@@ -50,6 +50,10 @@ rm -rf node_modules
 npm ci
 
 echo "🏗️ Construyendo Next.js..."
+export NEXT_PUBLIC_API_URL=https://api.proptech.com.py
+export NEXT_PUBLIC_UPLOADS_URL=https://api.proptech.com.py/uploads
+export NEXT_PUBLIC_ENABLE_MOCK_DATA=false
+export NEXT_PUBLIC_ENABLE_ANALYTICS=true
 npm run build
 
 echo "🚀 Iniciando aplicación..."
