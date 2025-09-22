@@ -1,0 +1,128 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { currencyService } from "@/app/(proptech)/catalogs/currencies/services/currencyService";
+import { Currency } from "@/app/(proptech)/catalogs/currencies/services/types";
+
+interface CurrencySelectorProps {
+  selectedCurrencyId?: number;
+  onCurrencyChange: (currencyId: number, currencyCode: string) => void;
+  className?: string;
+  disabled?: boolean;
+}
+
+export default function CurrencySelector({
+  selectedCurrencyId,
+  onCurrencyChange,
+  className = "",
+  disabled = false
+}: CurrencySelectorProps) {
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCurrencies();
+  }, []);
+
+  const loadCurrencies = async () => {
+    try {
+      setLoading(true);
+      const activeCurrencies = await currencyService.getActive();
+      setCurrencies(activeCurrencies);
+    } catch (error) {
+      console.error("Error loading currencies:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedCurrencyData = currencies.find(c => c.id === selectedCurrencyId);
+
+  const handleCurrencySelect = (currency: Currency) => {
+    onCurrencyChange(currency.id, currency.code);
+    setIsOpen(false);
+  };
+
+  if (loading) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`w-full h-12 px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 ${
+          disabled ? 'bg-gray-50 cursor-not-allowed' : 'hover:border-gray-400'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {selectedCurrencyData ? (
+              <>
+                <span className="text-lg">{selectedCurrencyData.symbol}</span>
+                <span className="font-medium">{selectedCurrencyData.code}</span>
+                <span className="text-gray-500 text-sm">({selectedCurrencyData.name})</span>
+              </>
+            ) : (
+              <span className="text-gray-500">Seleccionar moneda</span>
+            )}
+          </div>
+          <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+        </div>
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+          {currencies.map((currency) => (
+            <button
+              key={currency.id}
+              type="button"
+              onClick={() => handleCurrencySelect(currency)}
+              className={`w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none ${
+                selectedCurrencyId === currency.id ? 'bg-brand-50 text-brand-700' : ''
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">{currency.symbol}</span>
+                <span className="font-medium">{currency.code}</span>
+                <span className="text-gray-500 text-sm">({currency.name})</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Componente para mostrar solo el símbolo de la moneda
+export function CurrencySymbol({ currency }: { currency: string }) {
+  return (
+    <span className="inline-flex items-center px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-sm font-medium">
+      {currency}
+    </span>
+  );
+}
+
+// Componente para mostrar información completa de la moneda
+export function CurrencyInfo({ currency }: { currency: string }) {
+  return (
+    <div className="flex items-center space-x-2">
+      <span className="text-lg font-semibold">{currency}</span>
+      <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div>{currency}</div>
+        <div className="text-xs">{currency}</div>
+      </div>
+    </div>
+  );
+} 

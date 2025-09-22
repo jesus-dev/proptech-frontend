@@ -1,0 +1,996 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { 
+  UsersIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  CurrencyDollarIcon,
+  PlusIcon,
+  FunnelIcon,
+  ChartBarIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  PencilIcon,
+  EyeIcon
+} from "@heroicons/react/24/outline";
+import { 
+  SalesPipeline, 
+  STAGE_CONFIG, 
+  PRIORITY_CONFIG, 
+  SOURCE_CONFIG,
+  PipelineOverview,
+  StageBreakdown,
+  AgentPerformance,
+  SourceAnalysis
+} from "./types";
+import { salesPipelineService } from "./services/salesPipelineService";
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+
+export default function SalesPipelinePage() {
+  const router = useRouter();
+  const [pipelines, setPipelines] = useState<SalesPipeline[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'analytics'>('kanban');
+  const [selectedPipeline, setSelectedPipeline] = useState<SalesPipeline | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    agentId: '',
+    stage: '',
+    source: '',
+    priority: '',
+    search: ''
+  });
+
+  // Analytics data
+  const [overview, setOverview] = useState<PipelineOverview | null>(null);
+  const [stageBreakdown, setStageBreakdown] = useState<StageBreakdown | null>(null);
+  const [agentPerformance, setAgentPerformance] = useState<AgentPerformance | null>(null);
+  const [sourceAnalysis, setSourceAnalysis] = useState<SourceAnalysis | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [pipelinesData, overviewData, stageData, agentData, sourceData] = await Promise.all([
+        salesPipelineService.getAllPipelines(),
+        salesPipelineService.getPipelineOverview(),
+        salesPipelineService.getStageBreakdown(),
+        salesPipelineService.getAgentPerformance(),
+        salesPipelineService.getSourceAnalysis()
+      ]);
+
+      setPipelines(pipelinesData);
+      setOverview(overviewData);
+      setStageBreakdown(stageData);
+      setAgentPerformance(agentData);
+      setSourceAnalysis(sourceData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setError('Error al cargar los datos del pipeline');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPipelines = pipelines.filter(pipeline => {
+    if (filters.agentId && pipeline.agentId?.toString() !== filters.agentId) return false;
+    if (filters.stage && pipeline.stage !== filters.stage) return false;
+    if (filters.source && pipeline.source !== filters.source) return false;
+    if (filters.priority && pipeline.priority !== filters.priority) return false;
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      const leadName = `${pipeline.lead?.firstName || ''} ${pipeline.lead?.lastName || ''}`.toLowerCase();
+      const propertyTitle = pipeline.property?.title?.toLowerCase() || '';
+      const notes = pipeline.notes?.toLowerCase() || '';
+      
+      if (!leadName.includes(searchLower) && 
+          !propertyTitle.includes(searchLower) && 
+          !notes.includes(searchLower)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const getPipelinesByStage = (stage: string) => {
+    return filteredPipelines.filter(p => p.stage === stage);
+  };
+
+  const handleMoveToStage = async (pipelineId: number, newStage: string) => {
+    try {
+      await salesPipelineService.moveToStage(pipelineId, newStage);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error moving pipeline:', error);
+      alert('Error al mover el pipeline');
+    }
+  };
+
+  const handleUpdateContact = async (pipelineId: number, notes: string) => {
+    try {
+      await salesPipelineService.updateContact(pipelineId, notes);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      alert('Error al actualizar el contacto');
+    }
+  };
+
+  const handleCloseDeal = async (pipelineId: number, closeReason: string, actualValue: number) => {
+    try {
+      const commissionEarned = actualValue * 0.05; // 5% commission
+      await salesPipelineService.closeDeal(pipelineId, closeReason, actualValue, commissionEarned);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error closing deal:', error);
+      alert('Error al cerrar el deal');
+    }
+  };
+
+  const handleLoseDeal = async (pipelineId: number, closeReason: string) => {
+    try {
+      await salesPipelineService.loseDeal(pipelineId, closeReason);
+      await loadData(); // Reload data
+    } catch (error) {
+      console.error('Error losing deal:', error);
+      alert('Error al marcar el deal como perdido');
+    }
+  };
+
+  const formatCurrency = (amount: number, currency: string = 'USD') => {
+    return new Intl.NumberFormat('es-PY', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-PY');
+  };
+
+  const getStageConfig = (stage: string) => {
+    return STAGE_CONFIG.find(config => config.name === stage) || STAGE_CONFIG[0];
+  };
+
+  const getPriorityConfig = (priority: string) => {
+    return PRIORITY_CONFIG[priority as keyof typeof PRIORITY_CONFIG] || PRIORITY_CONFIG.MEDIUM;
+  };
+
+  const getSourceConfig = (source: string) => {
+    return SOURCE_CONFIG[source as keyof typeof SOURCE_CONFIG] || SOURCE_CONFIG.OTHER;
+  };
+
+  if (loading) {
+          return <LoadingSpinner size="md" message="Cargando pipeline de ventas" />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-blue-600 shadow-2xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl shadow-lg">
+                <ChartBarIcon className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  Pipeline de Ventas
+                </h1>
+                <p className="text-green-100 text-lg">
+                  Gestiona y analiza tu pipeline de ventas
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="px-4 py-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 border border-white/30"
+              >
+                <FunnelIcon className="h-5 w-5 mr-2" />
+                Filtros
+              </button>
+              <button
+                onClick={() => router.push('/sales-pipeline/new')}
+                className="px-6 py-3 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 border border-white/30"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Nuevo Lead
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* View Mode Tabs */}
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-2 mb-8">
+          <div className="flex space-x-1">
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                viewMode === 'kanban' 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
+              }`}
+            >
+              Vista Kanban
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                viewMode === 'list' 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
+              }`}
+            >
+              Lista
+            </button>
+            <button
+              onClick={() => setViewMode('analytics')}
+              className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                viewMode === 'analytics' 
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
+              }`}
+            >
+              <ChartBarIcon className="h-5 w-5 mr-2 inline" />
+              Analytics
+            </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        {showFilters && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <input
+                type="text"
+                placeholder="Buscar leads, propiedades..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                className="px-4 py-3 bg-gray-50/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-500 text-sm transition-all duration-200"
+              />
+              <select
+                value={filters.stage}
+                onChange={(e) => setFilters({ ...filters, stage: e.target.value })}
+                className="px-4 py-3 bg-gray-50/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-500 text-sm transition-all duration-200"
+              >
+                <option value="">Todas las etapas</option>
+                {STAGE_CONFIG.map(stage => (
+                  <option key={stage.name} value={stage.name}>{stage.label}</option>
+                ))}
+              </select>
+              <select
+                value={filters.priority}
+                onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
+                className="px-4 py-3 bg-gray-50/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-500 text-sm transition-all duration-200"
+              >
+                <option value="">Todas las prioridades</option>
+                {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
+                  <option key={key} value={key}>{config.label}</option>
+                ))}
+              </select>
+              <select
+                value={filters.source}
+                onChange={(e) => setFilters({ ...filters, source: e.target.value })}
+                className="px-4 py-3 bg-gray-50/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-500 text-sm transition-all duration-200"
+              >
+                <option value="">Todas las fuentes</option>
+                {Object.entries(SOURCE_CONFIG).map(([key, config]) => (
+                  <option key={key} value={key}>{config.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => setFilters({ agentId: '', stage: '', source: '', priority: '', search: '' })}
+                className="px-4 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+        )}
+
+      {/* Content */}
+      {viewMode === 'kanban' && (
+        <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+          {STAGE_CONFIG.map(stageConfig => {
+            const stagePipelines = getPipelinesByStage(stageConfig.name);
+            const totalValue = stagePipelines.reduce((sum, p) => sum + (p.expectedValue || 0), 0);
+            
+            return (
+              <div key={stageConfig.name} className="bg-white rounded-lg shadow-sm">
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">{stageConfig.label}</h3>
+                    <span className="text-sm text-gray-500">{stagePipelines.length}</span>
+                  </div>
+                  <div className="text-sm text-gray-600 mb-2">{stageConfig.description}</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {formatCurrency(totalValue)}
+                  </div>
+                </div>
+                
+                <div className="p-2 space-y-2 max-h-96 overflow-y-auto">
+                  {stagePipelines.map(pipeline => (
+                    <PipelineCard
+                      key={pipeline.id}
+                      pipeline={pipeline}
+                      onMoveToStage={handleMoveToStage}
+                      onUpdateContact={handleUpdateContact}
+                      onCloseDeal={handleCloseDeal}
+                      onLoseDeal={handleLoseDeal}
+                      formatCurrency={formatCurrency}
+                      formatDate={formatDate}
+                      getPriorityConfig={getPriorityConfig}
+                      getSourceConfig={getSourceConfig}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {viewMode === 'list' && (
+        <div className="bg-white rounded-lg shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Lead/Propiedad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Etapa
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Valor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Probabilidad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Prioridad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Último Contacto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredPipelines.map(pipeline => (
+                  <tr key={pipeline.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {pipeline.lead ? `${pipeline.lead.firstName} ${pipeline.lead.lastName}` : 'Sin lead'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {pipeline.property?.title || 'Sin propiedad'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                        style={{ 
+                          backgroundColor: getStageConfig(pipeline.stage).color + '20',
+                          color: getStageConfig(pipeline.stage).color
+                        }}
+                      >
+                        {getStageConfig(pipeline.stage).label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {pipeline.expectedValue ? formatCurrency(pipeline.expectedValue, pipeline.currency) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${pipeline.probability}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-gray-900">{pipeline.probability}%</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                        style={{
+                          backgroundColor: getPriorityConfig(pipeline.priority).bgColor,
+                          color: getPriorityConfig(pipeline.priority).color
+                        }}
+                      >
+                        {getPriorityConfig(pipeline.priority).label}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {pipeline.lastContactDate ? formatDate(pipeline.lastContactDate) : 'Nunca'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setSelectedPipeline(pipeline)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => router.push(`/sales-pipeline/edit/${pipeline.id}`)}
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'analytics' && overview && (
+        <div className="space-y-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <UsersIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Leads</p>
+                  <p className="text-2xl font-semibold text-gray-900">{overview.totalLeads}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Ganados</p>
+                  <p className="text-2xl font-semibold text-gray-900">{overview.closedWon}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <XCircleIcon className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Perdidos</p>
+                  <p className="text-2xl font-semibold text-gray-900">{overview.closedLost}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <CurrencyDollarIcon className="h-6 w-6 text-purple-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Valor Pipeline</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {formatCurrency(overview.totalPipelineValue)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stage Breakdown */}
+          {stageBreakdown && (
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Desglose por Etapas</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {STAGE_CONFIG.filter(stage => stage.name !== 'CLOSED_LOST').map(stageConfig => {
+                  const stageData = stageBreakdown[stageConfig.name];
+                  if (!stageData) return null;
+                  
+                  return (
+                    <div key={stageConfig.name} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-900">{stageConfig.label}</span>
+                        <span className="text-sm text-gray-500">{stageData.count}</span>
+                      </div>
+                      <div className="text-lg font-semibold text-gray-900">
+                        {formatCurrency(stageData.value)}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {stageData.avgProbability.toFixed(1)}% probabilidad
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Agent Performance */}
+          {agentPerformance && (
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Rendimiento por Agente</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agente</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Leads</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ganados</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Conversión</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {Object.entries(agentPerformance).map(([agentId, data]) => (
+                      <tr key={agentId}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          Agente {agentId}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {data.totalLeads}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {data.wonLeads}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {data.conversionRate.toFixed(1)}%
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatCurrency(data.totalValue)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pipeline Detail Modal */}
+      {selectedPipeline && (
+        <PipelineDetailModal
+          pipeline={selectedPipeline}
+          onClose={() => setSelectedPipeline(null)}
+          onMoveToStage={handleMoveToStage}
+          onUpdateContact={handleUpdateContact}
+          onCloseDeal={handleCloseDeal}
+          onLoseDeal={handleLoseDeal}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+          getStageConfig={getStageConfig}
+          getPriorityConfig={getPriorityConfig}
+          getSourceConfig={getSourceConfig}
+        />
+      )}
+
+      {/* Pipeline Explanation - Compact */}
+      <div className="mt-8 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center space-x-2 mb-3">
+          <ChartBarIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">¿Qué es el Pipeline de Ventas?</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div>
+            <p className="text-gray-600 dark:text-gray-300 mb-2">
+              <strong>Definición:</strong> Es como un embudo que organiza tus clientes potenciales desde el primer contacto hasta la venta.
+            </p>
+            <div className="space-y-1 text-gray-600 dark:text-gray-300">
+              <div><strong>🎯 Lead:</strong> Cliente que mostró interés</div>
+              <div><strong>📞 Contactado:</strong> Primer contacto realizado</div>
+              <div><strong>🤝 Reunión:</strong> Visita o reunión programada</div>
+              <div><strong>📋 Propuesta:</strong> Oferta enviada al cliente</div>
+              <div><strong>💼 Negociación:</strong> Discusión de términos</div>
+              <div><strong>✅ Ganado/❌ Perdido:</strong> Resultado final</div>
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-gray-600 dark:text-gray-300 mb-2">
+              <strong>¿Por qué usarlo?</strong>
+            </p>
+            <div className="space-y-1 text-gray-600 dark:text-gray-300">
+              <div>• <strong>No perder leads:</strong> Seguimiento sistemático</div>
+              <div>• <strong>Mejor conversión:</strong> Proceso optimizado</div>
+              <div>• <strong>Predicción:</strong> Estima ventas futuras</div>
+              <div>• <strong>Análisis:</strong> Identifica oportunidades</div>
+            </div>
+            <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-gray-700 dark:text-gray-300">
+              <strong>💡 Tip:</strong> Mueve las tarjetas entre columnas para actualizar el estado de cada lead
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Pipeline Card Component
+function PipelineCard({ 
+  pipeline, 
+  onMoveToStage, 
+  onUpdateContact, 
+  onCloseDeal, 
+  onLoseDeal,
+  formatCurrency,
+  formatDate,
+  getPriorityConfig,
+  getSourceConfig
+}: {
+  pipeline: SalesPipeline;
+  onMoveToStage: (id: number, stage: string) => void;
+  onUpdateContact: (id: number, notes: string) => void;
+  onCloseDeal: (id: number, reason: string, value: number) => void;
+  onLoseDeal: (id: number, reason: string) => void;
+  formatCurrency: (amount: number, currency?: string) => string;
+  formatDate: (date: string) => string;
+  getPriorityConfig: (priority: string) => any;
+  getSourceConfig: (source: string) => any;
+}) {
+  const [showActions, setShowActions] = useState(false);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex-1">
+          <h4 className="text-sm font-medium text-gray-900 truncate">
+            {pipeline.lead ? `${pipeline.lead.firstName} ${pipeline.lead.lastName}` : 'Sin lead'}
+          </h4>
+          <p className="text-xs text-gray-500 truncate">
+            {pipeline.property?.title || 'Sin propiedad'}
+          </p>
+        </div>
+        <div className="flex space-x-1">
+          <span
+            className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+            style={{
+              backgroundColor: getPriorityConfig(pipeline.priority).bgColor,
+              color: getPriorityConfig(pipeline.priority).color
+            }}
+          >
+            {getPriorityConfig(pipeline.priority).label}
+          </span>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div className="text-sm font-semibold text-gray-900">
+          {pipeline.expectedValue ? formatCurrency(pipeline.expectedValue, pipeline.currency) : '-'}
+        </div>
+        <div className="flex items-center mt-1">
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mr-2">
+            <div
+              className="bg-blue-600 h-1.5 rounded-full"
+              style={{ width: `${pipeline.probability}%` }}
+            ></div>
+          </div>
+          <span className="text-xs text-gray-500">{pipeline.probability}%</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+        <span>{pipeline.source ? getSourceConfig(pipeline.source).label : 'Sin fuente'}</span>
+        <span>{pipeline.lastContactDate ? formatDate(pipeline.lastContactDate) : 'Nunca'}</span>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <button
+          onClick={() => setShowActions(!showActions)}
+          className="text-xs text-blue-600 hover:text-blue-800"
+        >
+          Acciones
+        </button>
+        <div className="flex space-x-1">
+          <button className="text-gray-400 hover:text-gray-600">
+            <PhoneIcon className="h-3 w-3" />
+          </button>
+          <button className="text-gray-400 hover:text-gray-600">
+            <EnvelopeIcon className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+
+      {showActions && (
+        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
+          {pipeline.stage !== 'CLOSED_WON' && pipeline.stage !== 'CLOSED_LOST' && (
+            <>
+              <button
+                onClick={() => onMoveToStage(pipeline.id, 'CONTACTED')}
+                className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
+              >
+                Marcar como Contactado
+              </button>
+              <button
+                onClick={() => onMoveToStage(pipeline.id, 'MEETING')}
+                className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
+              >
+                Programar Reunión
+              </button>
+              <button
+                onClick={() => onMoveToStage(pipeline.id, 'PROPOSAL')}
+                className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
+              >
+                Enviar Propuesta
+              </button>
+              <button
+                onClick={() => onMoveToStage(pipeline.id, 'NEGOTIATION')}
+                className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
+              >
+                Iniciar Negociación
+              </button>
+            </>
+          )}
+          
+          {pipeline.stage === 'NEGOTIATION' && (
+            <>
+              <button
+                onClick={() => {
+                  const actualValue = pipeline.expectedValue || 0;
+                  onCloseDeal(pipeline.id, 'Deal cerrado exitosamente', actualValue);
+                }}
+                className="w-full text-left text-xs text-green-600 hover:text-green-800 py-1"
+              >
+                Cerrar Ganado
+              </button>
+              <button
+                onClick={() => onLoseDeal(pipeline.id, 'Deal perdido')}
+                className="w-full text-left text-xs text-red-600 hover:text-red-800 py-1"
+              >
+                Cerrar Perdido
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Pipeline Detail Modal Component
+function PipelineDetailModal({ 
+  pipeline, 
+  onClose, 
+  onMoveToStage, 
+  onUpdateContact, 
+  onCloseDeal, 
+  onLoseDeal,
+  formatCurrency,
+  formatDate,
+  getStageConfig,
+  getPriorityConfig,
+  getSourceConfig
+}: {
+  pipeline: SalesPipeline;
+  onClose: () => void;
+  onMoveToStage: (id: number, stage: string) => void;
+  onUpdateContact: (id: number, notes: string) => void;
+  onCloseDeal: (id: number, reason: string, value: number) => void;
+  onLoseDeal: (id: number, reason: string) => void;
+  formatCurrency: (amount: number, currency?: string) => string;
+  formatDate: (date: string) => string;
+  getStageConfig: (stage: string) => any;
+  getPriorityConfig: (priority: string) => any;
+  getSourceConfig: (source: string) => any;
+}) {
+  const [contactNotes, setContactNotes] = useState('');
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Detalles del Pipeline</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <XCircleIcon className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Lead Information */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Información del Lead</h3>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Nombre:</label>
+                  <p className="text-sm text-gray-900">
+                    {pipeline.lead ? `${pipeline.lead.firstName} ${pipeline.lead.lastName}` : 'Sin lead'}
+                  </p>
+                </div>
+                {pipeline.lead && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Email:</label>
+                      <p className="text-sm text-gray-900">{pipeline.lead.email}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Teléfono:</label>
+                      <p className="text-sm text-gray-900">{pipeline.lead.phone}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Property Information */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Información de la Propiedad</h3>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Título:</label>
+                  <p className="text-sm text-gray-900">{pipeline.property?.title || 'Sin propiedad'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Dirección:</label>
+                  <p className="text-sm text-gray-900">{pipeline.property?.address || 'Sin dirección'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Precio:</label>
+                  <p className="text-sm text-gray-900">
+                    {pipeline.property?.price ? formatCurrency(pipeline.property.price, pipeline.property.currency) : '-'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pipeline Status */}
+          <div className="mt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Estado del Pipeline</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Etapa:</label>
+                <div className="mt-1">
+                  <span
+                    className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                    style={{ 
+                      backgroundColor: getStageConfig(pipeline.stage).color + '20',
+                      color: getStageConfig(pipeline.stage).color
+                    }}
+                  >
+                    {getStageConfig(pipeline.stage).label}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Prioridad:</label>
+                <div className="mt-1">
+                  <span
+                    className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                    style={{
+                      backgroundColor: getPriorityConfig(pipeline.priority).bgColor,
+                      color: getPriorityConfig(pipeline.priority).color
+                    }}
+                  >
+                    {getPriorityConfig(pipeline.priority).label}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Fuente:</label>
+                <div className="mt-1">
+                  <span
+                    className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
+                    style={{
+                      backgroundColor: getSourceConfig(pipeline.source || '').color + '20',
+                      color: getSourceConfig(pipeline.source || '').color
+                    }}
+                  >
+                    {pipeline.source ? getSourceConfig(pipeline.source).label : 'Sin fuente'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Financial Information */}
+          <div className="mt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-3">Información Financiera</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Valor Esperado:</label>
+                <p className="text-lg font-semibold text-gray-900">
+                  {pipeline.expectedValue ? formatCurrency(pipeline.expectedValue, pipeline.currency) : '-'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Probabilidad:</label>
+                <div className="flex items-center mt-1">
+                  <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: `${pipeline.probability}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm text-gray-900">{pipeline.probability}%</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Días en Pipeline:</label>
+                <p className="text-lg font-semibold text-gray-900">{pipeline.daysInPipeline || 0}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          {pipeline.notes && (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-3">Notas</h3>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{pipeline.notes}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="mt-6 flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
+              Cerrar
+            </button>
+            {pipeline.stage !== 'CLOSED_WON' && pipeline.stage !== 'CLOSED_LOST' && (
+              <button
+                onClick={() => {
+                  onMoveToStage(pipeline.id, 'CONTACTED');
+                  onClose();
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Marcar como Contactado
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 
