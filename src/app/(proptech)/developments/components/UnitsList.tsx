@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Unit } from "./types";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, FunnelIcon, ViewColumnsIcon, MagnifyingGlassIcon, EyeIcon, PencilIcon } from "@heroicons/react/24/outline";
 interface UnitsListProps {
   units: Unit[];
   onUnitClick?: (unit: Unit) => void;

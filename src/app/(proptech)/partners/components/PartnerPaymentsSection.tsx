@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { partnerPaymentService, PartnerPayment, PaymentSummary } from "../services/partnerPaymentService";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, BanknotesIcon, EyeIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 
 interface PartnerPaymentsSectionProps {
   partnerId: number;

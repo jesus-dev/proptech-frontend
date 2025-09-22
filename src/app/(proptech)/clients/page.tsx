@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Client } from "../developments/components/types";
 import { clientService } from "../developments/services/clientService";
 

@@ -5,7 +5,7 @@ import { propertyService } from "../services/propertyService";
 import { Property } from "../components/types";
 import PropertyCard from "../components/PropertyCard";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, HeartIcon } from "@heroicons/react/24/outline";
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<Property[]>([]);

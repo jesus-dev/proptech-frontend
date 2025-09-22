@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, FireIcon } from "@heroicons/react/24/outline";
 import { propertyService } from "../properties/services/propertyService";
 import type { Property } from "../properties/components/types";
 

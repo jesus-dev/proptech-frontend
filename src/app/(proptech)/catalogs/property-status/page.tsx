@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getAllPropertyStatuses, createPropertyStatus, updatePropertyStatus, deletePropertyStatus, type PropertyStatus } from "./services/propertyStatusService";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, PencilIcon, TrashIcon, TagIcon } from "@heroicons/react/24/outline";
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ModernPopup from '@/components/ui/ModernPopup';
 

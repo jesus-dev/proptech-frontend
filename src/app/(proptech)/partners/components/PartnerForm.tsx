@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Partner, partnerService } from "../services/partnerService";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, XMarkIcon, CheckCircleIcon, BriefcaseIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 import QRCode from 'react-qr-code';
 import { Dialog } from '@headlessui/react';
 

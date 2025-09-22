@@ -270,7 +270,7 @@ export default function SubscriptionNotificationsPage() {
                           {template.subject}
                         </p>
                         <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="secondary" className="text-xs">
                             {getTypeLabel(template.type)}
                           </Badge>
                           <Badge className={template.isActive ? "bg-green-100 text-green-800 border-green-200" : "bg-gray-100 text-gray-800 border-gray-200"}>

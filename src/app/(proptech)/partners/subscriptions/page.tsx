@@ -153,7 +153,7 @@ export default function SubscriptionsPage() {
       case 'PENDING':
         return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Pendiente</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 

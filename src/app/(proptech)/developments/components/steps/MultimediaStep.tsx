@@ -1,6 +1,6 @@
 "use client";
 import Image from 'next/image';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 import React, { useCallback } from "react";
 import { useDropzone } from "react-dropzone";

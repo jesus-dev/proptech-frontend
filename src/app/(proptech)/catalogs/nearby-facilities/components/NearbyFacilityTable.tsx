@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PhoneIcon, GlobeAltIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { NearbyFacility, FacilityTypeLabels } from '../types';
 
 interface NearbyFacilityTableProps {

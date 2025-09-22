@@ -1,4 +1,5 @@
 import React from 'react';
+import { ClockIcon, HomeIcon, UsersIcon } from '@heroicons/react/24/outline';
 
 
 const HomeStats: React.FC = () => {

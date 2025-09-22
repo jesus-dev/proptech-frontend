@@ -8,6 +8,7 @@ import {
   TrashIcon,
   UserIcon,
   HomeIcon,
+  EyeIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
   PhoneIcon,

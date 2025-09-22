@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from 'next/image';
 const ImageComponent = Image as any;
 import { useRouter } from "next/navigation";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CheckCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import SignaturePad from "../../components/SignaturePad";
 import { contractService } from "../../services/contractService";
 import { Contract } from "../../components/types";

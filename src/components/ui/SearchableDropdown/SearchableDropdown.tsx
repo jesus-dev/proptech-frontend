@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, MagnifyingGlassIcon, XMarkIcon, ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
 interface SearchableDropdownProps<T extends { id: string; name: string }> {
   label: string;
   placeholder?: string;

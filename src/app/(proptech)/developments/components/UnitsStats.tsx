@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Unit } from "./types";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 
 
 

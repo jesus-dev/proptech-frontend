@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect } from 'react';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 interface DeleteContactDialogProps {
   isOpen: boolean;
   onClose: () => void;

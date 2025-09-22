@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CreditCardIcon, ArrowLeftIcon, UserPlusIcon } from "@heroicons/react/24/outline";
 import { Package } from "lucide-react";
 import PartnerForm from "../components/PartnerForm";
 import { SubscriptionProduct } from "../types/subscription";
@@ -135,7 +135,7 @@ export default function NewPartnerPage() {
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {product.name}
                         </h3>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="secondary" className="text-xs">
                           {product.category}
                         </Badge>
                       </div>

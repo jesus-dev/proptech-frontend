@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { contactService } from "../services/contactService";
 import { ContactFormData, ContactStatus, ContactType } from "../types";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, XMarkIcon, ArrowUpOnSquareIcon } from "@heroicons/react/24/outline";
 interface ImportContactsModalProps {
   isOpen: boolean;
   onClose: () => void;

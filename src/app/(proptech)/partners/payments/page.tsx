@@ -195,7 +195,7 @@ export default function PartnerPaymentsPage() {
       case 'CANCELLED':
         return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Cancelado</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
@@ -210,7 +210,7 @@ export default function PartnerPaymentsPage() {
       case 'ADVANCE':
         return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Adelanto</Badge>;
       default:
-        return <Badge variant="outline">{type}</Badge>;
+        return <Badge variant="secondary">{type}</Badge>;
     }
   };
 

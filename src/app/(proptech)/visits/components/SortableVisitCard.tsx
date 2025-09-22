@@ -6,7 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Visit } from "./types";
 import { visitService } from "../services/visitService";
 import Link from "next/link";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, EyeIcon, PencilIcon, TrashIcon, CalendarIcon, EnvelopeIcon, PhoneIcon } from "@heroicons/react/24/outline";
 
 interface SortableVisitCardProps {
   visit: Visit;

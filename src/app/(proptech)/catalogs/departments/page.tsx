@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Department } from "./types";
 import { useDepartments } from "./hooks/useDepartments";
 import { getAllCountries, type Country } from "../countries/services/countryService";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, PencilIcon, TrashIcon, MapIcon } from "@heroicons/react/24/outline";
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ModernPopup from '@/components/ui/ModernPopup';
 

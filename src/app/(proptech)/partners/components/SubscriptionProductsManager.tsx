@@ -203,14 +203,14 @@ export default function SubscriptionProductsManager() {
               </div>
               <div className="flex items-center space-x-1">
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => handleEdit(product)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => handleDelete(product.id)}
                 >

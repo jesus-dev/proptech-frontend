@@ -1,6 +1,6 @@
 "use client";
 
-import { BuildingOfficeIcon, HomeIcon, MapPinIcon, UserIcon } from "@heroicons/react/24/outline";
+import { BuildingOfficeIcon, HomeIcon, MapPinIcon, UserIcon, ArrowLeftIcon, CalendarIcon } from "@heroicons/react/24/outline";
 
 import React, { useState, useEffect } from "react";
 import Image from 'next/image';

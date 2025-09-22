@@ -3,7 +3,7 @@
 import React from 'react';
 import { CityZone } from '../types';
 import ModernPopup from '@/components/ui/ModernPopup';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;

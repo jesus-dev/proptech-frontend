@@ -439,6 +439,7 @@ class MarketIntelligenceEngine {
     if (marketingRecommendation) {
       actions.push({
         id: `marketing-${Date.now()}`,
+        type: 'MARKETING_UPDATE',
         title: 'Implementar Campaña de Marketing',
         description: marketingRecommendation.description,
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
@@ -497,6 +498,32 @@ export class OwnersPropertyService {
       return response.data;
     } catch (error) {
       console.error('Error fetching owner properties:', error);
+      throw error;
+    }
+  }
+
+  // Agregar propiedad a un propietario
+  static async addPropertyToOwner(ownerId: number, propertyData: {
+    propertyId: number;
+    ownershipType: 'FULL' | 'PARTIAL' | 'JOINT';
+    ownershipPercentage: number;
+  }): Promise<OwnerProperty> {
+    try {
+      const response = await apiClient.post(`/api/owners/${ownerId}/properties`, propertyData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding property to owner:', error);
+      throw error;
+    }
+  }
+
+  // Remover propiedad de un propietario
+  static async removePropertyFromOwner(ownerId: number, propertyId: number): Promise<boolean> {
+    try {
+      const response = await apiClient.delete(`/api/owners/${ownerId}/properties/${propertyId}`);
+      return response.data.success;
+    } catch (error) {
+      console.error('Error removing property from owner:', error);
       throw error;
     }
   }

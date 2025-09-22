@@ -13,6 +13,10 @@ interface Property {
   city: string;
   price: number;
   type: string;
+  description?: string;
+  featuredImage?: string;
+  propertyGalleryImages?: string[];
+  currency?: string;
   bedrooms?: number;
   bathrooms?: number;
   area?: number;
@@ -121,8 +125,8 @@ export default function PublicRecommendationsPage() {
       }
     }
 
-    if (filters.type && property.propertyType) {
-      if (property.propertyType !== filters.type) return false;
+    if (filters.type && property.type) {
+      if (property.type !== filters.type) return false;
     }
 
     if (filters.bedrooms && property.bedrooms) {
@@ -227,7 +231,7 @@ export default function PublicRecommendationsPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Puntuación Promedio</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {(recommendations.reduce((sum, rec) => sum + rec.score.totalScore, 0) / recommendations.length * 100).toFixed(0)}%
+                  {(recommendations.reduce((sum, rec) => sum + rec.score, 0) / recommendations.length * 100).toFixed(0)}%
                 </p>
               </div>
             </div>
@@ -241,7 +245,7 @@ export default function PublicRecommendationsPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Tendencias</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {recommendations.filter(rec => rec.score.totalScore > 0.7).length}
+                  {recommendations.filter(rec => rec.score > 0.7).length}
                 </p>
               </div>
             </div>
@@ -480,8 +484,8 @@ function RecommendationCard({
                 <div className="text-2xl font-bold text-gray-900 mb-2">
                   {property.price ? formatCurrency(property.price, property.currency || 'USD') : 'Consultar'}
                 </div>
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getScoreColor(score.totalScore)}`}>
-                  {getScoreLabel(score.totalScore)} ({Math.round(score.totalScore * 100)}%)
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getScoreColor(score)}`}>
+                  {getScoreLabel(score)} ({Math.round(score * 100)}%)
                 </span>
               </div>
             </div>
@@ -520,8 +524,8 @@ function RecommendationCard({
         
         {/* Score Badge */}
         <div className="absolute top-3 right-3">
-          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getScoreColor(score.totalScore)}`}>
-            {getScoreLabel(score.totalScore)}
+          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getScoreColor(score)}`}>
+            {getScoreLabel(score)}
           </span>
         </div>
       </div>

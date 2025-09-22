@@ -1,7 +1,7 @@
 'use client';
 
 import { useVisitForm } from '../hooks/useVisitForm';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Visit } from './types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,7 +55,6 @@ export default function VisitForm({ initialData, initialDate, onSubmitSuccess, o
             <div className="space-y-2">
               <Label htmlFor="visitType">Tipo de Visita</Label>
               <Select
-                name="visitType"
                 value={formData.visitType}
                 onValueChange={(value) => handleChange({ target: { name: 'visitType', value } } as any)}
               >
@@ -194,7 +193,6 @@ export default function VisitForm({ initialData, initialDate, onSubmitSuccess, o
           <div className="space-y-2">
             <Label htmlFor="status">Estado</Label>
             <Select
-              name="status"
               value={formData.status}
               onValueChange={(value) => handleChange({ target: { name: 'status', value } } as any)}
             >
@@ -235,8 +233,8 @@ export default function VisitForm({ initialData, initialDate, onSubmitSuccess, o
                   />
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon"
+                    variant="outline"
+                    size="sm"
                     onClick={() => removeReminder(index)}
                   >
                     <XMarkIcon className="h-4 w-4" />

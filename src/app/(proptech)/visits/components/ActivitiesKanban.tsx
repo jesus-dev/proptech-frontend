@@ -1,5 +1,5 @@
 import { Visit } from './types';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';

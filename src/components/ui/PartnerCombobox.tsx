@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Combobox } from '@headlessui/react';
 import { partnerService, Partner } from '@/app/(proptech)/partners/services/partnerService';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, BriefcaseIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 
 interface PartnerComboboxProps {
   value: Partner | null;

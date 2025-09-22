@@ -6,7 +6,7 @@ import { ContractTemplate } from "../templates/types";
 import { Contract } from "../components/types";
 import { contractService } from "../services/contractService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, ArrowLeftIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { lazy } from "react";
 
 // Error Boundary simple

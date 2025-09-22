@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ContractTemplate } from "../types";
 
 interface TemplatePreviewProps {

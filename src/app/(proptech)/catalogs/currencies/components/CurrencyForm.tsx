@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Currency } from "../services/types";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 
 interface CurrencyFormProps {
   initialData?: Partial<Currency>;

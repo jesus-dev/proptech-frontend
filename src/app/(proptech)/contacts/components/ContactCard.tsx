@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PencilIcon, TrashIcon, EnvelopeIcon, PhoneIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { Contact, ContactType, ContactStatus } from "../types";
 import { contactService } from "../services/contactService";
 import DeleteConfirmationDialog from "../../contracts/components/DeleteConfirmationDialog";

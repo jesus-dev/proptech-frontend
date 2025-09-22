@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, EnvelopeIcon, EyeSlashIcon, EyeIcon, PhoneIcon } from "@heroicons/react/24/outline";
 import { apiClient } from '@/lib/api';
 
 interface Inquiry {

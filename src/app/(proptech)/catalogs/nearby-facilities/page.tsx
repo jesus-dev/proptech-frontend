@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { useNearbyFacilities } from './hooks/useNearbyFacilities';
 import { NearbyFacility, NearbyFacilityFormData, NearbyFacilityFilters } from './types';
 import NearbyFacilityModal from './components/NearbyFacilityModal';

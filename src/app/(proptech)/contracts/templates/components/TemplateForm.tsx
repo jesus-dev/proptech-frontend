@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, XMarkIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { ContractTemplate, TemplateFormData, TemplateVariable } from "../types";
 import dynamic from "next/dynamic";
 

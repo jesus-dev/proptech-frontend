@@ -346,6 +346,7 @@ export default function SocialPage() {
   const [userLocation, setUserLocation] = useState<string>('');
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string; fullAddress?: string } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   const [postImagePreviews, setPostImagePreviews] = useState<string[]>([]);
   const [showComments, setShowComments] = useState<{ [key: number]: boolean }>({});
   const [commentCounts, setCommentCounts] = useState<{ [key: number]: number }>({});
@@ -376,6 +377,28 @@ export default function SocialPage() {
     setUserLocation(location.address);
     setShowLocationPicker(false);
     console.log('📍 Ubicación seleccionada manualmente:', location);
+  };
+
+  // Función para detectar ubicación automáticamente
+  const detectLocation = async () => {
+    setLocationLoading(true);
+    try {
+      // Intentar GPS primero
+      const gpsResult = await getLocationByGPS();
+      if (gpsResult.location && !gpsResult.location.includes('GPS requerido') && !gpsResult.location.includes('GPS no disponible')) {
+        setUserLocation(gpsResult.location);
+        return;
+      }
+      
+      // Si GPS falla, intentar IP
+      const ipLocation = await getLocationByIP();
+      setUserLocation(ipLocation);
+    } catch (error) {
+      console.error('Error detecting location:', error);
+      setUserLocation('Ubicación no disponible');
+    } finally {
+      setLocationLoading(false);
+    }
   };
 
 

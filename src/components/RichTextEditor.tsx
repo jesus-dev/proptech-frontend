@@ -228,9 +228,9 @@ export default function RichTextEditor({
             ) : (
               <ToolbarButton
                 icon={button.icon}
-                onClick={button.onClick}
+                onClick={button.onClick || (() => {})}
                 isActive={button.isActive}
-                title={button.title}
+                title={button.title || ''}
               />
             )}
           </React.Fragment>

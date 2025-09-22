@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CityZone } from '../types';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface CityZoneTableProps {
   cityZones: CityZone[];

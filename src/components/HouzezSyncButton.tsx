@@ -96,7 +96,7 @@ export function HouzezSyncButton({
     const text = houzezSyncService.getSyncStatusText(property);
     
     return (
-      <Badge variant="outline" className={`${color} border-current`}>
+      <Badge variant="secondary" className={`${color} border-current`}>
         {getStatusIcon()}
         <span className="ml-1">{text}</span>
       </Badge>

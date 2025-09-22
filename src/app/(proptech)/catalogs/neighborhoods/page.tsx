@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useNeighborhoods } from "./hooks/useNeighborhoods";
 import { Neighborhood } from "./types";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ModernPopup from '@/components/ui/ModernPopup';
 
@@ -281,7 +281,7 @@ export default function NeighborhoodsPage() {
         onClose={closeModal}
         title={editingNeighborhood ? 'Editar Barrio' : 'Nuevo Barrio'}
         subtitle={editingNeighborhood ? 'Modifica los datos del barrio' : 'Crea un nuevo barrio en el sistema'}
-        icon={<BuildingOffice2Icon className="w-6 h-6 text-white" />}
+        icon={<BuildingOfficeIcon className="w-6 h-6 text-white" />}
         maxWidth="max-w-md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">

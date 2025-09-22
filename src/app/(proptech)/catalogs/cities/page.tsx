@@ -3,7 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { getAllCities, createCity, updateCity, deleteCity, type City } from "./services/cityService";
 import { getAllDepartments } from "../departments/services/departmentService";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { 
+  HomeIcon, 
+  BuildingOfficeIcon, 
+  UserIcon, 
+  MapPinIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon
+} from "@heroicons/react/24/outline";
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ModernPopup from '@/components/ui/ModernPopup';
 
@@ -282,7 +290,7 @@ export default function CitiesPage() {
         onClose={closeModal}
         title={editingCity ? 'Editar Ciudad' : 'Nueva Ciudad'}
         subtitle={editingCity ? 'Modifica los datos de la ciudad' : 'Crea una nueva ciudad en el sistema'}
-        icon={<BuildingOffice2Icon className="w-6 h-6 text-white" />}
+        icon={<BuildingOfficeIcon className="w-6 h-6 text-white" />}
         maxWidth="max-w-md"
       >
         <form onSubmit={handleSubmit} className="space-y-4">

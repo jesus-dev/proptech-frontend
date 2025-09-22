@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { locationService } from "../services/locationService";
 import { Country, City, Neighborhood } from "../types";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PencilIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 
 type LocationType = "country" | "city" | "neighborhood";
 

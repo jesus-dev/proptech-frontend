@@ -107,7 +107,27 @@ export default function ReportDetailPage() {
         }
       ]),
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      // Required properties for OwnerReport interface
+      marketAnalysis: {
+        marketTrend: 'BULL',
+        priceIndex: 5.2,
+        demandLevel: 'HIGH',
+        competitionLevel: 'MEDIUM',
+        seasonality: 'PEAK',
+        marketInsights: ['Mercado en alza', 'Alta demanda', 'Temporada pico']
+      },
+      strategicRecommendations: [],
+      performanceMetrics: {
+        overallScore: 85,
+        marketPosition: 'LEADER',
+        engagementRate: 7.8,
+        conversionRate: 0.078,
+        priceCompetitiveness: 75,
+        visibilityScore: 80,
+        buyerInterest: 85
+      },
+      followUpActions: []
     };
   };
 

@@ -156,7 +156,7 @@ export default function SubscriptionsPage() {
             </div>
             <div>
               <span className="font-medium">Tier:</span> 
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="secondary" className="ml-2">
                 {userAccess.propTechTier}
               </Badge>
             </div>
@@ -283,7 +283,7 @@ export default function SubscriptionsPage() {
       <div className="text-center mt-12">
         <p className="text-gray-600">
           ¿Tienes preguntas sobre nuestros planes? 
-          <Button variant="link" className="text-orange-500">
+          <Button variant="outline" className="text-orange-500">
             Contacta con soporte
           </Button>
         </p>

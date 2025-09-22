@@ -4,7 +4,7 @@ import { Combobox } from '@headlessui/react';
 import { clientService } from '@/app/(proptech)/developments/services/clientService';
 import { Client } from '@/app/(proptech)/developments/components/types';
 import ModernPopup from './ui/ModernPopup';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, UserCircleIcon, PlusIcon } from "@heroicons/react/24/outline";
 
 interface ClientComboboxProps {
   value: Client | null;

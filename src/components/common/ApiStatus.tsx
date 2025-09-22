@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { API_CONFIG } from '@/lib/api';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { apiClient } from '@/lib/api';
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 interface ApiStatusProps {
   className?: string;
 }
@@ -14,7 +14,7 @@ export default function ApiStatus({ className = '' }: ApiStatusProps) {
   const checkApiStatus = async () => {
     try {
       setStatus('checking');
-      const response = await fetch(`${API_CONFIG.baseURL}/api/health`, {
+      const response = await fetch(`${apiClient.defaults.baseURL}/api/health`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });

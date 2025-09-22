@@ -1,6 +1,34 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { Property } from "../components/types";
+import { SystemProperty } from "@/services/systemService";
+
+// Convert SystemProperty to Property for compatibility
+const convertSystemPropertyToProperty = (sysProp: SystemProperty): Property => ({
+  id: sysProp.id.toString(),
+  title: sysProp.title,
+  address: sysProp.address || '',
+  city: '',
+  state: '',
+  zip: '',
+  price: sysProp.price,
+  currency: (sysProp.currencyCode || 'USD') as any,
+  type: sysProp.propertyTypeName || '',
+  status: sysProp.status || '',
+  description: '',
+  images: sysProp.galleryImages?.map(img => img.url) || [],
+  bedrooms: sysProp.bedrooms,
+  bathrooms: sysProp.bathrooms,
+  area: sysProp.area,
+  amenities: [],
+  services: [],
+  privateFiles: [],
+  featured: false,
+  premium: false,
+  favorite: true,
+  createdAt: sysProp.createdAt,
+  updatedAt: sysProp.updatedAt
+});
 import { propertyService } from "../services/propertyService";
 import PropertyList from "../components/PropertyList";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -38,8 +66,8 @@ import { systemService } from "@/services/systemService";
 
 export default function FavoritesPage() {
   const { user, isAuthenticated } = useAuth();
-  const [favoriteProperties, setFavoriteProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [favoriteProperties, setFavoriteProperties] = useState<SystemProperty[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<SystemProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -84,8 +112,7 @@ export default function FavoritesPage() {
     if (searchQuery) {
       filtered = filtered.filter(property => 
         property.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        property.address?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -96,7 +123,7 @@ export default function FavoritesPage() {
 
     // Property type filter
     if (propertyType !== "all") {
-      filtered = filtered.filter(property => property.type === propertyType);
+      filtered = filtered.filter(property => property.propertyTypeName === propertyType);
     }
 
     // Sort
@@ -113,8 +140,8 @@ export default function FavoritesPage() {
           bValue = new Date(b.createdAt || 0);
           break;
         case "location":
-          aValue = a.location || "";
-          bValue = b.location || "";
+          aValue = a.address || "";
+          bValue = b.address || "";
           break;
         case "size":
           aValue = a.area || 0;
@@ -135,7 +162,7 @@ export default function FavoritesPage() {
   }, [favoriteProperties, searchQuery, priceRange, propertyType, sortBy, sortOrder]);
 
   const handlePropertyRemovedFromFavorites = (removedId: string) => {
-    setFavoriteProperties(prev => prev.filter(property => property.id !== removedId));
+    setFavoriteProperties(prev => prev.filter(property => property.id.toString() !== removedId));
     setSelectedProperties(prev => prev.filter(id => id !== removedId));
   };
 
@@ -151,17 +178,17 @@ export default function FavoritesPage() {
     if (selectedProperties.length === filteredProperties.length) {
       setSelectedProperties([]);
     } else {
-      setSelectedProperties(filteredProperties.map(p => p.id));
+      setSelectedProperties(filteredProperties.map(p => p.id.toString()));
     }
   };
 
   const handleBulkRemove = async () => {
     try {
       for (const propertyId of selectedProperties) {
-        await systemService.unsaveProperty(propertyId);
+        await systemService.unsaveProperty(parseInt(propertyId));
       }
       setFavoriteProperties(prev => 
-        prev.filter(property => !selectedProperties.includes(property.id))
+        prev.filter(property => !selectedProperties.includes(property.id.toString()))
       );
       setSelectedProperties([]);
     } catch (error) {
@@ -302,7 +329,7 @@ export default function FavoritesPage() {
               </Button>
               <div className="flex items-center space-x-1 bg-white dark:bg-gray-700 rounded-lg p-1 shadow-sm">
                 <Button
-                  variant={view === "grid" ? "default" : "ghost"}
+                  variant={view === "grid" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setView("grid")}
                   className="h-8 w-8 p-0"
@@ -310,7 +337,7 @@ export default function FavoritesPage() {
                   <Grid3X3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={view === "list" ? "default" : "ghost"}
+                  variant={view === "list" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setView("list")}
                   className="h-8 w-8 p-0"
@@ -521,7 +548,7 @@ export default function FavoritesPage() {
               </div>
               <div className="flex items-center space-x-2">
                 <Button
-                  variant="destructive"
+                  variant="outline"
                   size="sm"
                   onClick={handleBulkRemove}
                   className="bg-red-600 hover:bg-red-700"
@@ -588,14 +615,10 @@ export default function FavoritesPage() {
         {filteredProperties.length > 0 && (
           <div className="space-y-6">
             <PropertyList
-              properties={filteredProperties}
+              properties={filteredProperties.map(convertSystemPropertyToProperty)}
               view={view}
               onPropertyRemovedFromFavorites={handlePropertyRemovedFromFavorites}
               isFavoritesPage={true}
-              selectedProperties={selectedProperties}
-              onSelectProperty={handleSelectProperty}
-              onSelectAll={handleSelectAll}
-              showSelection={true}
             />
           </div>
         )}

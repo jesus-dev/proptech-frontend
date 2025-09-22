@@ -1,64 +1,64 @@
-import { UserRole, Permission, UserPermissions } from '@/types/auth';
+import { UserRole, PermissionEnum, UserPermissions } from '@/types/auth';
 
 class PermissionService {
   private rolePermissions: Record<UserRole, UserPermissions> = {
     [UserRole.ADMIN]: {
-      [Permission.VIEW_SUBSCRIPTIONS]: true,
-      [Permission.MANAGE_SUBSCRIPTIONS]: true,
-      [Permission.VIEW_SUBSCRIPTION_PLANS]: true,
-      [Permission.MANAGE_SUBSCRIPTION_PLANS]: true,
-      [Permission.VIEW_SALES_AGENTS]: true,
-      [Permission.MANAGE_SALES_AGENTS]: true,
-      [Permission.VIEW_AGENT_PERFORMANCE]: true,
-      [Permission.VIEW_COMMISSIONS]: true,
-      [Permission.MANAGE_COMMISSIONS]: true,
-      [Permission.VIEW_COMMISSION_REPORTS]: true,
-      [Permission.VIEW_PROPERTIES]: true,
-      [Permission.MANAGE_PROPERTIES]: true,
-      [Permission.PUBLISH_PROPERTIES]: true,
-      [Permission.VIEW_USERS]: true,
-      [Permission.MANAGE_USERS]: true,
-      [Permission.VIEW_ANALYTICS]: true,
-      [Permission.VIEW_REPORTS]: true,
-      [Permission.VIEW_SETTINGS]: true,
-      [Permission.MANAGE_SETTINGS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTIONS]: true,
+      [PermissionEnum.MANAGE_SUBSCRIPTIONS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTION_PLANS]: true,
+      [PermissionEnum.MANAGE_SUBSCRIPTION_PLANS]: true,
+      [PermissionEnum.VIEW_SALES_AGENTS]: true,
+      [PermissionEnum.MANAGE_SALES_AGENTS]: true,
+      [PermissionEnum.VIEW_AGENT_PERFORMANCE]: true,
+      [PermissionEnum.VIEW_COMMISSIONS]: true,
+      [PermissionEnum.MANAGE_COMMISSIONS]: true,
+      [PermissionEnum.VIEW_COMMISSION_REPORTS]: true,
+      [PermissionEnum.VIEW_PROPERTIES]: true,
+      [PermissionEnum.MANAGE_PROPERTIES]: true,
+      [PermissionEnum.PUBLISH_PROPERTIES]: true,
+      [PermissionEnum.VIEW_USERS]: true,
+      [PermissionEnum.MANAGE_USERS]: true,
+      [PermissionEnum.VIEW_ANALYTICS]: true,
+      [PermissionEnum.VIEW_REPORTS]: true,
+      [PermissionEnum.VIEW_SETTINGS]: true,
+      [PermissionEnum.MANAGE_SETTINGS]: true,
     },
     [UserRole.MANAGER]: {
-      [Permission.VIEW_SUBSCRIPTIONS]: true,
-      [Permission.MANAGE_SUBSCRIPTIONS]: true,
-      [Permission.VIEW_SUBSCRIPTION_PLANS]: true,
-      [Permission.VIEW_SALES_AGENTS]: true,
-      [Permission.MANAGE_SALES_AGENTS]: true,
-      [Permission.VIEW_AGENT_PERFORMANCE]: true,
-      [Permission.VIEW_COMMISSIONS]: true,
-      [Permission.MANAGE_COMMISSIONS]: true,
-      [Permission.VIEW_COMMISSION_REPORTS]: true,
-      [Permission.VIEW_PROPERTIES]: true,
-      [Permission.MANAGE_PROPERTIES]: true,
-      [Permission.PUBLISH_PROPERTIES]: true,
-      [Permission.VIEW_USERS]: true,
-      [Permission.VIEW_ANALYTICS]: true,
-      [Permission.VIEW_REPORTS]: true,
-      [Permission.VIEW_SETTINGS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTIONS]: true,
+      [PermissionEnum.MANAGE_SUBSCRIPTIONS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTION_PLANS]: true,
+      [PermissionEnum.VIEW_SALES_AGENTS]: true,
+      [PermissionEnum.MANAGE_SALES_AGENTS]: true,
+      [PermissionEnum.VIEW_AGENT_PERFORMANCE]: true,
+      [PermissionEnum.VIEW_COMMISSIONS]: true,
+      [PermissionEnum.MANAGE_COMMISSIONS]: true,
+      [PermissionEnum.VIEW_COMMISSION_REPORTS]: true,
+      [PermissionEnum.VIEW_PROPERTIES]: true,
+      [PermissionEnum.MANAGE_PROPERTIES]: true,
+      [PermissionEnum.PUBLISH_PROPERTIES]: true,
+      [PermissionEnum.VIEW_USERS]: true,
+      [PermissionEnum.VIEW_ANALYTICS]: true,
+      [PermissionEnum.VIEW_REPORTS]: true,
+      [PermissionEnum.VIEW_SETTINGS]: true,
     },
     [UserRole.AGENT]: {
-      [Permission.VIEW_SUBSCRIPTIONS]: true,
-      [Permission.VIEW_SUBSCRIPTION_PLANS]: true,
-      [Permission.VIEW_PROPERTIES]: true,
-      [Permission.PUBLISH_PROPERTIES]: true,
-      [Permission.VIEW_COMMISSIONS]: true,
-      [Permission.VIEW_ANALYTICS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTIONS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTION_PLANS]: true,
+      [PermissionEnum.VIEW_PROPERTIES]: true,
+      [PermissionEnum.PUBLISH_PROPERTIES]: true,
+      [PermissionEnum.VIEW_COMMISSIONS]: true,
+      [PermissionEnum.VIEW_ANALYTICS]: true,
     },
     [UserRole.VIEWER]: {
-      [Permission.VIEW_SUBSCRIPTIONS]: true,
-      [Permission.VIEW_SUBSCRIPTION_PLANS]: true,
-      [Permission.VIEW_PROPERTIES]: true,
-      [Permission.VIEW_ANALYTICS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTIONS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTION_PLANS]: true,
+      [PermissionEnum.VIEW_PROPERTIES]: true,
+      [PermissionEnum.VIEW_ANALYTICS]: true,
     },
     [UserRole.CUSTOMER]: {
-      [Permission.VIEW_SUBSCRIPTIONS]: true,
-      [Permission.VIEW_SUBSCRIPTION_PLANS]: true,
-      [Permission.VIEW_PROPERTIES]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTIONS]: true,
+      [PermissionEnum.VIEW_SUBSCRIPTION_PLANS]: true,
+      [PermissionEnum.VIEW_PROPERTIES]: true,
     },
   };
 
@@ -72,43 +72,43 @@ class PermissionService {
   /**
    * Verifica si un usuario tiene un permiso específico
    */
-  hasPermission(userPermissions: UserPermissions, permission: Permission): boolean {
+  hasPermission(userPermissions: UserPermissions, permission: PermissionEnum): boolean {
     return userPermissions[permission] === true;
   }
 
   /**
    * Verifica si un usuario tiene al menos uno de los permisos especificados
    */
-  hasAnyPermission(userPermissions: UserPermissions, permissions: Permission[]): boolean {
+  hasAnyPermission(userPermissions: UserPermissions, permissions: PermissionEnum[]): boolean {
     return permissions.some(permission => this.hasPermission(userPermissions, permission));
   }
 
   /**
    * Verifica si un usuario tiene todos los permisos especificados
    */
-  hasAllPermissions(userPermissions: UserPermissions, permissions: Permission[]): boolean {
+  hasAllPermissions(userPermissions: UserPermissions, permissions: PermissionEnum[]): boolean {
     return permissions.every(permission => this.hasPermission(userPermissions, permission));
   }
 
   /**
    * Obtiene los permisos requeridos para una ruta específica
    */
-  getRequiredPermissionsForRoute(route: string): Permission[] {
-    const routePermissions: Record<string, Permission[]> = {
-      '/subscriptions': [Permission.VIEW_SUBSCRIPTIONS],
-      '/subscriptions/admin': [Permission.MANAGE_SUBSCRIPTIONS],
-      '/subscriptions/admin/plans': [Permission.MANAGE_SUBSCRIPTION_PLANS],
-      '/subscriptions/admin/subscriptions': [Permission.MANAGE_SUBSCRIPTIONS],
-      '/subscriptions/admin/sales-agents': [Permission.MANAGE_SALES_AGENTS],
-      '/subscriptions/admin/commissions': [Permission.MANAGE_COMMISSIONS],
-      '/properties': [Permission.VIEW_PROPERTIES],
-      '/properties/admin': [Permission.MANAGE_PROPERTIES],
-      '/users': [Permission.VIEW_USERS],
-      '/users/admin': [Permission.MANAGE_USERS],
-      '/analytics': [Permission.VIEW_ANALYTICS],
-      '/reports': [Permission.VIEW_REPORTS],
-      '/settings': [Permission.VIEW_SETTINGS],
-      '/settings/admin': [Permission.MANAGE_SETTINGS],
+  getRequiredPermissionsForRoute(route: string): PermissionEnum[] {
+    const routePermissions: Record<string, PermissionEnum[]> = {
+      '/subscriptions': [PermissionEnum.VIEW_SUBSCRIPTIONS],
+      '/subscriptions/admin': [PermissionEnum.MANAGE_SUBSCRIPTIONS],
+      '/subscriptions/admin/plans': [PermissionEnum.MANAGE_SUBSCRIPTION_PLANS],
+      '/subscriptions/admin/subscriptions': [PermissionEnum.MANAGE_SUBSCRIPTIONS],
+      '/subscriptions/admin/sales-agents': [PermissionEnum.MANAGE_SALES_AGENTS],
+      '/subscriptions/admin/commissions': [PermissionEnum.MANAGE_COMMISSIONS],
+      '/properties': [PermissionEnum.VIEW_PROPERTIES],
+      '/properties/admin': [PermissionEnum.MANAGE_PROPERTIES],
+      '/users': [PermissionEnum.VIEW_USERS],
+      '/users/admin': [PermissionEnum.MANAGE_USERS],
+      '/analytics': [PermissionEnum.VIEW_ANALYTICS],
+      '/reports': [PermissionEnum.VIEW_REPORTS],
+      '/settings': [PermissionEnum.VIEW_SETTINGS],
+      '/settings/admin': [PermissionEnum.MANAGE_SETTINGS],
     };
 
     return routePermissions[route] || [];
@@ -154,7 +154,7 @@ class PermissionService {
   /**
    * Obtiene el rol más alto que tiene un permiso específico
    */
-  getHighestRoleForPermission(permission: Permission): UserRole {
+  getHighestRoleForPermission(permission: PermissionEnum): UserRole {
     const roleHierarchy = [UserRole.ADMIN, UserRole.MANAGER, UserRole.AGENT, UserRole.VIEWER, UserRole.CUSTOMER];
     
     for (const role of roleHierarchy) {
@@ -170,7 +170,7 @@ class PermissionService {
    * Verifica si un rol puede ser asignado por otro rol
    */
   canAssignRole(assignerRole: UserRole, targetRole: UserRole): boolean {
-    const roleHierarchy = {
+    const roleHierarchy: Record<UserRole, UserRole[]> = {
       [UserRole.ADMIN]: [UserRole.ADMIN, UserRole.MANAGER, UserRole.AGENT, UserRole.VIEWER, UserRole.CUSTOMER],
       [UserRole.MANAGER]: [UserRole.AGENT, UserRole.VIEWER, UserRole.CUSTOMER],
       [UserRole.AGENT]: [UserRole.VIEWER, UserRole.CUSTOMER],

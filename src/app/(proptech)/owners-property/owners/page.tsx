@@ -22,7 +22,8 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
-import { OwnersPropertyService, Owner, CreateOwnerRequest } from '@/services/ownersPropertyService';
+import { ownerService, Owner, CreateOwnerRequest } from '@/services/ownerService';
+import { OwnersPropertyService } from '@/services/ownersPropertyService';
 import ModernPopup from '@/components/ui/ModernPopup';
 
 export default function OwnersListPage() {
@@ -54,8 +55,8 @@ export default function OwnersListPage() {
   const loadOwners = async () => {
     try {
       setLoading(true);
-      const mockOwners = OwnersPropertyService.getMockOwners();
-      setOwners(mockOwners);
+      const ownersData = await ownerService.getAllOwners();
+      setOwners(ownersData);
     } catch (error) {
       console.error('Error cargando propietarios:', error);
     } finally {
@@ -89,8 +90,10 @@ export default function OwnersListPage() {
     
     try {
       setIsSubmitting(true);
-      const newOwner = await OwnersPropertyService.createOwner(formData);
-      setOwners(prev => [...prev, newOwner]);
+      const newOwner = await ownerService.createOwner(formData);
+      if (newOwner) {
+        setOwners(prev => [...prev, newOwner]);
+      }
       setShowCreateModal(false);
       resetForm();
       alert('Propietario creado exitosamente');
@@ -107,10 +110,12 @@ export default function OwnersListPage() {
     
     try {
       setIsSubmitting(true);
-      const updatedOwner = await OwnersPropertyService.updateOwner(editingOwner.id, formData);
-      setOwners(prev => prev.map(owner => 
-        owner.id === editingOwner.id ? updatedOwner : owner
-      ));
+      const updatedOwner = await ownerService.updateOwner(editingOwner.id, formData);
+      if (updatedOwner) {
+        setOwners(prev => prev.map(owner => 
+          owner.id === editingOwner.id ? updatedOwner : owner
+        ));
+      }
       setShowEditModal(false);
       setEditingOwner(null);
       resetForm();
@@ -128,7 +133,7 @@ export default function OwnersListPage() {
     
     try {
       setIsSubmitting(true);
-      await OwnersPropertyService.deleteOwner(deletingOwner.id);
+      await ownerService.deleteOwner(deletingOwner.id);
       setOwners(prev => prev.filter(owner => owner.id !== deletingOwner.id));
       setShowDeleteModal(false);
       setDeletingOwner(null);
@@ -200,7 +205,7 @@ export default function OwnersListPage() {
         owner.documentNumber || '',
         owner.bankAccount || '',
         OwnersPropertyService.getStatusDisplayName(owner.status),
-        new Date(owner.createdAt).toLocaleDateString('es-ES')
+        new Date().toLocaleDateString('es-ES')
       ])
     ].map(row => row.join(',')).join('\n');
     
@@ -306,7 +311,7 @@ export default function OwnersListPage() {
             <div>
               <p className="text-sm font-medium text-gray-600">Activos</p>
               <p className="text-2xl font-bold text-gray-900">
-                {owners.filter(o => o.status === 'ACTIVE').length}
+                {owners.filter(o => o.status === 'active').length}
               </p>
             </div>
           </div>
@@ -320,7 +325,7 @@ export default function OwnersListPage() {
             <div>
               <p className="text-sm font-medium text-gray-600">Pendientes</p>
               <p className="text-2xl font-bold text-gray-900">
-                {owners.filter(o => o.status === 'PENDING').length}
+                {owners.filter(o => o.status === 'pending').length}
               </p>
             </div>
           </div>
@@ -334,7 +339,7 @@ export default function OwnersListPage() {
             <div>
               <p className="text-sm font-medium text-gray-600">Inactivos</p>
               <p className="text-2xl font-bold text-gray-900">
-                {owners.filter(o => o.status === 'INACTIVE').length}
+                {owners.filter(o => o.status === 'inactive').length}
               </p>
             </div>
           </div>
@@ -409,8 +414,8 @@ export default function OwnersListPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      owner.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                      owner.status === 'INACTIVE' ? 'bg-red-100 text-red-800' :
+                      owner.status === 'active' ? 'bg-green-100 text-green-800' :
+                      owner.status === 'inactive' ? 'bg-red-100 text-red-800' :
                       'bg-yellow-100 text-yellow-800'
                     }`}>
                       {OwnersPropertyService.getStatusDisplayName(owner.status)}
@@ -419,7 +424,7 @@ export default function OwnersListPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex items-center">
                       <Calendar className="w-3 h-3 mr-1" />
-                      {new Date(owner.createdAt).toLocaleDateString('es-ES')}
+                      {new Date().toLocaleDateString('es-ES')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

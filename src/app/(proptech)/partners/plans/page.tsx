@@ -520,7 +520,7 @@ export default function PlansAndProductsPage() {
                   </div>
                   <div className="flex items-center space-x-1">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(product)}
                       className="hover:bg-gray-100"
@@ -528,7 +528,7 @@ export default function PlansAndProductsPage() {
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => handleDelete(product.id)}
                       className="hover:bg-red-50 text-red-600"

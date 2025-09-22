@@ -8,7 +8,7 @@ import type { Property } from "../../properties/components/types";
 import type { Client } from "../../developments/components/types";
 import { Combobox, Listbox } from '@headlessui/react';
 import { BuildingIcon, UserCircleIcon, CheckCircleIcon } from "@/icons";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
 export default function NewPropertySalePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
