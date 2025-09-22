@@ -68,7 +68,7 @@ docker-compose logs -f proptech-frontend
 
 ### **Producción (.env.production)**
 ```env
-NEXT_PUBLIC_API_URL=https://api.onproptech.com
+NEXT_PUBLIC_API_URL=https://api.proptech.com.py
 NEXT_PUBLIC_TINYMCE_API_KEY=your_tinymce_key
 NEXT_PUBLIC_ENABLE_ANALYTICS=true
 NEXT_PUBLIC_ENABLE_ERROR_TRACKING=true
@@ -92,7 +92,7 @@ docker run -d \
   --name proptech-frontend \
   -p 3000:3000 \
   -e NODE_ENV=production \
-  -e NEXT_PUBLIC_API_URL=https://api.onproptech.com \
+  -e NEXT_PUBLIC_API_URL=https://api.proptech.com.py \
   proptech-frontend
 
 # 3. Con Docker Compose

@@ -72,12 +72,12 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'api.onproptech.com',
+        hostname: 'api.proptech.com.py',
         pathname: '/uploads/**',
       },
       {
         protocol: 'https',
-        hostname: 'onproptech.com',
+        hostname: 'proptech.com.py',
         pathname: '/uploads/**',
       },
       {
