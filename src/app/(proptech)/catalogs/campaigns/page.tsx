@@ -3,7 +3,16 @@
 import React, { useEffect, useState } from "react";
 import { campaignService } from "./services/campaignService";
 import type { Campaign } from "./types";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { 
+  HomeIcon, 
+  BuildingOfficeIcon, 
+  UserIcon, 
+  MapPinIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  MegaphoneIcon
+} from "@heroicons/react/24/outline";
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ModernPopup from '@/components/ui/ModernPopup';
 
