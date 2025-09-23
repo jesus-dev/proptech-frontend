@@ -25,7 +25,9 @@ export default function PropertyImage({
   // Initialize current image URL and set up fallback logic
   useEffect(() => {
     if (imageUrl) {
-      setCurrentImageUrl(getImageUrl(imageUrl));
+      const fullUrl = getImageUrl(imageUrl);
+      console.log(`🖼️ PropertyImage: Original URL: ${imageUrl}, Full URL: ${fullUrl}`);
+      setCurrentImageUrl(fullUrl);
       setImageError(false);
       setImageLoaded(false);
     }
@@ -48,16 +50,28 @@ export default function PropertyImage({
     
     // Try fallback URL patterns if the original URL fails
     if (imageUrl && !imageUrl.startsWith('http')) {
-      // Try different URL patterns as fallbacks
-      const fallbackUrls = [
-        getImageUrl(imageUrl.replace('/api/files/', '/uploads/')), // Convert /api/files to /uploads
-        getImageUrl(imageUrl.replace('/uploads/', '/api/files/')), // Convert /uploads to /api/files
-      ].filter(Boolean);
+      // Generate fallback URLs based on the original imageUrl
+      const fallbackUrls = [];
       
-      const nextFallback = fallbackUrls.find(url => url !== currentImageUrl);
+      if (imageUrl.includes('/uploads/')) {
+        // If original is /uploads/, try /api/files/
+        const apiFilesUrl = imageUrl.replace('/uploads/', '/api/files/');
+        fallbackUrls.push(getImageUrl(apiFilesUrl));
+      } else if (imageUrl.includes('/api/files/')) {
+        // If original is /api/files/, try /uploads/
+        const uploadsUrl = imageUrl.replace('/api/files/', '/uploads/');
+        fallbackUrls.push(getImageUrl(uploadsUrl));
+      } else {
+        // If it's just a filename, try both patterns
+        fallbackUrls.push(getImageUrl(`/api/files/${imageUrl}`));
+        fallbackUrls.push(getImageUrl(`/uploads/${imageUrl}`));
+      }
       
-      if (nextFallback) {
-        console.log(`Trying fallback URL: ${nextFallback}`);
+      const validFallbacks = fallbackUrls.filter(url => url && url !== currentImageUrl);
+      
+      if (validFallbacks.length > 0) {
+        const nextFallback = validFallbacks[0];
+        console.log(`🔄 PropertyImage: Trying fallback URL: ${nextFallback}`);
         setCurrentImageUrl(nextFallback);
         setImageError(false);
         return;

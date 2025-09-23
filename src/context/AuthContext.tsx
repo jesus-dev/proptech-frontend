@@ -44,25 +44,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Inicializar desde localStorage
+  // Inicializar desde localStorage - solo una vez
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeAuth = async () => {
       try {
+        // Verificar si estamos en el cliente
+        if (typeof window === 'undefined') {
+          setIsLoading(false);
+          return;
+        }
+
         const token = localStorage.getItem('token');
         const userData = localStorage.getItem('user');
         
         // Verificar si hay token válido
         if (!token || token === 'undefined' || token === 'null') {
           // No hay token válido, limpiar todo
-          localStorage.clear();
-          setIsLoading(false);
+          if (isMounted) {
+            localStorage.clear();
+            setIsLoading(false);
+          }
           return;
         }
 
         // Si hay token pero no hay datos de usuario, limpiar
         if (!userData) {
-          localStorage.clear();
-          setIsLoading(false);
+          if (isMounted) {
+            localStorage.clear();
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -74,54 +86,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             throw new Error('Datos de usuario inválidos');
           }
 
-          console.log('🔐 AuthContext: Usuario encontrado en localStorage:', user.email);
-          
-          // Si el usuario no tiene información completa de roles/permisos, obtenerla del backend
-          if (!user.userType && !user.roles && (!user.permissions || (Array.isArray(user.permissions) && user.permissions.length === 0))) {
-            console.log('🔐 AuthContext: Obteniendo información completa del usuario desde el backend...');
-            try {
-              const completeUser = await authService.getCurrentUser();
-              console.log('🔐 AuthContext: Usuario completo obtenido:', completeUser);
-              setUser(completeUser);
-              localStorage.setItem('user', JSON.stringify(completeUser));
-            } catch (backendError) {
-              console.warn('🔐 AuthContext: Error obteniendo usuario del backend, usando datos locales:', backendError);
-              
-              // Si falla el backend pero el email sugiere que es admin, establecer como admin
-              if (user.email && (user.email.includes('admin') || user.email.includes('@idear.com'))) {
-                console.log('🔐 AuthContext: Detectado usuario admin por email, estableciendo permisos de admin');
-                const adminUser = {
-                  ...user,
-                  userType: 'ADMIN',
-                  roles: ['ADMIN'],
-                  permissions: ['PERMISSION_READ', 'PERMISSION_CREATE', 'PERMISSION_UPDATE', 'PERMISSION_DELETE']
-                };
-                setUser(adminUser);
-                localStorage.setItem('user', JSON.stringify(adminUser));
-              } else {
-                setUser(user);
-              }
-            }
-          } else {
+          if (isMounted) {
+            console.log('🔐 AuthContext: Usuario encontrado en localStorage:', user.email);
             setUser(user);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+            console.log('🔐 AuthContext: Estado de autenticación establecido a true');
           }
-          
-          setIsAuthenticated(true);
-          console.log('🔐 AuthContext: Estado de autenticación establecido a true');
         } catch (parseError) {
           // Datos corruptos, limpiar
-          localStorage.clear();
-          console.error('Error parsing user data:', parseError);
+          if (isMounted) {
+            localStorage.clear();
+            setIsLoading(false);
+            console.error('Error parsing user data:', parseError);
+          }
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
-        localStorage.clear();
-      } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          console.error('Error initializing auth:', error);
+          localStorage.clear();
+          setIsLoading(false);
+        }
       }
     };
 
     initializeAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Login

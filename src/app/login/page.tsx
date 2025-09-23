@@ -115,14 +115,25 @@ export default function LoginPage() {
     }, 5000);
   };
 
-  // Verificar si ya hay un usuario logueado
+  // Verificar si ya hay un usuario logueado - solo una vez
   useEffect(() => {
+    // Verificar si estamos en el cliente
+    if (typeof window === 'undefined') return;
+    
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     
-    if (token && user) {
-      // Usuario ya logueado, redirigir al dashboard
-      router.push('/dash');
+    if (token && user && token !== 'undefined' && token !== 'null') {
+      try {
+        const userData = JSON.parse(user);
+        if (userData.id && userData.email) {
+          // Usuario ya logueado, redirigir al dashboard
+          router.push('/dash');
+        }
+      } catch (error) {
+        // Datos corruptos, limpiar
+        localStorage.clear();
+      }
     }
   }, [router]);
 
