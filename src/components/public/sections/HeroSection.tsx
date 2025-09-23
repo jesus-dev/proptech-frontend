@@ -50,22 +50,33 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-brand-900">
-      {/* Animated Background */}
-      <div className="absolute inset-0">
-        {/* Main Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-600/40 via-brand-700/30 to-brand-800/40"></div>
-        
-        {/* Animated Mesh Gradient */}
-        <div className="absolute inset-0 opacity-60">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-500/20 via-transparent to-emerald-500/20 animate-pulse"></div>
-          <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-purple-500/20 via-transparent to-brand-600/20 animate-pulse delay-1000"></div>
-        </div>
-        
-        {/* Pattern Overlay */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
+    <section className="relative -mt-14 sm:-mt-16 min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pt-0">
+      {/* Patrón de cuadrícula de bienes raíces */}
+      <div className="absolute inset-0 opacity-10">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="property-grid-hero" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+              <rect width="80" height="80" fill="none" stroke="cyan" strokeWidth="0.5" opacity="0.3"/>
+              <rect x="10" y="10" width="60" height="45" fill="none" stroke="cyan" strokeWidth="0.3" opacity="0.4" rx="2"/>
+              <rect x="15" y="45" width="10" height="8" fill="cyan" opacity="0.2"/>
+              <rect x="30" y="45" width="8" height="8" fill="cyan" opacity="0.2"/>
+              <rect x="45" y="45" width="8" height="8" fill="cyan" opacity="0.2"/>
+              <rect x="20" y="20" width="15" height="10" fill="none" stroke="cyan" strokeWidth="0.2" opacity="0.3"/>
+              <rect x="45" y="20" width="15" height="10" fill="none" stroke="cyan" strokeWidth="0.2" opacity="0.3"/>
+              <circle cx="25" cy="65" r="1.5" fill="cyan" opacity="0.3"/>
+              <circle cx="55" cy="65" r="1.5" fill="cyan" opacity="0.3"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#property-grid-hero)" />
+        </svg>
+      </div>
+      
+      {/* Elementos decorativos animados */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-sky-300/10 rounded-full blur-2xl animate-bounce"></div>
+        <div className="absolute top-20 right-20 w-32 h-32 bg-emerald-400/10 rounded-full blur-xl animate-pulse delay-500"></div>
         
         {/* Floating Elements */}
         <motion.div
@@ -79,7 +90,7 @@ const HeroSection = () => {
             repeat: Infinity,
             ease: "easeInOut"
           }}
-          className="absolute top-10 left-5 w-16 h-16 bg-gradient-to-r from-brand-400/30 to-brand-600/30 rounded-full blur-xl"
+          className="absolute top-10 left-5 w-16 h-16 bg-gradient-to-r from-cyan-400/30 to-blue-600/30 rounded-full blur-xl"
         ></motion.div>
         
         <motion.div
@@ -94,7 +105,7 @@ const HeroSection = () => {
             ease: "easeInOut",
             delay: 1
           }}
-          className="absolute top-20 right-10 w-24 h-24 bg-gradient-to-r from-emerald-400/25 to-brand-500/25 rounded-full blur-2xl"
+          className="absolute top-20 right-10 w-24 h-24 bg-gradient-to-r from-emerald-400/25 to-cyan-500/25 rounded-full blur-2xl"
         ></motion.div>
         
         <motion.div
@@ -109,11 +120,11 @@ const HeroSection = () => {
             ease: "easeInOut",
             delay: 2
           }}
-          className="absolute bottom-10 left-1/4 w-20 h-20 bg-gradient-to-r from-purple-400/20 to-brand-500/20 rounded-full blur-xl"
+          className="absolute bottom-10 left-1/4 w-20 h-20 bg-gradient-to-r from-purple-400/20 to-blue-500/20 rounded-full blur-xl"
         ></motion.div>
       </div>
       
-      <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-16 sm:pt-20 pb-16 sm:pb-20">
+      <div className="relative max-w-7xl mx-auto px-4 pt-16 sm:pt-20 pb-12 sm:pb-16 w-full z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Column - Content */}
           <motion.div
@@ -127,7 +138,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-green-100/20 backdrop-blur-sm text-green-300 text-xs sm:text-sm font-medium mb-4 sm:mb-6 border border-green-400/30"
+              className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-cyan-100/20 backdrop-blur-sm text-cyan-300 text-xs sm:text-sm font-medium mb-4 sm:mb-6 border border-cyan-400/30"
             >
               <StarSolidIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               <span className="hidden sm:inline">Propiedades siempre actualizadas en tiempo real</span>
@@ -142,7 +153,7 @@ const HeroSection = () => {
               className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight"
             >
               Encuentra tu{' '}
-              <span className="bg-gradient-to-r from-brand-300 to-brand-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
                 hogar ideal
               </span>{' '}
               en Paraguay
@@ -153,7 +164,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl"
+              className="text-lg sm:text-xl text-cyan-100 mb-6 sm:mb-8 max-w-2xl"
             >
               <span className="hidden sm:inline">Explora más de 500 propiedades verificadas en Asunción, Ciudad del Este, 
               Encarnación y todo el país. Casas, departamentos, terrenos y locales comerciales.</span>
@@ -170,7 +181,7 @@ const HeroSection = () => {
             >
               <Link
                 href="/propiedades"
-                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-lg hover:from-brand-700 hover:to-brand-800 transition-all duration-300 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Explorar Propiedades
                 <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" />
@@ -197,7 +208,7 @@ const HeroSection = () => {
                 '✅ Agentes profesionales certificados',
                 '✅ Portal optimizado para móviles',
               ].map((feature, index) => (
-                <div key={index} className="flex items-center text-gray-300 font-medium text-sm sm:text-base">
+                <div key={index} className="flex items-center text-cyan-200 font-medium text-sm sm:text-base">
                   {feature}
                 </div>
               ))}
@@ -212,7 +223,7 @@ const HeroSection = () => {
             >
               {stats.map((stat, index) => (
                 <div key={index} className="text-center lg:text-left">
-                  <div className="text-xl sm:text-2xl font-bold text-brand-300 mb-1">
+                  <div className="text-xl sm:text-2xl font-bold text-cyan-300 mb-1">
                     {stat.value}
                   </div>
                   <div className="text-xs sm:text-sm text-gray-400">

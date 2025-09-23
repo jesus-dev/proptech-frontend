@@ -229,9 +229,79 @@ const ProjectsSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="bg-gray-50 rounded-2xl p-6 shadow-lg border border-gray-200 mb-8"
+          className="bg-gray-50 rounded-2xl p-3 sm:p-6 shadow-lg border border-gray-200 mb-8"
         >
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          {/* Mobile: Layout compacto en 2 columnas */}
+          <div className="block sm:hidden">
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="col-span-2 pl-3 pr-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm bg-white shadow-sm"
+              />
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="px-2 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent appearance-none text-sm bg-white shadow-sm"
+              >
+                {projectTypes.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-2 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent appearance-none text-sm bg-white shadow-sm"
+              >
+                {projectStatuses.map(status => (
+                  <option key={status.value} value={status.value}>{status.label}</option>
+                ))}
+              </select>
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="px-2 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent appearance-none text-sm bg-white shadow-sm"
+              >
+                {cities.map(city => (
+                  <option key={city.value} value={city.value}>{city.label}</option>
+                ))}
+              </select>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex-1 py-2 px-2 rounded-lg transition-all duration-200 flex items-center justify-center text-xs ${viewMode === 'grid' ? 'bg-cyan-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700'}`}
+                >
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                  Grid
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex-1 py-2 px-2 rounded-lg transition-all duration-200 flex items-center justify-center text-xs ${viewMode === 'list' ? 'bg-cyan-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700'}`}
+                >
+                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Lista
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span>{filteredProjects.length} proyectos encontrados</span>
+              <button
+                onClick={clearFilters}
+                className="text-cyan-600 hover:text-cyan-700 font-medium"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop: Layout original */}
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,7 +377,7 @@ const ProjectsSection = () => {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span>Grilla</span>
+                <span className="hidden sm:inline">Grilla</span>
               </button>
               <button
                 onClick={() => setViewMode('list')}
@@ -316,15 +386,21 @@ const ProjectsSection = () => {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
                 </svg>
-                <span>Lista</span>
+                <span className="hidden sm:inline">Lista</span>
               </button>
             </div>
           </div>
 
-          <div className="flex justify-between items-center">
+          <div className="hidden sm:flex justify-between items-center">
             <span className="text-sm text-gray-600">
               {filteredProjects.length} proyectos encontrados
             </span>
+            <button
+              onClick={clearFilters}
+              className="text-sm text-cyan-600 hover:text-cyan-700 font-medium px-4 py-2 rounded-lg hover:bg-cyan-50 transition-all duration-300"
+            >
+              Limpiar filtros
+            </button>
           </div>
         </motion.div>
 

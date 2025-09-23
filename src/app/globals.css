@@ -128,6 +128,26 @@
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
   }
+  
+  /* Fix ultra simple - a veces lo básico funciona */
+  @media (max-width: 768px) {
+    body {
+      padding-bottom: 0 !important;
+      margin-bottom: 0 !important;
+    }
+    
+    footer {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+    
+    /* Eliminar cualquier espacio fantasma */
+    * {
+      box-sizing: border-box;
+    }
+  }
+  
+
 
   /* Modern scrollbar */
   ::-webkit-scrollbar {

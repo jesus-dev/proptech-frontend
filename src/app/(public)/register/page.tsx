@@ -90,45 +90,63 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-[30vh] sm:min-h-[35vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-brand-900">
-        {/* Animated Background */}
-        <div className="absolute inset-0">
-          {/* Main Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-600/40 via-brand-700/30 to-brand-800/40"></div>
-          
-          {/* Animated Mesh Gradient */}
-          <div className="absolute inset-0 opacity-60">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-500/20 via-transparent to-emerald-500/20 animate-pulse"></div>
-            <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-purple-500/20 via-transparent to-brand-600/20 animate-pulse delay-1000"></div>
-          </div>
-          
-          {/* Pattern Overlay */}
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
+      <section className="relative -mt-14 sm:-mt-16 min-h-[30vh] sm:min-h-[35vh] overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pt-0">
+        {/* Patrón de cuadrícula de bienes raíces */}
+        <div className="absolute inset-0 opacity-10">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="property-grid-register" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                <rect width="80" height="80" fill="none" stroke="cyan" strokeWidth="0.5" opacity="0.3"/>
+                <rect x="10" y="10" width="60" height="45" fill="none" stroke="cyan" strokeWidth="0.3" opacity="0.4" rx="2"/>
+                <rect x="15" y="45" width="10" height="8" fill="cyan" opacity="0.2"/>
+                <rect x="30" y="45" width="8" height="8" fill="cyan" opacity="0.2"/>
+                <rect x="45" y="45" width="8" height="8" fill="cyan" opacity="0.2"/>
+                <circle cx="20" cy="25" r="3" fill="cyan" opacity="0.3"/>
+                <circle cx="35" cy="30" r="2" fill="cyan" opacity="0.3"/>
+                <circle cx="55" cy="20" r="1.5" fill="cyan" opacity="0.4"/>
+                <rect x="25" y="15" width="4" height="6" fill="none" stroke="cyan" strokeWidth="0.2" opacity="0.3"/>
+                <rect x="40" y="18" width="4" height="6" fill="none" stroke="cyan" strokeWidth="0.2" opacity="0.3"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#property-grid-register)" />
+          </svg>
+        </div>
+
+        {/* Elementos decorativos flotantes */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-20 left-10 w-20 h-20 bg-cyan-500/20 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute top-40 right-20 w-32 h-32 bg-blue-500/20 rounded-full blur-xl animate-pulse delay-1000"></div>
+          <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-cyan-300/20 rounded-full blur-xl animate-bounce"></div>
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">Crear Cuenta</h1>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">Únete a Proptech CRM y comienza a gestionar tus propiedades</p>
+        <div className="relative max-w-7xl mx-auto px-4 pt-20 sm:pt-24 pb-12 sm:pb-16 w-full z-10">
+          <div className="text-center">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                Crear Cuenta
+              </span>
+            </h1>
+            <p className="text-lg sm:text-xl text-cyan-100 max-w-3xl mx-auto mb-8 px-4">
+              Únete a Proptech CRM y comienza a gestionar tus propiedades. 
+              Una plataforma completa para profesionales inmobiliarios.
+            </p>
+          </div>
         </div>
       </section>
       
       {/* Form Section */}
       <div className="bg-white">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
             {/* Header */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                {React.createElement(UserIcon, { className: "w-8 h-8 text-white" })}
-              </div>
+            <div className="text-center mb-4">
+            
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Registrarse</h2>
               <p className="text-gray-600">Completa el formulario para crear tu cuenta</p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
