@@ -191,7 +191,7 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
     <div className="relative" ref={ref}>
       {/* Botón del usuario moderno */}
       <button
-        className="group relative flex items-center gap-3 px-4 py-2.5 bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg hover:shadow-xl hover:bg-white/90 transition-all duration-300 cursor-pointer min-w-[200px] hover:scale-[1.02]"
+        className="group relative flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5 bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg hover:shadow-xl hover:bg-white/90 transition-all duration-300 cursor-pointer min-w-[60px] sm:min-w-[200px] hover:scale-[1.02]"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="true"
         aria-expanded={open}
@@ -199,7 +199,7 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
         {/* Avatar con gradiente moderno */}
         <div className="relative flex-shrink-0">
           {avatarUrl ? (
-            <div className="w-10 h-10 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg">
               <img
                 src={avatarUrl}
                 alt={name}
@@ -207,22 +207,22 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
               />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm shadow-lg ring-2 ring-white/30">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg ring-2 ring-white/30">
               {getInitials(name)}
             </div>
           )}
           
           {/* Indicador de notificaciones */}
           {notifications > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-red-400 to-pink-500 border-2 border-white rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse"></span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-red-400 to-pink-500 border-2 border-white rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg animate-pulse"></span>
           )}
           
           {/* Indicador de estado online */}
-          <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-white rounded-full shadow-lg"></span>
+          <span className="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-white rounded-full shadow-lg"></span>
         </div>
         
-        {/* Información del usuario */}
-        <div className="flex-1 text-left min-w-0">
+        {/* Información del usuario - Solo en desktop */}
+        <div className="hidden sm:flex flex-1 text-left min-w-0">
           <div className="font-semibold text-gray-800 text-sm truncate">
             {name}
           </div>
@@ -231,8 +231,8 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
           </div>
         </div>
 
-        {/* Flecha moderna */}
-        <div className={`flex-shrink-0 transition-all duration-300 ${open ? 'rotate-180' : ''}`}>
+        {/* Flecha moderna - Solo en desktop */}
+        <div className={`hidden sm:flex flex-shrink-0 transition-all duration-300 ${open ? 'rotate-180' : ''}`}>
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-inner">
             <svg
               className="w-3 h-3 text-gray-600"

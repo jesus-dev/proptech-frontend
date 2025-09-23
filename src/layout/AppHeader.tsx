@@ -66,8 +66,8 @@ const AppHeaderCRM: React.FC = () => {
 
   return (
     <header className="sticky top-0 left-0 right-0 z-30 w-full border-b border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-white dark:border-gray-800">
-      <div className="flex h-16 items-center justify-between w-full px-0 sm:px-4">
-        <div className="flex items-center gap-2 sm:gap-6">
+      <div className="flex h-16 items-center justify-between w-full px-3 sm:px-4">
+        <div className="flex items-center gap-3 sm:gap-6">
           <button
             onClick={handleToggle}
             className="block md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-300"
@@ -79,14 +79,20 @@ const AppHeaderCRM: React.FC = () => {
           </button>
           
           {/* Logo visible en móvil */}
-          <div className="md:hidden">
-            <Image
-              src="/images/logo/proptech.png"
-              alt="PropTech CRM"
-              width={180}
-              height={48}
-              className="object-contain w-44 h-auto"
-            />
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => router.push('/dash')}
+              className="flex items-center hover:opacity-80 transition-opacity"
+              aria-label="Ir al dashboard"
+            >
+              <Image
+                src="/images/logo/proptech.png"
+                alt="PropTech CRM"
+                width={160}
+                height={44}
+                className="object-contain h-10 w-auto"
+              />
+            </button>
           </div>
         </div>
         <div className="flex items-center gap-2">

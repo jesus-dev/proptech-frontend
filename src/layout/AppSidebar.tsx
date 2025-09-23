@@ -495,7 +495,7 @@ const AppSidebar: React.FC = () => {
               }}
               aria-expanded={openSubmenu?.type === menuType && openSubmenu?.index === index}
               aria-controls={`submenu-${menuType}-${index}`}
-              className={`group w-full flex items-center px-3 py-3 rounded-xl transition-all duration-300 hover:bg-blue-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              className={`group w-full flex items-center px-3 py-3 rounded-xl transition-all duration-150 hover:bg-blue-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                 openSubmenu?.type === menuType && openSubmenu?.index === index
                   ? "bg-blue-100 text-blue-700 shadow-sm border border-blue-200"
                   : "text-gray-700 hover:text-blue-600"
@@ -531,7 +531,7 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <LinkComponent
                 href={nav.path}
-                className={`group w-full flex items-center px-3 py-3 rounded-xl transition-all duration-300 hover:bg-blue-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                className={`group w-full flex items-center px-3 py-3 rounded-xl transition-all duration-150 hover:bg-blue-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                   isActive(nav.path) 
                     ? "bg-blue-100 text-blue-700 shadow-sm border border-blue-200" 
                     : "text-gray-700 hover:text-blue-600"
@@ -576,7 +576,7 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     <LinkComponent
                       href={subItem.path}
-                      className={`group flex items-center px-3 py-2 rounded-lg transition-all duration-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      className={`group flex items-center px-3 py-2 rounded-lg transition-all duration-150 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                         isActive(subItem.path)
                           ? "bg-blue-50 text-blue-700 font-medium"
                           : "text-gray-600 hover:text-blue-600"
@@ -636,21 +636,21 @@ const AppSidebar: React.FC = () => {
       {/* Backdrop para móvil */}
       {isMobile && isMobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-gradient-to-br from-white/80 via-blue-100/60 to-blue-200/40 transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ease-out"
           onClick={toggleMobileSidebar}
           aria-label="Cerrar menú"
         />
       )}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300
+        className={`fixed top-0 left-0 z-50 h-screen transition-all duration-200 ease-out
           ${isExpanded ? "w-64" : "w-20"}
-          glass border-r border-white/20 dark:border-gray-600/20 shadow-modern-lg
+          bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-lg
           ${isMobile ?
             (isMobileOpen ? "translate-x-0" : "-translate-x-full") + " w-64" :
             ""
           }
         `}
-        style={isMobile ? { transition: 'transform 0.3s', willChange: 'transform', height: '100dvh' } : {}}
+        style={isMobile ? { transition: 'transform 0.2s ease-out', willChange: 'transform', height: '100dvh', top: '0px' } : {}}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         aria-label="Menú lateral"
@@ -658,18 +658,18 @@ const AppSidebar: React.FC = () => {
         {/* Botón cerrar solo en móvil */}
         {isMobile && (
           <button
-            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none shadow-lg border border-gray-200 dark:border-gray-600"
+            className="absolute top-6 right-4 z-50 p-2 rounded-full bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none shadow-lg border border-gray-200 dark:border-gray-600"
             onClick={toggleMobileSidebar}
             aria-label="Cerrar menú"
           >
-            <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         )}
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-center h-20 px-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
+          <div className={`flex items-center justify-center border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 ${isMobile ? 'h-24 px-6 pt-4' : 'h-20 px-6'}`}>
             <LinkComponent href="/" className="flex items-center justify-center group">
               <div className="relative">
                 <img
@@ -677,7 +677,7 @@ const AppSidebar: React.FC = () => {
                   alt="PropTech"
                   width={isMobile && isMobileOpen ? 160 : isExpanded ? 180 : 50}
                   height={isMobile && isMobileOpen ? 44 : 50}
-                  className="object-contain transition-all duration-300 group-hover:scale-105"
+                  className="object-contain transition-all duration-150 group-hover:scale-105"
                 />
                 {!isExpanded && !isMobile && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>

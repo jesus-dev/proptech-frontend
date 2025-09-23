@@ -159,17 +159,17 @@ const PropertiesSectionContent = () => {
   };
 
   return (
-    <div className="bg-white py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Filtros */}
+    <div className="bg-white py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+        {/* Filtros - Optimizados para móvil */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="bg-gray-50 rounded-2xl p-6 shadow-lg border border-gray-200 mb-8"
+          className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200 mb-6 sm:mb-8"
         >
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,7 +181,7 @@ const PropertiesSectionContent = () => {
                 placeholder="Buscar propiedades..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
 
@@ -194,7 +194,7 @@ const PropertiesSectionContent = () => {
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent appearance-none"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent appearance-none text-sm sm:text-base"
               >
                 {propertyTypes.map(type => (
                   <option key={type.value} value={type.value}>{type.label}</option>
@@ -211,7 +211,7 @@ const PropertiesSectionContent = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent appearance-none"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent appearance-none text-sm sm:text-base"
               >
                 {propertyCategories.map(category => (
                   <option key={category.value} value={category.value}>{category.label}</option>
@@ -229,7 +229,7 @@ const PropertiesSectionContent = () => {
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent appearance-none"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent appearance-none text-sm sm:text-base"
               >
                 {cities.map(city => (
                   <option key={city.value} value={city.value}>{city.label}</option>
@@ -240,29 +240,37 @@ const PropertiesSectionContent = () => {
             <div className="flex space-x-2">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-2 ${viewMode === 'grid' ? 'bg-brand-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base ${viewMode === 'grid' ? 'bg-brand-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                 </svg>
-                <span>Grilla</span>
+                <span className="hidden sm:inline">Grilla</span>
+                <span className="sm:hidden">📱</span>
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-4 py-3 rounded-lg transition-all duration-200 flex items-center space-x-2 ${viewMode === 'list' ? 'bg-brand-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base ${viewMode === 'list' ? 'bg-brand-600 text-white shadow-lg' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
                 </svg>
-                <span>Lista</span>
+                <span className="hidden sm:inline">Lista</span>
+                <span className="sm:hidden">📋</span>
               </button>
             </div>
           </div>
 
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <span className="text-xs sm:text-sm text-gray-600">
               {filteredProperties.length} propiedades encontradas
             </span>
+            <button
+              onClick={clearFilters}
+              className="text-xs sm:text-sm text-brand-600 hover:text-brand-700 font-medium px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-all duration-200"
+            >
+              Limpiar filtros
+            </button>
           </div>
         </motion.div>
 

@@ -9,6 +9,7 @@ export interface Property {
   state: string;
   zip: string;
   price: number;
+  pricePerSquareMeter?: number;
   currency: CurrencyCode;
   currencyId?: number; // ID de la moneda en la base de datos
   type: string;

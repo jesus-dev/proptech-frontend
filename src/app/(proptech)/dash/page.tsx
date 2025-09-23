@@ -295,108 +295,112 @@ export default function UserDashboardPage() {
       role="main"
       aria-label="Dashboard del sistema inmobiliario"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
         
-        {/* Header Moderno con Efectos Avanzados */}
-        <div className="mb-8">
-          <div className="relative bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 rounded-3xl p-8 backdrop-blur-sm border border-white/20 shadow-2xl overflow-hidden">
+        {/* Header Moderno con Efectos Avanzados - Optimizado para móvil */}
+        <div className="mb-6 sm:mb-8">
+          <div className="relative bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 backdrop-blur-sm border border-white/20 shadow-2xl overflow-hidden">
             {/* Efectos de fondo */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-indigo-600/5"></div>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-indigo-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-64 lg:h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-36 sm:h-36 lg:w-48 lg:h-48 bg-gradient-to-tr from-indigo-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
             
             <div className="relative z-10">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="flex flex-col gap-4 sm:gap-6">
                 <div className="flex-1">
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
                     Mi Dashboard
                   </h1>
-                  <p className="text-lg text-gray-600 dark:text-gray-300">
+                  <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300">
                     Gestiona tus propiedades favoritas, visitas y búsquedas
                   </p>
-                  <div className="flex items-center mt-3 text-sm text-gray-500 gap-4">
-                    <div className="flex items-center px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm" role="status" aria-label="Estado del sistema">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center mt-3 text-xs sm:text-sm text-gray-500 gap-2 sm:gap-4">
+                    <div className="flex items-center px-2 sm:px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm" role="status" aria-label="Estado del sistema">
                       <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" aria-hidden="true"></div>
                       <span>Sistema operativo</span>
                     </div>
-                    <div className="flex items-center px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm" role="status" aria-label="Última actualización">
-                      <Clock className="w-4 h-4 mr-2" aria-hidden="true" />
-                      <span>Última actualización: {new Date().toLocaleTimeString('es-PY')}</span>
+                    <div className="flex items-center px-2 sm:px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm" role="status" aria-label="Última actualización">
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" aria-hidden="true" />
+                      <span className="hidden sm:inline">Última actualización: {new Date().toLocaleTimeString('es-PY')}</span>
+                      <span className="sm:hidden">Actualizado: {new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
                 </div>
                 
-                {/* Controles del Dashboard */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  {/* Time Range Selector */}
-                  <div className="flex items-center bg-white/20 rounded-lg backdrop-blur-sm p-1" role="tablist" aria-label="Selector de rango de tiempo">
-                    {['24h', '7d', '30d', '90d'].map((range) => (
+                {/* Controles del Dashboard - Optimizados para móvil */}
+                <div className="flex flex-col gap-3">
+                  {/* Primera fila: Time Range y View Mode */}
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Time Range Selector */}
+                    <div className="flex items-center bg-white/20 rounded-lg backdrop-blur-sm p-1" role="tablist" aria-label="Selector de rango de tiempo">
+                      {['24h', '7d', '30d', '90d'].map((range) => (
+                        <button
+                          key={range}
+                          onClick={() => setSelectedTimeRange(range)}
+                          role="tab"
+                          aria-selected={selectedTimeRange === range}
+                          aria-label={`Ver datos de los últimos ${range}`}
+                          className={`px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 ${
+                            selectedTimeRange === range
+                              ? 'bg-white/80 text-blue-600 shadow-sm'
+                              : 'text-gray-600 hover:bg-white/40 hover:text-gray-900'
+                          }`}
+                        >
+                          {range}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center bg-white/20 rounded-lg backdrop-blur-sm p-1" role="group" aria-label="Modo de visualización">
                       <button
-                        key={range}
-                        onClick={() => setSelectedTimeRange(range)}
-                        role="tab"
-                        aria-selected={selectedTimeRange === range}
-                        aria-label={`Ver datos de los últimos ${range}`}
-                        className={`px-3 py-1 text-sm rounded-md transition-all duration-200 ${
-                          selectedTimeRange === range
-                            ? 'bg-white/80 text-blue-600 font-medium'
+                        onClick={() => setViewMode('grid')}
+                        aria-label="Vista de cuadrícula"
+                        className={`p-1.5 sm:p-2 rounded-md transition-all duration-200 ${
+                          viewMode === 'grid'
+                            ? 'bg-white/80 text-blue-600'
                             : 'text-gray-600 hover:bg-white/40'
                         }`}
                       >
-                        {range}
+                        <Grid className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
                       </button>
-                    ))}
+                      <button
+                        onClick={() => setViewMode('list')}
+                        aria-label="Vista de lista"
+                        className={`p-1.5 sm:p-2 rounded-md transition-all duration-200 ${
+                          viewMode === 'list'
+                            ? 'bg-white/80 text-blue-600'
+                            : 'text-gray-600 hover:bg-white/40'
+                        }`}
+                      >
+                        <List className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* View Mode Toggle */}
-                  <div className="flex items-center bg-white/20 rounded-lg backdrop-blur-sm p-1" role="group" aria-label="Modo de visualización">
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      aria-label="Vista de cuadrícula"
-                      className={`p-2 rounded-md transition-all duration-200 ${
-                        viewMode === 'grid'
-                          ? 'bg-white/80 text-blue-600'
-                          : 'text-gray-600 hover:bg-white/40'
-                      }`}
-                    >
-                      <Grid className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      aria-label="Vista de lista"
-                      className={`p-2 rounded-md transition-all duration-200 ${
-                        viewMode === 'list'
-                          ? 'bg-white/80 text-blue-600'
-                          : 'text-gray-600 hover:bg-white/40'
-                      }`}
-                    >
-                      <List className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
+                  {/* Segunda fila: Action Buttons - Optimizados para móvil */}
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button 
                       onClick={() => setAutoRefresh(!autoRefresh)}
                       variant="outline" 
                       size="sm"
                       aria-label={autoRefresh ? 'Desactivar actualización automática' : 'Activar actualización automática'}
-                      className={`bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 ${
+                      className={`bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm ${
                         autoRefresh ? 'text-green-600 border-green-200' : 'text-gray-600'
                       }`}
                     >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} aria-hidden="true" />
-                      Auto
+                      <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${autoRefresh ? 'animate-spin' : ''}`} aria-hidden="true" />
+                      <span className="hidden sm:inline">Auto</span>
                     </Button>
                     <Button 
                       onClick={loadDashboardData}
                       variant="outline" 
                       size="sm"
                       aria-label="Actualizar datos del dashboard"
-                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm"
                     >
-                      <RefreshCw className="h-4 w-4 mr-2" aria-hidden="true" />
-                      Actualizar
+                      <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" aria-hidden="true" />
+                      <span className="hidden sm:inline">Actualizar</span>
                     </Button>
                     <Button 
                       onClick={() => handleExport('csv')}
@@ -404,19 +408,20 @@ export default function UserDashboardPage() {
                       size="sm"
                       disabled={isExporting}
                       aria-label={isExporting ? 'Exportando datos...' : 'Exportar datos del dashboard'}
-                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm"
                     >
-                      <Download className={`h-4 w-4 mr-2 ${isExporting ? 'animate-spin' : ''}`} aria-hidden="true" />
-                      {isExporting ? 'Exportando...' : 'Exportar'}
+                      <Download className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${isExporting ? 'animate-spin' : ''}`} aria-hidden="true" />
+                      <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
+                      <span className="sm:hidden">{isExporting ? '...' : 'Exp'}</span>
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm"
                       aria-label="Configurar dashboard"
-                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm"
                     >
-                      <Settings className="h-4 w-4 mr-2" aria-hidden="true" />
-                      Configurar
+                      <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" aria-hidden="true" />
+                      <span className="hidden sm:inline">Configurar</span>
                     </Button>
                   </div>
                 </div>
@@ -425,26 +430,27 @@ export default function UserDashboardPage() {
           </div>
         </div>
 
-        {/* Stats Cards Grid con Efectos Avanzados */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {/* Stats Cards Grid con Efectos Avanzados - Optimizado para móvil */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           
           {/* Propiedades Guardadas */}
           <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-4 sm:p-6 relative z-10">
+            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Propiedades Guardadas</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{userStats.savedProperties}</p>
-                  <div className="flex items-center mt-2">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{userStats.savedProperties}</p>
+                  <div className="flex items-center mt-1 sm:mt-2">
                     <div className="flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">
                       <Star className="h-3 w-3 mr-1" />
-                      Favoritas
+                      <span className="hidden sm:inline">Favoritas</span>
+                      <span className="sm:hidden">Fav</span>
                     </div>
                   </div>
                 </div>
-                <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <Star className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
+                  <Star className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -453,20 +459,21 @@ export default function UserDashboardPage() {
           {/* Visitas Agendadas */}
           <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-green-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-4 sm:p-6 relative z-10">
+            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Visitas Agendadas</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{userStats.scheduledVisits}</p>
-                  <div className="flex items-center mt-2">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{userStats.scheduledVisits}</p>
+                  <div className="flex items-center mt-1 sm:mt-2">
                     <div className="flex items-center px-2 py-1 rounded-full bg-green-50 text-green-600 text-xs font-medium">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Pendientes
+                      <span className="hidden sm:inline">Pendientes</span>
+                      <span className="sm:hidden">Pend</span>
                     </div>
                   </div>
                 </div>
-                <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <Calendar className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -475,22 +482,23 @@ export default function UserDashboardPage() {
           {/* Consultas Enviadas */}
           <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-4 sm:p-6 relative z-10">
+            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Consultas Enviadas</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                     {userStats.inquiriesSent}
                   </p>
-                  <div className="flex items-center mt-2">
+                  <div className="flex items-center mt-1 sm:mt-2">
                     <div className="flex items-center px-2 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-medium">
                       <MessageSquare className="h-3 w-3 mr-1" />
-                      Este mes
+                      <span className="hidden sm:inline">Este mes</span>
+                      <span className="sm:hidden">Mes</span>
                     </div>
                   </div>
                 </div>
-                <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
+                  <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -499,12 +507,12 @@ export default function UserDashboardPage() {
           {/* Notificaciones */}
           <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-orange-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-4 sm:p-6 relative z-10">
+            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Notificaciones</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{userStats.notificationsUnread}</p>
-                  <div className="flex items-center mt-2">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{userStats.notificationsUnread}</p>
+                  <div className="flex items-center mt-1 sm:mt-2">
                     <div className={`flex items-center px-2 py-1 rounded-full ${
                       userStats.notificationsUnread > 0 
                         ? 'bg-orange-50 text-orange-600' 
@@ -517,8 +525,8 @@ export default function UserDashboardPage() {
                     </div>
                   </div>
                 </div>
-                <div className="h-12 w-12 sm:h-14 sm:w-14 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <Bell className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
+                  <Bell className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -526,25 +534,26 @@ export default function UserDashboardPage() {
 
         </div>
 
-        {/* Grid Principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Grid Principal - Optimizado para móvil */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           
           {/* Mi Actividad */}
           <div className="lg:col-span-2">
             <Card className="h-full bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
+              <CardHeader className="pb-3 sm:pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
                       Mi Actividad
                     </CardTitle>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                       Tus últimas acciones en la plataforma
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" className="hover:shadow-lg transition-all duration-300">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Ver Todo
+                  <Button variant="outline" size="sm" className="hover:shadow-lg transition-all duration-300 text-xs sm:text-sm self-start sm:self-auto">
+                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Ver Todo</span>
+                    <span className="sm:hidden">Ver</span>
                   </Button>
                 </div>
               </CardHeader>
