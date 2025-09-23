@@ -25,15 +25,9 @@ export default function PropertyImage({
     if (!url) return null;
     if (url.startsWith('http')) return url;
     
-    // Usar la configuración centralizada
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
-                      (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
-    
-    // Asegurar que no haya doble concatenación de URLs
-    if (url.startsWith('/') && apiBaseUrl.endsWith('/')) {
-      return `${apiBaseUrl.slice(0, -1)}${url}`;
-    }
-    return `${apiBaseUrl}${url}`;
+    // Usar la configuración centralizada de api-config
+    const { getEndpoint } = require('@/lib/api-config');
+    return getEndpoint(url);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {

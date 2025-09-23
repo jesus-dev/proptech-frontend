@@ -20,8 +20,8 @@ function getFullImageUrl(url: string): string {
     return url;
   }
   
-  // Si es una URL relativa del backend, convertirla a URL completa
-  if (url.startsWith('/api/')) {
+  // Si es una URL relativa del backend (como /uploads/gallery/...), usar getEndpoint
+  if (url.startsWith('/uploads/') || url.startsWith('/api/')) {
     return getEndpoint(url);
   }
   
