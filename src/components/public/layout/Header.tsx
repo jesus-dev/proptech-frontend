@@ -73,13 +73,13 @@ const Header = () => {
             <img
               src="/proptech.png"
               alt="Proptech Logo"
-              className="h-8 sm:h-10 w-auto transition-all duration-300 group-hover:scale-105"
+              className="h-10 sm:h-12 w-auto transition-all duration-300 group-hover:scale-105"
               style={!isScrolled ? {
                 filter: 'brightness(0) invert(1)',
                 WebkitFilter: 'brightness(0) invert(1)'
               } : {}}
             />
-            <span className={`ml-2 sm:ml-3 text-lg sm:text-xl font-bold transition-colors duration-300 ${
+            <span className={`ml-3 text-xl sm:text-2xl font-bold transition-colors duration-300 ${
               shouldUseWhiteText ? 'text-white' : 'text-gray-900'
             }`}>
               PropTech
@@ -181,17 +181,17 @@ const Header = () => {
 
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`lg:hidden p-2 rounded-lg transition-all duration-300 relative z-50 ${
+            className={`lg:hidden p-3 rounded-lg transition-all duration-300 relative z-50 ${
               shouldUseWhiteText
-                ? 'text-white hover:text-white/90 hover:bg-white/10'
+                ? 'text-white hover:text-white/90 hover:bg-white/20'
                 : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
             }`}
             aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
           >
             {isMenuOpen ? (
-              <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <XMarkIcon className="w-6 h-6" />
             ) : (
-              <Bars3Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+              <Bars3Icon className="w-6 h-6" />
             )}
           </button>
         </div>
