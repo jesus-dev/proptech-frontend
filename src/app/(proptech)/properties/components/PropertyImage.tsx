@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BuildingOfficeIcon } from "@heroicons/react/24/outline";
 
 interface PropertyImageProps {
@@ -20,8 +20,18 @@ export default function PropertyImage({
 }: PropertyImageProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
 
-    const getImageUrl = (url: string | null | undefined): string | null => {
+  // Initialize current image URL and set up fallback logic
+  useEffect(() => {
+    if (imageUrl) {
+      setCurrentImageUrl(getImageUrl(imageUrl));
+      setImageError(false);
+      setImageLoaded(false);
+    }
+  }, [imageUrl]);
+
+  const getImageUrl = (url: string | null | undefined): string | null => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
     
@@ -31,10 +41,29 @@ export default function PropertyImage({
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    const fullUrl = getImageUrl(imageUrl);
+    const fullUrl = currentImageUrl;
     const errorMessage = `No se pudo cargar la imagen para la propiedad: "${title}". URL: ${fullUrl}`;
     
     console.warn(errorMessage);
+    
+    // Try fallback URL patterns if the original URL fails
+    if (imageUrl && !imageUrl.startsWith('http')) {
+      // Try different URL patterns as fallbacks
+      const fallbackUrls = [
+        getImageUrl(imageUrl.replace('/api/files/', '/uploads/')), // Convert /api/files to /uploads
+        getImageUrl(imageUrl.replace('/uploads/', '/api/files/')), // Convert /uploads to /api/files
+      ].filter(Boolean);
+      
+      const nextFallback = fallbackUrls.find(url => url !== currentImageUrl);
+      
+      if (nextFallback) {
+        console.log(`Trying fallback URL: ${nextFallback}`);
+        setCurrentImageUrl(nextFallback);
+        setImageError(false);
+        return;
+      }
+    }
+    
     setImageError(true);
     
     if (onError) {
@@ -56,9 +85,7 @@ export default function PropertyImage({
     );
   }
 
-  const fullImageUrl = getImageUrl(imageUrl);
-  
-  if (!fullImageUrl) {
+  if (!currentImageUrl) {
     return (
       <div className={placeholderClassName}>
         <BuildingOfficeIcon className="w-16 h-16 text-sky-400 opacity-60" />
@@ -69,7 +96,7 @@ export default function PropertyImage({
   return (
     <>
       <img
-        src={fullImageUrl}
+        src={currentImageUrl}
         alt={title}
         className={className}
         onError={handleImageError}
