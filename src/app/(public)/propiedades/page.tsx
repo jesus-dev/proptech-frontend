@@ -7,7 +7,7 @@ export default function PublicPropiedades() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative min-h-[40vh] sm:min-h-[50vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-brand-900">
+      <section className="relative min-h-[35vh] sm:min-h-[40vh] lg:min-h-[50vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-brand-900">
         {/* Animated Background */}
         <div className="absolute inset-0">
           {/* Main Gradient */}
@@ -25,14 +25,14 @@ export default function PublicPropiedades() {
           }}></div>
         </div>
         
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-12 text-center">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 leading-tight">
             Encuentra tu{' '}
             <span className="bg-gradient-to-r from-brand-300 to-brand-400 bg-clip-text text-transparent">
               Propiedad Ideal
             </span>
           </h1>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto px-2">
             Descubre las mejores propiedades en venta y alquiler en Paraguay. 
             Tu hogar perfecto te está esperando.
           </p>

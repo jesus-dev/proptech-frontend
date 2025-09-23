@@ -458,6 +458,19 @@ export default function EditPropertyPage({ params }: PageProps) {
 
   const handleStepClick = (targetIndex: number) => {
     setCurrentStep(targetIndex + 1);
+    
+    // En móvil, hacer scroll al formulario después de cambiar el paso
+    if (window.innerWidth < 1024) { // lg breakpoint
+      setTimeout(() => {
+        const formElement = document.querySelector('[data-step-content]');
+        if (formElement) {
+          formElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }
+      }, 100);
+    }
   };
 
   if (loading) {
@@ -679,8 +692,8 @@ export default function EditPropertyPage({ params }: PageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar with steps */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-6 sticky top-8">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
                 Progreso del Formulario
               </h3>
               
@@ -689,7 +702,7 @@ export default function EditPropertyPage({ params }: PageProps) {
                   <button
                     key={step.id}
                     onClick={() => handleStepClick(index)}
-                    className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all duration-200 ${
+                    className={`w-full flex items-center space-x-2 sm:space-x-3 px-2 sm:px-3 py-2 sm:py-3 rounded-lg text-left transition-all duration-200 ${
                       currentStep === index + 1
                         ? 'bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-300'
                         : index + 1 < currentStep
@@ -699,16 +712,16 @@ export default function EditPropertyPage({ params }: PageProps) {
                   >
                     <div className="flex-shrink-0">
                       {index + 1 < currentStep ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                       ) : (
-                        <div className="h-5 w-5 rounded-full border-2 border-current flex items-center justify-center text-xs font-medium">
+                        <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full border-2 border-current flex items-center justify-center text-xs font-medium">
                           {index + 1}
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{step.title}</p>
-                      <p className="text-xs opacity-75 truncate">{step.description}</p>
+                      <p className="text-xs sm:text-sm font-medium truncate">{step.title}</p>
+                      <p className="text-xs opacity-75 truncate hidden sm:block">{step.description}</p>
                     </div>
                   </button>
                 ))}
@@ -718,7 +731,7 @@ export default function EditPropertyPage({ params }: PageProps) {
 
           {/* Main content */}
           <div className="lg:col-span-3">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm" data-step-content>
               {/* Step header */}
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between">

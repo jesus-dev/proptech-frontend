@@ -140,7 +140,7 @@ const SearchHeroSection = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight whitespace-nowrap"
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight"
           >
             <motion.span initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5, duration: 0.6 }} className="inline-block">
               Encuentra tu{' '}
@@ -170,9 +170,10 @@ const SearchHeroSection = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
-            className="text-base sm:text-lg md:text-xl text-gray-200 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed"
+            className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-200 mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed px-2"
           >
-            Explora más de <span className="text-brand-300 font-semibold">500 propiedades verificadas</span> en Asunción, Ciudad del Este, Encarnación y todo el país.
+            <span className="hidden sm:inline">Explora más de <span className="text-brand-300 font-semibold">500 propiedades verificadas</span> en Asunción, Ciudad del Este, Encarnación y todo el país.</span>
+            <span className="sm:hidden">Más de <span className="text-brand-300 font-semibold">500 propiedades</span> verificadas en todo Paraguay.</span>
           </motion.p>
 
           <motion.div initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }} whileHover={{ scale: 1.02 }} className="max-w-4xl mx-auto">
@@ -191,29 +192,30 @@ const SearchHeroSection = () => {
                     placeholder="Buscar propiedades..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-brand-200/50 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all duration-300 hover:border-brand-400 bg-gradient-to-r from-white/90 to-brand-50/30 backdrop-blur-sm group-hover:shadow-md"
+                    className="w-full pl-10 pr-4 py-2 sm:py-3 border-2 border-brand-200/50 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all duration-300 hover:border-brand-400 bg-gradient-to-r from-white/90 to-brand-50/30 backdrop-blur-sm group-hover:shadow-md"
                   />
                   {searchTerm && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-full left-0 right-0 mt-1 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-brand-200/50 z-20 overflow-hidden">
                       {["Casa en Asunción","Departamento en Ciudad del Este","Terreno en Encarnación","Local comercial en San Lorenzo"].filter(s => s.toLowerCase().includes(searchTerm.toLowerCase())).map((suggestion, index) => (
                         <motion.div key={index} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }} className="px-3 py-2 hover:bg-brand-50 cursor-pointer flex items-center group text-sm">
                           <MagnifyingGlassIcon className="w-3 h-3 text-gray-400 mr-2 group-hover:text-brand-500" />
-                          <span className="text-gray-700 group-hover:text-brand-700">{suggestion}</span>
+                          <span className="text-gray-700 group-hover:text-brand-700 truncate">{suggestion}</span>
                         </motion.div>
                       ))}
                     </motion.div>
                   )}
                 </motion.div>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-gradient-to-r from-brand-600 to-brand-700 text-white px-6 py-3 rounded-lg hover:from-brand-700 hover:to-brand-800 transition-all duration-300 font-semibold text-sm shadow-lg hover:shadow-xl flex items-center justify-center relative overflow-hidden group">
-                  <MagnifyingGlassIcon className="w-4 h-4 mr-2" />
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="bg-gradient-to-r from-brand-600 to-brand-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg hover:from-brand-700 hover:to-brand-800 transition-all duration-300 font-semibold text-sm shadow-lg hover:shadow-xl flex items-center justify-center relative overflow-hidden group">
+                  <MagnifyingGlassIcon className="w-4 h-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Buscar</span>
-                  <span className="sm:hidden">🔍</span>
+                  <span className="sm:hidden">Buscar</span>
                 </motion.button>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className="flex items-center justify-center px-4 py-3 border-2 border-brand-200/50 rounded-lg hover:bg-gradient-to-r hover:from-brand-50 hover:to-brand-100 hover:border-brand-500 transition-all duration-300 font-medium text-sm group relative overflow-hidden bg-gradient-to-r from-white/90 to-brand-50/30">
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setShowAdvancedFilters(!showAdvancedFilters)} className="flex items-center justify-center px-3 sm:px-4 py-2 sm:py-3 border-2 border-brand-200/50 rounded-lg hover:bg-gradient-to-r hover:from-brand-50 hover:to-brand-100 hover:border-brand-500 transition-all duration-300 font-medium text-sm group relative overflow-hidden bg-gradient-to-r from-white/90 to-brand-50/30">
                   <motion.div animate={{ rotate: showAdvancedFilters ? 180 : 0 }} transition={{ duration: 0.3 }}>
-                    <FunnelIcon className="w-4 h-4 mr-2 group-hover:text-brand-600 transition-colors duration-300" />
+                    <FunnelIcon className="w-4 h-4 mr-1 sm:mr-2 group-hover:text-brand-600 transition-colors duration-300" />
                   </motion.div>
-                  <span className="group-hover:text-brand-700 transition-colors duration-300">Filtros</span>
+                  <span className="group-hover:text-brand-700 transition-colors duration-300 hidden sm:inline">Filtros</span>
+                  <span className="sm:hidden">Filtros</span>
                 </motion.button>
               </motion.div>
 
@@ -333,16 +335,16 @@ const SearchHeroSection = () => {
             </motion.div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mt-8 sm:mt-12 lg:mt-16">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-8 mt-6 sm:mt-8 lg:mt-16">
             {stats.map((stat, index) => (
               <motion.div key={index} initial={{ opacity: 0, y: 30, scale: 0.8 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.8 + index * 0.2, duration: 0.8, ease: "easeOut" }} whileHover={{ scale: 1.05, y: -5 }} className="text-center group relative">
-                <motion.div whileHover={{ rotateY: 5, rotateX: 5 }} className="bg-white/15 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/30 hover:bg-white/25 transition-all duration-500 group-hover:shadow-2xl relative overflow-hidden">
-                  <motion.div initial={{ scale: 0, opacity: 0 }} whileHover={{ scale: 1, opacity: 0.1 }} transition={{ duration: 0.6 }} className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-brand-600/20 rounded-xl sm:rounded-2xl"></motion.div>
-                  <motion.div animate={{ boxShadow: ["0 0 0px rgba(99, 102, 241, 0)", "0 0 20px rgba(99, 102, 241, 0.3)", "0 0 0px rgba(99, 102, 241, 0)"] }} transition={{ duration: 3, repeat: Infinity, delay: index * 0.5 }} className="absolute inset-0 rounded-xl sm:rounded-2xl"></motion.div>
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1 + index * 0.2, duration: 0.6, ease: "easeOut" }} className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2 group-hover:text-brand-300 transition-colors relative z-10">
+                <motion.div whileHover={{ rotateY: 5, rotateX: 5 }} className="bg-white/15 backdrop-blur-sm rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 border border-white/30 hover:bg-white/25 transition-all duration-500 group-hover:shadow-2xl relative overflow-hidden">
+                  <motion.div initial={{ scale: 0, opacity: 0 }} whileHover={{ scale: 1, opacity: 0.1 }} transition={{ duration: 0.6 }} className="absolute inset-0 bg-gradient-to-r from-brand-400/20 to-brand-600/20 rounded-lg sm:rounded-xl lg:rounded-2xl"></motion.div>
+                  <motion.div animate={{ boxShadow: ["0 0 0px rgba(99, 102, 241, 0)", "0 0 20px rgba(99, 102, 241, 0.3)", "0 0 0px rgba(99, 102, 241, 0)"] }} transition={{ duration: 3, repeat: Infinity, delay: index * 0.5 }} className="absolute inset-0 rounded-lg sm:rounded-xl lg:rounded-2xl"></motion.div>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1 + index * 0.2, duration: 0.6, ease: "easeOut" }} className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-white mb-1 sm:mb-2 group-hover:text-brand-300 transition-colors relative z-10">
                     {stat.value}
                   </motion.div>
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 + index * 0.2, duration: 0.6 }} className="text-xs sm:text-sm text-gray-200 group-hover:text-white transition-colors font-medium relative z-10">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 + index * 0.2, duration: 0.6 }} className="text-xs sm:text-sm text-gray-200 group-hover:text-white transition-colors font-medium relative z-10 leading-tight">
                     {stat.label}
                   </motion.div>
                 </motion.div>

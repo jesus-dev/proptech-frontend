@@ -27,6 +27,12 @@ const Header = () => {
     const handleScroll = () => {
       const scrolled = window.scrollY > 50;
       setIsScrolled(scrolled);
+      
+      // Cerrar menú móvil al hacer scroll (buena práctica UX)
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+        setActiveSubmenu(null);
+      }
     };
     
     // Verificar estado inicial
@@ -34,7 +40,7 @@ const Header = () => {
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isMenuOpen]);
 
   const navigation = [
     { name: 'Inicio', href: '/' },
@@ -61,19 +67,19 @@ const Header = () => {
       }`}
       data-scrolled={isScrolled}
     >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <nav className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           <Link href="/" className="flex items-center group">
             <img
               src="/proptech.png"
               alt="Proptech Logo"
-              className="h-10 w-auto transition-all duration-300 group-hover:scale-105"
+              className="h-8 sm:h-10 w-auto transition-all duration-300 group-hover:scale-105"
               style={!isScrolled ? {
                 filter: 'brightness(0) invert(1)',
                 WebkitFilter: 'brightness(0) invert(1)'
               } : {}}
             />
-            <span className={`ml-3 text-xl font-bold transition-colors duration-300 ${
+            <span className={`ml-2 sm:ml-3 text-lg sm:text-xl font-bold transition-colors duration-300 ${
               shouldUseWhiteText ? 'text-white' : 'text-gray-900'
             }`}>
               PropTech
@@ -175,16 +181,17 @@ const Header = () => {
 
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`lg:hidden p-2 rounded-lg transition-all duration-300 ${
+            className={`lg:hidden p-2 rounded-lg transition-all duration-300 relative z-50 ${
               shouldUseWhiteText
                 ? 'text-white hover:text-white/90 hover:bg-white/10'
                 : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
             }`}
+            aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
           >
             {isMenuOpen ? (
-              <XMarkIcon className="w-6 h-6" />
+              <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
             ) : (
-              <Bars3Icon className="w-6 h-6" />
+              <Bars3Icon className="w-5 h-5 sm:w-6 sm:h-6" />
             )}
           </button>
         </div>
@@ -196,19 +203,19 @@ const Header = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className={`lg:hidden border-t ${
+              className={`lg:hidden border-t relative z-50 ${
                 isScrolled
-                  ? 'bg-white/95 backdrop-blur-lg border-gray-200/50 shadow-xl'
-                  : 'bg-black/90 backdrop-blur-md border-white/20'
+                  ? 'bg-white border-gray-200 shadow-xl'
+                  : 'bg-black/95 border-white/20'
               }`}
             >
-              <div className="px-2 pt-2 pb-3 space-y-1">
+              <div className="px-3 pt-3 pb-4 space-y-1">
                 {navigation.map((item) => (
                   <div key={item.name}>
                     {item.submenu ? (
                       <div>
                         <div
-                          className={`block px-4 py-3 rounded-lg transition-all duration-300 font-medium cursor-pointer ${
+                          className={`block px-3 py-2.5 rounded-lg transition-all duration-300 font-medium cursor-pointer text-sm ${
                             isScrolled
                               ? 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                               : 'text-white hover:text-white hover:bg-white/10'
@@ -216,17 +223,17 @@ const Header = () => {
                           onClick={() => setActiveSubmenu(activeSubmenu === item.name ? null : item.name)}
                         >
                           {item.name}
-                          <span className="float-right">
+                          <span className="float-right text-lg">
                             {activeSubmenu === item.name ? '−' : '+'}
                           </span>
                         </div>
                         {activeSubmenu === item.name && (
-                          <div className="ml-4 space-y-1">
+                          <div className="ml-3 space-y-1">
                             {item.submenu.map((subItem) => (
                               <Link
                                 key={subItem.name}
                                 href={subItem.href}
-                                className={`block px-6 py-2.5 rounded-lg transition-all duration-300 text-sm ${
+                                className={`block px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
                                   isScrolled
                                     ? 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                                     : 'text-white/80 hover:text-white hover:bg-white/10'
@@ -242,7 +249,7 @@ const Header = () => {
                     ) : (
                       <Link
                         href={item.href}
-                        className={`block px-4 py-3 rounded-lg transition-all duration-300 font-medium ${
+                        className={`block px-3 py-2.5 rounded-lg transition-all duration-300 font-medium text-sm ${
                           isScrolled
                             ? 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
                             : 'text-white hover:text-white hover:bg-white/10'
@@ -254,10 +261,10 @@ const Header = () => {
                     )}
                   </div>
                 ))}
-                <div className="pt-4 px-2">
+                <div className="pt-3 px-1">
                   <Link
                     href="/login"
-                    className={`w-full inline-flex justify-center px-4 py-3 rounded-lg transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 ${
+                    className={`w-full inline-flex justify-center px-3 py-2.5 rounded-lg transition-all duration-300 font-semibold text-sm shadow-lg hover:shadow-xl transform hover:scale-105 ${
                       isScrolled
                         ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
                         : 'bg-white/20 backdrop-blur-sm text-white border border-white/30 hover:bg-white/30'
