@@ -99,14 +99,14 @@ const AuthSection = () => {
   };
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
+    <section className="py-12 sm:py-20 bg-white relative overflow-hidden">
       {/* Background Pattern */}
       <div 
         className="absolute inset-0 opacity-5"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Side - Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -120,10 +120,10 @@ const AuthSection = () => {
                 {React.createElement(UserIcon, { className: "w-4 h-4 mr-2" })}
                 {isLogin ? 'Acceso seguro' : 'Registro gratuito'}
               </div>
-              <h2 className="text-5xl font-bold text-gray-900 mb-6">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
                 {isLogin ? 'Bienvenido de vuelta' : 'Únete a Proptech CRM'}
               </h2>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+              <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                 {isLogin 
                   ? 'Accede a tu cuenta y gestiona tus propiedades de manera profesional con las herramientas más avanzadas del mercado.'
                   : 'Comienza a gestionar tus propiedades con la plataforma más avanzada del mercado. Únete a miles de agentes que ya confían en nosotros.'
@@ -132,7 +132,7 @@ const AuthSection = () => {
             </div>
 
             {/* Features List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-gray-200">
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                   {React.createElement(CheckCircleIcon, { className: "w-5 h-5 text-green-600" })}
@@ -160,18 +160,18 @@ const AuthSection = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-8">
-              <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 border border-brand-200">
-                <div className="text-4xl font-bold text-brand-600 mb-2">500+</div>
-                <div className="text-sm text-brand-700 font-medium">Agentes activos</div>
+            <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-6 sm:pt-8">
+              <div className="text-center p-3 sm:p-6 rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 border border-brand-200">
+                <div className="text-2xl sm:text-4xl font-bold text-brand-600 mb-1 sm:mb-2">500+</div>
+                <div className="text-xs sm:text-sm text-brand-700 font-medium">Agentes activos</div>
               </div>
-              <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                <div className="text-4xl font-bold text-green-600 mb-2">10K+</div>
-                <div className="text-sm text-green-700 font-medium">Propiedades</div>
+              <div className="text-center p-3 sm:p-6 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
+                <div className="text-2xl sm:text-4xl font-bold text-green-600 mb-1 sm:mb-2">10K+</div>
+                <div className="text-xs sm:text-sm text-green-700 font-medium">Propiedades</div>
               </div>
-              <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                <div className="text-4xl font-bold text-purple-600 mb-2">98%</div>
-                <div className="text-sm text-purple-700 font-medium">Satisfacción</div>
+              <div className="text-center p-3 sm:p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+                <div className="text-2xl sm:text-4xl font-bold text-purple-600 mb-1 sm:mb-2">98%</div>
+                <div className="text-xs sm:text-sm text-purple-700 font-medium">Satisfacción</div>
               </div>
             </div>
           </motion.div>
@@ -182,7 +182,7 @@ const AuthSection = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-200 relative overflow-hidden"
+            className="bg-white rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 border border-gray-200 relative overflow-hidden"
           >
             {/* Background Pattern */}
             <div 
@@ -194,7 +194,7 @@ const AuthSection = () => {
               <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 {React.createElement(UserIcon, { className: "w-8 h-8 text-white" })}
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                 {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
               </h3>
               <p className="text-gray-600">

@@ -113,8 +113,8 @@ const HeroSection = () => {
         ></motion.div>
       </div>
       
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-16 sm:pt-20 pb-16 sm:pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Column - Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -127,10 +127,11 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="inline-flex items-center px-4 py-2 rounded-full bg-green-100/20 backdrop-blur-sm text-green-300 text-sm font-medium mb-6 border border-green-400/30"
+              className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-green-100/20 backdrop-blur-sm text-green-300 text-xs sm:text-sm font-medium mb-4 sm:mb-6 border border-green-400/30"
             >
-              <StarSolidIcon className="w-4 h-4 mr-2" />
-              Propiedades siempre actualizadas en tiempo real
+              <StarSolidIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Propiedades siempre actualizadas en tiempo real</span>
+              <span className="sm:hidden">Propiedades actualizadas</span>
             </motion.div>
 
             {/* Main Heading */}
@@ -138,7 +139,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight"
+              className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight"
             >
               Encuentra tu{' '}
               <span className="bg-gradient-to-r from-brand-300 to-brand-400 bg-clip-text text-transparent">
@@ -152,10 +153,12 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-xl text-gray-300 mb-8 max-w-2xl"
+              className="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 max-w-2xl"
             >
-              Explora más de 500 propiedades verificadas en Asunción, Ciudad del Este, 
-              Encarnación y todo el país. Casas, departamentos, terrenos y locales comerciales.
+              <span className="hidden sm:inline">Explora más de 500 propiedades verificadas en Asunción, Ciudad del Este, 
+              Encarnación y todo el país. Casas, departamentos, terrenos y locales comerciales.</span>
+              <span className="sm:hidden">Explora más de 500 propiedades verificadas en Paraguay. 
+              Casas, departamentos, terrenos y locales comerciales.</span>
             </motion.p>
 
             {/* CTA Buttons */}
@@ -163,20 +166,20 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4 mb-12"
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12"
             >
               <Link
                 href="/propiedades"
-                className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-lg hover:from-brand-700 hover:to-brand-800 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-lg hover:from-brand-700 hover:to-brand-800 transition-all duration-300 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Explorar Propiedades
-                <ArrowRightIcon className="w-5 h-5 ml-2" />
+                <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" />
               </Link>
               <Link
                 href="/proptech"
-                className="inline-flex items-center justify-center px-8 py-4 border-2 border-white/30 text-white rounded-lg hover:bg-white/10 hover:text-white transition-all duration-300 font-semibold text-lg backdrop-blur-sm"
+                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white/30 text-white rounded-lg hover:bg-white/10 hover:text-white transition-all duration-300 font-semibold text-base sm:text-lg backdrop-blur-sm"
               >
-                <PlayIcon className="w-5 h-5 mr-2" />
+                <PlayIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                 Descubrir PropTech
               </Link>
             </motion.div>
@@ -186,7 +189,7 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
-              className="space-y-3 mb-12"
+              className="space-y-2 sm:space-y-3 mb-8 sm:mb-12"
             >
               {[
                 '✅ Propiedades verificadas y actualizadas',
@@ -194,7 +197,7 @@ const HeroSection = () => {
                 '✅ Agentes profesionales certificados',
                 '✅ Portal optimizado para móviles',
               ].map((feature, index) => (
-                <div key={index} className="flex items-center text-gray-300 font-medium">
+                <div key={index} className="flex items-center text-gray-300 font-medium text-sm sm:text-base">
                   {feature}
                 </div>
               ))}
@@ -205,14 +208,14 @@ const HeroSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.6 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6"
             >
               {stats.map((stat, index) => (
                 <div key={index} className="text-center lg:text-left">
-                  <div className="text-2xl font-bold text-brand-300 mb-1">
+                  <div className="text-xl sm:text-2xl font-bold text-brand-300 mb-1">
                     {stat.value}
                   </div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-xs sm:text-sm text-gray-400">
                     {stat.label}
                   </div>
                 </div>
@@ -228,49 +231,49 @@ const HeroSection = () => {
             className="relative"
           >
             {/* Main Dashboard Mockup */}
-            <div className="relative bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
+            <div className="relative bg-white rounded-2xl shadow-2xl p-3 sm:p-6 border border-gray-200">
               {/* Browser Header */}
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <div className="flex-1 bg-gray-100 rounded-md h-6 ml-4 flex items-center px-3">
-                  <span className="text-xs text-gray-500">proptech.com.py/dashboard</span>
+                <div className="flex-1 bg-gray-100 rounded-md h-6 ml-4 flex items-center px-2 sm:px-3">
+                  <span className="text-xs text-gray-500 truncate">proptech.com.py/dashboard</span>
                 </div>
               </div>
 
               {/* Dashboard Content */}
               <div className="space-y-4">
                 {/* Header Stats */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-brand-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-brand-600">24</div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                  <div className="bg-brand-50 rounded-lg p-2 sm:p-3">
+                    <div className="text-lg sm:text-2xl font-bold text-brand-600">24</div>
                     <div className="text-xs text-gray-600">Propiedades</div>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-green-600">8</div>
+                  <div className="bg-green-50 rounded-lg p-2 sm:p-3">
+                    <div className="text-lg sm:text-2xl font-bold text-green-600">8</div>
                     <div className="text-xs text-gray-600">Clientes</div>
                   </div>
-                  <div className="bg-orange-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-orange-600">5</div>
+                  <div className="bg-orange-50 rounded-lg p-2 sm:p-3">
+                    <div className="text-lg sm:text-2xl font-bold text-orange-600">5</div>
                     <div className="text-xs text-gray-600">Citas</div>
                   </div>
                 </div>
 
                 {/* Property List */}
                 <div className="space-y-2">
-                  <div className="text-sm font-semibold text-gray-700 mb-2">Propiedades Recientes</div>
+                  <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Propiedades Recientes</div>
                   {[
                     { name: 'Casa en Asunción', price: '$85,000', status: 'Disponible' },
                     { name: 'Depto. en Ciudad del Este', price: '$45,000', status: 'Vendido' },
                     { name: 'Terreno en Encarnación', price: '$25,000', status: 'Reservado' },
                   ].map((property, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{property.name}</div>
+                    <div key={index} className="flex items-center justify-between p-1.5 sm:p-2 bg-gray-50 rounded-lg">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">{property.name}</div>
                         <div className="text-xs text-gray-500">{property.price}</div>
                       </div>
-                      <div className={`px-2 py-1 rounded-full text-xs ${
+                      <div className={`px-1.5 sm:px-2 py-1 rounded-full text-xs flex-shrink-0 ${
                         property.status === 'Disponible' ? 'bg-green-100 text-green-700' :
                         property.status === 'Vendido' ? 'bg-blue-100 text-blue-700' :
                         'bg-orange-100 text-orange-700'

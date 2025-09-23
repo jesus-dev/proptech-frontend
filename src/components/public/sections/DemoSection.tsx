@@ -50,8 +50,8 @@ const DemoSection = () => {
   ];
 
   return (
-    <section id="demo" className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="demo" className="py-12 sm:py-20 bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -64,19 +64,19 @@ const DemoSection = () => {
             <span className="w-2 h-2 bg-brand-500 rounded-full mr-2"></span>
             Demostración en vivo
           </div>
-          <h2 className="text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
             Ve Proptech CRM{' '}
             <span className="bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
               en acción
             </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             Descubre cómo funciona nuestro CRM con una demostración interactiva 
             y ve por qué más de 500 agentes confían en nosotros. Configuración en menos de 5 minutos.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Column - Video Demo */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -129,7 +129,7 @@ const DemoSection = () => {
             </div>
 
             {/* Demo Features */}
-            <div className="mt-8 grid grid-cols-2 gap-4">
+            <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {features.map((feature, index) => (
                 <motion.div
                   key={index}
@@ -157,17 +157,17 @@ const DemoSection = () => {
             className="space-y-8"
           >
             <div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-4">
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                 Configuración paso a paso
               </h3>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                 Te guiamos a través de la configuración inicial para que tengas 
                 tu CRM funcionando en menos de 10 minutos. Diseñado para ser intuitivo y rápido.
               </p>
             </div>
 
             {/* Steps */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {demoSteps.map((step, index) => (
                 <motion.div
                   key={step.step}
@@ -175,24 +175,24 @@ const DemoSection = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  className="flex items-start space-x-6 p-6 bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  className="flex items-start space-x-4 sm:space-x-6 p-4 sm:p-6 bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
                   {/* Step Number */}
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-r from-brand-600 to-brand-700 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                  <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-brand-600 to-brand-700 rounded-2xl flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg">
                     {step.step}
                   </div>
 
                   {/* Step Content */}
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-xl font-bold text-gray-900">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3 gap-2">
+                      <h4 className="text-lg sm:text-xl font-bold text-gray-900">
                         {step.title}
                       </h4>
-                      <span className="text-sm font-semibold text-brand-600 bg-brand-100 px-3 py-1 rounded-full">
+                      <span className="text-xs sm:text-sm font-semibold text-brand-600 bg-brand-100 px-2 sm:px-3 py-1 rounded-full self-start sm:self-auto">
                         {step.duration}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-lg leading-relaxed">
+                    <p className="text-gray-600 text-sm sm:text-base lg:text-lg leading-relaxed">
                       {step.description}
                     </p>
                   </div>
@@ -242,7 +242,7 @@ const DemoSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
-          className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8"
+          className="mt-12 sm:mt-20 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8"
         >
           <div className="text-center p-8 bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
             <div className="text-4xl font-bold text-brand-600 mb-3">98%</div>
