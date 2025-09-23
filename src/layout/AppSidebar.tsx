@@ -397,7 +397,8 @@ const AppSidebar: React.FC = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -657,11 +658,11 @@ const AppSidebar: React.FC = () => {
         {/* Botón cerrar solo en móvil */}
         {isMobile && (
           <button
-            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none"
+            className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none shadow-lg border border-gray-200 dark:border-gray-600"
             onClick={toggleMobileSidebar}
             aria-label="Cerrar menú"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

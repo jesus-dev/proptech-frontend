@@ -40,11 +40,11 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       if (!mobile) {
+        // En desktop, cerrar el menú móvil y expandir el sidebar
         setIsMobileOpen(false);
-        // En desktop, expandir el sidebar por defecto
         setIsExpanded(true);
       } else {
-        // En móvil, colapsar el sidebar
+        // En móvil, colapsar el sidebar y cerrar el menú móvil
         setIsExpanded(false);
         setIsMobileOpen(false);
       }

@@ -16,7 +16,7 @@ const AppHeaderCRM: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleToggle = () => {
-    if (window.innerWidth >= 1024) {
+    if (window.innerWidth >= 768) {
       toggleSidebar();
     } else {
       toggleMobileSidebar();
@@ -70,7 +70,7 @@ const AppHeaderCRM: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-6">
           <button
             onClick={handleToggle}
-            className="block lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="block md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-300"
             aria-label="Abrir menú"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -79,7 +79,7 @@ const AppHeaderCRM: React.FC = () => {
           </button>
           
           {/* Logo visible en móvil */}
-          <div className="lg:hidden">
+          <div className="md:hidden">
             <Image
               src="/images/logo/proptech.png"
               alt="PropTech CRM"
@@ -90,7 +90,7 @@ const AppHeaderCRM: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden lg:block">
+          <div className="hidden md:block">
             <form>
               <div className="relative">
                 <span className="absolute -translate-y-1/2 left-4 top-1/2 pointer-events-none">

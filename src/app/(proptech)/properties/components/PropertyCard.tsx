@@ -152,23 +152,42 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           {property.address}
         </p>
 
-        {property.amenities && property.amenities.length > 0 && (
-          <div className="mb-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400">Amenities: </span>
-            <span className="text-xs text-gray-700 dark:text-gray-200">{property.amenities.join(", ")}</span>
+        {/* Amenities y detalles adicionales */}
+        <div className="mb-4 space-y-2">
+          {property.amenities && property.amenities.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Amenities:</span>
+              <div className="flex flex-wrap gap-1">
+                {property.amenities.slice(0, 3).map((amenity, index) => (
+                  <span 
+                    key={index}
+                    className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full"
+                  >
+                    {amenity}
+                  </span>
+                ))}
+                {property.amenities.length > 3 && (
+                  <span className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-400 rounded-full">
+                    +{property.amenities.length - 3} más
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+            {property.yearBuilt && (
+              <span>Año: {property.yearBuilt}</span>
+            )}
+            {property.parking && (
+              <span>Parking: {property.parking}</span>
+            )}
           </div>
-        )}
-        {property.yearBuilt && (
-          <div className="mb-1 text-xs text-gray-500 dark:text-gray-400">Año: {property.yearBuilt}</div>
-        )}
-        {property.parking && (
-          <div className="mb-1 text-xs text-gray-500 dark:text-gray-400">Parking: {property.parking}</div>
-        )}
+        </div>
 
         {/* Características */}
         <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               {property.bedrooms && (
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -197,7 +216,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             <button
               onClick={handleToggleStatus}
               disabled={loading}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 ${
                 status === "active" 
                   ? "bg-gradient-to-r from-red-100 to-red-200 text-red-700 hover:from-red-200 hover:to-red-300 dark:from-red-900/50 dark:to-red-800/50 dark:text-red-300" 
                   : "bg-gradient-to-r from-green-100 to-green-200 text-green-700 hover:from-green-200 hover:to-green-300 dark:from-green-900/50 dark:to-green-800/50 dark:text-green-300"
@@ -210,9 +229,14 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
         {/* Precio */}
         <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-blue-100 dark:border-gray-600">
-          <div className="text-3xl font-bold text-gray-900 dark:text-white text-gradient">
+          <div className="text-2xl font-bold text-gray-900 dark:text-white text-gradient">
             {formatPropertyPrice(property.price)}
           </div>
+          {property.pricePerSquareMeter && (
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {formatPropertyPrice(property.pricePerSquareMeter)}/m²
+            </div>
+          )}
         </div>
 
         {property.agent && (
