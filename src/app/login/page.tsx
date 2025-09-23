@@ -42,21 +42,17 @@ export default function LoginPage() {
     }
   }, [lockTime]);
 
-  // Validate form in real-time
+  // Validate form in real-time - solo cuando cambien los campos del formulario
   useEffect(() => {
     const emailValid = formData.email.includes('@') && formData.email.includes('.');
     const passwordValid = formData.password.length >= 3;
-    setIsFormValid(emailValid && passwordValid);
+    const newFormValid = emailValid && passwordValid;
     
-    // Debug: ver qué valores tienen las variables
-    console.log('🔍 DEBUG - Estado actual:', {
-      isLocked,
-      isFormValid: emailValid && passwordValid,
-      isLoading,
-      emailValid,
-      passwordValid
-    });
-  }, [formData.email, formData.password, isLocked, isLoading]);
+    // Solo actualizar si el valor realmente cambió
+    if (isFormValid !== newFormValid) {
+      setIsFormValid(newFormValid);
+    }
+  }, [formData.email, formData.password, isFormValid]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -262,7 +258,7 @@ export default function LoginPage() {
                   showSuccess 
                     ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
                     : 'bg-gradient-to-r from-gray-800 to-gray-600 hover:from-gray-900 hover:to-gray-700'
-                } mt-4 animate-pulse`}
+                } mt-4`}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative flex items-center justify-center gap-2">
