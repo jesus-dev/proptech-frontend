@@ -5,7 +5,6 @@ type SidebarContextType = {
   isExpanded: boolean;
   isMobileOpen: boolean;
   isHovered: boolean;
-  isMobile: boolean;
   activeItem: string | null;
   openSubmenu: string | null;
   toggleSidebar: () => void;
@@ -28,9 +27,8 @@ export const useSidebar = () => {
 export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true); // Volver a true por defecto para desktop
+  const [isExpanded, setIsExpanded] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
@@ -38,14 +36,7 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
       if (!mobile) {
-        // En desktop, cerrar el menú móvil y expandir el sidebar
-        setIsMobileOpen(false);
-        setIsExpanded(true);
-      } else {
-        // En móvil, colapsar el sidebar y cerrar el menú móvil
-        setIsExpanded(false);
         setIsMobileOpen(false);
       }
     };
@@ -73,10 +64,9 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <SidebarContext.Provider
       value={{
-        isExpanded: isMobile ? false : isExpanded,
+        isExpanded,
         isMobileOpen,
         isHovered,
-        isMobile,
         activeItem,
         openSubmenu,
         toggleSidebar,

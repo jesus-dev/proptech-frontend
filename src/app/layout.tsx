@@ -232,6 +232,7 @@ export default function RootLayout({
             </MobileOptimizer>
           </AuthProvider>
         )}
+        
       </body>
     </html>
   );

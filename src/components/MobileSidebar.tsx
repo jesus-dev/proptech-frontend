@@ -6,7 +6,6 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useSidebar } from "../context/SidebarContext";
-import MobileSidebar from "../components/MobileSidebar";
 import {
   BoxCubeIcon,
   BuildingIcon,
@@ -21,11 +20,6 @@ import {
   GroupIcon,
 } from "../icons/index";
 import { Package, Bell, MoreHorizontal, FileText, Mail } from "lucide-react";
-import SidebarWidget from "./SidebarWidget";
-import Logo from "@/components/common/Logo";
-
-// Type assertion to resolve JSX compatibility issues
-const LinkComponent = Link as any;
 
 interface NavItem {
   name: string;
@@ -85,7 +79,6 @@ const navItems: NavItem[] = [
       },
     ],
   },
-
   {
     name: "Gestión de Propiedades de Propietarios",
     path: "/owners-property",
@@ -140,7 +133,6 @@ const navItems: NavItem[] = [
         name: "Reportes",
         path: "/agenda/reports",
       },
-
     ],
   },
   {
@@ -192,7 +184,6 @@ const navItems: NavItem[] = [
       },
     ],
   },
-
   {
     name: "Desarrollos",
     path: "/developments",
@@ -318,7 +309,6 @@ const othersItems: NavItem[] = [
       </div>
     ),
   },
-
 ];
 
 const catalogItems: NavItem[] = [
@@ -386,8 +376,8 @@ const catalogItems: NavItem[] = [
   },
 ];
 
-const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
+const MobileSidebar: React.FC = () => {
+  const { isMobileOpen, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others" | "catalogs";
@@ -395,19 +385,57 @@ const AppSidebar: React.FC = () => {
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Controlar animación de entrada
+  useEffect(() => {
+    if (isMobileOpen) {
+      // Solo animar al abrir
+      setIsAnimating(true);
+    } else {
+      // Al cerrar, no animar
+      setIsAnimating(false);
+    }
+  }, [isMobileOpen]);
+
+  // Prevenir scroll del body cuando el sidebar esté abierto
+  useEffect(() => {
+    if (isMobileOpen) {
+      // Guardar la posición del scroll
+      const scrollY = window.scrollY;
+      
+      // Oscurecer la página ANTES de mover para ocultar el movimiento
+      document.body.style.filter = 'brightness(0)';
+      document.body.style.transition = 'none';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      
+      // Mover la página al inicio mientras está oscura
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo(0, 0);
+      
+      // Restaurar el brillo después del movimiento
+      setTimeout(() => {
+        document.body.style.filter = '';
+        document.body.style.transition = '';
+      }, 50);
+      
+      return () => {
+        document.body.style.filter = '';
+        document.body.style.transition = '';
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        // Restaurar la posición del scroll
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isMobileOpen]);
 
   const isActive = useCallback((path: string) => path === pathname, [pathname]);
 
@@ -464,9 +492,7 @@ const AppSidebar: React.FC = () => {
   }, [pathname, isActive]);
 
   const handleMenuLinkClick = () => {
-    if (isMobile) {
-      toggleMobileSidebar();
-    }
+    toggleMobileSidebar();
   };
 
   const renderMenuItems = (
@@ -483,13 +509,7 @@ const AppSidebar: React.FC = () => {
                 openSubmenu?.type === menuType && openSubmenu?.index === index
                   ? "menu-item-active"
                   : "menu-item-inactive"
-              } cursor-pointer ${
-                isMobile 
-                  ? "justify-start"
-                  : !isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "lg:justify-start"
-              }`}
+              } cursor-pointer justify-start`}
             >
               <span
                 className={` ${
@@ -500,19 +520,15 @@ const AppSidebar: React.FC = () => {
               >
                 {nav.icon}
               </span>
-              {(isMobile || isExpanded || isHovered) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
-              )}
-              {(isMobile || isExpanded || isHovered) && (
-                <ChevronDownIcon
-                  className={`ml-auto w-5 h-5 transition-transform duration-200  ${
-                    openSubmenu?.type === menuType &&
-                    openSubmenu?.index === index
-                      ? "rotate-180 text-brand-500"
-                      : ""
-                  }`}
-                />
-              )}
+              <span className={`menu-item-text`}>{nav.name}</span>
+              <ChevronDownIcon
+                className={`ml-auto w-5 h-5 transition-transform duration-200  ${
+                  openSubmenu?.type === menuType &&
+                  openSubmenu?.index === index
+                    ? "rotate-180 text-brand-500"
+                    : ""
+                }`}
+              />
             </button>
           ) : (
             nav.path && (
@@ -532,13 +548,11 @@ const AppSidebar: React.FC = () => {
                 >
                   {nav.icon}
                 </span>
-                {(isMobile || isExpanded || isHovered) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
-                )}
+                <span className={`menu-item-text`}>{nav.name}</span>
               </Link>
             )
           )}
-          {nav.subItems && (isMobile || isExpanded || isHovered) && (
+          {nav.subItems && (
             <div
               ref={(el) => {
                 subMenuRefs.current[`${menuType}-${index}`] = el;
@@ -610,82 +624,69 @@ const AppSidebar: React.FC = () => {
     </ul>
   );
 
-  // Debug - removed for production
+  if (!isMounted || !isMobileOpen) {
+    return null;
+  }
 
   const sidebarContent = (
     <>
-      {/* Backdrop para móvil */}
-      {isMobile && isMobileOpen && (
-        <div
-          className="sidebar-backdrop-fixed bg-black bg-opacity-50"
-          onClick={toggleMobileSidebar}
-        />
-      )}
-      <aside
-        className={`flex flex-col px-5 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 transition-all duration-300 ease-in-out border-r border-gray-200 
-          ${
-            isMobile 
-              ? `sidebar-mobile-fixed`
-              : `lg:mt-0 z-30 ${
-                  isExpanded || isHovered
-                    ? "w-[290px]"
-                    : "w-[90px]"
-                }`
-          }`}
+      {/* Backdrop */}
+      <div
         style={{
-          overflowY: 'auto',
-          left: isMobile ? (isMobileOpen ? '0px' : '-290px') : undefined
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 99998
         }}
-        onMouseEnter={() => !isMobile && !isExpanded && setIsHovered(true)}
-        onMouseLeave={() => !isMobile && setIsHovered(false)}
+        onClick={toggleMobileSidebar}
+      />
+      
+      {/* Sidebar */}
+      <aside
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '290px',
+          height: '100vh',
+          backgroundColor: 'white',
+          borderRight: '1px solid #e5e7eb',
+          zIndex: 99999,
+          overflowY: 'auto',
+          transform: isAnimating ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.2s ease-out'
+        }}
       >
-        <div
-          className={`py-8 flex ${
-            isMobile 
-              ? "justify-start" 
-              : !isExpanded && !isHovered 
-                ? "lg:justify-center" 
-                : "justify-start"
-          }`}
-        >
+        {/* Header con botón de cerrar */}
+        <div className="py-4 px-3 flex items-center justify-between border-b border-gray-200">
           <Link href="/">
-            {isMobile || isExpanded || isHovered ? (
-              <Image
-                src="/images/logo/proptech.png"
-                alt="PropTech"
-                width={150}
-                height={40}
-                className="object-contain"
-              />
-            ) : (
-              <Image
-                src="/images/logo/proptech.png"
-                alt="PropTech"
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-            )}
+            <Image
+              src="/images/logo/proptech.png"
+              alt="PropTech"
+              width={120}
+              height={32}
+              className="object-contain"
+            />
           </Link>
+          <button
+            onClick={toggleMobileSidebar}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+        
+        <div className="flex flex-col overflow-y-auto duration-75 ease-out no-scrollbar px-3">
           <nav className="mb-6">
             <div className="flex flex-col gap-4">
               <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                    isMobile 
-                      ? "justify-start"
-                      : !isExpanded && !isHovered
-                        ? "lg:justify-center"
-                        : "justify-start"
-                  }`}
-                >
-                  {isMobile || isExpanded || isHovered ? (
-                    "Menu"
-                  ) : (
-                    "•••"
-                  )}
+                <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start pl-2">
+                  Menu
                 </h2>
                 {renderMenuItems(navItems, "main")}
               </div>
@@ -696,13 +697,7 @@ const AppSidebar: React.FC = () => {
     </>
   );
 
-  // En móvil, usar el componente MobileSidebar separado
-  if (isMobile) {
-    return <MobileSidebar />;
-  }
-
-  // En desktop, renderizar normalmente
   return sidebarContent;
 };
 
-export default AppSidebar;
+export default MobileSidebar;

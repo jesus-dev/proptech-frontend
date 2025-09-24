@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { XMarkIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from 'framer-motion';
-import { createPortal } from 'react-dom';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,12 +31,6 @@ const Header = () => {
     const handleScroll = () => {
       const scrolled = window.scrollY > 50;
       setIsScrolled(scrolled);
-      
-      // COMENTADO TEMPORALMENTE - NO CERRAR MENU AL SCROLL
-      // if (isMenuOpen) {
-      //   setIsMenuOpen(false);
-      //   setActiveSubmenu(null);
-      // }
     };
     
     // Verificar estado inicial
@@ -45,6 +38,25 @@ const Header = () => {
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []); // Removido isMenuOpen de las dependencias
+
+  // Prevenir scroll del body cuando el menú está abierto
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.position = 'unset';
+      document.body.style.width = 'unset';
+    };
   }, [isMenuOpen]);
 
   const navigation = [
@@ -68,7 +80,7 @@ const Header = () => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
+        className={`relative z-[100] transition-all duration-300 ${
           isScrolled
             ? 'bg-white/90 backdrop-blur-md shadow-md border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700'
             : 'bg-transparent'
@@ -188,13 +200,7 @@ const Header = () => {
             </div>
 
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('BOTON CLICKEADO - Estado actual:', isMenuOpen);
-                setIsMenuOpen(!isMenuOpen);
-                console.log('NUEVO ESTADO DEBERIA SER:', !isMenuOpen);
-              }}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
               className={`lg:hidden p-3 rounded-lg transition-all duration-300 relative z-[70] ${
                 shouldUseWhiteText
                   ? 'text-white hover:text-white/90 hover:bg-white/20'
@@ -211,94 +217,139 @@ const Header = () => {
             </button>
           </div>
           
-          {/* MENU MOBILE ELEGANTE */}
-          {isMenuOpen ? (
-            <div 
-              className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-lg shadow-2xl border-t border-white/20"
-              style={{ zIndex: 999999999 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="px-6 py-8">
-                <nav className="space-y-1">
-                  {navigation.map((item) => (
-                    <div key={item.name}>
-                      {item.submenu ? (
-                        <div>
-                          <div
-                            className="flex items-center justify-between py-4 px-4 text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-300 cursor-pointer"
-                            onClick={() => setActiveSubmenu(activeSubmenu === item.name ? null : item.name)}
-                          >
-                            <div className="flex items-center">
-                              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-4">
-                                <span className="text-green-600 text-lg">🏘️</span>
-                              </div>
-                              <span className="font-medium">{item.name}</span>
-                            </div>
-                            <span className="text-gray-400 text-lg">
-                              {activeSubmenu === item.name ? '−' : '+'}
-                            </span>
-                          </div>
-                          {activeSubmenu === item.name && (
-                            <div className="ml-6 mt-2 space-y-1">
-                              {item.submenu.map((subItem) => (
-                                <Link
-                                  key={subItem.name}
-                                  href={subItem.href}
-                                  className="block py-3 px-4 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm"
-                                  onClick={() => setIsMenuOpen(false)}
-                                >
-                                  {subItem.name}
-                                </Link>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <Link 
-                          href={item.href} 
-                          className="group flex items-center py-4 px-4 text-gray-800 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-300" 
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-4 group-hover:bg-blue-200 transition-colors">
-                            <span className="text-blue-600 text-lg">
-                              {item.name === 'Inicio' && '🏠'}
-                              {item.name === 'Asesores' && '👥'}
-                              {item.name === 'Contacto' && '📞'}
-                            </span>
-                          </div>
-                          <span className="font-medium">{item.name}</span>
-                        </Link>
-                      )}
-                    </div>
-                  ))}
-                </nav>
-                
-                <div className="mt-8 pt-6 border-t border-gray-200 space-y-3">
-                  <Link href="/login" className="flex items-center justify-center py-3 px-6 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-300" onClick={() => setIsMenuOpen(false)}>
-                    <span className="font-medium">Iniciar Sesión</span>
-                  </Link>
-                  <Link href="/register" className="flex items-center justify-center py-3 px-6 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-300" onClick={() => setIsMenuOpen(false)}>
-                    <span className="font-medium">Registrarse</span>
-                  </Link>
-                  <Link href="/proptech" className="flex items-center justify-center py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg" onClick={() => setIsMenuOpen(false)}>
-                    <span className="mr-2">✨</span>
-                    <span className="font-semibold">Descubrir PropTech</span>
-                  </Link>
-                </div>
-                
-                <div className="mt-6 text-center">
-                  <button 
-                    onClick={() => setIsMenuOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 text-sm transition-colors"
-                  >
-                    Cerrar menú
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
         </nav>
       </header>
+      
+      {/* MENU MOBILE */}
+      {isMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+          onClick={() => setIsMenuOpen(false)}
+        >
+          <div 
+            className="fixed top-0 left-0 w-80 h-full bg-white shadow-xl z-[9999] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800">Menú</h2>
+              <button 
+                onClick={() => setIsMenuOpen(false)}
+                className="text-2xl text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              <a 
+                href="/" 
+                onClick={() => setIsMenuOpen(false)} 
+                className="block p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors bg-gray-50"
+              >
+                🏠 Inicio
+              </a>
+              
+              {/* Propiedades con submenu */}
+              <div className="space-y-2">
+                <div className="p-3 text-gray-700 bg-gray-50 rounded-lg font-medium">
+                  🏘️ Propiedades
+                </div>
+                <div className="ml-4 space-y-1">
+                  <a 
+                    href="/propiedades" 
+                    onClick={() => setIsMenuOpen(false)} 
+                    className="block p-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  >
+                    Todas las Propiedades
+                  </a>
+                  <a 
+                    href="/propiedades?tipo=venta" 
+                    onClick={() => setIsMenuOpen(false)} 
+                    className="block p-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  >
+                    Ventas
+                  </a>
+                  <a 
+                    href="/propiedades?tipo=alquiler" 
+                    onClick={() => setIsMenuOpen(false)} 
+                    className="block p-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  >
+                    Alquiler
+                  </a>
+                  <a 
+                    href="/propiedades?categoria=apartamento" 
+                    onClick={() => setIsMenuOpen(false)} 
+                    className="block p-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  >
+                    Departamentos
+                  </a>
+                  <a 
+                    href="/propiedades?categoria=casa" 
+                    onClick={() => setIsMenuOpen(false)} 
+                    className="block p-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  >
+                    Casas
+                  </a>
+                  <a 
+                    href="/proyectos" 
+                    onClick={() => setIsMenuOpen(false)} 
+                    className="block p-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  >
+                    Proyectos/Desarrollos
+                  </a>
+                </div>
+              </div>
+              
+              <a 
+                href="/asesores" 
+                onClick={() => setIsMenuOpen(false)} 
+                className="block p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors bg-gray-50"
+              >
+                👥 Asesores
+              </a>
+              <a 
+                href="/contact" 
+                onClick={() => setIsMenuOpen(false)} 
+                className="block p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors bg-gray-50"
+              >
+                📞 Contacto
+              </a>
+              <a 
+                href="/login" 
+                onClick={() => setIsMenuOpen(false)} 
+                className="block p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors bg-gray-50"
+              >
+                🔐 Iniciar Sesión
+              </a>
+              <a 
+                href="/register" 
+                onClick={() => setIsMenuOpen(false)} 
+                className="block p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors bg-gray-50"
+              >
+                ✨ Registrarse
+              </a>
+              <a 
+                href="/proptech" 
+                onClick={() => setIsMenuOpen(false)} 
+                className="block p-3 text-white bg-blue-600 hover:bg-blue-700 rounded-lg text-center font-bold transition-colors"
+              >
+                🚀 Descubrir PropTech
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Botón flotante para ir al inicio */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-6 right-6 z-[9999] bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+        aria-label="Ir al inicio"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+        </svg>
+      </button>
     </>
   );
 };

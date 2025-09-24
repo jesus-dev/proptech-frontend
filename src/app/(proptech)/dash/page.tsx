@@ -295,24 +295,35 @@ export default function UserDashboardPage() {
       role="main"
       aria-label="Dashboard del sistema inmobiliario"
     >
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
         
         {/* Header Moderno con Efectos Avanzados - Optimizado para móvil */}
-        <div className="mb-6 sm:mb-8">
-          <div className="relative bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 backdrop-blur-sm border border-white/20 shadow-2xl overflow-hidden">
-            {/* Efectos de fondo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-indigo-600/5"></div>
-            <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-64 lg:h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-36 sm:h-36 lg:w-48 lg:h-48 bg-gradient-to-tr from-indigo-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
+        <div className="mb-8 sm:mb-10">
+          <div className="relative bg-gradient-to-r from-blue-600/15 via-purple-600/15 to-indigo-600/15 rounded-3xl sm:rounded-[2rem] p-6 sm:p-8 lg:p-10 backdrop-blur-sm border border-white/30 shadow-2xl overflow-hidden">
+            {/* Efectos de fondo mejorados */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/8 via-purple-600/8 to-indigo-600/8"></div>
+            <div className="absolute top-0 right-0 w-40 h-40 sm:w-56 sm:h-56 lg:w-72 lg:h-72 bg-gradient-to-br from-blue-500/15 to-purple-500/15 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-64 lg:h-64 bg-gradient-to-tr from-indigo-500/15 to-pink-500/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '2s'}}></div>
             
             <div className="relative z-10">
               <div className="flex flex-col gap-4 sm:gap-6">
                 <div className="flex-1">
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
-                    Mi Dashboard
-                  </h1>
-                  <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300">
-                    Gestiona tus propiedades favoritas, visitas y búsquedas
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                      <Home className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                        Mi Dashboard
+                      </h1>
+                      <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 font-medium">
+                        Bienvenido de vuelta! 👋
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 mb-4">
+                    Gestiona tus propiedades favoritas, visitas y búsquedas de manera inteligente
                   </p>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center mt-3 text-xs sm:text-sm text-gray-500 gap-2 sm:gap-4">
                     <div className="flex items-center px-2 sm:px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm" role="status" aria-label="Estado del sistema">
@@ -431,102 +442,106 @@ export default function UserDashboardPage() {
         </div>
 
         {/* Stats Cards Grid con Efectos Avanzados - Optimizado para móvil */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-10">
           
           {/* Propiedades Guardadas */}
-          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
+          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-[1.03] bg-white/90 backdrop-blur-sm border border-blue-100/50 shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/8 to-blue-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/20 to-blue-600/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700"></div>
+            <CardContent className="p-4 sm:p-5 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Propiedades Guardadas</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{userStats.savedProperties}</p>
-                  <div className="flex items-center mt-1 sm:mt-2">
-                    <div className="flex items-center px-2 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-medium">
-                      <Star className="h-3 w-3 mr-1" />
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Propiedades Guardadas</p>
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mt-1 group-hover:text-blue-600 transition-colors duration-300">{userStats.savedProperties}</p>
+                  <div className="flex items-center mt-2 sm:mt-3">
+                    <div className="flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 text-xs font-semibold shadow-sm">
+                      <Star className="h-3 w-3 mr-1.5" />
                       <span className="hidden sm:inline">Favoritas</span>
                       <span className="sm:hidden">Fav</span>
                     </div>
                   </div>
                 </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <Star className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
+                <div className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 flex-shrink-0">
+                  <Star className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Visitas Agendadas */}
-          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-green-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
+          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-[1.03] bg-white/90 backdrop-blur-sm border border-green-100/50 shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/8 to-green-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700"></div>
+            <CardContent className="p-4 sm:p-5 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Visitas Agendadas</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{userStats.scheduledVisits}</p>
-                  <div className="flex items-center mt-1 sm:mt-2">
-                    <div className="flex items-center px-2 py-1 rounded-full bg-green-50 text-green-600 text-xs font-medium">
-                      <Calendar className="h-3 w-3 mr-1" />
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Visitas Agendadas</p>
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mt-1 group-hover:text-green-600 transition-colors duration-300">{userStats.scheduledVisits}</p>
+                  <div className="flex items-center mt-2 sm:mt-3">
+                    <div className="flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r from-green-50 to-green-100 text-green-700 text-xs font-semibold shadow-sm">
+                      <Calendar className="h-3 w-3 mr-1.5" />
                       <span className="hidden sm:inline">Pendientes</span>
                       <span className="sm:hidden">Pend</span>
                     </div>
                   </div>
                 </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
+                <div className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 flex-shrink-0">
+                  <Calendar className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Consultas Enviadas */}
-          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
+          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-[1.03] bg-white/90 backdrop-blur-sm border border-purple-100/50 shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/8 to-purple-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-400/20 to-purple-600/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700"></div>
+            <CardContent className="p-4 sm:p-5 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Consultas Enviadas</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Consultas Enviadas</p>
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mt-1 group-hover:text-purple-600 transition-colors duration-300">
                     {userStats.inquiriesSent}
                   </p>
-                  <div className="flex items-center mt-1 sm:mt-2">
-                    <div className="flex items-center px-2 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-medium">
-                      <MessageSquare className="h-3 w-3 mr-1" />
+                  <div className="flex items-center mt-2 sm:mt-3">
+                    <div className="flex items-center px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 text-xs font-semibold shadow-sm">
+                      <MessageSquare className="h-3 w-3 mr-1.5" />
                       <span className="hidden sm:inline">Este mes</span>
                       <span className="sm:hidden">Mes</span>
                     </div>
                   </div>
                 </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
+                <div className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 flex-shrink-0">
+                  <MessageSquare className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Notificaciones */}
-          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02] bg-white/80 backdrop-blur-sm border-0 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-orange-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <CardContent className="p-3 sm:p-4 lg:p-6 relative z-10">
+          <Card className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 hover:scale-[1.03] bg-white/90 backdrop-blur-sm border border-orange-100/50 shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/8 to-orange-600/8 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-orange-400/20 to-orange-600/20 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700"></div>
+            <CardContent className="p-4 sm:p-5 lg:p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">Notificaciones</p>
-                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">{userStats.notificationsUnread}</p>
-                  <div className="flex items-center mt-1 sm:mt-2">
-                    <div className={`flex items-center px-2 py-1 rounded-full ${
+                  <p className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Notificaciones</p>
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mt-1 group-hover:text-orange-600 transition-colors duration-300">{userStats.notificationsUnread}</p>
+                  <div className="flex items-center mt-2 sm:mt-3">
+                    <div className={`flex items-center px-3 py-1.5 rounded-full ${
                       userStats.notificationsUnread > 0 
-                        ? 'bg-orange-50 text-orange-600' 
-                        : 'bg-green-50 text-green-600'
-                    } text-xs font-medium`}>
-                      <Bell className="h-3 w-3 mr-1" />
-                      <span className="ml-1">
+                        ? 'bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700' 
+                        : 'bg-gradient-to-r from-green-50 to-green-100 text-green-700'
+                    } text-xs font-semibold shadow-sm`}>
+                      <Bell className="h-3 w-3 mr-1.5" />
+                      <span>
                         {userStats.notificationsUnread > 0 ? 'Nuevas' : 'Al día'}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
-                  <Bell className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
+                <div className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 flex-shrink-0">
+                  <Bell className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
                 </div>
               </div>
             </CardContent>
@@ -535,22 +550,27 @@ export default function UserDashboardPage() {
         </div>
 
         {/* Grid Principal - Optimizado para móvil */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
           
           {/* Mi Actividad */}
           <div className="lg:col-span-2">
-            <Card className="h-full bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-              <CardHeader className="pb-3 sm:pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
-                      Mi Actividad
-                    </CardTitle>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                      Tus últimas acciones en la plataforma
-                    </p>
+            <Card className="h-full bg-white/90 backdrop-blur-sm border border-gray-100/50 shadow-xl hover:shadow-2xl transition-all duration-500 group">
+              <CardHeader className="pb-4 sm:pb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                      <Activity className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                        Mi Actividad
+                      </CardTitle>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                        Tus últimas acciones en la plataforma
+                      </p>
+                    </div>
                   </div>
-                  <Button variant="outline" size="sm" className="hover:shadow-lg transition-all duration-300 text-xs sm:text-sm self-start sm:self-auto">
+                  <Button variant="outline" size="sm" className="hover:shadow-lg hover:scale-105 transition-all duration-300 text-xs sm:text-sm self-start sm:self-auto bg-white/80 border-gray-200">
                     <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Ver Todo</span>
                     <span className="sm:hidden">Ver</span>

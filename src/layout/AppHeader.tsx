@@ -65,7 +65,7 @@ const AppHeaderCRM: React.FC = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-30 w-full border-b border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-white dark:border-gray-800">
+    <header className=" top-0 left-0 right-0 z-30 w-full border-b border-gray-200 bg-white text-gray-900 dark:bg-gray-900 dark:text-white dark:border-gray-800">
       <div className="flex h-16 items-center justify-between w-full px-3 sm:px-4">
         <div className="flex items-center gap-3 sm:gap-6">
           <button
