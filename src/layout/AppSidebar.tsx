@@ -479,10 +479,10 @@ const AppSidebar: React.FC = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className={`menu-item group  ${
+              className={`relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm group ${
                 openSubmenu?.type === menuType && openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
+                  ? "bg-blue-50 text-blue-500 dark:bg-blue-500/[0.12] dark:text-blue-400"
+                  : "text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
               } cursor-pointer ${
                 isMobile 
                   ? "justify-start"
@@ -494,14 +494,14 @@ const AppSidebar: React.FC = () => {
               <span
                 className={` ${
                   openSubmenu?.type === menuType && openSubmenu?.index === index
-                    ? "menu-item-icon-active"
-                    : "menu-item-icon-inactive"
+                    ? "text-blue-500 dark:text-blue-400"
+                    : "text-gray-500 group-hover:text-gray-700 dark:text-gray-400"
                 }`}
               >
                 {nav.icon}
               </span>
               {(isMobile || isExpanded || isHovered) && (
-                <span className={`menu-item-text`}>{nav.name}</span>
+                <span className={`text-sm font-medium`}>{nav.name}</span>
               )}
               {(isMobile || isExpanded || isHovered) && (
                 <ChevronDownIcon
@@ -518,22 +518,18 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 href={nav.path}
-                className={`menu-item group ${
-                  isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                className={`relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm group ${
+                  isActive(nav.path) ? "bg-blue-50 text-blue-500 dark:bg-blue-500/[0.12] dark:text-blue-400" : "text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
                 }`}
                 onClick={handleMenuLinkClick}
               >
                 <span
-                  className={`${
-                    isActive(nav.path)
-                      ? "menu-item-icon-active"
-                      : "menu-item-icon-inactive"
-                  }`}
+                  className={`${isActive(nav.path) ? "text-blue-500 dark:text-blue-400" : "text-gray-500 group-hover:text-gray-700 dark:text-gray-400"}`}
                 >
                   {nav.icon}
                 </span>
                 {(isMobile || isExpanded || isHovered) && (
-                  <span className={`menu-item-text`}>{nav.name}</span>
+                  <span className={`text-sm font-medium`}>{nav.name}</span>
                 )}
               </Link>
             )
@@ -556,45 +552,25 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     <Link
                       href={subItem.path}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
+                      className={`relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm ${
+                        isActive(subItem.path) ? "bg-blue-50 text-blue-500 dark:bg-blue-500/[0.12] dark:text-blue-400" : "text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
                       }`}
                       onClick={handleMenuLinkClick}
                     >
                       {subItem.name}
                       <span className="flex items-center gap-1 ml-auto">
                         {subItem.new && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
+                          <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path) ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
                             new
                           </span>
                         )}
                         {subItem.nuevo && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
+                          <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path) ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
                             nuevo
                           </span>
                         )}
                         {subItem.pro && (
-                          <span
-                            className={`ml-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge `}
-                          >
+                          <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path) ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
                             pro
                           </span>
                         )}
@@ -622,11 +598,11 @@ const AppSidebar: React.FC = () => {
         />
       )}
       <aside
-        className={`flex flex-col px-5 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 transition-all duration-300 ease-in-out border-r border-gray-200 
+        className={`flex flex-col px-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 transition-all duration-300 ease-in-out 
           ${
             isMobile 
               ? `sidebar-mobile-fixed`
-              : `lg:mt-0 z-30 ${
+              : `lg:mt-0 z-30 flex-shrink-0 fixed ${
                   isExpanded || isHovered
                     ? "w-[290px]"
                     : "w-[90px]"
@@ -634,13 +610,15 @@ const AppSidebar: React.FC = () => {
           }`}
         style={{
           overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch' as any,
+          height: '100vh',
           left: isMobile ? (isMobileOpen ? '0px' : '-290px') : undefined
         }}
         onMouseEnter={() => !isMobile && !isExpanded && setIsHovered(true)}
         onMouseLeave={() => !isMobile && setIsHovered(false)}
       >
         <div
-          className={`py-8 flex ${
+          className={`py-6 px-4 flex ${
             isMobile 
               ? "justify-start" 
               : !isExpanded && !isHovered 
@@ -668,7 +646,7 @@ const AppSidebar: React.FC = () => {
             )}
           </Link>
         </div>
-        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
+        <div className="flex flex-col overflow-y-auto duration-300 ease-linear px-4">
           <nav className="mb-6">
             <div className="flex flex-col gap-4">
               <div>

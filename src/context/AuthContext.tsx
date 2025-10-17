@@ -22,6 +22,15 @@ interface AuthContextType {
   getUserRole: () => any;
   getUserPermissions: () => any;
   getAvailableRoutes: () => string[];
+  getUserContext: () => {
+    canViewAll: boolean;
+    agentId: string | null;
+    agencyId: string | null;
+    isAdmin: boolean;
+    isAgent: boolean;
+    isAgencyAdmin: boolean;
+  };
+  getFilterParams: () => Record<string, string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -181,6 +190,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
   }, []);
 
+  // Get user context for API filtering
+  const getUserContext = useCallback(() => {
+    if (!user) {
+      return { 
+        canViewAll: false, 
+        agentId: null, 
+        agencyId: null,
+        isAdmin: false,
+        isAgent: false,
+        isAgencyAdmin: false
+      };
+    }
+    
+    const isAdmin = user.userType === 'ADMIN' || 
+                   user.roles?.includes('ADMIN') || 
+                   (user.email && (user.email.includes('admin') || user.email.includes('@idear.com')));
+    
+    return {
+      canViewAll: Boolean(isAdmin),
+      agentId: user.agentId || null,
+      agencyId: user.agencyId || null,
+      isAdmin: Boolean(isAdmin),
+      isAgent: Boolean(user.userType === 'AGENT' || user.roles?.includes('AGENT')),
+      isAgencyAdmin: Boolean(user.userType === 'AGENCY_ADMIN' || user.roles?.includes('AGENCY_ADMIN')),
+    };
+  }, [user]);
+
+  // Get filter parameters for API calls
+  const getFilterParams = useCallback(() => {
+    const context = getUserContext();
+    const params: Record<string, string> = {};
+
+    if (context.canViewAll) {
+      return params; // Admin can see everything
+    }
+
+    // Agency admin can see all agents in their agency
+    if (context.isAgencyAdmin && context.agencyId) {
+      params.agencyId = context.agencyId;
+      return params;
+    }
+
+    // Agent can see all properties from their agency (not just their own)
+    if (context.isAgent && context.agencyId) {
+      params.agencyId = context.agencyId;
+      return params;
+    }
+
+    // If agent doesn't have agencyId but has agentId, they can only see their own
+    if (context.isAgent && context.agentId && !context.agencyId) {
+      params.agentId = context.agentId;
+      return params;
+    }
+
+    return { access: 'denied' };
+  }, [getUserContext]);
+
   // Permission checks
   const hasPermission = useCallback((permission: any) => {
     if (!user) return false;
@@ -293,6 +359,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getUserRole,
     getUserPermissions,
     getAvailableRoutes,
+    getUserContext,
+    getFilterParams,
   };
 
   return (

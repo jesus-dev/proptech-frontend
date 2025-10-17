@@ -99,12 +99,37 @@ const AuthSection = () => {
   };
 
   return (
-    <section className="py-12 sm:py-20 bg-white relative overflow-hidden">
-      {/* Background Pattern */}
-      <div 
-        className="absolute inset-0 opacity-5"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }}
-      />
+    <section className="py-24 bg-gradient-to-br from-slate-900 via-purple-900 to-blue-900 relative overflow-hidden w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+      {/* Animated Background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/30 to-cyan-600/20"></div>
+        <motion.div
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute top-20 left-20 w-96 h-96 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, -150, 0],
+            y: [0, 100, 0],
+            scale: [1, 0.8, 1],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full blur-3xl"
+        />
+      </div>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Side - Content */}
@@ -116,14 +141,14 @@ const AuthSection = () => {
             className="space-y-8"
           >
             <div>
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-brand-50 to-brand-100 text-brand-700 text-sm font-medium mb-6">
-                {React.createElement(UserIcon, { className: "w-4 h-4 mr-2" })}
+              <div className="inline-flex items-center px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-500/30 to-indigo-500/30 border-2 border-blue-400/50 text-white text-sm font-bold mb-8 shadow-sm backdrop-blur-sm">
+                <UserIcon className="w-4 h-4 mr-2" />
                 {isLogin ? 'Acceso seguro' : 'Registro gratuito'}
               </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 drop-shadow-lg">
                 {isLogin ? 'Bienvenido de vuelta' : 'Únete a Proptech CRM'}
               </h2>
-              <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
+              <p className="text-lg md:text-xl text-white/90 mb-8 leading-relaxed drop-shadow-md">
                 {isLogin 
                   ? 'Accede a tu cuenta y gestiona tus propiedades de manera profesional con las herramientas más avanzadas del mercado.'
                   : 'Comienza a gestionar tus propiedades con la plataforma más avanzada del mercado. Únete a miles de agentes que ya confían en nosotros.'
@@ -132,46 +157,46 @@ const AuthSection = () => {
             </div>
 
             {/* Features List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-gray-200">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  {React.createElement(CheckCircleIcon, { className: "w-5 h-5 text-green-600" })}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <CheckCircleIcon className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-gray-700 font-medium">Gestión completa de propiedades</span>
+                <span className="text-white font-bold text-sm drop-shadow-md">Gestión completa de propiedades</span>
               </div>
-              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-gray-200">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  {React.createElement(CheckCircleIcon, { className: "w-5 h-5 text-blue-600" })}
+              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <CheckCircleIcon className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-gray-700 font-medium">CRM integrado para agentes</span>
+                <span className="text-white font-bold text-sm drop-shadow-md">CRM integrado para agentes</span>
               </div>
-              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-gray-200">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  {React.createElement(CheckCircleIcon, { className: "w-5 h-5 text-purple-600" })}
+              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <CheckCircleIcon className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-gray-700 font-medium">Reportes y analytics en tiempo real</span>
+                <span className="text-white font-bold text-sm drop-shadow-md">Reportes y analytics en tiempo real</span>
               </div>
-              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-gray-200">
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  {React.createElement(CheckCircleIcon, { className: "w-5 h-5 text-orange-600" })}
+              <div className="flex items-center space-x-3 p-4 rounded-xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <CheckCircleIcon className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-gray-700 font-medium">Soporte 24/7</span>
+                <span className="text-white font-bold text-sm drop-shadow-md">Soporte 24/7</span>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-6 pt-6 sm:pt-8">
-              <div className="text-center p-3 sm:p-6 rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 border border-brand-200">
-                <div className="text-2xl sm:text-4xl font-bold text-brand-600 mb-1 sm:mb-2">500+</div>
-                <div className="text-xs sm:text-sm text-brand-700 font-medium">Agentes activos</div>
+            <div className="grid grid-cols-3 gap-4 pt-8">
+              <div className="text-center p-6 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="text-3xl font-bold text-white mb-2 drop-shadow-lg">500+</div>
+                <div className="text-xs text-white/90 font-bold drop-shadow-md">Agentes activos</div>
               </div>
-              <div className="text-center p-3 sm:p-6 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                <div className="text-2xl sm:text-4xl font-bold text-green-600 mb-1 sm:mb-2">10K+</div>
-                <div className="text-xs sm:text-sm text-green-700 font-medium">Propiedades</div>
+              <div className="text-center p-6 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="text-3xl font-bold text-white mb-2 drop-shadow-lg">10K+</div>
+                <div className="text-xs text-white/90 font-bold drop-shadow-md">Propiedades</div>
               </div>
-              <div className="text-center p-3 sm:p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-                <div className="text-2xl sm:text-4xl font-bold text-purple-600 mb-1 sm:mb-2">98%</div>
-                <div className="text-xs sm:text-sm text-purple-700 font-medium">Satisfacción</div>
+              <div className="text-center p-6 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                <div className="text-3xl font-bold text-white mb-2 drop-shadow-lg">98%</div>
+                <div className="text-xs text-white/90 font-bold drop-shadow-md">Satisfacción</div>
               </div>
             </div>
           </motion.div>
@@ -182,22 +207,19 @@ const AuthSection = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="bg-white rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 border border-gray-200 relative overflow-hidden"
+            className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-200 relative overflow-hidden"
           >
-            {/* Background Pattern */}
-            <div 
-              className="absolute top-0 right-0 w-32 h-32 opacity-5"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }}
-            />
+            {/* Background Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-50/30 via-transparent to-transparent opacity-50"></div>
             {/* Header */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                {React.createElement(UserIcon, { className: "w-8 h-8 text-white" })}
+            <div className="text-center mb-8 relative">
+              <div className="w-20 h-20 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <UserIcon className="w-10 h-10 text-white" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-base">
                 {isLogin 
                   ? 'Ingresa tus credenciales para acceder'
                   : 'Completa el formulario para registrarte'
@@ -385,7 +407,7 @@ const AuthSection = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-brand-600 to-brand-700 text-white py-3 px-6 rounded-lg font-semibold hover:from-brand-700 hover:to-brand-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="w-full bg-gradient-to-r from-brand-600 to-brand-700 text-white py-3 px-6 rounded-xl font-bold text-base hover:from-brand-700 hover:to-brand-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
               >
                 {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
               </button>

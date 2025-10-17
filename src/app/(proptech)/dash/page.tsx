@@ -67,6 +67,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { systemService, SystemStats, SystemActivity, SystemProperty, PropertyTypeData, RevenueTrendData, PerformanceMetrics } from "@/services/systemService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { PropShot, PropShotService } from "@/services/propShotService";
+import { Play, Camera } from "lucide-react";
+import PropShotGrid from "@/components/social/PropShotGrid";
 
 // Función para obtener indicador de crecimiento
 const getGrowthIndicator = (value: number) => {
@@ -128,6 +131,11 @@ export default function UserDashboardPage() {
     }
   });
   
+  // PropShots states
+  const [propShots, setPropShots] = useState<PropShot[]>([]);
+  const [propShotsLoading, setPropShotsLoading] = useState(true);
+  const [selectedPropShot, setSelectedPropShot] = useState<PropShot | null>(null);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
@@ -149,7 +157,8 @@ export default function UserDashboardPage() {
         recommendedPropsData,
         visitsData,
         activitiesData,
-        notificationsData
+        notificationsData,
+        propShotsData
       ] = await Promise.all([
         systemService.getUserStats(),
         systemService.getUserSavedProperties(),
@@ -157,7 +166,8 @@ export default function UserDashboardPage() {
         systemService.getUserRecommendedProperties(),
         systemService.getUserScheduledVisits(),
         systemService.getUserActivities(),
-        systemService.getUserNotifications()
+        systemService.getUserNotifications(),
+        PropShotService.getPropShots()
       ]);
 
       setUserStats(userStatsData);
@@ -167,6 +177,7 @@ export default function UserDashboardPage() {
       setScheduledVisits(visitsData);
       setUserActivities(activitiesData);
       setUserNotifications(notificationsData);
+      setPropShots(propShotsData);
       
       console.log('✅ Datos del usuario cargados exitosamente');
     } catch (error: any) {
@@ -174,6 +185,7 @@ export default function UserDashboardPage() {
       setError(error?.message || 'Error al cargar los datos del dashboard');
     } finally {
       setLoading(false);
+      setPropShotsLoading(false);
     }
   }, []);
 
@@ -297,40 +309,34 @@ export default function UserDashboardPage() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
         
-        {/* Header Moderno con Efectos Avanzados - Optimizado para móvil */}
-        <div className="mb-8 sm:mb-10">
-          <div className="relative bg-gradient-to-r from-blue-600/15 via-purple-600/15 to-indigo-600/15 rounded-3xl sm:rounded-[2rem] p-6 sm:p-8 lg:p-10 backdrop-blur-sm border border-white/30 shadow-2xl overflow-hidden">
-            {/* Efectos de fondo mejorados */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/8 via-purple-600/8 to-indigo-600/8"></div>
-            <div className="absolute top-0 right-0 w-40 h-40 sm:w-56 sm:h-56 lg:w-72 lg:h-72 bg-gradient-to-br from-blue-500/15 to-purple-500/15 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 sm:w-48 sm:h-48 lg:w-64 lg:h-64 bg-gradient-to-tr from-indigo-500/15 to-pink-500/15 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="mb-6 sm:mb-8">
+          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-6 lg:p-7 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
             
             <div className="relative z-10">
               <div className="flex flex-col gap-4 sm:gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="h-12 w-12 sm:h-14 sm:w-14 lg:h-16 lg:w-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                      <Home className="h-6 w-6 sm:h-7 sm:w-7 lg:h-8 lg:w-8 text-white" />
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-12 lg:w-12 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
+                      <Home className="h-5 w-5 sm:h-6 sm:w-6 text-gray-700 dark:text-gray-200" />
                     </div>
                     <div>
-                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 dark:text-white">
                         Mi Dashboard
                       </h1>
-                      <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 font-medium">
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                         Bienvenido de vuelta! 👋
                       </p>
                     </div>
                   </div>
-                  <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 mb-4">
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-3">
                     Gestiona tus propiedades favoritas, visitas y búsquedas de manera inteligente
                   </p>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center mt-3 text-xs sm:text-sm text-gray-500 gap-2 sm:gap-4">
-                    <div className="flex items-center px-2 sm:px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm" role="status" aria-label="Estado del sistema">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse" aria-hidden="true"></div>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center mt-2 text-xs sm:text-sm text-gray-500 gap-2 sm:gap-3">
+                    <div className="flex items-center px-2 sm:px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700" role="status" aria-label="Estado del sistema">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mr-2" aria-hidden="true"></div>
                       <span>Sistema operativo</span>
                     </div>
-                    <div className="flex items-center px-2 sm:px-3 py-1 bg-white/20 rounded-full backdrop-blur-sm" role="status" aria-label="Última actualización">
+                    <div className="flex items-center px-2 sm:px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700" role="status" aria-label="Última actualización">
                       <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-2" aria-hidden="true" />
                       <span className="hidden sm:inline">Última actualización: {new Date().toLocaleTimeString('es-PY')}</span>
                       <span className="sm:hidden">Actualizado: {new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -343,7 +349,7 @@ export default function UserDashboardPage() {
                   {/* Primera fila: Time Range y View Mode */}
                   <div className="flex items-center justify-between gap-2">
                     {/* Time Range Selector */}
-                    <div className="flex items-center bg-white/20 rounded-lg backdrop-blur-sm p-1" role="tablist" aria-label="Selector de rango de tiempo">
+                    <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 p-1" role="tablist" aria-label="Selector de rango de tiempo">
                       {['24h', '7d', '30d', '90d'].map((range) => (
                         <button
                           key={range}
@@ -351,11 +357,7 @@ export default function UserDashboardPage() {
                           role="tab"
                           aria-selected={selectedTimeRange === range}
                           aria-label={`Ver datos de los últimos ${range}`}
-                          className={`px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 ${
-                            selectedTimeRange === range
-                              ? 'bg-white/80 text-blue-600 shadow-sm'
-                              : 'text-gray-600 hover:bg-white/40 hover:text-gray-900'
-                          }`}
+                          className={`px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-colors ${selectedTimeRange === range ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                         >
                           {range}
                         </button>
@@ -363,26 +365,18 @@ export default function UserDashboardPage() {
                     </div>
 
                     {/* View Mode Toggle */}
-                    <div className="flex items-center bg-white/20 rounded-lg backdrop-blur-sm p-1" role="group" aria-label="Modo de visualización">
+                    <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-700 p-1" role="group" aria-label="Modo de visualización">
                       <button
                         onClick={() => setViewMode('grid')}
                         aria-label="Vista de cuadrícula"
-                        className={`p-1.5 sm:p-2 rounded-md transition-all duration-200 ${
-                          viewMode === 'grid'
-                            ? 'bg-white/80 text-blue-600'
-                            : 'text-gray-600 hover:bg-white/40'
-                        }`}
+                        className={`p-1.5 sm:p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                       >
                         <Grid className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
                       </button>
                       <button
                         onClick={() => setViewMode('list')}
                         aria-label="Vista de lista"
-                        className={`p-1.5 sm:p-2 rounded-md transition-all duration-200 ${
-                          viewMode === 'list'
-                            ? 'bg-white/80 text-blue-600'
-                            : 'text-gray-600 hover:bg-white/40'
-                        }`}
+                        className={`p-1.5 sm:p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                       >
                         <List className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
                       </button>
@@ -396,11 +390,9 @@ export default function UserDashboardPage() {
                       variant="outline" 
                       size="sm"
                       aria-label={autoRefresh ? 'Desactivar actualización automática' : 'Activar actualización automática'}
-                      className={`bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm ${
-                        autoRefresh ? 'text-green-600 border-green-200' : 'text-gray-600'
-                      }`}
+                      className={`text-xs sm:text-sm ${autoRefresh ? 'text-green-600' : 'text-gray-600'}`}
                     >
-                      <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${autoRefresh ? 'animate-spin' : ''}`} aria-hidden="true" />
+                      <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2`} aria-hidden="true" />
                       <span className="hidden sm:inline">Auto</span>
                     </Button>
                     <Button 
@@ -408,7 +400,7 @@ export default function UserDashboardPage() {
                       variant="outline" 
                       size="sm"
                       aria-label="Actualizar datos del dashboard"
-                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm"
+                      className="text-xs sm:text-sm"
                     >
                       <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" aria-hidden="true" />
                       <span className="hidden sm:inline">Actualizar</span>
@@ -419,9 +411,9 @@ export default function UserDashboardPage() {
                       size="sm"
                       disabled={isExporting}
                       aria-label={isExporting ? 'Exportando datos...' : 'Exportar datos del dashboard'}
-                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm"
+                      className="text-xs sm:text-sm"
                     >
-                      <Download className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${isExporting ? 'animate-spin' : ''}`} aria-hidden="true" />
+                      <Download className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2`} aria-hidden="true" />
                       <span className="hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar'}</span>
                       <span className="sm:hidden">{isExporting ? '...' : 'Exp'}</span>
                     </Button>
@@ -429,7 +421,7 @@ export default function UserDashboardPage() {
                       variant="outline" 
                       size="sm"
                       aria-label="Configurar dashboard"
-                      className="bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm"
+                      className="text-xs sm:text-sm"
                     >
                       <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" aria-hidden="true" />
                       <span className="hidden sm:inline">Configurar</span>
@@ -547,6 +539,71 @@ export default function UserDashboardPage() {
             </CardContent>
           </Card>
 
+        </div>
+
+        {/* PropShots Section */}
+        <div className="mb-8">
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-100/50 shadow-xl hover:shadow-2xl transition-all duration-500">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Camera className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                      PropShots
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Videos inmobiliarios en formato reels
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = '/social/propshots'}
+                    className="hover:shadow-lg hover:scale-105 transition-all duration-300"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Ver todos
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PropShotGrid
+                propShots={propShots}
+                loading={propShotsLoading}
+                limit={4}
+                onLike={async (propShotId) => {
+                  try {
+                    await PropShotService.likePropShot(propShotId);
+                    setPropShots(prev => prev.map(shot =>
+                      shot.id === propShotId
+                        ? { ...shot, likes: shot.likes + 1 }
+                        : shot
+                    ));
+                  } catch (error) {
+                    console.error('Error liking PropShot:', error);
+                  }
+                }}
+                onView={async (propShotId) => {
+                  try {
+                    await PropShotService.incrementViews(propShotId);
+                  } catch (error) {
+                    console.error('Error incrementing views:', error);
+                  }
+                }}
+                gridCols={{
+                  default: 2,
+                  sm: 3,
+                  lg: 4
+                }}
+              />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Grid Principal - Optimizado para móvil */}
@@ -978,7 +1035,7 @@ export default function UserDashboardPage() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 
                 <Link href="/search">
                   <Button className="w-full h-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -998,6 +1055,13 @@ export default function UserDashboardPage() {
                   <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                     <Calendar className="h-5 w-5 mr-2" />
                     Mis Visitas
+                  </Button>
+                </Link>
+
+                <Link href="/social/propshots">
+                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <Camera className="h-5 w-5 mr-2" />
+                    PropShots
                   </Button>
                 </Link>
 

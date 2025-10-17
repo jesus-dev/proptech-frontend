@@ -26,6 +26,7 @@ import {
   Camera,
   Building2
 } from 'lucide-react';
+import PropShotReelViewer from '@/components/social/PropShotReelViewer';
 
 // Función para convertir URLs en texto a enlaces clickeables
 const convertUrlsToLinks = (text: string): string => {
@@ -503,19 +504,13 @@ export default function SocialPage() {
     loadInitialPosts();
   }, [postsPerPage]);
 
-  // Cargar PropShots del usuario autenticado
+  // Cargar TODOS los PropShots (público)
   useEffect(() => {
     const loadPropShots = async () => {
-      if (!isAuthenticated || !user) {
-        setPropShots([]);
-        setPropShotsLoading(false);
-        return;
-      }
-
       try {
         setPropShotsLoading(true);
-        // Solo cargar PropShots del usuario autenticado
-        const fetchedPropShots = await PropShotService.getPropShotsByUser(user.id || 0);
+        // Cargar TODOS los PropShots (público)
+        const fetchedPropShots = await PropShotService.getPropShots();
         setPropShots(fetchedPropShots);
       } catch (err) {
         console.error('Error loading PropShots:', err);
@@ -526,7 +521,7 @@ export default function SocialPage() {
     };
 
     loadPropShots();
-  }, [isAuthenticated, user]);
+  }, []);
 
   // Manejar navegación con teclado para la galería de imágenes
   useEffect(() => {
@@ -784,11 +779,9 @@ export default function SocialPage() {
 
       const createdPropShot = await PropShotService.createPropShot(propShotData);
       
-      // Recargar los PropShots del usuario para mostrar el nuevo
-      if (user) {
-        const updatedPropShots = await PropShotService.getPropShotsByUser(user.id || 0);
+      // Recargar TODOS los PropShots para mostrar el nuevo
+      const updatedPropShots = await PropShotService.getPropShots();
         setPropShots(updatedPropShots);
-      }
       
       // Limpiar el formulario
       setNewPropShot({ title: '', description: '', duration: '90:00', link: '' });
@@ -810,12 +803,17 @@ export default function SocialPage() {
 
   // Función para dar like a un PropShot
   const handleLikePropShot = async (propShotId: number) => {
+    if (!isAuthenticated) {
+      alert('Debes iniciar sesión para dar like');
+      return;
+    }
+    
     try {
       await PropShotService.likePropShot(propShotId);
       
       // Actualizar el PropShot en la lista
-      setPropShots(prev => prev.map(shot => 
-        shot.id === propShotId 
+      setPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
           ? { ...shot, likes: shot.likes + 1 }
           : shot
       ));
@@ -841,25 +839,29 @@ export default function SocialPage() {
     }
   };
 
-  // Función para convertir URLs relativas en URLs completas
+  // Función para convertir URLs relativas en URLs completas (usando env)
   const getFullUrl = (url: string): string => {
     if (!url) return '';
-    if (url.startsWith('http')) {
-      return url;
-    }
-    
-    // Manejar URLs incorrectas de PropShots
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+
+    // Corrección de rutas PropShots
     if (url.includes('/api/prop-shots/media/')) {
-      // Convertir URL incorrecta a la correcta
       const filename = url.split('/').pop();
-      const correctedUrl = `/uploads/prop-shots/media/${filename}`;
-      console.log('🔧 URL corregida:', { original: url, corrected: correctedUrl });
-      url = correctedUrl;
+      url = `/uploads/prop-shots/media/${filename}`;
     }
+
+    // Base desde variables de entorno con fallback a localhost
+    const uploadsBase = 
+      process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
+      process.env.NEXT_PUBLIC_API_BASE_URL || 
+      process.env.NEXT_PUBLIC_API_URL || 
+      'http://localhost:8080';
     
-    // Construir URL completa para el backend
-    const fullUrl = `http://localhost:8080${url.startsWith('/') ? url : `/${url}`}`;
-    console.log('🔗 URL convertida:', { original: url, full: fullUrl });
+    const base = uploadsBase.replace(/\/$/, '');
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const fullUrl = `${base}${path}`;
+    
+    console.log('🔗 getFullUrl:', { original: url, base, fullUrl });
     return fullUrl;
   };
 
@@ -882,55 +884,13 @@ export default function SocialPage() {
     return `hace ${Math.floor(diffInDays / 365)} año`;
   };
 
-  // Función para abrir galería de imágenes
+  // Redirigir a la galería existente (/social/gallery/[postId])
   const openImageGallery = (postId: number, imageIndex: number = 0) => {
-    console.log('🚀 openImageGallery called:', { postId, imageIndex });
-    console.log('📊 Estado completo de postImages:', postImages);
-    console.log('📝 Posts disponibles:', posts.map(p => ({ id: p.id, hasImages: !!(p.linkImage || p.images) })));
-    
-    // Primero intentar obtener imágenes del estado postImages
-    let images = postImages.get(postId) || [];
-    console.log('🖼️ Images from postImages state for post', postId, ':', images);
-    
-    // Si no hay imágenes en el estado, intentar obtenerlas del post original
-    if (images.length === 0) {
-      const post = posts.find(p => p.id === postId);
-      if (post) {
-        console.log('📝 Post encontrado:', { id: post.id, linkImage: post.linkImage, images: post.images });
-        
-        // Si el post tiene linkImage, usarlo
-        if (post.linkImage) {
-          images = [post.linkImage];
-          console.log('🔗 Usando linkImage:', images);
-        }
-        // Si el post tiene images, usarlas
-        else if (post.images) {
-          // Convertir string a array si es necesario
-          if (typeof post.images === 'string') {
-            images = post.images.split(',').filter(img => img.trim());
-          } else if (Array.isArray(post.images)) {
-            images = post.images;
-          }
-          console.log('🖼️ Usando images del post:', images);
-        }
-      } else {
-        console.log('❌ Post no encontrado con ID:', postId);
-      }
-    }
-    
-    // Si encontramos imágenes, abrir la galería
-    if (images.length > 0) {
-      console.log('✅ Abriendo galería con imágenes:', { postId, images, startIndex: imageIndex });
-      setImageGallery({ postId, images, startIndex: imageIndex });
-      console.log('🎯 Estado imageGallery actualizado');
-      
-      // Verificar que el estado se actualizó
-      setTimeout(() => {
-        console.log('🔍 Estado imageGallery después de 100ms:', imageGallery);
-      }, 100);
-    } else {
-      console.log('❌ No se encontraron imágenes para el post:', postId);
-      alert('No hay imágenes disponibles para mostrar');
+    const target = imageIndex > 0 
+      ? `/social/gallery/${postId}?i=${imageIndex}` 
+      : `/social/gallery/${postId}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = target;
     }
   };
 
@@ -950,10 +910,10 @@ export default function SocialPage() {
   }
 
   if (loading) {
-  return (
+    return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-              </div>
+      </div>
     );
   }
 
@@ -962,12 +922,12 @@ export default function SocialPage() {
       <div className="text-center py-12">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                </div>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar posts</h3>
         <p className="text-gray-600">{error}</p>
-              </div>
+      </div>
     );
   }
 
@@ -1185,41 +1145,43 @@ export default function SocialPage() {
 
       {/* Mensaje de bienvenida para usuarios no autenticados */}
       {!isAuthenticated && (
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">¡Bienvenido a PropTech Social!</h3>
-                <p className="text-gray-600 mb-4">Descubre las mejores propiedades y conecta con agentes inmobiliarios</p>
-                <p className="text-sm text-gray-500 mb-4">💡 <strong>Inicia sesión</strong> para publicar posts y compartir en redes sociales</p>
-                <div className="flex space-x-3 justify-center">
-                  <button 
-                    onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        window.location.href = '/login';
-                      }
-                    }}
-                    className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
-                  >
-                    Iniciar Sesión
-                  </button>
-                  <button 
-                    onClick={() => {
-                      if (typeof window !== 'undefined') {
-                        window.location.href = '/register';
-                      }
-                    }}
-                    className="bg-white text-orange-500 border border-orange-500 px-6 py-2 rounded-lg hover:bg-orange-50 transition-colors font-medium"
-                  >
-                    Registrarse
-                  </button>
+        <div className="max-w-4xl mx-auto mb-4 px-2">
+          <div className="w-full bg-white/70 backdrop-blur-md border border-gray-200 rounded-full shadow-sm px-3 sm:px-4 py-2 flex items-center justify-between">
+            {/* Izquierda: avatar + texto */}
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 p-[2px]">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <svg className="w-4 h-4 text-orange-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                  </div>
                 </div>
               </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm font-semibold text-gray-900 leading-tight">Únete a la red inmobiliaria</p>
+                <p className="text-[10px] sm:text-xs text-gray-600 leading-tight mt-0.5">Explora y comparte propiedades</p>
+              </div>
             </div>
-          )}
+
+            {/* Derecha: CTAs */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => { if (typeof window !== 'undefined') window.location.href = '/login'; }}
+                className="px-2.5 sm:px-3 py-1 rounded-full text-white bg-orange-600 hover:bg-orange-700 text-[11px] sm:text-xs font-medium transition-colors"
+              >
+                Empezar ahora
+              </button>
+              <button
+                onClick={() => { if (typeof window !== 'undefined') window.location.href = '/register'; }}
+                className="px-2.5 sm:px-3 py-1 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 text-[11px] sm:text-xs"
+              >
+                Crear cuenta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PropShots */}
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -1242,7 +1204,7 @@ export default function SocialPage() {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
                 </svg>
-                <span>Crear</span>
+                  <span>Publicar Tour</span>
               </button>
             )}
             <span className="text-gray-300">•</span>
@@ -1256,7 +1218,7 @@ export default function SocialPage() {
               disabled={propShotsLoading || propShots.length === 0}
               className="text-gray-600 hover:text-orange-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  Ver todos
+                  Ver todos los tours
                 </button>
           </div>
               </div>
@@ -1286,14 +1248,14 @@ export default function SocialPage() {
                 {shot.mediaUrl ? (
                   <div className="aspect-[9/16] rounded-xl overflow-hidden shadow-lg relative">
                     <video
-                      src={`http://localhost:8080${shot.mediaUrl}`}
+                      src={getFullUrl(shot.mediaUrl)}
                       className="w-full h-full object-cover"
                       autoPlay
                       muted
                       loop
                       playsInline
                       preload="metadata"
-                      onLoadStart={() => console.log('🎬 Card video iniciando carga:', shot.id)}
+                      onLoadStart={() => console.log('🎬 Card video iniciando carga:', shot.id, getFullUrl(shot.mediaUrl))}
                       onLoadedData={(e) => {
                         console.log('🎬 Card video datos cargados:', shot.id);
                         const videoElement = e.currentTarget;
@@ -1316,7 +1278,7 @@ export default function SocialPage() {
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                         </svg>
-                        <span>PropShot</span>
+                            <span>Tour Virtual</span>
                       </div>
                     </div>
                     
@@ -1340,7 +1302,7 @@ export default function SocialPage() {
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                         </svg>
-                        <span>PropShot</span>
+                            <span>Tour Virtual</span>
                       </div>
                     </div>
                     
@@ -1385,48 +1347,57 @@ export default function SocialPage() {
                   <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                 </svg>
               </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">No tienes PropShots aún</h4>
-              <p className="text-gray-600">Crea tu primer PropShot para mostrar propiedades en video</p>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No hay tours virtuales aún</h4>
+              <p className="text-gray-600">Crea tu primer tour virtual para mostrar propiedades</p>
             </div>
           )}
               </div>
                 </div>
 
-      {/* Posts en dos columnas */}
+      {/* Posts en dos columnas - Mejorado */}
             {!loading && !error && posts.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {posts.map((post) => (
-            <div key={post.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-              {/* Header del Post */}
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
-                    {post.user?.firstName?.charAt(0) || post.user?.lastName?.charAt(0) || 'U'}
-                          </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-medium text-gray-900">
-                              {post.user ? `${post.user.firstName} ${post.user.lastName}` : 'Usuario'}
-                      </h4>
-                      {/* Badge de agente verificado */}
-                      <div className="flex items-center space-x-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                        <span className="font-medium">Agente Verificado</span>
-                          </div>
-                            </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      <span>{formatDateLikeFacebook(post.createdAt)}</span>
-
-                          </div>
-                        </div>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreHorizontal className="w-5 h-5 text-gray-500" />
-                  </button>
+            <div key={post.id} className="group bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden">
+              {/* Header del Post - Mejorado */}
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-orange-50/30 to-transparent">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md ring-2 ring-orange-100">
+                        {post.user?.firstName?.charAt(0) || post.user?.lastName?.charAt(0) || 'U'}
+                      </div>
+                      {/* Indicador de verificación */}
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
                       </div>
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                          {post.user ? `${post.user.firstName} ${post.user.lastName}` : 'Usuario'}
+                        </h4>
+                        {/* Badge de agente verificado */}
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gradient-to-r from-green-500 to-green-600 text-white text-[10px] sm:text-xs rounded-full font-medium shadow-sm whitespace-nowrap">
+                          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Agente Verificado
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 mt-0.5">
+                        <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        <span>{formatDateLikeFacebook(post.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button className="p-2 hover:bg-white/80 rounded-lg transition-colors flex-shrink-0">
+                    <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                  </button>
+                </div>
+              </div>
 
                     {/* Contenido del Post */}
               <div className="p-4">
@@ -1561,11 +1532,12 @@ export default function SocialPage() {
                   return null;
                                     })()}
 
-                {/* Contenido/Descripción del Post */}
+                {/* Contenido/Descripción del Post - Mejorado */}
                 {post.content && (
-                  <div className="mb-4">
+                  <div className="mb-4 px-1">
                     <div 
-                      className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap"
+                      className="text-gray-800 text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words"
+                      style={{ wordBreak: 'break-word' }}
                       dangerouslySetInnerHTML={{ 
                         __html: convertUrlsToLinks(post.content) 
                       }}
@@ -1574,35 +1546,56 @@ export default function SocialPage() {
                 )}
                     </div>
 
-              {/* Acciones del Post */}
-              <div className="px-4 py-3 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                          <button 
-                            onClick={() => handleLike(post.id)}
-                      className="flex items-center space-x-2 text-gray-500 hover:text-orange-500 transition-colors"
-                    >
-                      <ThumbsUp className="w-5 h-5" />
-                      <span className="text-sm">{post.likesCount || 0}</span>
-                          </button>
-                          
-                          <button 
-                            onClick={() => setShowComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                      className="flex items-center space-x-2 text-gray-500 hover:text-orange-500 transition-colors"
-                    >
-                      <MessageSquare className="w-5 h-5" />
-                      <span className="text-sm">{commentCounts[post.id] || 0}</span>
-                          </button>
-                          
-                    <button className="flex items-center space-x-2 text-gray-500 hover:text-orange-500 transition-colors">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
-                      </svg>
-                      <span className="text-sm">Compartir</span>
-                          </button>
+              {/* Acciones del Post - Mejoradas */}
+              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/50">
+                <div className="flex items-center justify-around sm:justify-start sm:space-x-8">
+                  {/* Like Button */}
+                  <button 
+                    onClick={() => handleLike(post.id)}
+                    className="group/like flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-orange-50 transition-all duration-300"
+                  >
+                    <div className="relative">
+                      <ThumbsUp className="w-5 h-5 text-gray-600 group-hover/like:text-orange-500 group-hover/like:scale-110 transition-all duration-300" />
+                      {(post.likesCount || 0) > 0 && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                          <span className="text-[8px] text-white font-bold">{post.likesCount > 99 ? '99+' : post.likesCount}</span>
                         </div>
-                      </div>
+                      )}
                     </div>
+                    <span className="text-sm font-medium text-gray-700 group-hover/like:text-orange-600 hidden sm:inline">
+                      {post.likesCount || 0}
+                    </span>
+                  </button>
+                  
+                  {/* Comment Button */}
+                  <button 
+                    onClick={() => setShowComments(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                    className="group/comment flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-all duration-300"
+                  >
+                    <div className="relative">
+                      <MessageSquare className="w-5 h-5 text-gray-600 group-hover/comment:text-blue-500 group-hover/comment:scale-110 transition-all duration-300" />
+                      {(commentCounts[post.id] || 0) > 0 && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-[8px] text-white font-bold">{commentCounts[post.id] > 99 ? '99+' : commentCounts[post.id]}</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-gray-700 group-hover/comment:text-blue-600 hidden sm:inline">
+                      {commentCounts[post.id] || 0}
+                    </span>
+                  </button>
+                  
+                  {/* Share Button */}
+                  <button className="group/share flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-green-50 transition-all duration-300">
+                    <svg className="w-5 h-5 text-gray-600 group-hover/share:text-green-500 group-hover/share:scale-110 transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700 group-hover/share:text-green-600 hidden sm:inline">
+                      Compartir
+                    </span>
+                  </button>
+                </div>
+              </div>
 
               {/* Comentarios */}
                     {showComments[post.id] && (
@@ -1732,340 +1725,17 @@ export default function SocialPage() {
         </div>
       )}
 
-            {/* Galería de imágenes */}
-      {console.log('🖼️ Estado postImages en render:', postImages)}
-      {console.log('🖼️ Rendering image gallery:', imageGallery)}
-      {console.log('🎯 Estado imageGallery detallado:', imageGallery ? {
-        postId: imageGallery.postId,
-        imagesCount: imageGallery.images.length,
-        startIndex: imageGallery.startIndex,
-        firstImage: imageGallery.images[0]
-      } : 'null')}
-      {console.log('🔍 ¿Se debe renderizar la galería?', !!imageGallery)}
-      {imageGallery && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
-          <div className="relative max-w-6xl max-h-full w-full h-full flex flex-col">
-            {/* Header con botón cerrar y contador */}
-            <div className="absolute top-4 right-4 z-20 flex items-center space-x-4">
-              <div className="text-white text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
-                {imageGallery.startIndex + 1} de {imageGallery.images.length}
-              </div>
-              <button
-                onClick={closeImageGallery}
-                className="text-white text-2xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center"
-              >
-                ✕
-              </button>
-            </div>
-            
-            {/* Imagen principal */}
-            <div className="flex-1 flex items-center justify-center">
-              <img
-                src={imageGallery.images[imageGallery.startIndex]}
-                alt={`Imagen ${imageGallery.startIndex + 1}`}
-                className="max-w-full max-h-full object-contain rounded-lg"
-                onError={(e) => {
-                  console.log('❌ Error cargando imagen:', imageGallery.images[imageGallery.startIndex]);
-                  e.currentTarget.src = '/images/placeholder.jpg';
-                }}
-              />
-            </div>
-            
-            {/* Navegación con flechas */}
-            {imageGallery.images.length > 1 && (
-              <>
-                {/* Botón anterior */}
-                <button
-                  onClick={() => setImageGallery(prev => prev ? { 
-                    ...prev, 
-                    startIndex: prev.startIndex > 0 ? prev.startIndex - 1 : prev.images.length - 1 
-                  } : null)}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-4xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center"
-                >
-                  ‹
-                </button>
-                
-                {/* Botón siguiente */}
-                <button
-                  onClick={() => setImageGallery(prev => prev ? { 
-                    ...prev, 
-                    startIndex: prev.startIndex < prev.images.length - 1 ? prev.startIndex + 1 : 0 
-                  } : null)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-4xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center"
-                >
-                  ›
-                </button>
-                
-                {/* Indicadores de puntos */}
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                  {imageGallery.images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setImageGallery(prev => prev ? { ...prev, startIndex: index } : null)}
-                      className={`w-3 h-3 rounded-full transition-all ${
-                        index === imageGallery.startIndex 
-                          ? 'bg-white' 
-                          : 'bg-white bg-opacity-50 hover:bg-opacity-75'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-            
-            {/* Navegación con teclado */}
-            <div className="hidden">
-              <button
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') closeImageGallery();
-                  if (e.key === 'ArrowLeft') {
-                    setImageGallery(prev => prev ? { 
-                      ...prev, 
-                      startIndex: prev.startIndex > 0 ? prev.startIndex - 1 : prev.images.length - 1 
-                    } : null);
-                  }
-                  if (e.key === 'ArrowRight') {
-                    setImageGallery(prev => prev ? { 
-                      ...prev, 
-                      startIndex: prev.startIndex < prev.images.length - 1 ? prev.startIndex + 1 : 0 
-                    } : null);
-                  }
-                }}
-                tabIndex={-1}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Modal de PropShot */}
+      {/* Modal PropShot reel */}
       {selectedPropShot && (
-        <>
-          {console.log('🔍 PropShot seleccionado:', {
-            id: selectedPropShot.id,
-            title: selectedPropShot.title,
-            link: selectedPropShot.linkUrl,
-            mediaUrl: selectedPropShot.mediaUrl
-          })}
-          <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-          {/* Botón cerrar */}
-          <button
-            onClick={() => setSelectedPropShot(null)}
-            className="absolute top-6 right-6 text-white text-3xl hover:text-gray-300 z-10 bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center"
-          >
-            ✕
-          </button>
-          
-          {/* Botón anterior */}
-                      <button
-              onClick={() => {
-                const currentIndex = propShots.findIndex(shot => shot.id === selectedPropShot?.id);
-                const prevIndex = currentIndex > 0 ? currentIndex - 1 : propShots.length - 1;
-                if (prevIndex >= 0 && prevIndex < propShots.length) {
-                  setSelectedPropShot(propShots[prevIndex]);
-                }
-              }}
-            className="absolute left-6 top-1/2 transform -translate-y-1/2 text-white text-2xl hover:text-gray-300 z-10 bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center"
-          >
-            ‹
-          </button>
-          
-          {/* Botón siguiente */}
-                      <button
-              onClick={() => {
-                const currentIndex = propShots.findIndex(shot => shot.id === selectedPropShot?.id);
-                const nextIndex = currentIndex < propShots.length - 1 ? currentIndex + 1 : 0;
-                if (nextIndex >= 0 && nextIndex < propShots.length) {
-                  setSelectedPropShot(propShots[nextIndex]);
-                }
-              }}
-            className="absolute right-6 top-1/2 transform -translate-y-1/2 text-white text-2xl hover:text-gray-300 z-10 bg-black bg-opacity-50 rounded-full w-12 h-12 flex items-center justify-center"
-          >
-            ›
-          </button>
-          
-          {/* Contenido del PropShot */}
-          <div className="w-full h-full flex items-center justify-center px-20">
-            {/* Video real con controles */}
-            <div className="relative w-full max-w-lg aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl">
-              {(() => {
-                const rawVideoUrl = selectedPropShot.mediaUrl;
-                const videoUrl = rawVideoUrl ? getFullUrl(rawVideoUrl) : '';
-                
-                console.log('🎬 Intentando reproducir video:', {
-                  propShotId: selectedPropShot.id,
-                  propShotTitle: selectedPropShot.title,
-                  rawMediaUrl: selectedPropShot.mediaUrl,
-                  rawUrl: rawVideoUrl,
-                  fullUrl: videoUrl,
-                  hasVideo: !!rawVideoUrl
-                });
-                
-                if (rawVideoUrl) {
-                  return (
-                    <video
-                      src={videoUrl}
-                      className="w-full h-full object-cover"
-                      controls
-                      autoPlay
-                      muted
-                      loop
-                      preload="metadata"
-                      onLoadStart={() => console.log('🚀 Iniciando carga del video:', videoUrl)}
-                      onLoadedData={() => console.log('✅ Video cargado exitosamente:', videoUrl)}
-                      onCanPlay={() => console.log('🎯 Video puede reproducirse:', videoUrl)}
-                      onPlay={() => handleViewPropShot(selectedPropShot.id)}
-                      onError={(e) => {
-                        const target = e.currentTarget as HTMLVideoElement;
-                        
-                        // Log del error de forma más segura
-                        console.error('❌ Error cargando video');
-                        console.error('URL original:', rawVideoUrl);
-                        console.error('URL completa:', videoUrl);
-                        console.error('URL del video:', target.src);
-                        console.error('Estado del video:', target.readyState);
-                        console.error('Estado de la red:', target.networkState);
-                        if (target.error) {
-                          console.error('Código de error:', target.error.code);
-                          console.error('Mensaje de error:', target.error.message);
-                        }
-                        
-                        // Mostrar mensaje de error más informativo
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'w-full h-full bg-red-500 flex items-center justify-center text-white text-center p-4';
-                        errorDiv.innerHTML = `
-                          <div>
-                            <p class="font-bold mb-2">Error al cargar video</p>
-                            <p class="text-sm mb-2">URL Original: ${rawVideoUrl}</p>
-                            <p class="text-sm mb-2">URL Completa: ${videoUrl}</p>
-                            <p class="text-sm mb-2">Estado: ${target.readyState === 0 ? 'No hay datos' : target.readyState === 1 ? 'Metadatos cargados' : target.readyState === 2 ? 'Datos actuales' : target.readyState === 3 ? 'Datos futuros' : target.readyState === 4 ? 'Datos suficientes' : 'Desconocido'}</p>
-                            <p class="text-sm mb-2">Red: ${target.networkState === 0 ? 'Vacío' : target.networkState === 1 ? 'Idle' : target.networkState === 2 ? 'Cargando' : target.networkState === 3 ? 'Sin fuente' : 'Desconocido'}</p>
-                            <p class="text-xs opacity-80 mt-3">Verifica que el archivo esté disponible en el servidor</p>
-                            <button onclick="if (typeof window !== 'undefined') window.location.reload()" class="mt-3 px-4 py-2 bg-white text-red-500 rounded-lg hover:bg-gray-100 transition-colors">
-                              Recargar página
-                            </button>
-                          </div>
-                        `;
-                        
-                        // Reemplazar el video con el mensaje de error
-                        target.style.display = 'none';
-                        target.parentElement?.appendChild(errorDiv);
-                      }}
-                    />
-                  );
-                } else {
-                  return (
-                    <div className="w-full h-full bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <Play className="w-16 h-16 mx-auto mb-4" />
-                        <p className="text-lg font-medium">Video no disponible</p>
-                        <p className="text-sm opacity-80">Este PropShot no tiene video</p>
-                        <p className="text-xs opacity-60 mt-2">
-                          mediaUrl: {selectedPropShot.mediaUrl || 'null'}
-                        </p>
-                        <div className="mt-4 p-3 bg-white bg-opacity-20 rounded-lg">
-                          <p className="text-xs opacity-80">Debug info:</p>
-                          <p className="text-xs opacity-60">ID: {selectedPropShot.id}</p>
-                          <p className="text-xs opacity-60">Título: {selectedPropShot.title}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-              })()}
-              
-              {/* Indicador de PropShot */}
-              <div className="absolute top-4 left-4">
-                <div className="flex items-center gap-2 px-3 py-1 bg-orange-500 text-white text-sm rounded-full font-bold shadow-lg">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
-                  </svg>
-                  <span>PropShot</span>
-                </div>
-              </div>
-                      
-              {/* Duración del video */}
-              <div className="absolute bottom-4 right-4 bg-black bg-opacity-80 text-white text-sm px-3 py-1 rounded-lg font-medium">
-                0:30
-              </div>
-
-              {/* Información del PropShot SUPERPUESTA sobre el video */}
-              <div className="absolute bottom-20 left-0 right-0 text-center text-white">
-                <h3 className="text-2xl font-bold mb-2 drop-shadow-lg">{selectedPropShot.title}</h3>
-                <p className="text-lg text-gray-200 mb-3 drop-shadow-lg">por {selectedPropShot.agentFirstName} {selectedPropShot.agentLastName}</p>
-                
-                {/* Estadísticas */}
-                <div className="flex items-center justify-center space-x-6 text-sm">
-                  <span className="flex items-center space-x-2 bg-black bg-opacity-50 px-3 py-1 rounded-full">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                    </svg>
-                    <span>{selectedPropShot.shares || 0} vistas</span>
-                  </span>
-                  <span className="flex items-center space-x-2 bg-black bg-opacity-50 px-3 py-1 rounded-full">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                    </svg>
-                    <span>{selectedPropShot.likes} me gusta</span>
-                  </span>
-                </div>
-                       </div>
-                       
-              {/* Botones de acción del lado derecho - estilo TikTok/Instagram */}
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-6">
-                {/* Botón Me gusta */}
-                <button 
-                  onClick={() => {
-                    // Aquí iría la lógica para dar me gusta
-                    console.log('Me gusta dado a:', selectedPropShot.title);
-                  }}
-                  className="flex flex-col items-center space-y-1 group"
-                >
-                  <div className="w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center group-hover:bg-opacity-70 transition-all duration-300">
-                    <Heart className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                       </div>
-                  <span className="text-white text-xs font-medium bg-black bg-opacity-50 px-2 py-1 rounded-full">
-                    {selectedPropShot.likes}
-                  </span>
-                </button>
-                
-                {/* Botón Contactar Asesor */}
-                    <button
-                  onClick={() => {
-                    // Aquí iría la lógica para contactar al asesor
-                    console.log('Contactar asesor:', selectedPropShot.agentFirstName + ' ' + selectedPropShot.agentLastName);
-                    // Podría abrir un modal de contacto o redirigir a mensajes
-                  }}
-                  className="flex flex-col items-center space-y-1 group"
-                >
-                  <div className="w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center group-hover:bg-opacity-70 transition-all duration-300">
-                    <MessageCircle className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                  </div>
-                  <span className="text-white text-xs font-medium bg-black bg-opacity-50 px-2 py-1 rounded-full">
-                    Contactar
-                  </span>
-                    </button>
-                
-                {/* Botón Compartir */}
-                    <button
-                  onClick={() => {
-                    // Aquí iría la lógica para compartir
-                    console.log('Compartir PropShot:', selectedPropShot.title);
-                  }}
-                  className="flex flex-col items-center space-y-1 group"
-                >
-                  <div className="w-12 h-12 bg-black bg-opacity-50 rounded-full flex items-center justify-center group-hover:bg-opacity-70 transition-all duration-300">
-                    <Share2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
-                  </div>
-                  <span className="text-white text-xs font-medium bg-black bg-opacity-50 px-2 py-1 rounded-full">
-                    Compartir
-                      </span>
-                    </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        </>
+        <PropShotReelViewer
+          initialPropShot={selectedPropShot}
+          allPropShots={propShots}
+          onLike={handleLikePropShot}
+          onView={handleViewPropShot}
+          getFullUrl={getFullUrl}
+          onClose={() => setSelectedPropShot(null)}
+        />
       )}
 
       {/* Modal de Crear PropShot */}

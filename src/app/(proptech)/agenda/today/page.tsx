@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, User, ArrowLeft, Plus, CalendarDays, Star, TrendingUp, Bell, CheckCircle, AlertCircle, ArrowRight, Building2 } from "lucide-react";
 import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { agendaService } from "../services/agendaService";
 
 interface Appointment {
   id: number;
@@ -22,6 +25,9 @@ interface Appointment {
 export default function TodayAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<string>("DATE_ASC");
   const [stats, setStats] = useState({
     totalAppointments: 0,
     completedAppointments: 0,
@@ -86,6 +92,25 @@ export default function TodayAppointmentsPage() {
       minute: '2-digit'
     });
   };
+
+  const filteredAndSorted = (() => {
+    const filtered = appointments.filter((a) => {
+      const matchesSearch = !search ||
+        a.title.toLowerCase().includes(search.toLowerCase()) ||
+        (a.clientName || '').toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === 'ALL' || a.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'DATE_DESC') return new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime();
+      if (sortBy === 'DATE_ASC') return new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime();
+      if (sortBy === 'DURATION_DESC') return (b.durationMinutes || 0) - (a.durationMinutes || 0);
+      if (sortBy === 'DURATION_ASC') return (a.durationMinutes || 0) - (b.durationMinutes || 0);
+      return 0;
+    });
+    return sorted;
+  })();
 
   if (loading) {
     return (
@@ -266,6 +291,39 @@ export default function TodayAppointmentsPage() {
             </CardHeader>
             
             <CardContent className="p-8 pt-0 relative z-10">
+              <div className="flex flex-col md:flex-row gap-3 mb-6">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Buscar por título o cliente..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todos</SelectItem>
+                    <SelectItem value="Programada">Programada</SelectItem>
+                    <SelectItem value="Confirmada">Confirmada</SelectItem>
+                    <SelectItem value="En Progreso">En Progreso</SelectItem>
+                    <SelectItem value="Completada">Completada</SelectItem>
+                    <SelectItem value="Cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DATE_ASC">Hora ascendente</SelectItem>
+                    <SelectItem value="DATE_DESC">Hora descendente</SelectItem>
+                    <SelectItem value="DURATION_DESC">Duración descendente</SelectItem>
+                    <SelectItem value="DURATION_ASC">Duración ascendente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               {appointments.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="relative mb-8">
@@ -289,7 +347,7 @@ export default function TodayAppointmentsPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {appointments.map((appointment, index) => (
+                  {filteredAndSorted.map((appointment, index) => (
                     <div key={appointment.id} className="group relative p-6 rounded-2xl bg-gradient-to-r from-white/50 to-slate-50/50 dark:from-slate-700/50 dark:to-slate-600/50 border border-white/20 hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-6">
@@ -334,9 +392,26 @@ export default function TodayAppointmentsPage() {
                               {appointment.appointmentType}
                             </div>
                           </div>
-                          <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
+                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <Button size="sm" variant="outline" onClick={async () => {
+                              try {
+                                const updated = await agendaService.updateAppointmentStatus(appointment.id, 'Confirmada');
+                                setAppointments(prev => prev.map(a => a.id === appointment.id ? { ...a, status: updated.status || 'Confirmada' } : a));
+                              } catch (e) { console.error(e); }
+                            }}>Confirmar</Button>
+                            <Button size="sm" variant="outline" onClick={async () => {
+                              try {
+                                const updated = await agendaService.updateAppointmentStatus(appointment.id, 'Completada');
+                                setAppointments(prev => prev.map(a => a.id === appointment.id ? { ...a, status: updated.status || 'Completada' } : a));
+                              } catch (e) { console.error(e); }
+                            }}>Completar</Button>
+                            <Button size="sm" variant="destructive" onClick={async () => {
+                              try {
+                                const updated = await agendaService.cancelAppointment(appointment.id, 'Cancelada desde Hoy');
+                                setAppointments(prev => prev.map(a => a.id === appointment.id ? { ...a, status: updated.status || 'Cancelada' } : a));
+                              } catch (e) { console.error(e); }
+                            }}>Cancelar</Button>
+                          </div>
                         </div>
                       </div>
                     </div>

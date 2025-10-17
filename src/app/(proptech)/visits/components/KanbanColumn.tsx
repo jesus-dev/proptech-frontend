@@ -23,7 +23,7 @@ export const KanbanColumnComponent: React.FC<KanbanColumnProps> = ({
   });
 
   return (
-    <div className="flex flex-col w-56 min-w-56 max-w-56 bg-gray-50 dark:bg-gray-700 rounded-xl p-2 shadow-sm kanban-column hover-lift">
+    <div className="flex flex-col w-72 min-w-72 max-w-72 bg-gray-50 dark:bg-gray-700 rounded-xl p-3 shadow-sm kanban-column hover-lift snap-start">
       {/* Column Header */}
       <div className="flex items-center justify-between mb-3 p-2 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800">
         <div className="flex items-center space-x-2">

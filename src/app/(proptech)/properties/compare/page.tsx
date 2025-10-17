@@ -289,54 +289,59 @@ export default function PropertyComparePage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4">
+    <div className="max-w-7xl mx-auto py-6 px-4">
       {/* Header */}
-      <div className="flex flex-col items-center mb-10">
-        <div className="bg-gradient-to-r from-brand-500 to-green-400 rounded-full p-4 mb-4 shadow-lg">
+      <div className="flex flex-col items-center mb-8">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full p-4 mb-4 shadow-lg">
           <Eye className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2 text-center">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 text-center">
           Comparador de Propiedades
         </h1>
-        <p className="text-lg text-gray-500 text-center max-w-2xl">
+        <p className="text-base md:text-lg text-gray-600 text-center max-w-2xl">
           Compara hasta {MAX_COMPARISON_PROPERTIES} propiedades lado a lado para tomar la mejor decisión de inversión.
         </p>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             onClick={() => setShowSearchModal(true)}
             disabled={!canAddMore}
-            className="bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50"
+            className="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            size="sm"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Agregar Propiedad
+            <span className="hidden sm:inline">Agregar Propiedad</span>
+            <span className="sm:hidden">Agregar</span>
           </Button>
           
           {hasProperties && (
             <Button
               onClick={handleClearAll}
               variant="outline"
-              className="text-red-600 border-red-300 hover:bg-red-50"
+              className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400"
+              size="sm"
             >
               <X className="w-4 h-4 mr-2" />
-              Limpiar Todo
+              <span className="hidden sm:inline">Limpiar Todo</span>
+              <span className="sm:hidden">Limpiar</span>
             </Button>
           )}
         </div>
 
-        <div className="text-sm text-gray-500">
+        <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
           {comparisonProperties.length} de {MAX_COMPARISON_PROPERTIES} propiedades
         </div>
       </div>
 
       {/* Comparison Table */}
       {hasProperties ? (
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 min-w-[200px]">
@@ -401,19 +406,22 @@ export default function PropertyComparePage() {
           </div>
         </div>
       ) : (
-        <div className="text-center py-16 bg-white rounded-2xl shadow-xl border border-gray-100">
-          <Eye className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="text-center py-12 md:py-16 bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg border border-gray-200">
+          <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <Eye className="w-12 h-12 text-blue-600" />
+          </div>
+          <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
             No hay propiedades para comparar
           </h3>
-          <p className="text-gray-500 mb-6">
-            Agrega al menos 2 propiedades para comenzar la comparación
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            Agrega al menos 2 propiedades para comenzar la comparación y tomar la mejor decisión de inversión.
           </p>
           <Button
             onClick={() => setShowSearchModal(true)}
-            className="bg-brand-500 text-white hover:bg-brand-600"
+            className="bg-blue-600 text-white hover:bg-blue-700 shadow-md px-6 py-3"
+            size="lg"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-5 h-5 mr-2" />
             Agregar Primera Propiedad
           </Button>
         </div>
@@ -429,7 +437,7 @@ export default function PropertyComparePage() {
         title="Buscar Propiedades"
         subtitle="Encuentra propiedades para agregar a la comparación"
         icon={<Search className="w-6 h-6 text-white" />}
-        maxWidth="max-w-2xl"
+        maxWidth="max-w-3xl"
       >
         <div className="space-y-4">
           {/* Search Form */}

@@ -56,12 +56,12 @@ export default function MessagesPage() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
-      <div className="flex h-[calc(100vh-200px)]">
-        {/* Lista de conversaciones */}
-        <div className="w-1/3 border-r border-gray-200">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Mensajes</h2>
-            <p className="text-sm text-gray-600">Tus conversaciones</p>
+      <div className="flex flex-col md:flex-row h-[calc(100vh-120px)] md:h-[calc(100vh-200px)]">
+        {/* Lista de conversaciones - Responsive */}
+        <div className={`${selectedConversation ? 'hidden md:block' : 'block'} w-full md:w-1/3 border-r border-gray-200`}>
+          <div className="p-3 sm:p-4 border-b border-gray-200">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Mensajes</h2>
+            <p className="text-xs sm:text-sm text-gray-600">Tus conversaciones</p>
           </div>
           
           <div className="overflow-y-auto h-full">
@@ -93,30 +93,40 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Chat activo */}
-        <div className="flex-1 flex flex-col">
+        {/* Chat activo - Responsive */}
+        <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-1 flex-col w-full`}>
           {selectedConversation ? (
             <>
-              {/* Header del chat */}
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-medium">
+              {/* Header del chat - Con botón volver en mobile */}
+              <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  {/* Botón volver - Solo mobile */}
+                  <button
+                    onClick={() => setSelectedConversation(null)}
+                    className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-medium text-sm sm:text-base">
                     {conversations.find(c => c.id === selectedConversation)?.avatar}
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">
+                    <h3 className="font-medium text-gray-900 text-sm sm:text-base">
                       {conversations.find(c => c.id === selectedConversation)?.name}
                     </h3>
-                    <p className="text-sm text-gray-600">En línea</p>
+                    <p className="text-xs sm:text-sm text-gray-600">En línea</p>
                   </div>
                 </div>
               </div>
               
-              {/* Mensajes */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Mensajes - Responsive */}
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
                 {messages[selectedConversation as keyof typeof messages]?.map((msg, index) => (
                   <div key={index} className={`flex ${msg.sent ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-md px-4 py-2 rounded-lg ${
+                    <div className={`max-w-[85%] sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base ${
                       msg.sent 
                         ? 'bg-orange-500 text-white' 
                         : 'bg-gray-100 text-gray-800'
@@ -127,20 +137,20 @@ export default function MessagesPage() {
                 ))}
               </div>
 
-              {/* Input */}
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-3">
+              {/* Input - Responsive */}
+              <div className="p-3 sm:p-4 border-t border-gray-200">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                     placeholder="Escribe un mensaje..."
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="flex-1 px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm sm:text-base"
                   />
                   <button 
                     onClick={sendMessage}
-                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                    className="px-4 sm:px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm sm:text-base"
                   >
                     Enviar
                   </button>

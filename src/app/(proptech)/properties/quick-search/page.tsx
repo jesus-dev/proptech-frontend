@@ -389,9 +389,9 @@ export default function QuickSearchPage() {
   }, [editQueryIndex, editQueryName, updateQuery]);
 
   return (
-    <div className="max-w-7xl mx-auto py-10 px-4">
+    <div className="max-w-7xl mx-auto pt-4 md:pt-6 pb-8 px-3 md:px-4">
       {/* Header */}
-      <div className="flex flex-col items-center mb-10">
+      <div className="flex flex-col items-center mb-6 md:mb-8">
         <div className="bg-gradient-to-r from-brand-500 to-green-400 rounded-full p-4 mb-4 shadow-lg">
           <Search className="w-8 h-8 text-white" />
         </div>
@@ -402,7 +402,7 @@ export default function QuickSearchPage() {
       </div>
 
       {/* Formulario Simplificado */}
-      <div className="mb-12 bg-white/90 p-6 rounded-2xl shadow-xl border border-gray-100">
+      <div className="mb-6 md:mb-8 bg-white/90 p-5 md:p-6 rounded-2xl shadow-xl border border-gray-100">
         {/* Campo de búsqueda principal */}
         <div className="flex gap-4 mb-4">
           <div className="flex-1">

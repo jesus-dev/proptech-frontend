@@ -66,11 +66,12 @@ const Header = () => {
       href: '/propiedades',
       submenu: [
         { name: 'Todas las Propiedades', href: '/propiedades' },
-        { name: 'Ventas', href: '/propiedades?tipo=venta' },
-        { name: 'Alquiler', href: '/propiedades?tipo=alquiler' },
-        { name: 'Departamentos', href: '/propiedades?categoria=apartamento' },
-        { name: 'Casas', href: '/propiedades?categoria=casa' },
-        { name: 'Proyectos/Desarrollos', href: '/proyectos' }
+        { name: 'Casas', href: '/propiedades/casa' },
+        { name: 'Departamentos', href: '/propiedades/departamento' },
+        { name: 'Terrenos', href: '/propiedades/terreno' },
+        { name: 'Locales Comerciales', href: '/propiedades/comercial' },
+        { name: 'Quintas y Chalets', href: '/propiedades/quinta' },
+        { name: 'Edificios', href: '/propiedades/edificio' }
       ]
     },
     { name: 'Asesores', href: '/asesores' },
@@ -80,12 +81,13 @@ const Header = () => {
   return (
     <>
       <header
-        className={`relative z-[100] transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ${
           isScrolled
-            ? 'bg-white/90 backdrop-blur-md shadow-md border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700'
-            : 'bg-transparent'
+            ? 'bg-white/90 backdrop-blur-md shadow-md border-b border-gray-200'
+            : 'bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900'
         }`}
         data-scrolled={isScrolled}
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
       >
         <nav className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between h-14 sm:h-16 py-1">
@@ -219,6 +221,8 @@ const Header = () => {
           
         </nav>
       </header>
+      {/* Spacer para evitar solapamiento con contenido en mobile */}
+      <div className="h-14 sm:h-16"></div>
       
       {/* MENU MOBILE */}
       {isMenuOpen && (

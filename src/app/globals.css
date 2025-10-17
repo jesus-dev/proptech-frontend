@@ -2,38 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Footer fijo para CRM */
-.crm-footer {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 60px !important;
-  background-color: #f8f9fa !important;
-  border-top: 1px solid #e9ecef !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-  padding: 0 24px !important;
-  z-index: 999999 !important;
-}
-
-.crm-scroll-button {
-  background-color: #2563eb !important;
-  color: white !important;
-  padding: 12px !important;
-  border-radius: 50% !important;
-  border: none !important;
-  cursor: pointer !important;
-  width: 48px !important;
-  height: 48px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 18px !important;
-  font-weight: bold !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
+/* (removido) Reglas globales específicas del CRM con !important que afectaban el layout */
 
 /* Modern CSS Variables */
 :root {
@@ -158,66 +127,10 @@
   body {
     margin: 0;
     line-height: inherit;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: #f9fafb; /* más neutro para CRM */
     min-height: 100vh;
   }
   
-         /* Fix ultra simple - a veces lo básico funciona */
-         @media (max-width: 768px) {
-           body {
-             padding-bottom: 0 !important;
-             margin-bottom: 0 !important;
-           }
-           
-           footer {
-             margin-bottom: 0 !important;
-             padding-bottom: 0 !important;
-           }
-           
-           /* Eliminar cualquier espacio fantasma */
-           * {
-             box-sizing: border-box;
-           }
-           
-           /* MENU MOBILE SIMPLE Y LIMPIO */
-           .mobile-menu {
-             position: fixed;
-             top: 0;
-             left: 0;
-             width: 100vw;
-             height: 100vh;
-             z-index: 9999;
-             background: rgba(0,0,0,0.5);
-           }
-           
-           .mobile-menu-panel {
-             position: fixed;
-             top: 0;
-             left: 0;
-             width: 280px;
-             height: 100vh;
-             z-index: 10000;
-             background: #111;
-             padding-top: 20px;
-             overflow-y: auto;
-           }
-           
-           .mobile-menu-link {
-             display: block;
-             padding: 10px 15px;
-             color: #818181;
-             text-decoration: none;
-             font-size: 18px;
-           }
-           
-           .mobile-menu-link:hover {
-             color: #f1f1f1;
-           }
-           
-         }
-  
-
-
   /* Modern scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
@@ -283,6 +196,28 @@
 
 /* Component styles */
 @layer components {
+  /* CRM layout overrides: eliminar centrado y ancho máximo en contenedores internos */
+  .crm-content .mx-auto {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .crm-content .max-w-7xl,
+  .crm-content .max-w-6xl,
+  .crm-content .max-w-5xl,
+  .crm-content .max-w-4xl {
+    max-width: 100% !important;
+  }
+  .crm-content .container,
+  .crm-content [class*="max-w-"],
+  .crm-content [class*="mx-auto"] {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .crm-content > *:first-child {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
   /* Modern card */
   .card-modern {
     @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-modern hover-lift;
@@ -301,81 +236,5 @@
   /* Modern badge */
   .badge-modern {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 dark:from-blue-900/30 dark:to-purple-900/30 dark:text-blue-200;
-  }
-
-  /* TailAdmin Menu Styles */
-  .menu-item {
-    @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm;
-  }
-
-  .menu-item-active {
-    @apply bg-blue-50 text-blue-500 dark:bg-blue-500/[0.12] dark:text-blue-400;
-  }
-
-  .menu-item-inactive {
-    @apply text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300;
-  }
-
-  .menu-item-icon {
-    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400;
-  }
-
-  .menu-item-icon-active {
-    @apply text-blue-500 dark:text-blue-400;
-  }
-
-  .menu-item-icon-inactive {
-    @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
-  }
-
-  .menu-item-text {
-    @apply text-sm font-medium;
-  }
-
-  .menu-dropdown-item {
-    @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm;
-  }
-
-  .menu-dropdown-item-active {
-    @apply bg-blue-50 text-blue-500 dark:bg-blue-500/[0.12] dark:text-blue-400;
-  }
-
-  .menu-dropdown-item-inactive {
-    @apply text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300;
-  }
-
-  .menu-dropdown-badge {
-    @apply px-2 py-0.5 text-xs font-semibold rounded-full;
-  }
-
-  .menu-dropdown-badge-active {
-    @apply bg-blue-200 text-blue-800;
-  }
-
-  .menu-dropdown-badge-inactive {
-    @apply bg-green-100 text-green-800;
-  }
-
-  /* Sidebar móvil fijo */
-  .sidebar-mobile-fixed {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    height: 100vh !important;
-    width: 290px !important;
-    z-index: 99999 !important;
-    transform: none !important;
-    will-change: auto !important;
-    backface-visibility: hidden !important;
-    -webkit-backface-visibility: hidden !important;
-  }
-
-  .sidebar-backdrop-fixed {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 99998 !important;
   }
 }

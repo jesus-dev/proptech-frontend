@@ -9,7 +9,7 @@ class PublicPropertyService {
 
   async getPropertiesPaginated({ page = 1, limit = 12 }: { page: number; limit: number }) {
     try {
-      const response = await fetch(`${this.baseUrl}/properties?page=${page}&size=${limit}`);
+      const response = await fetch(`${this.baseUrl}/api/public/properties/paginated?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -120,7 +120,7 @@ class PublicPropertyService {
 
   async getAllProperties(): Promise<any[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/properties`);
+      const response = await fetch(`${this.baseUrl}/api/public/properties`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -164,6 +164,20 @@ class PublicPropertyService {
       return data;
     } catch (error) {
       console.error('Error fetching featured properties:', error);
+      throw error;
+    }
+  }
+
+  async getPropertyBySlug(slug: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/public/properties/slug/${slug}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching property by slug:', error);
       throw error;
     }
   }

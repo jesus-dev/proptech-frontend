@@ -78,6 +78,8 @@ export interface User {
   lastLogin?: string;
   createdAt: string;
   updatedAt: string;
+  agentId?: string;
+  agencyId?: string;
 }
 
 export interface AuthState {

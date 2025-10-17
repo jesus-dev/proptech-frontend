@@ -47,9 +47,4 @@ export interface PropertyMedia {
   virtualTourUrl: string;
 }
 
-export interface Property {
-  basicInfo: PropertyBasicInfo;
-  details: PropertyDetails;
-  location: PropertyLocation;
-  media: PropertyMedia;
-} 
+// Property interface moved to property.ts to avoid conflicts 

@@ -1,83 +1,89 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { publicPropertyService } from '@/services/publicPropertyService';
+import { getImageBaseUrl } from '@/config/environment';
 
-// Datos de ejemplo
-const properties = [
-  {
-    id: 1,
-    title: 'Casa Moderna en Asunción Centro',
-    type: 'venta',
-    price: 850000000,
-    currency: 'PYG',
-    location: 'Asunción, Paraguay',
-    bedrooms: 4,
-    bathrooms: 3,
-    area: 180,
-    parking: 2,
-    images: ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800'],
-    description: 'Hermosa casa moderna en el corazón de Asunción.',
-    agent: {
-      name: 'María González',
-      company: 'Propiedades Premium',
-      phone: '+595 123 456 789',
-      email: 'maria@propiedades.com',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-      verified: true
-    },
-    views: 245
-  },
-  {
-    id: 2,
-    title: 'Apartamento de Lujo en Ciudad del Este',
-    type: 'alquiler',
-    price: 2500000,
-    currency: 'PYG',
-    pricePeriod: 'mensual',
-    location: 'Ciudad del Este, Paraguay',
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 120,
-    parking: 1,
-    images: ['https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800'],
-    description: 'Apartamento moderno y elegante con vista panorámica.',
-    agent: {
-      name: 'Carlos Ramírez',
-      company: 'Luxury Real Estate',
-      phone: '+595 987 654 321',
-      email: 'carlos@luxury.com',
-      avatar: 'https://randomuser.me/api/portraits/men/78.jpg',
-      verified: true
-    },
-    views: 189
-  },
-  {
-    id: 3,
-    title: 'Casa Familiar en San Lorenzo',
-    type: 'venta',
-    price: 650000000,
-    currency: 'PYG',
-    location: 'San Lorenzo, Paraguay',
-    bedrooms: 5,
-    bathrooms: 4,
-    area: 220,
-    parking: 3,
-    images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800'],
-    description: 'Casa espaciosa perfecta para familias grandes.',
-    agent: {
-      name: 'Ana López',
-      company: 'Familias Real Estate',
-      phone: '+595 456 789 123',
-      email: 'ana@familias.com',
-      avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-      verified: false
-    },
-    views: 312
+// Estado para datos reales
+type PublicProperty = any;
+
+// Función helper para construir URLs completas de imágenes
+const getImageUrl = (imagePath: string | null | undefined): string => {
+  if (!imagePath) return '/images/placeholder.jpg';
+  
+  // Si ya es una URL completa, devolverla tal como está
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
   }
-];
+  
+  // Si es una ruta relativa, construir la URL completa usando la configuración
+  const baseUrl = getImageBaseUrl();
+  return `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+};
+
+// Función helper para limpiar HTML y extraer texto plano
+const stripHtml = (html: string | null | undefined): string => {
+  if (!html) return '';
+  
+  // Crear un elemento temporal para parsear el HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  
+  // Extraer solo el texto
+  return tempDiv.textContent || tempDiv.innerText || '';
+};
+
+// Componente de imagen optimizada con lazy loading
+const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
+  src: string;
+  alt: string;
+  className: string;
+  onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+}) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    setIsLoaded(true);
+    onLoad?.(e);
+  }, [onLoad]);
+
+  const handleError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    setHasError(true);
+    onError?.(e);
+  }, [onError]);
+
+  return (
+    <div className="relative w-full h-full">
+      {/* Skeleton loader */}
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+          <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+      )}
+      
+      {/* Imagen real */}
+      <img
+        ref={imgRef}
+        src={hasError ? '/images/placeholder.jpg' : getImageUrl(src)}
+        alt={alt}
+        className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+        loading="lazy"
+        onLoad={handleLoad}
+        onError={handleError}
+      />
+    </div>
+  );
+};
 
 const propertyTypes = [
   { value: '', label: 'Todos los Tipos' },
@@ -91,13 +97,6 @@ const propertyCategories = [
   { value: 'apartamento', label: 'Departamentos' },
   { value: 'oficina', label: 'Oficinas' },
   { value: 'terreno', label: 'Terrenos' }
-];
-
-const cities = [
-  { value: '', label: 'Todas las Ciudades' },
-  { value: 'Asunción', label: 'Asunción' },
-  { value: 'Ciudad del Este', label: 'Ciudad del Este' },
-  { value: 'San Lorenzo', label: 'San Lorenzo' }
 ];
 
 const priceRanges = [
@@ -133,22 +132,88 @@ const areaRanges = [
   { value: '300+', label: 'Más de 300m²' }
 ];
 
-const PropertiesSectionContent = () => {
+const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: string }) => {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(defaultCategory || '');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedPriceRange, setSelectedPriceRange] = useState('');
   const [selectedBedrooms, setSelectedBedrooms] = useState('');
   const [selectedBathrooms, setSelectedBathrooms] = useState('');
   const [selectedAreaRange, setSelectedAreaRange] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [favorites, setFavorites] = useState<number[]>([2]);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [properties, setProperties] = useState<PublicProperty[]>([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  // Aplicar filtros desde URL al cargar el componente
+  // Calcular ciudades únicas dinámicamente desde las propiedades cargadas
+  const availableCities = React.useMemo(() => {
+    const citiesCount = new Map<string, number>();
+    
+    properties.forEach(property => {
+      const city = property.cityName || property.address;
+      if (city && city.trim()) {
+        // Extraer el nombre de la ciudad del string (puede contener dirección completa)
+        const cityName = city.split(',')[0].trim();
+        citiesCount.set(cityName, (citiesCount.get(cityName) || 0) + 1);
+      }
+    });
+    
+    // Convertir Map a array y ordenar alfabéticamente
+    const sortedCities = Array.from(citiesCount.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([city, count]) => ({
+        value: city,
+        label: `${city} (${count})`
+      }));
+    
+    // Retornar con la opción "Todas las Ciudades" al inicio
+    return [
+      { value: '', label: `Todas las Ciudades (${properties.length})` },
+      ...sortedCities
+    ];
+  }, [properties]);
+
+  // Verificar si hay filtros activos
+  const hasActiveFilters = React.useMemo(() => {
+    return (
+      searchTerm !== '' ||
+      selectedType !== '' ||
+      (selectedCategory !== '' && selectedCategory !== defaultCategory) ||
+      selectedCity !== '' ||
+      selectedPriceRange !== '' ||
+      selectedBedrooms !== '' ||
+      selectedBathrooms !== '' ||
+      selectedAreaRange !== ''
+    );
+  }, [searchTerm, selectedType, selectedCategory, selectedCity, selectedPriceRange, selectedBedrooms, selectedBathrooms, selectedAreaRange, defaultCategory]);
+
+  // Función para cargar propiedades iniciales
+  const loadInitialProperties = async () => {
+    try {
+      setLoading(true);
+      setCurrentPage(1);
+      const data = await publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
+      setProperties(Array.isArray(data.properties) ? data.properties : []);
+      setHasMore(data.properties && data.properties.length === 6);
+      setError('');
+    } catch (e: any) {
+      setError('No se pudieron cargar propiedades');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar propiedades reales y aplicar filtros desde URL
   useEffect(() => {
+    loadInitialProperties();
+
     const tipo = searchParams.get('tipo');
     const categoria = searchParams.get('categoria');
     
@@ -159,6 +224,29 @@ const PropertiesSectionContent = () => {
       setSelectedCategory(categoria);
     }
   }, [searchParams]);
+
+  // Función para cargar más propiedades
+  const loadMoreProperties = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    
+    try {
+      setLoadingMore(true);
+      const nextPage = currentPage + 1;
+      const data = await publicPropertyService.getPropertiesPaginated({ page: nextPage, limit: 6 });
+      
+      if (data.properties && data.properties.length > 0) {
+        setProperties(prev => [...prev, ...data.properties]);
+        setCurrentPage(nextPage);
+        setHasMore(data.properties.length === 6);
+      } else {
+        setHasMore(false);
+      }
+    } catch (e: any) {
+      console.error('Error loading more properties:', e);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [currentPage, hasMore, loadingMore]);
 
   const formatPrice = (price: number, currency: string, period?: string) => {
     const formattedPrice = new Intl.NumberFormat('es-PY').format(price);
@@ -172,37 +260,45 @@ const PropertiesSectionContent = () => {
     return 'casa';
   };
 
-  const filteredProperties = properties.filter(property => {
+  const filteredProperties = properties.filter((property: any) => {
+    const title = property.title || '';
+    const loc = property.cityName || property.address || '';
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         property.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType ? property.type === selectedType : true;
+                         loc.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType ? (() => {
+      if (selectedType === 'venta') return property.operacion === 'SALE';
+      if (selectedType === 'alquiler') return property.operacion === 'RENT';
+      return true;
+    })() : true;
     const matchesCategory = selectedCategory ? getPropertyCategory(property) === selectedCategory : true;
-    const matchesCity = selectedCity ? property.location.includes(selectedCity) : true;
+    const matchesCity = selectedCity ? loc.includes(selectedCity) : true;
     
     // Filtro de precio
     const matchesPrice = selectedPriceRange ? (() => {
-      if (selectedPriceRange === '1000000000+') return property.price >= 1000000000;
+      if (selectedPriceRange === '1000000000+') return (property.price || 0) >= 1000000000;
       const [min, max] = selectedPriceRange.split('-').map(Number);
-      return property.price >= min && property.price <= max;
+      const price = property.price || 0;
+      return price >= min && price <= max;
     })() : true;
     
     // Filtro de dormitorios
     const matchesBedrooms = selectedBedrooms ? (() => {
-      if (selectedBedrooms === '5+') return property.bedrooms >= 5;
-      return property.bedrooms === parseInt(selectedBedrooms);
+      if (selectedBedrooms === '5+') return (property.bedrooms || 0) >= 5;
+      return (property.bedrooms || 0) === parseInt(selectedBedrooms);
     })() : true;
     
     // Filtro de baños
     const matchesBathrooms = selectedBathrooms ? (() => {
-      if (selectedBathrooms === '4+') return property.bathrooms >= 4;
-      return property.bathrooms === parseInt(selectedBathrooms);
+      if (selectedBathrooms === '4+') return (property.bathrooms || 0) >= 4;
+      return (property.bathrooms || 0) === parseInt(selectedBathrooms);
     })() : true;
     
     // Filtro de área
     const matchesArea = selectedAreaRange ? (() => {
-      if (selectedAreaRange === '300+') return property.area >= 300;
+      if (selectedAreaRange === '300+') return (property.area || 0) >= 300;
       const [min, max] = selectedAreaRange.split('-').map(Number);
-      return property.area >= min && property.area <= max;
+      const area = property.area || 0;
+      return area >= min && area <= max;
     })() : true;
     
     return matchesSearch && matchesType && matchesCategory && matchesCity && matchesPrice && matchesBedrooms && matchesBathrooms && matchesArea;
@@ -226,12 +322,19 @@ const PropertiesSectionContent = () => {
     setSelectedBathrooms('');
     setSelectedAreaRange('');
     setShowAdvancedFilters(false);
+    // Resetear paginación
+    setCurrentPage(1);
+    setHasMore(true);
+    setProperties([]);
+    // Recargar propiedades
+    loadInitialProperties();
   };
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section con Filtros */}
-      <section className="relative -mt-14 sm:-mt-16 min-h-[70vh] sm:min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pt-0">
+      {/* Hero Section solo para página principal */}
+      {!defaultCategory && (
+        <section className="relative -mt-14 sm:-mt-16 min-h-[70vh] sm:min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pt-0">
         {/* Patrón de cuadrícula de bienes raíces */}
         <div className="absolute inset-0 opacity-10">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -275,13 +378,7 @@ const PropertiesSectionContent = () => {
           </div>
 
           {/* Filtros en el Hero - Mejorados */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-            className="max-w-4xl mx-auto"
-          >
+          <div className="max-w-4xl mx-auto">
           {/* Mobile: Sistema de filtros expandible ultra premium */}
           <div className="block sm:hidden">
             <div className="bg-gradient-to-br from-black/40 via-black/25 to-black/15 backdrop-blur-2xl rounded-3xl p-6 border border-white/40 shadow-[0_20px_80px_rgba(0,0,0,0.3)] relative overflow-hidden">
@@ -350,7 +447,7 @@ const PropertiesSectionContent = () => {
                     onChange={(e) => setSelectedCity(e.target.value)}
                     className="w-full pl-12 pr-10 py-4 border border-cyan-400/30 hover:border-cyan-300/50 rounded-2xl focus:ring-2 focus:ring-cyan-300/50 focus:border-cyan-200/70 appearance-none text-sm bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
                   >
-                    {cities.map(city => (
+                    {availableCities.map(city => (
                       <option key={city.value} value={city.value}>{city.label}</option>
                     ))}
                   </select>
@@ -406,27 +503,29 @@ const PropertiesSectionContent = () => {
                         </div>
                       </div>
 
-                      <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
-                          <svg className="h-4 w-4 text-cyan-400 group-focus-within:text-cyan-300 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                </svg>
-              </div>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                          className="w-full pl-12 pr-10 py-4 border border-cyan-400/30 hover:border-cyan-300/50 rounded-2xl focus:ring-2 focus:ring-cyan-300/50 focus:border-cyan-200/70 appearance-none text-sm bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
-              >
-                {propertyCategories.map(category => (
-                  <option key={category.value} value={category.value}>{category.label}</option>
-                ))}
-              </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none z-20">
-                          <svg className="h-4 w-4 text-cyan-500 group-focus-within:text-cyan-400 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
+                      {!defaultCategory && (
+                        <div className="relative group">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
+                            <svg className="h-4 w-4 text-cyan-400 group-focus-within:text-cyan-300 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                          </div>
+                          <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="w-full pl-12 pr-10 py-4 border border-cyan-400/30 hover:border-cyan-300/50 rounded-2xl focus:ring-2 focus:ring-cyan-300/50 focus:border-cyan-200/70 appearance-none text-sm bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
+                          >
+                            {propertyCategories.map(category => (
+                              <option key={category.value} value={category.value}>{category.label}</option>
+                            ))}
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none z-20">
+                            <svg className="h-4 w-4 text-cyan-500 group-focus-within:text-cyan-400 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Fila 2: Dormitorios y Baños */}
@@ -506,7 +605,7 @@ const PropertiesSectionContent = () => {
               <div className="h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent mb-5 relative z-10"></div>
 
               {/* Footer mejorado */}
-              <div className="flex items-center justify-between text-sm relative z-10">
+              <div className={`flex items-center ${hasActiveFilters ? 'justify-between' : 'justify-start'} text-sm relative z-10`}>
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2">
                     <div className="w-2.5 h-2.5 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-pulse shadow-lg shadow-cyan-500/50"></div>
@@ -518,16 +617,18 @@ const PropertiesSectionContent = () => {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={clearFilters}
-                  className="group relative overflow-hidden text-cyan-200 hover:text-white font-bold bg-gradient-to-r from-white/15 to-white/10 hover:from-white/25 hover:to-white/15 px-5 py-3 rounded-2xl transition-all duration-300 border border-white/30 hover:border-white/50 flex items-center space-x-2 hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                  <svg className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span className="relative z-10">Limpiar Filtros</span>
-                </button>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="group relative overflow-hidden text-cyan-200 hover:text-white font-semibold bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 px-5 py-2.5 rounded-xl transition-all duration-300 border border-white/30 hover:border-white/50 flex items-center space-x-2 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <svg className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="relative z-10 text-sm">Limpiar</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -577,7 +678,7 @@ const PropertiesSectionContent = () => {
                 </div>
               </div>
 
-              {/* Filtros básicos */}
+              {/* Buscador original para página principal */}
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6 relative z-10">
                 <div className="lg:col-span-2 relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
@@ -619,25 +720,26 @@ const PropertiesSectionContent = () => {
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
                     <svg className="h-5 w-5 text-cyan-400 group-focus-within:text-cyan-300 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
                     className="w-full pl-12 pr-10 py-4 border border-cyan-400/40 hover:border-cyan-300/60 rounded-2xl focus:ring-2 focus:ring-cyan-300/60 focus:border-cyan-200/80 appearance-none text-base bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
-              >
-                {cities.map(city => (
-                  <option key={city.value} value={city.value}>{city.label}</option>
-                ))}
-              </select>
+                  >
+                    {availableCities.map(city => (
+                      <option key={city.value} value={city.value}>{city.label}</option>
+                    ))}
+                  </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none z-20">
                     <svg className="h-5 w-5 text-cyan-500 group-focus-within:text-cyan-400 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
                 </div>
+              </div>
             </div>
 
               {/* Filtros avanzados expandibles */}
@@ -684,28 +786,30 @@ const PropertiesSectionContent = () => {
                         </div>
                       </div>
 
-                      <div className="relative group">
-                        <label className="block text-cyan-200 text-sm font-semibold mb-2">Categoría</label>
-                        <div className="absolute inset-y-0 top-6 left-0 pl-4 flex items-center pointer-events-none z-20">
-                          <svg className="h-5 w-5 text-cyan-400 group-focus-within:text-cyan-300 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                          </svg>
+                      {!defaultCategory && (
+                        <div className="relative group">
+                          <label className="block text-cyan-200 text-sm font-semibold mb-2">Categoría</label>
+                          <div className="absolute inset-y-0 top-6 left-0 pl-4 flex items-center pointer-events-none z-20">
+                            <svg className="h-5 w-5 text-cyan-400 group-focus-within:text-cyan-300 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                          </div>
+                          <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="w-full pl-12 pr-10 py-4 mt-6 border border-cyan-400/40 hover:border-cyan-300/60 rounded-2xl focus:ring-2 focus:ring-cyan-300/60 focus:border-cyan-200/80 appearance-none text-base bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
+                          >
+                            {propertyCategories.map(category => (
+                              <option key={category.value} value={category.value}>{category.label}</option>
+                            ))}
+                          </select>
+                          <div className="absolute inset-y-0 top-6 right-0 flex items-center pr-4 pointer-events-none z-20">
+                            <svg className="h-5 w-5 text-cyan-500 group-focus-within:text-cyan-400 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
                         </div>
-                        <select
-                          value={selectedCategory}
-                          onChange={(e) => setSelectedCategory(e.target.value)}
-                          className="w-full pl-12 pr-10 py-4 mt-6 border border-cyan-400/40 hover:border-cyan-300/60 rounded-2xl focus:ring-2 focus:ring-cyan-300/60 focus:border-cyan-200/80 appearance-none text-base bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
-                        >
-                          {propertyCategories.map(category => (
-                            <option key={category.value} value={category.value}>{category.label}</option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 top-6 right-0 flex items-center pr-4 pointer-events-none z-20">
-                          <svg className="h-5 w-5 text-cyan-500 group-focus-within:text-cyan-400 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
+                      )}
 
                       <div className="relative group">
                         <label className="block text-cyan-200 text-sm font-semibold mb-2">Dormitorios</label>
@@ -783,8 +887,20 @@ const PropertiesSectionContent = () => {
               </motion.div>
 
               {/* Footer premium */}
-              <div className="flex items-center justify-between pt-6 border-t border-cyan-300/20 relative z-10">
+              <div className={`flex items-center ${hasActiveFilters ? 'justify-between' : 'justify-start'} pt-6 border-t border-cyan-300/20 relative z-10`}>
                 <div className="flex items-center space-x-4">
+                  {/* Categoría activa cuando hay defaultCategory */}
+                  {defaultCategory && (
+                    <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 px-3 py-2 rounded-lg border border-blue-400/30">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      <span className="text-blue-200 font-semibold text-sm">
+                        {propertyCategories.find(cat => cat.value === defaultCategory)?.label || defaultCategory}
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center space-x-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-4 py-3 rounded-xl border border-cyan-400/30">
                     <div className="w-3 h-3 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-pulse shadow-lg shadow-cyan-500/50"></div>
                     <span className="text-white font-bold text-lg">
@@ -795,22 +911,177 @@ const PropertiesSectionContent = () => {
             </span>
                   </div>
                 </div>
-            <button
-              onClick={clearFilters}
-                  className="group relative overflow-hidden bg-gradient-to-r from-white/20 to-white/15 hover:from-white/30 hover:to-white/20 text-cyan-200 hover:text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 border border-white/40 hover:border-white/60 flex items-center space-x-3 hover:scale-105 active:scale-95 shadow-2xl hover:shadow-cyan-500/20"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/15 to-blue-500/15 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                  <svg className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span className="relative z-10">Limpiar Filtros</span>
-            </button>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="group relative overflow-hidden text-cyan-200 hover:text-white font-semibold bg-gradient-to-r from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 px-6 py-3 rounded-xl transition-all duration-300 border border-white/30 hover:border-white/50 flex items-center space-x-2 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <svg className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="relative z-10">Limpiar Filtros</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
-        </motion.div>
         </div>
-      </section>
+        </section>
+      )}
+
+      {/* Buscador avanzado para páginas con categoría */}
+      {defaultCategory && (
+        <div className="bg-gradient-to-br from-gray-950 via-blue-950 to-gray-950 relative overflow-hidden pt-8 pb-8">
+          {/* Animated Background */}
+          <div className="absolute inset-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/15 via-indigo-900/15 to-blue-950/15"></div>
+            <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-r from-blue-700/10 to-indigo-700/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-r from-indigo-700/10 to-blue-800/10 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Buscador principal */}
+              <div className="flex-1 relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-900 group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar por ubicación, tipo o características..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white hover:border-blue-500 transition-all duration-200 placeholder:text-gray-700 text-gray-950 font-semibold shadow-sm"
+                />
+              </div>
+
+              {/* Filtro de ubicación */}
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                  <svg className="h-5 w-5 text-gray-900 group-focus-within:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <select
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  className="pl-10 pr-8 py-3 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm appearance-none bg-white hover:border-indigo-500 transition-all duration-200 min-w-[140px] font-bold text-gray-950 shadow-sm"
+                >
+                  <option value="">Ubicación</option>
+                  {availableCities.map(city => (
+                    <option key={city.value} value={city.value}>{city.label}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="h-4 w-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Botón más filtros */}
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className="px-5 py-3 border-2 border-gray-700 bg-white rounded-xl hover:bg-gray-100 hover:border-gray-900 transition-all duration-200 text-sm font-bold flex items-center text-gray-950 hover:text-black group shadow-sm"
+              >
+                <svg className="h-5 w-5 mr-2 text-gray-900 group-hover:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                <span className="text-base">Filtros</span>
+                <svg className={`h-5 w-5 ml-2 transition-transform duration-300 text-gray-900 group-hover:text-black ${showAdvancedFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Botón de búsqueda */}
+              <button
+                onClick={() => {
+                  setCurrentPage(1);
+                  loadInitialProperties();
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center group"
+              >
+                <svg className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Buscar
+              </button>
+            </div>
+
+            {/* Filtros adicionales desplegables */}
+            {showAdvancedFilters && (
+              <div className="mt-4 pt-4 border-t-2 border-gray-400">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Filtro de tipo */}
+                      <select
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="px-4 py-3 border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none bg-white font-bold text-gray-950 hover:border-blue-500 transition-colors shadow-sm"
+                      >
+                        <option value="">Tipo de propiedad</option>
+                        {propertyTypes.map(type => (
+                          <option key={type.value} value={type.value}>{type.label}</option>
+                        ))}
+                      </select>
+
+                      {/* Filtro de precio */}
+                      <select
+                        value={selectedPriceRange}
+                        onChange={(e) => setSelectedPriceRange(e.target.value)}
+                        className="px-4 py-3 border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none bg-white font-bold text-gray-950 hover:border-blue-500 transition-colors shadow-sm"
+                      >
+                        <option value="">Rango de precio</option>
+                        {priceRanges.map(range => (
+                          <option key={range.value} value={range.value}>{range.label}</option>
+                        ))}
+                      </select>
+
+                      {/* Filtro de dormitorios */}
+                      <select
+                        value={selectedBedrooms}
+                        onChange={(e) => setSelectedBedrooms(e.target.value)}
+                        className="px-4 py-3 border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none bg-white font-bold text-gray-950 hover:border-blue-500 transition-colors shadow-sm"
+                      >
+                        <option value="">Dormitorios</option>
+                        {bedroomsOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+
+                      {/* Filtro de baños */}
+                      <select
+                        value={selectedBathrooms}
+                        onChange={(e) => setSelectedBathrooms(e.target.value)}
+                        className="px-4 py-3 border-2 border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none bg-white font-bold text-gray-950 hover:border-blue-500 transition-colors shadow-sm"
+                      >
+                        <option value="">Baños</option>
+                        {bathroomsOptions.map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Botón limpiar filtros */}
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={clearFilters}
+                        className="group px-6 py-3 text-sm text-white font-extrabold bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 border-2 border-red-700 hover:border-red-800 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 flex items-center space-x-2"
+                      >
+                        <svg className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Limpiar filtros</span>
+                      </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Sección de Lista de Propiedades */}
       <div className="bg-gradient-to-b from-white via-gray-50 to-cyan-50 py-8 sm:py-12 lg:py-16">
@@ -822,35 +1093,67 @@ const PropertiesSectionContent = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           viewport={{ once: true }}
-          className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8' : 'space-y-4 sm:space-y-6'}
+          className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 items-stretch' : 'space-y-4 sm:space-y-6'}
         >
-          {filteredProperties.length > 0 ? (
-            filteredProperties.map(property => (
+          {loading ? (
+            <div className="col-span-full text-center py-16 text-gray-600">Cargando propiedades...</div>
+          ) : error ? (
+            <div className="col-span-full text-center py-16 text-red-600 font-medium">{error}</div>
+          ) : filteredProperties.length > 0 ? (
+            filteredProperties.map(property => {
+              // Procesar datos del agente para el frontend
+              console.log('Property slug:', property.slug, 'ID:', property.id); // Debug para verificar slug
+              
+              if (property.agent) {
+                const firstName = property.agent.firstName || '';
+                const lastName = property.agent.lastName || '';
+                property.agent.name = `${firstName} ${lastName}`.trim();
+                property.agent.avatar = property.agent.photo;
+                // Si no hay nombre completo, usar email como fallback
+                if (!property.agent.name) {
+                  property.agent.name = property.agent.email || 'Agente';
+                }
+                console.log('Processed agent name:', property.agent.name); // Debug del nombre procesado
+              }
+              
+              // Debug temporal para verificar operacion
+              console.log('Property operacion:', property.operacion, 'Title:', property.title);
+              
+              
+              return (
               <motion.div
-                key={property.id}
+                key={property.id || property.slug || Math.random()}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
-                className={`group bg-gradient-to-br from-white via-white to-gray-50/50 rounded-2xl lg:rounded-3xl shadow-xl hover:shadow-2xl border border-gray-100/50 overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:scale-[1.02] relative ${viewMode === 'list' ? 'flex flex-col sm:flex-row' : ''}`}
+                className={`group bg-gradient-to-br from-white via-white to-gray-50/50 rounded-xl shadow-lg hover:shadow-xl border border-gray-100/50 overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] relative h-full flex flex-col min-h-[420px] backdrop-blur-sm hover:backdrop-blur-md ${viewMode === 'list' ? 'sm:flex-row sm:min-h-[280px]' : ''}`}
               >
-              {/* Imagen con overlay premium */}
-              <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-full sm:w-80 h-48 sm:h-64' : 'h-52 sm:h-60 lg:h-72'}`}>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 z-10"></div>
-                <img
-                  src={property.images[0]}
-                  alt={property.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              {/* Imagen con overlay premium y efectos mágicos ✨ */}
+              <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-full sm:w-80 h-40 sm:h-48' : 'h-40 sm:h-48'}`}>
+                {/* Overlay con gradiente más hermoso */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10 group-hover:from-black/50 transition-all duration-500"></div>
+                
+                {/* Efecto de brillo sutil */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-20"></div>
+                
+                <OptimizedImage
+                  src={property.featuredImage || (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : null)}
+                  alt={property.title || 'Propiedad'}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 group-hover:brightness-110"
                 />
                 
-                {/* Badge tipo premium */}
+                {/* Badge tipo premium con efectos mágicos ✨ */}
                 <div className="absolute top-4 left-4 z-20">
-                  <div className={`px-4 py-2 rounded-2xl backdrop-blur-md border font-bold text-sm shadow-xl ${
-                    property.type === 'venta' 
-                      ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white border-emerald-400/50 shadow-emerald-500/30' 
-                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400/50 shadow-blue-500/30'
+                  <div className={`px-4 py-2 rounded-2xl backdrop-blur-md border font-bold text-sm shadow-xl transform group-hover:scale-105 transition-all duration-300 ${
+                    property.operacion === 'SALE'
+                      ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 text-white border-emerald-300/60 shadow-emerald-400/40 group-hover:shadow-emerald-400/60' 
+                      : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 text-white border-blue-300/60 shadow-blue-400/40 group-hover:shadow-blue-400/60'
                   }`}>
-                    {property.type === 'venta' ? '🏠 Venta' : '🏢 Alquiler'}
+                    <div className="flex items-center space-x-1">
+                      <span className="text-lg">{property.operacion === 'SALE' ? '🏠' : '🏢'}</span>
+                      <span>{property.operacion === 'SALE' ? 'Venta' : property.operacion === 'RENT' ? 'Alquiler' : 'Ambos'}</span>
+                    </div>
                   </div>
                 </div>
                 
@@ -890,231 +1193,321 @@ const PropertiesSectionContent = () => {
                 </div>
                 
                 {/* Indicador de múltiples fotos */}
-                {property.images.length > 1 && (
+                {property.galleryImages && property.galleryImages.length > 1 && (
                   <div className="absolute bottom-4 right-4 z-20">
                     <div className="flex items-center space-x-1 bg-black/60 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/20">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-white text-sm font-medium">{property.images.length}</span>
+                      <span className="text-white text-sm font-medium">{property.galleryImages.length}</span>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Detalles con diseño premium compacto */}
-              <div className={`p-4 lg:p-5 ${viewMode === 'list' ? 'flex-1' : ''}`}>
-                {/* Header con título y precio compacto */}
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3">
-                  <div className="flex-1 sm:pr-3">
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-2 mb-1">
-                    {property.title}
-                  </h3>
-                  </div>
-                  <div className="flex-shrink-0">
-                  <div className="text-right">
-                      <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-700 to-blue-700 bg-clip-text text-transparent">
-                      {formatPrice(property.price, property.currency, property.pricePeriod)}
-                    </div>
-                    {property.type === 'alquiler' && (
-                        <div className="text-xs text-gray-600 font-semibold">por mes</div>
-                    )}
-                    </div>
-                  </div>
-                </div>
+              <div className={`p-3 flex-1 flex flex-col ${viewMode === 'list' ? 'sm:flex-1' : ''}`}>
+                {/* Título */}
+                <h3 className="text-base font-bold text-gray-900 line-clamp-2 leading-tight mb-2">
+                  {property.title}
+                </h3>
 
                 {/* Ubicación compacta */}
-                <div className="flex items-center text-gray-600 mb-3">
-                  <div className="p-1.5 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-lg mr-2 shadow-sm">
-                    <svg className="w-3 h-3 text-cyan-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center text-sm text-gray-600 mb-2">
+                  <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  </div>
-                  <span className="text-xs font-bold text-gray-800">{property.location}</span>
+                  <span className="truncate">
+                    {property.cityName || property.address || 'Ubicación no disponible'}
+                  </span>
                 </div>
 
-                {/* Características compactas */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                  <div className="flex items-center bg-gradient-to-br from-gray-50 to-gray-100/80 p-2 rounded-xl border border-gray-200/50 hover:shadow-md transition-all duration-300">
-                    <div className="p-1.5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mr-2 shadow-sm">
-                      <svg className="w-3 h-3 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                    </svg>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-gray-900">{property.bedrooms}</div>
-                      <div className="text-xs text-gray-700 font-medium">Dorm.</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center bg-gradient-to-br from-gray-50 to-gray-100/80 p-2 rounded-xl border border-gray-200/50 hover:shadow-md transition-all duration-300">
-                    <div className="p-1.5 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-lg mr-2 shadow-sm">
-                      <svg className="w-3 h-3 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-gray-900">{property.bathrooms}</div>
-                      <div className="text-xs text-gray-700 font-medium">Baños</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center bg-gradient-to-br from-gray-50 to-gray-100/80 p-2 rounded-xl border border-gray-200/50 hover:shadow-md transition-all duration-300">
-                    <div className="p-1.5 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg mr-2 shadow-sm">
-                      <svg className="w-3 h-3 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    </svg>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-gray-900">{property.area}</div>
-                      <div className="text-xs text-gray-700 font-medium">m²</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center bg-gray-50 px-2 sm:px-3 py-1 rounded-full">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                    </svg>
-                    <span className="font-medium text-xs sm:text-sm">{property.parking}</span>
-                  </div>
-                </div>
-
-                <p className="text-gray-700 text-xs mb-3 line-clamp-2 font-medium leading-relaxed">
-                  {property.description}
-                </p>
-
-                {/* Sección del agente con mucho amor 💕 compacta */}
-                <div className="relative mt-3 p-3 bg-gradient-to-br from-gray-50 via-white to-gray-50/50 rounded-xl border border-gray-100 shadow-sm">
-                  {/* Decoración sutil */}
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 rounded-t-2xl"></div>
-                  
-                  {/* Header del agente compacto */}
-                  <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                      <div className="relative">
-                    <img
-                      src={property.agent.avatar}
-                      alt={property.agent.name}
-                          className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-lg ring-2 ring-gray-100"
-                    />
-                        {property.agent.verified && (
-                          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-                            <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+                {/* Información del Agente y Agencia - Mejorada */}
+                <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 rounded-xl p-3 mb-3 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="relative flex-shrink-0">
+                        {property.agent?.name ? (
+                          <>
+                            {property.agent.avatar ? (
+                              <img 
+                                src={getImageUrl(property.agent.avatar)} 
+                                alt={property.agent.name}
+                                className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-md"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                                <span className="text-white text-sm font-bold">
+                                  {property.agent.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm">
+                              <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-8 h-8 bg-gradient-to-br from-slate-500 to-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
                           </div>
                         )}
                       </div>
-                      <div>
-                        <div className="flex items-center space-x-1">
-                          <h4 className="font-bold text-gray-900 text-sm">
-                            {property.agent.name}
-                          </h4>
-                          {property.agent.verified && (
-                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                              ✓
+                      <div className="ml-3 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900 truncate">
+                            {property.agent?.name || property.agencyName || 'ON Bienes Raíces'}
+                          </p>
+                          {property.agent?.name && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              ✓ Verificado
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-600 font-medium">
-                        {property.agent.company}
-                        </p>
-                        <div className="flex items-center">
-                          <div className="flex space-x-0.5">
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs font-semibold text-blue-700">
+                            {property.agent?.name ? 'Agente Inmobiliario' : 'Agencia Inmobiliaria'}
+                          </p>
+                          {property.agencyName && property.agent?.name && (
+                            <>
+                              <span className="text-slate-400">•</span>
+                              <p className="text-xs text-slate-600 truncate">{property.agencyName}</p>
+                            </>
+                          )}
+                        </div>
+                        {/* Rating o badges */}
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center">
                             {[...Array(5)].map((_, i) => (
-                              <svg key={i} className="w-2.5 h-2.5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                              <svg key={i} className="w-3 h-3 text-yellow-400 fill-current" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               </svg>
                             ))}
+                            <span className="text-xs text-slate-600 ml-1">4.9</span>
                           </div>
-                          <span className="text-xs text-gray-500 ml-1">4.9</span>
+                          <span className="text-xs text-slate-500">•</span>
+                          <span className="text-xs text-green-600 font-medium">Disponible</span>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Botones de contacto compactos */}
-                  <div className="flex space-x-1.5">
-                    <a
-                      href={`tel:${property.agent.phone}`}
-                      className="group p-2 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300 hover:scale-110 active:scale-95"
-                      title="Llamar ahora"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                    </a>
-                    <a
-                      href={`https://wa.me/${property.agent.phone}`}
-                      className="group p-2 bg-gradient-to-br from-green-600 to-green-700 text-white rounded-lg hover:shadow-lg hover:shadow-green-600/25 transition-all duration-300 hover:scale-110 active:scale-95"
-                      title="WhatsApp"
-                    >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.786"/>
-                      </svg>
-                    </a>
-                    <a
-                      href={`mailto:${property.agent.email}`}
-                      className="group p-2 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 hover:scale-110 active:scale-95"
-                      title="Enviar email"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-
-                  {/* Separador elegante compacto */}
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-3"></div>
-
-                  {/* Acciones principales compactas */}
-                  <div className="flex items-center justify-between">
-                    <button className="flex-1 bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 hover:from-cyan-700 hover:via-blue-700 hover:to-purple-700 text-white py-2 px-4 rounded-xl font-bold text-xs transition-all duration-500 hover:shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98] group relative overflow-hidden mr-3">
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                      <div className="flex items-center justify-center space-x-1 relative z-10">
-                        <span>Ver Detalles</span>
-                        <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      </div>
-                  </button>
-                    
-                    <div className="flex items-center space-x-2">
-                      <div className="h-6 w-px bg-gray-200"></div>
-                      <a
-                        href={`tel:${property.agent.phone}`}
-                        className="group flex items-center space-x-1 text-cyan-600 hover:text-cyan-800 font-bold text-xs transition-all duration-300 hover:scale-105"
+                    {/* Botones de contacto mejorados */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {property.agent?.phone && (
+                        <button 
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 bg-green-500 hover:bg-green-600 text-white rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:scale-110"
+                          title="Llamar"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                        </button>
+                      )}
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:scale-110"
+                        title={property.agent?.name ? 'Contactar agente' : 'Contactar agencia'}
                       >
-                        <svg className="w-3 h-3 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        <span className="group-hover:underline">Contactar</span>
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
+
+                {/* Características minimalistas */}
+                <div className="grid grid-cols-4 gap-1 mb-2">
+                  <div className="text-center">
+                    <div className="text-sm font-bold text-gray-900">{property.bedrooms}</div>
+                    <div className="text-xs text-gray-500">Dorm.</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-bold text-gray-900">{property.bathrooms}</div>
+                    <div className="text-xs text-gray-500">Baños</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-bold text-gray-900">{property.area}</div>
+                    <div className="text-xs text-gray-500">m²</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm font-bold text-gray-900">{property.parking}</div>
+                    <div className="text-xs text-gray-500">Estac.</div>
+                  </div>
+                </div>
+
+                {/* Espaciador */}
+                <div className="flex-1"></div>
+
+                {/* Precio */}
+                <div className="text-center mb-2">
+                  <div className="text-lg font-bold text-gray-900">
+                    {formatPrice(property.price || 0, property.currencyCode || 'PYG')}
+                  </div>
+                  {property.operacion === 'RENT' && (
+                    <div className="text-xs text-gray-500">por mes</div>
+                  )}
+                </div>
+
+                {/* Descripción */}
+                <p className="text-gray-600 text-xs line-clamp-2 mb-3 leading-relaxed">
+                  {stripHtml(property.description)}
+                </p>
+
+                {/* Botón premium mejorado */}
+                <Link href={`/propiedad/${property.slug || property.id}`}>
+                  <button className="group relative w-full bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-0.5 active:translate-y-0 overflow-hidden">
+                    {/* Efecto de brillo animado */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                    
+                    <div className="relative flex items-center justify-center space-x-2">
+                      <span>Ver Detalles</span>
+                      <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                    
+                    {/* Efecto de partículas */}
+                    <div className="absolute top-0 left-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute top-2 left-2 w-1 h-1 bg-white/60 rounded-full animate-ping"></div>
+                      <div className="absolute top-4 right-3 w-1 h-1 bg-white/40 rounded-full animate-ping delay-100"></div>
+                      <div className="absolute bottom-3 left-4 w-1 h-1 bg-white/50 rounded-full animate-ping delay-200"></div>
+                    </div>
+                  </button>
+                </Link>
               </div>
               </motion.div>
-            ))
+              );
+            })
           ) : (
-            <div className="col-span-full text-center py-16">
-              <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-                <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                No se encontraron propiedades
-              </h3>
-              <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Intenta ajustar tus filtros de búsqueda para encontrar más resultados o explora otras opciones.
-              </p>
-              <button
-                onClick={clearFilters}
-                className="px-8 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-lg hover:from-brand-700 hover:to-brand-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            <div className="col-span-full">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-3xl shadow-xl border-2 border-blue-100 p-12 text-center relative overflow-hidden"
               >
-                Limpiar Filtros
+                {/* Decorative elements */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-gradient-to-br from-purple-200/30 to-pink-200/30 rounded-full blur-3xl"></div>
+                
+                <div className="relative">
+                  {/* Icon */}
+                  <div className="w-28 h-28 mx-auto mb-8 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+                    <svg className="w-14 h-14 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  
+                  {/* Title */}
+                  <h3 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">
+                    No encontramos propiedades
+                  </h3>
+                  
+                  {/* Description */}
+                  <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+                    No hay propiedades que coincidan con tus criterios de búsqueda. 
+                    <span className="block mt-2 font-semibold text-gray-700">
+                      ¿Qué tal si pruebas con otros filtros?
+                    </span>
+                  </p>
+                  
+                  {/* Suggestions */}
+                  <div className="mb-10 max-w-3xl mx-auto">
+                    <p className="text-sm font-semibold text-gray-700 mb-4">Sugerencias:</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white rounded-xl p-4 shadow-md border border-blue-100 hover:shadow-lg transition-shadow">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-700 font-medium">Amplía el rango de precios</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 shadow-md border border-purple-100 hover:shadow-lg transition-shadow">
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-700 font-medium">Prueba otras ubicaciones</p>
+                      </div>
+                      <div className="bg-white rounded-xl p-4 shadow-md border border-pink-100 hover:shadow-lg transition-shadow">
+                        <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <svg className="w-5 h-5 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-700 font-medium">Cambia el tipo de propiedad</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <button
+                      onClick={clearFilters}
+                      className="group inline-flex items-center px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-bold text-lg shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                    >
+                      <svg className="w-5 h-5 mr-2 group-hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Limpiar Todos los Filtros
+                    </button>
+                    
+                    <a
+                      href="/propiedades"
+                      className="inline-flex items-center px-10 py-4 bg-white text-blue-600 rounded-2xl hover:bg-gray-50 transition-all duration-300 font-bold text-lg shadow-xl hover:shadow-2xl border-2 border-blue-200 hover:border-blue-300 hover:scale-105"
+                    >
+                      Ver Todas las Propiedades
+                      <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {/* Botón Cargar Más */}
+          {!loading && !error && filteredProperties.length > 0 && hasMore && (
+            <div className="col-span-full flex justify-center mt-8">
+              <button
+                onClick={loadMoreProperties}
+                disabled={loadingMore}
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {loadingMore ? (
+                  <div className="flex items-center space-x-2">
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Cargando...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <span>Cargar más propiedades</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                )}
               </button>
+            </div>
+          )}
+
+          {/* Mensaje cuando no hay más propiedades */}
+          {!loading && !error && filteredProperties.length > 0 && !hasMore && (
+            <div className="col-span-full text-center mt-8">
+              <p className="text-gray-500 text-sm">
+                Has visto todas las propiedades disponibles
+              </p>
             </div>
           )}
         </motion.div>
@@ -1124,10 +1517,10 @@ const PropertiesSectionContent = () => {
   );
 };
 
-const PropertiesSection = () => {
+const PropertiesSection = ({ defaultCategory }: { defaultCategory?: string } = {}) => {
   return (
     <Suspense fallback={<div className="flex justify-center items-center h-64">Cargando...</div>}>
-      <PropertiesSectionContent />
+      <PropertiesSectionContent defaultCategory={defaultCategory} />
     </Suspense>
   );
 };

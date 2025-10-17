@@ -18,11 +18,12 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, activeSubmenu,
       href: '/propiedades',
       submenu: [
         { name: 'Todas las Propiedades', href: '/propiedades' },
-        { name: 'Ventas', href: '/propiedades?tipo=venta' },
-        { name: 'Alquiler', href: '/propiedades?tipo=alquiler' },
-        { name: 'Departamentos', href: '/propiedades?categoria=apartamento' },
-        { name: 'Casas', href: '/propiedades?categoria=casa' },
-        { name: 'Proyectos/Desarrollos', href: '/proyectos' }
+        { name: 'Casas', href: '/propiedades/casa' },
+        { name: 'Departamentos', href: '/propiedades/departamento' },
+        { name: 'Terrenos', href: '/propiedades/terreno' },
+        { name: 'Locales Comerciales', href: '/propiedades/comercial' },
+        { name: 'Quintas y Chalets', href: '/propiedades/quinta' },
+        { name: 'Edificios', href: '/propiedades/edificio' }
       ]
     },
     { name: 'Asesores', href: '/asesores' },

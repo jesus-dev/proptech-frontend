@@ -20,26 +20,26 @@ export default function ProptechLayout({ children }: any) {
   return (
     <>
       <AuthGuard requireAuth={true}>
-        <div className="min-h-screen xl:flex">
+        <div className="min-h-screen xl:flex xl:gap-0">
           {/* Sidebar and Backdrop */}
           <AppSidebar />
           <Backdrop />
           {/* Main Content Area */}
           <div
-            className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
+            className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin} bg-gray-50 min-h-screen`}
           >
             {/* Header */}
             <AppHeaderCRM />
             {/* Page Content */}
-            <div className="p-2 mx-auto max-w-(--breakpoint-2xl) md:p-4">
+            <div className="pt-0 md:pt-1 -ml-4 pl-4 pr-2 md:pr-4 pb-20 w-full crm-content">
               {children}
             </div>
           </div>
         </div>
       </AuthGuard>
       
-      {/* Footer sticky con flecha y Powered by OnTech */}
-      <footer className="sticky bottom-0 left-0 right-0 z-30 h-16 bg-white border-t border-gray-200 flex items-center justify-between px-6">
+      {/* Footer sticky con flecha y Powered by OnTech - Solo mobile */}
+      <footer className="md:hidden sticky bottom-0 left-0 right-0 z-30 h-16 bg-white border-t border-gray-200 flex items-center justify-between px-6">
         <div className="text-sm text-gray-500">
           Powered by <a href="https://ontech.com.py" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer">OnTech</a>
         </div>

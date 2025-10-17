@@ -1,61 +1,37 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-  MagnifyingGlassIcon,
-  MapPinIcon,
-  HomeIcon,
-  BuildingOfficeIcon,
-  WrenchScrewdriverIcon,
-  CurrencyDollarIcon,
-  FunnelIcon,
+  PlayIcon,
   ArrowRightIcon,
-  PlayIcon
+  CheckCircleIcon,
+  StarIcon,
+  RocketLaunchIcon
 } from '@heroicons/react/24/outline';
-import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
 
 const HeroSection = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [propertyType, setPropertyType] = useState('');
-  const [location, setLocation] = useState('');
-  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [bedrooms, setBedrooms] = useState('');
-  const [bathrooms, setBathrooms] = useState('');
-
-  const propertyTypes = [
-    { value: '', label: 'Tipo de Propiedad' },
-    { value: 'casa', label: 'Casa' },
-    { value: 'departamento', label: 'Departamento' },
-    { value: 'terreno', label: 'Terreno' },
-    { value: 'local', label: 'Local Comercial' },
-    { value: 'oficina', label: 'Oficina' }
-  ];
-
-  const locations = [
-    { value: '', label: 'Ubicación' },
-    { value: 'asuncion', label: 'Asunción' },
-    { value: 'ciudad-del-este', label: 'Ciudad del Este' },
-    { value: 'encarnacion', label: 'Encarnación' },
-    { value: 'san-lorenzo', label: 'San Lorenzo' },
-    { value: 'fernando-de-la-mora', label: 'Fernando de la Mora' }
-  ];
-
   const stats = [
-    { label: 'Propiedades Activas', value: '500+' },
-    { label: 'Ciudades Cubiertas', value: '15+' },
-    { label: 'Agentes Certificados', value: '150+' },
-    { label: 'Satisfacción', value: '98%' },
+    { value: '500+', label: 'Agentes activos' },
+    { value: '10K+', label: 'Propiedades gestionadas' },
+    { value: '98%', label: 'Satisfacción del cliente' },
+    { value: '24/7', label: 'Soporte disponible' }
+  ];
+
+  const features = [
+    'Gestión completa de propiedades',
+    'CRM integrado para agentes',
+    'Reportes en tiempo real',
+    'App móvil incluida'
   ];
 
   return (
-    <section className="relative -mt-14 sm:-mt-16 min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pt-0">
+    <section className="relative min-h-screen bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 overflow-hidden w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16">
       {/* Patrón de cuadrícula de bienes raíces */}
       <div className="absolute inset-0 opacity-10">
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <pattern id="property-grid-hero" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+            <pattern id="property-grid" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
               <rect width="80" height="80" fill="none" stroke="cyan" strokeWidth="0.5" opacity="0.3"/>
               <rect x="10" y="10" width="60" height="45" fill="none" stroke="cyan" strokeWidth="0.3" opacity="0.4" rx="2"/>
               <rect x="15" y="45" width="10" height="8" fill="cyan" opacity="0.2"/>
@@ -67,65 +43,19 @@ const HeroSection = () => {
               <circle cx="55" cy="65" r="1.5" fill="cyan" opacity="0.3"/>
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#property-grid-hero)" />
+          <rect width="100%" height="100%" fill="url(#property-grid)" />
         </svg>
       </div>
       
       {/* Elementos decorativos animados */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-400/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-sky-300/10 rounded-full blur-2xl animate-bounce"></div>
-        <div className="absolute top-20 right-20 w-32 h-32 bg-emerald-400/10 rounded-full blur-xl animate-pulse delay-500"></div>
-        
-        {/* Floating Elements */}
-        <motion.div
-          animate={{
-            y: [0, -20, 0],
-            x: [0, 10, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute top-10 left-5 w-16 h-16 bg-gradient-to-r from-cyan-400/30 to-blue-600/30 rounded-full blur-xl"
-        ></motion.div>
-        
-        <motion.div
-          animate={{
-            y: [0, 15, 0],
-            x: [0, -15, 0],
-            scale: [1, 0.9, 1],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1
-          }}
-          className="absolute top-20 right-10 w-24 h-24 bg-gradient-to-r from-emerald-400/25 to-cyan-500/25 rounded-full blur-2xl"
-        ></motion.div>
-        
-        <motion.div
-          animate={{
-            y: [0, -10, 0],
-            x: [0, 20, 0],
-            scale: [1, 1.2, 1],
-          }}
-          transition={{
-            duration: 7,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2
-          }}
-          className="absolute bottom-10 left-1/4 w-20 h-20 bg-gradient-to-r from-purple-400/20 to-blue-500/20 rounded-full blur-xl"
-        ></motion.div>
+        <div className="absolute top-20 left-4 sm:left-10 w-16 h-16 sm:w-20 sm:h-20 bg-cyan-500/20 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute top-32 sm:top-40 right-4 sm:right-20 w-24 h-24 sm:w-32 sm:h-32 bg-blue-500/20 rounded-full blur-xl animate-pulse delay-1000"></div>
+        <div className="absolute bottom-16 sm:bottom-20 left-1/4 w-20 h-20 sm:w-24 sm:h-24 bg-cyan-300/20 rounded-full blur-xl animate-bounce"></div>
       </div>
-      
-      <div className="relative max-w-7xl mx-auto px-4 pt-16 sm:pt-20 pb-12 sm:pb-16 w-full z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -137,100 +67,86 @@ const HeroSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="inline-flex items-center px-3 sm:px-4 py-2 rounded-full bg-cyan-100/20 backdrop-blur-sm text-cyan-300 text-xs sm:text-sm font-medium mb-4 sm:mb-6 border border-cyan-400/30"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-400/30 text-white text-sm font-semibold mb-8 backdrop-blur-sm"
             >
-              <StarSolidIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Propiedades siempre actualizadas en tiempo real</span>
-              <span className="sm:hidden">Propiedades actualizadas</span>
+              <RocketLaunchIcon className="w-5 h-5 mr-2" />
+              El CRM más avanzado para agentes inmobiliarios
             </motion.div>
 
             {/* Main Heading */}
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight"
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white mb-8 leading-tight"
             >
-              Encuentra tu{' '}
-              <span className="bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
-                hogar ideal
+              Gestiona tu negocio{' '}
+                <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-slate-400 bg-clip-text text-transparent">
+                inmobiliario
               </span>{' '}
-              en Paraguay
+              como un profesional
             </motion.h1>
 
-            {/* Subheading */}
+            {/* Subtitle */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-lg sm:text-xl text-cyan-100 mb-6 sm:mb-8 max-w-2xl"
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-xl md:text-2xl text-white mb-12 leading-relaxed max-w-2xl mx-auto lg:mx-0"
             >
-              <span className="hidden sm:inline">Explora más de 500 propiedades verificadas en Asunción, Ciudad del Este, 
-              Encarnación y todo el país. Casas, departamentos, terrenos y locales comerciales.</span>
-              <span className="sm:hidden">Explora más de 500 propiedades verificadas en Paraguay. 
-              Casas, departamentos, terrenos y locales comerciales.</span>
+              La plataforma más completa para agentes inmobiliarios. 
+              Gestiona propiedades, clientes y ventas desde un solo lugar.
             </motion.p>
-
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12"
-            >
-              <Link
-                href="/propiedades"
-                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:from-cyan-700 hover:to-blue-700 transition-all duration-300 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-              >
-                Explorar Propiedades
-                <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" />
-              </Link>
-              <Link
-                href="/proptech"
-                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 border-2 border-white/30 text-white rounded-lg hover:bg-white/10 hover:text-white transition-all duration-300 font-semibold text-base sm:text-lg backdrop-blur-sm"
-              >
-                <PlayIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                Descubrir PropTech
-              </Link>
-            </motion.div>
 
             {/* Features List */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-              className="space-y-2 sm:space-y-3 mb-8 sm:mb-12"
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12"
             >
-              {[
-                '✅ Propiedades verificadas y actualizadas',
-                '✅ Búsqueda avanzada con filtros',
-                '✅ Agentes profesionales certificados',
-                '✅ Portal optimizado para móviles',
-              ].map((feature, index) => (
-                <div key={index} className="flex items-center text-cyan-200 font-medium text-sm sm:text-base">
-                  {feature}
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-center justify-center lg:justify-start">
+                  <CheckCircleIcon className="w-6 h-6 text-green-400 mr-3 flex-shrink-0" />
+                  <span className="text-white font-medium">{feature}</span>
                 </div>
               ))}
             </motion.div>
 
-            {/* Stats */}
+            {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.6 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6"
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center lg:text-left">
-                  <div className="text-xl sm:text-2xl font-bold text-cyan-300 mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-xs sm:text-sm text-gray-400">
-                    {stat.label}
-                  </div>
+              <button className="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 hover:scale-105">
+                Comenzar Gratis
+                <ArrowRightIcon className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+              </button>
+              
+              <button className="group inline-flex items-center justify-center px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-2xl font-bold text-lg border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
+                <PlayIcon className="w-6 h-6 mr-2" />
+                Ver Demo
+              </button>
+            </motion.div>
+
+            {/* Trust Indicators */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+              className="mt-12 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6"
+            >
+              <div className="flex items-center">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <StarIcon key={i} className="w-6 h-6 text-yellow-400 fill-current" />
+                  ))}
                 </div>
-              ))}
+                <span className="ml-3 text-white font-medium">4.9/5 de 500+ agentes</span>
+              </div>
             </motion.div>
           </motion.div>
 
@@ -238,89 +154,110 @@ const HeroSection = () => {
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
             className="relative"
           >
             {/* Main Dashboard Mockup */}
-            <div className="relative bg-white rounded-2xl shadow-2xl p-3 sm:p-6 border border-gray-200">
-              {/* Browser Header */}
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <div className="flex-1 bg-gray-100 rounded-md h-6 ml-4 flex items-center px-2 sm:px-3">
-                  <span className="text-xs text-gray-500 truncate">proptech.com.py/dashboard</span>
+            <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl">
+              {/* Dashboard Header */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg"></div>
+                  <span className="text-white font-bold text-lg">Proptech CRM</span>
+                </div>
+                <div className="flex space-x-2">
+                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                 </div>
               </div>
 
               {/* Dashboard Content */}
-              <div className="space-y-4">
-                {/* Header Stats */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                  <div className="bg-brand-50 rounded-lg p-2 sm:p-3">
-                    <div className="text-lg sm:text-2xl font-bold text-brand-600">24</div>
-                    <div className="text-xs text-gray-600">Propiedades</div>
+              <div className="space-y-6">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-2xl p-4 border border-blue-400/30">
+                    <div className="text-2xl font-bold text-white mb-1">24</div>
+                    <div className="text-white text-sm">Propiedades Activas</div>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-2 sm:p-3">
-                    <div className="text-lg sm:text-2xl font-bold text-green-600">8</div>
-                    <div className="text-xs text-gray-600">Clientes</div>
-                  </div>
-                  <div className="bg-orange-50 rounded-lg p-2 sm:p-3">
-                    <div className="text-lg sm:text-2xl font-bold text-orange-600">5</div>
-                    <div className="text-xs text-gray-600">Citas</div>
+                  <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-2xl p-4 border border-purple-400/30">
+                    <div className="text-2xl font-bold text-white mb-1">156</div>
+                    <div className="text-white text-sm">Clientes</div>
                   </div>
                 </div>
 
-                {/* Property List */}
-                <div className="space-y-2">
-                  <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Propiedades Recientes</div>
-                  {[
-                    { name: 'Casa en Asunción', price: '$85,000', status: 'Disponible' },
-                    { name: 'Depto. en Ciudad del Este', price: '$45,000', status: 'Vendido' },
-                    { name: 'Terreno en Encarnación', price: '$25,000', status: 'Reservado' },
-                  ].map((property, index) => (
-                    <div key={index} className="flex items-center justify-between p-1.5 sm:p-2 bg-gray-50 rounded-lg">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">{property.name}</div>
-                        <div className="text-xs text-gray-500">{property.price}</div>
+                {/* Recent Activity */}
+                <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-gray-700/50">
+                  <h3 className="text-white font-bold mb-4">Actividad Reciente</h3>
+                  <div className="space-y-3">
+                    {[
+                      { icon: '🏠', text: 'Nueva propiedad agregada', time: '2 min' },
+                      { icon: '📞', text: 'Llamada programada', time: '15 min' },
+                      { icon: '📧', text: 'Email enviado a cliente', time: '1 hora' }
+                    ].map((activity, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xl">{activity.icon}</span>
+                          <span className="text-white text-sm">{activity.text}</span>
+                        </div>
+                        <span className="text-white text-xs">{activity.time}</span>
                       </div>
-                      <div className={`px-1.5 sm:px-2 py-1 rounded-full text-xs flex-shrink-0 ${
-                        property.status === 'Disponible' ? 'bg-green-100 text-green-700' :
-                        property.status === 'Vendido' ? 'bg-blue-100 text-blue-700' :
-                        'bg-orange-100 text-orange-700'
-                      }`}>
-                        {property.status}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
+
+              {/* Floating Elements */}
+              <motion.div
+                animate={{
+                  y: [0, -10, 0],
+                  rotate: [0, 5, 0],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg"
+              >
+                <span className="text-white text-2xl">📈</span>
+              </motion.div>
+
+              <motion.div
+                animate={{
+                  y: [0, 10, 0],
+                  rotate: [0, -5, 0],
+                }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+                className="absolute -bottom-4 -left-4 w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg"
+              >
+                <span className="text-white text-xl">💰</span>
+              </motion.div>
             </div>
-
-            {/* Floating Elements */}
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="absolute -top-4 -right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200"
-            >
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-gray-700">Nueva venta!</span>
-              </div>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 4, repeat: Infinity }}
-              className="absolute -bottom-4 -left-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200"
-            >
-              <div className="text-xs text-gray-600">
-                <div className="font-semibold">+15% ventas</div>
-                <div>este mes</div>
-              </div>
-            </motion.div>
           </motion.div>
         </div>
+
+        {/* Bottom Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.8 }}
+          className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-8"
+        >
+          {stats.map((stat, index) => (
+            <div key={index} className="text-center group">
+              <div className="text-4xl md:text-5xl font-bold text-white mb-2 group-hover:scale-110 transition-transform duration-300">
+                {stat.value}
+              </div>
+              <div className="text-white font-medium">{stat.label}</div>
+            </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );

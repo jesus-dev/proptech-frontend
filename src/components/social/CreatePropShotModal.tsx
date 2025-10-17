@@ -142,7 +142,8 @@ export default function CreatePropShotModal({
               </div>
             ) : (
               /* Área de upload - TODO clickeable */
-              <label htmlFor="video-upload" className="aspect-[9/16] bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl border-2 border-dashed border-orange-300 flex items-center justify-center cursor-pointer hover:border-orange-400 transition-colors group">
+              <label htmlFor="video-upload" className="aspect-[9/16] bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200 rounded-2xl border-2 border-dashed border-orange-300 flex items-center justify-center cursor-pointer hover:border-orange-500 hover:shadow-lg transition-all duration-300 group relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-400/0 to-orange-600/0 group-hover:from-orange-400/10 group-hover:to-orange-600/10 transition-all duration-300"></div>
                 <input
                   type="file"
                   accept="video/*"
@@ -169,13 +170,20 @@ export default function CreatePropShotModal({
                     }
                   }}
                 />
-                <div className="text-center">
-                  <svg className="w-16 h-16 text-orange-400 mx-auto mb-3 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
-                  </svg>
-                  <p className="text-orange-600 font-medium text-lg">Seleccionar Video</p>
-                  <p className="text-orange-500 text-sm mt-1">o arrastra y suelta aquí</p>
-                  <p className="text-orange-400 text-xs mt-2">MP4, MOV • Máximo 100MB</p>
+                <div className="text-center relative z-10">
+                  <div className="relative inline-block mb-4">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
+                    <div className="relative bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
+                      <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-orange-700 font-bold text-lg mb-2">Seleccionar Video</p>
+                  <p className="text-orange-600 text-sm mb-3">o arrastra y suelta aquí</p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-200/50 rounded-full">
+                    <span className="text-orange-700 text-xs font-medium">MP4, MOV • Máximo 100MB</span>
+                  </div>
                 </div>
               </label>
             )}

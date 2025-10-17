@@ -117,82 +117,82 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
 
   return (
     <div className="relative" ref={ref}>
-      {/* Botón del usuario */}
+      {/* Botón del usuario - Estilo Facebook */}
       <button
-        className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+        className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-all duration-200 group"
         onClick={() => setOpen(!open)}
         aria-haspopup="true"
         aria-expanded={open}
       >
         {/* Avatar del usuario */}
         <div className="relative">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:shadow-xl transition-all duration-200">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shadow-lg group-hover:shadow-xl transition-all duration-200">
             {getInitials(user.fullName)}
           </div>
           
           {/* Indicador de estado online */}
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full shadow-sm"></div>
         </div>
 
         {/* Información del usuario */}
-        <div className="hidden md:block text-left">
-          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+        <div className="hidden lg:block text-left">
+          <div className="text-sm font-semibold text-gray-900">
             {user.fullName || 'Usuario'}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-gray-500">
             {user.role || 'Usuario'}
           </div>
         </div>
 
         {/* Flecha */}
         <ChevronDown 
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} 
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} 
         />
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown - Responsive */}
       {open && (
-        <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden">
           {/* Header del perfil */}
-          <div className="relative p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+          <div className="relative p-4 sm:p-6 bg-gradient-to-br from-orange-50 to-orange-100">
             {/* Fondo decorativo */}
             <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 to-orange-600/10"></div>
             
-            <div className="relative flex items-center space-x-4">
+            <div className="relative flex items-center space-x-3 sm:space-x-4">
               {/* Avatar grande */}
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg sm:text-xl md:text-2xl shadow-lg">
                   {getInitials(user.fullName)}
                 </div>
                 
                 {/* Botón de editar */}
-                <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-orange-200">
-                  <Edit3 className="w-3.5 h-3.5 text-orange-600" />
+                <button className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 bg-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 border border-orange-200">
+                  <Edit3 className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 text-orange-600" />
                 </button>
               </div>
 
               {/* Información del usuario */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 truncate">
                   {user.fullName || 'Usuario'}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                <p className="text-xs sm:text-sm text-gray-600 truncate">
                   {user.email || 'usuario@ejemplo.com'}
                 </p>
                 
                 {/* Badge del rol */}
-                <div className="mt-2">
+                <div className="mt-1 sm:mt-2">
                   {getRoleBadge(user.role)}
                 </div>
 
-                {/* Estadísticas rápidas */}
-                <div className="flex items-center space-x-4 mt-3 text-xs text-gray-600 dark:text-gray-400">
+                {/* Estadísticas rápidas - Solo en desktop */}
+                <div className="hidden md:flex items-center space-x-4 mt-2 text-xs text-gray-600">
                   <div className="flex items-center space-x-1">
-                    <Bell className="w-3.5 h-3.5" />
+                    <Bell className="w-3 h-3" />
                     <span>12 notificaciones</span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <MessageSquare className="w-3.5 h-3.5" />
+                    <MessageSquare className="w-3 h-3" />
                     <span>5 mensajes</span>
                   </div>
                 </div>

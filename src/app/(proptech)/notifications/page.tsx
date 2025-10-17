@@ -323,15 +323,15 @@ export default function NotificationsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
                 <Bell className="h-6 w-6 text-orange-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Notificaciones</h1>
-                <p className="text-gray-600 dark:text-gray-400">Gestiona todas tus notificaciones</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Notificaciones</h1>
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Gestiona todas tus notificaciones</p>
               </div>
             </div>
             
@@ -363,10 +363,10 @@ export default function NotificationsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg mb-6">
+        <div className="grid grid-cols-2 sm:flex sm:space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg mb-6 gap-1">
           <button
             onClick={() => setActiveTab('all')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
               activeTab === 'all'
                 ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -383,7 +383,7 @@ export default function NotificationsPage() {
           
           <button
             onClick={() => setActiveTab('novelties')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
               activeTab === 'novelties'
                 ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -400,7 +400,7 @@ export default function NotificationsPage() {
           
           <button
             onClick={() => setActiveTab('system')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
               activeTab === 'system'
                 ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -417,7 +417,7 @@ export default function NotificationsPage() {
           
           <button
             onClick={() => setActiveTab('messages')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
               activeTab === 'messages'
                 ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -434,7 +434,7 @@ export default function NotificationsPage() {
           
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
               activeTab === 'users'
                 ? 'bg-white dark:bg-gray-700 text-orange-600 shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -451,8 +451,8 @@ export default function NotificationsPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -474,8 +474,8 @@ export default function NotificationsPage() {
             </div>
             
             {/* Time Filter */}
-            <div className="flex gap-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">Filtrar por tiempo:</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filtrar por:</span>
               <button
                 onClick={() => setTimeFilter('')}
                 className={`px-3 py-1 text-xs rounded-full transition-colors ${

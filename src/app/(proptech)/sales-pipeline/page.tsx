@@ -289,67 +289,66 @@ export default function SalesPipelinePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Header Section */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header Section - Compacto */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             {/* Title Section */}
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl shadow-lg">
-                  <ChartBarIcon className="h-6 w-6 text-white" />
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg shadow-sm">
+                  <ChartBarIcon className="h-5 w-5 text-white" />
                 </div>
-                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-900 dark:from-white dark:via-purple-200 dark:to-pink-200 bg-clip-text text-transparent">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                   Pipeline de Ventas
                 </h1>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Gestiona y analiza tu pipeline de ventas
               </p>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
+            {/* Action Buttons - Compactos */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-500/30"
+                className="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500/30"
               >
-                <FunnelIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+                <FunnelIcon className="mr-2 h-4 w-4" />
                 Filtros
               </button>
               <button
                 onClick={() => router.push('/sales-pipeline/new')}
-                className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-purple-500/30"
+                className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               >
-                <PlusIcon className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-200" />
+                <PlusIcon className="mr-2 h-4 w-4" />
                 Nuevo Lead
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* View Mode Tabs */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-2 mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* View Mode Tabs - Compactas */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-1 mb-4">
           <div className="flex space-x-1">
             <button
               onClick={() => setViewMode('kanban')}
-              className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                 viewMode === 'kanban' 
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' 
+                  ? 'bg-blue-600 text-white' 
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
               }`}
             >
-              Vista Kanban
+              Kanban
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                 viewMode === 'list' 
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' 
+                  ? 'bg-blue-600 text-white' 
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
               }`}
             >
@@ -357,24 +356,24 @@ export default function SalesPipelinePage() {
             </button>
             <button
               onClick={() => setViewMode('analytics')}
-              className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                 viewMode === 'analytics' 
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' 
+                  ? 'bg-blue-600 text-white' 
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
               }`}
             >
-              <ChartBarIcon className="h-5 w-5 mr-2 inline" />
+              <ChartBarIcon className="h-4 w-4 mr-1 inline" />
               Analytics
             </button>
           </div>
         </div>
 
-        {/* Search and Filters Bar */}
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
+        {/* Search and Filters Bar - Compacta */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4">
           <div className="flex items-center space-x-4">
             <div className="relative flex-1 max-w-md">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </span>
@@ -383,7 +382,7 @@ export default function SalesPipelinePage() {
                 placeholder="Buscar pipelines..."
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/30 focus:border-green-500 text-sm transition-all duration-200"
+                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 text-sm transition-all duration-200"
               />
               {filters.search && (
                 <button
@@ -473,7 +472,7 @@ export default function SalesPipelinePage() {
               }
             }}
           >
-            <div className="flex space-x-6 overflow-x-auto w-full min-w-0">
+            <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 w-full">
               {STAGE_CONFIG.map((stage) => (
                 <PipelineColumn
                   key={stage.name}

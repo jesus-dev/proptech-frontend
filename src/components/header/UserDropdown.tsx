@@ -191,7 +191,7 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
     <div className="relative" ref={ref}>
       {/* Botón del usuario moderno */}
       <button
-        className="group relative flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5 bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg hover:shadow-xl hover:bg-white/90 transition-all duration-300 cursor-pointer min-w-[60px] sm:min-w-[200px] hover:scale-[1.02]"
+        className="group relative flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5 bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-lg hover:shadow-xl hover:bg-white/90 transition-all duration-300 cursor-pointer min-w-[60px] sm:min-w-[120px] hover:scale-[1.02]"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="true"
         aria-expanded={open}
@@ -221,30 +221,12 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
           <span className="absolute -bottom-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-green-400 to-emerald-500 border-2 border-white rounded-full shadow-lg"></span>
         </div>
         
-        {/* Información del usuario - Solo en desktop */}
-        <div className="hidden sm:flex flex-1 text-left min-w-0">
-          <div className="font-semibold text-gray-800 text-sm truncate">
-            {name}
-          </div>
-          <div className="text-gray-500 text-xs truncate">
-            {role}
-          </div>
+        {/* Información del usuario: solo nombre */}
+        <div className="hidden sm:flex text-left min-w-0">
+          <div className="font-semibold text-gray-800 text-sm truncate">{name}</div>
         </div>
 
-        {/* Flecha moderna - Solo en desktop */}
-        <div className={`hidden sm:flex flex-shrink-0 transition-all duration-300 ${open ? 'rotate-180' : ''}`}>
-          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-inner">
-            <svg
-              className="w-3 h-3 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
+        {/* Sin flecha ni rol para minimalismo */}
       </button>
 
       {/* Dropdown moderno */}

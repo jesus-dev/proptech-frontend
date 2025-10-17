@@ -119,44 +119,56 @@ export default function PropertiesManagementPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
+          <p className="text-gray-600 text-sm">Cargando propiedades...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Gestión de Propiedades de Propietarios
-          </h1>
-          <p className="text-gray-600">
-            Administra la relación entre propietarios y sus propiedades
-          </p>
+        {/* Header Moderno */}
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg shadow-sm">
+                  <Home className="h-5 w-5 text-white" />
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  Propiedades de Propietarios
+                </h1>
+              </div>
+              <p className="text-gray-600 text-sm md:text-base">
+                Administra la relación entre propietarios y sus propiedades
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Controles y Filtros */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="relative">
+        {/* Controles y Filtros Modernos */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Buscar propiedades o propietarios..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent w-full sm:w-64"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
                 />
               </div>
               
               <select
                 value={filterOwner}
                 onChange={(e) => setFilterOwner(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm min-w-[180px]"
               >
                 <option value="all">Todos los propietarios</option>
                 {owners.map(owner => (
@@ -169,7 +181,7 @@ export default function PropertiesManagementPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm min-w-[150px]"
               >
                 <option value="all">Todos los estados</option>
                 <option value="FOR_SALE">En Venta</option>
@@ -181,56 +193,65 @@ export default function PropertiesManagementPage() {
             
             <button
               onClick={() => setShowLinkModal(true)}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center"
+              className="px-4 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center text-sm font-medium shadow-sm"
             >
               <Link className="w-4 h-4 mr-2" />
-              Vincular Propiedad
+              <span className="hidden sm:inline">Vincular Propiedad</span>
+              <span className="sm:hidden">Vincular</span>
             </button>
           </div>
         </div>
 
-        {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {/* Estadísticas Modernas */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center">
-              <Home className="w-8 h-8 text-orange-500 mr-3" />
+              <div className="p-2 bg-orange-100 rounded-lg mr-3">
+                <Home className="w-5 h-5 text-orange-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Propiedades</p>
-                <p className="text-2xl font-bold text-gray-900">{ownerProperties.length}</p>
+                <p className="text-xs md:text-sm font-medium text-gray-600">Total Propiedades</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">{ownerProperties.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center">
-              <User className="w-8 h-8 text-blue-500 mr-3" />
+              <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                <User className="w-5 h-5 text-blue-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Propietarios Activos</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs md:text-sm font-medium text-gray-600">Propietarios Activos</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">
                   {owners.filter(o => o.status === 'ACTIVE').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center">
-              <DollarSign className="w-8 h-8 text-green-500 mr-3" />
+              <div className="p-2 bg-green-100 rounded-lg mr-3">
+                <DollarSign className="w-5 h-5 text-green-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Valor Total</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs md:text-sm font-medium text-gray-600">Valor Total</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">
                   {ownerProperties.reduce((sum, op) => sum + (op.property?.price || 0), 0).toLocaleString('es-ES')}€
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
             <div className="flex items-center">
-              <Eye className="w-8 h-8 text-purple-500 mr-3" />
+              <div className="p-2 bg-purple-100 rounded-lg mr-3">
+                <Eye className="w-5 h-5 text-purple-600" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Vistas Totales</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-xs md:text-sm font-medium text-gray-600">Vistas Totales</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900">
                   {ownerProperties.length * 150}
                 </p>
               </div>
@@ -238,8 +259,8 @@ export default function PropertiesManagementPage() {
           </div>
         </div>
 
-        {/* Tabla de Propiedades */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        {/* Tabla de Propiedades Moderna */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">

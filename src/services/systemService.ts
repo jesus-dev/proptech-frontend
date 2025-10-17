@@ -140,7 +140,17 @@ export const systemService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching user stats:', error);
-      throw error;
+      // Fallback para que el dashboard no se rompa sin backend
+      return {
+        savedProperties: 0,
+        viewedProperties: 0,
+        scheduledVisits: 0,
+        inquiriesSent: 0,
+        favoriteAgents: 0,
+        notificationsUnread: 0,
+        searchHistoryCount: 0,
+        lastLogin: new Date().toISOString()
+      };
     }
   },
 
@@ -150,7 +160,7 @@ export const systemService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching saved properties:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -160,7 +170,7 @@ export const systemService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching recent views:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -170,7 +180,7 @@ export const systemService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching recommended properties:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -180,7 +190,7 @@ export const systemService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching scheduled visits:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -190,7 +200,7 @@ export const systemService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching user activities:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -200,7 +210,7 @@ export const systemService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching user notifications:', error);
-      throw error;
+      return [];
     }
   },
 

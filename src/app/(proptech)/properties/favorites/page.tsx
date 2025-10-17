@@ -65,7 +65,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { systemService } from "@/services/systemService";
 
 export default function FavoritesPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [favoriteProperties, setFavoriteProperties] = useState<SystemProperty[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<SystemProperty[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,13 +81,18 @@ export default function FavoritesPage() {
   const [showComparison, setShowComparison] = useState(false);
 
   useEffect(() => {
+    // No hacer nada si todavía está cargando la autenticación
+    if (authLoading) {
+      return;
+    }
+    
     if (isAuthenticated && user) {
       loadFavoriteProperties();
-    } else if (!isAuthenticated) {
+    } else if (!authLoading && !isAuthenticated) {
       setLoading(false);
       setError("Debes iniciar sesión para ver tus propiedades favoritas");
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, authLoading]);
 
   const loadFavoriteProperties = useCallback(async () => {
     try {

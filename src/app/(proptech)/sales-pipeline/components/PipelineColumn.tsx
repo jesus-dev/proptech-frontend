@@ -13,6 +13,7 @@ import {
   PlusIcon
 } from "@heroicons/react/24/outline";
 import { SortablePipelineCard } from "./SortablePipelineCard";
+import Link from "next/link";
 import { SalesPipeline, STAGE_CONFIG } from "../types";
 
 interface PipelineColumnProps {
@@ -49,35 +50,29 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
     : 0;
 
   return (
-    <div className="flex flex-col w-80 glass rounded-2xl p-6 shadow-modern hover-lift border-modern">
-      {/* Column Header */}
-      <div className="flex items-center justify-between mb-6 p-4 rounded-xl bg-gradient-to-r from-white/60 to-white/40 dark:from-gray-800/60 dark:to-gray-700/40 backdrop-blur-sm border border-white/20 dark:border-gray-600/20">
-        <div className="flex items-center space-x-4">
-          <div className="p-3 rounded-xl shadow-lg" style={{ 
-            background: `linear-gradient(135deg, ${stage.color}20, ${stage.color}10)`,
-            border: `1px solid ${stage.color}30`
+    <div className="flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      {/* Column Header - Compacto */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 rounded-lg" style={{ 
+            backgroundColor: `${stage.color}20`,
+            border: `1px solid ${stage.color}40`
           }}>
-            <ChartBarIcon className="h-6 w-6" style={{ color: stage.color }} />
+            <ChartBarIcon className="h-4 w-4" style={{ color: stage.color }} />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white text-gradient">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               {stage.label}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-              {stage.description}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {pipelines.length} pipelines
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <span className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-bold rounded-full shadow-lg">
+        <div className="flex items-center space-x-2">
+          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
             {pipelines.length}
           </span>
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full animate-pulse ${pipelines.length > 0 ? 'bg-green-400' : 'bg-gray-400'}`}></div>
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-              {pipelines.length > 0 ? 'Activo' : 'Vacío'}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -146,17 +141,7 @@ export const PipelineColumn: React.FC<PipelineColumnProps> = ({
       </div>
 
       {/* Add Pipeline Button */}
-      {onAddPipeline && (
-        <div className="mt-6">
-          <button
-            onClick={() => onAddPipeline(stage.name)}
-            className="w-full flex items-center justify-center space-x-3 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border border-green-400/20"
-          >
-            <PlusIcon className="h-5 w-5" />
-            <span>Nuevo Pipeline</span>
-          </button>
-        </div>
-      )}
+      {/* Botones inferiores eliminados para evitar redundancia */}
     </div>
   );
 }; 

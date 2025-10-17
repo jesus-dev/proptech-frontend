@@ -37,6 +37,49 @@ export interface TimeSlot {
 }
 
 export const agendaService = {
+  // === Appointments ===
+  async getAppointmentsByAgent(agentId: number): Promise<any[]> {
+    try {
+      const response = await apiClient.get(`/api/appointments/agent/${agentId}`);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching appointments by agent:', error);
+      throw error;
+    }
+  },
+
+  async updateAppointmentStatus(appointmentId: number, status: string): Promise<any> {
+    try {
+      const response = await apiClient.put(`/api/appointments/${appointmentId}/status?status=${encodeURIComponent(status)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      throw error;
+    }
+  },
+
+  async cancelAppointment(appointmentId: number, reason: string = ''): Promise<any> {
+    try {
+      const response = await apiClient.put(`/api/appointments/${appointmentId}/cancel?reason=${encodeURIComponent(reason)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      throw error;
+    }
+  },
+
+  async rescheduleAppointment(appointmentId: number, newDateISO: string, newDuration?: number): Promise<any> {
+    try {
+      const params = new URLSearchParams({ newDate: newDateISO });
+      if (typeof newDuration === 'number') params.set('newDuration', String(newDuration));
+      const response = await apiClient.put(`/api/appointments/${appointmentId}/reschedule?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error rescheduling appointment:', error);
+      throw error;
+    }
+  },
+
   // Obtener propiedades activas usando el mismo servicio que se usa en propiedades
   async getActiveProperties(page: number = 0, size: number = 12): Promise<{ properties: Property[]; total: number; totalPages: number }> {
     console.log('=== getActiveProperties called ===');
