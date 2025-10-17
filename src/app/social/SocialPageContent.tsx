@@ -1255,7 +1255,7 @@ export default function SocialPage() {
                       loop
                       playsInline
                       preload="metadata"
-                      onLoadStart={() => console.log('🎬 Card video iniciando carga:', shot.id, getFullUrl(shot.mediaUrl))}
+                      onLoadStart={() => console.log('🎬 Card video iniciando carga:', shot.id, getFullUrl(shot.mediaUrl || ''))}
                       onLoadedData={(e) => {
                         console.log('🎬 Card video datos cargados:', shot.id);
                         const videoElement = e.currentTarget;

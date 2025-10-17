@@ -756,7 +756,7 @@ export default function PropertyDetailPage() {
           {/* Indicadores de puntos en mobile */}
           {images.length > 1 && images.length <= 10 && (
             <div className="flex items-center justify-center gap-2 pb-4 sm:hidden">
-              {images.map((_, idx) => (
+              {images.map((_img: string, idx: number) => (
                 <button
                   key={idx}
                   onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
