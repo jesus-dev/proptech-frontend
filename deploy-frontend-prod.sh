@@ -69,10 +69,12 @@ npm ci --production=false
 # ========================
 # Actualizar información de versión (opcional)
 # ========================
-# echo "📋 Actualizando información de versión..."
-# if [ -f "update-version.js" ]; then
-#   node update-version.js
-# fi
+echo "📋 Actualizando información de versión..."
+if [ -f "update-version.js" ]; then
+  node update-version.js
+else
+  echo "⚠️ update-version.js no encontrado, saltando..."
+fi
 
 # ========================
 # Configurar variables de entorno
