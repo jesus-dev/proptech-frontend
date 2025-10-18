@@ -132,6 +132,15 @@ const getDefaultSettings = async (): Promise<AppSettings> => {
 
 const loadContactsFromBackend = async (): Promise<any[]> => {
     try {
+        // Verificar si hay token de autenticación antes de llamar al endpoint privado
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // No hay autenticación, no cargar contactos
+                return [];
+            }
+        }
+        
         const response = await apiClient.get('/api/agents');
         const agents = response.data || [];
         
@@ -144,6 +153,13 @@ const loadContactsFromBackend = async (): Promise<any[]> => {
             position: agent.position || 'Agente'
         }));
     } catch (error) {
+        // Silenciar el error 401 (no autenticado) - es esperado para usuarios no logueados
+        if (error && typeof error === 'object' && 'response' in error) {
+            const axiosError = error as { response?: { status?: number } };
+            if (axiosError.response?.status === 401) {
+                return []; // Usuario no autenticado, retornar array vacío sin error
+            }
+        }
         console.error('Error loading contacts from backend:', error);
         return [];
     }
