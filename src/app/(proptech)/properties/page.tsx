@@ -236,19 +236,33 @@ export default function PropertiesPage() {
         limit: 16 // Cargar 16 propiedades por página
       });
 
+      const properties: Property[] = (response.properties || []).map((p: any) => {
+        // Transformar galleryImages a images array
+        if (p.galleryImages && Array.isArray(p.galleryImages)) {
+          p.images = p.galleryImages
+            .sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0))
+            .map((img: any) => img.url);
+        } else if (!p.images) {
+          p.images = [];
+        }
+        return p;
+      });
+      
+      const totalProperties = response.total || 0;
+      const totalPages = Math.ceil(totalProperties / (response.size || 16));
+
       if (append) {
         setAllProperties(prev => {
           // Evitar duplicados usando un Map
           const existingIds = new Set(prev.map(p => p.id));
-          const newProperties = response.properties.filter(p => !existingIds.has(p.id));
+          const newProperties = properties.filter((p: Property) => !existingIds.has(p.id));
           return [...prev, ...newProperties];
         });
       } else {
-        setAllProperties(response.properties);
+        setAllProperties(properties);
       }
       
-      setTotalElements(response.total);
-      const totalPages = Math.ceil(response.total / 16); // 16 es el size que estamos usando
+      setTotalElements(totalProperties);
       setHasMore(page < totalPages);
       setCurrentPage(page);
     } catch (err) {

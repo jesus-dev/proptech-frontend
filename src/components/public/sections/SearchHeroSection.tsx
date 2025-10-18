@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   MapPinIcon,
@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
 import { CheckIcon } from "@heroicons/react/24/outline";
+import { apiClient } from '@/lib/api';
 
 const SearchHeroSection = () => {
   const [propertyType, setPropertyType] = useState('');
@@ -27,24 +28,49 @@ const SearchHeroSection = () => {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
+  
+  // Estados para datos din\u00e1micos
+  const [propertyTypes, setPropertyTypes] = useState([{ value: '', label: 'Tipo de Propiedad' }]);
+  const [locations, setLocations] = useState([{ value: '', label: 'Ubicación' }]);
 
-  const propertyTypes = [
-    { value: '', label: 'Tipo de Propiedad' },
-    { value: 'casa', label: 'Casa' },
-    { value: 'departamento', label: 'Departamento' },
-    { value: 'terreno', label: 'Terreno' },
-    { value: 'local', label: 'Local Comercial' },
-    { value: 'oficina', label: 'Oficina' }
-  ];
+  // Cargar datos dinámicamente del backend
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [typesRes, citiesRes] = await Promise.all([
+          apiClient.get('/api/property-types').catch(() => ({ data: [] })),
+          apiClient.get('/api/cities').catch(() => ({ data: [] }))
+        ]);
 
-  const locations = [
-    { value: '', label: 'Ubicación' },
-    { value: 'asuncion', label: 'Asunción' },
-    { value: 'ciudad-del-este', label: 'Ciudad del Este' },
-    { value: 'encarnacion', label: 'Encarnación' },
-    { value: 'san-lorenzo', label: 'San Lorenzo' },
-    { value: 'fernando-de-la-mora', label: 'Fernando de la Mora' }
-  ];
+        // Procesar tipos de propiedades
+        if (typesRes.data && Array.isArray(typesRes.data)) {
+          const types = typesRes.data
+            .filter((type: any) => type.active !== false)
+            .map((type: any) => ({
+              value: type.name.toLowerCase().replace(/ /g, '-'),
+              label: type.name
+            }));
+          setPropertyTypes([{ value: '', label: 'Tipo de Propiedad' }, ...types]);
+        }
+
+        // Procesar ciudades
+        if (citiesRes.data && Array.isArray(citiesRes.data)) {
+          const cities = citiesRes.data
+            .filter((city: any) => city.active !== false)
+            .map((city: any) => ({
+              value: city.name.toLowerCase().replace(/ /g, '-'),
+              label: city.name
+            }));
+          setLocations([{ value: '', label: 'Ubicación' }, ...cities]);
+        }
+      } catch (error) {
+        console.error('Error loading search data:', error);
+        // Los valores por defecto ya están establecidos en useState
+      }
+    };
+
+    loadData();
+  }, []);
 
   const quickFilters = [
     { icon: BuildingOfficeIcon, label: '1-2 dorm.', value: '1-2', type: 'bedrooms' },

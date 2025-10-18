@@ -43,10 +43,13 @@ export default function AgentForm({
           </label>
           <input
             type="text"
-            name="firstName"
+            name="nombre"
             required
-            value={formData.firstName ?? ''}
-            onChange={(e) => handleInputChange('firstName', e.target.value)}
+            value={formData.nombre || formData.firstName || ''}
+            onChange={(e) => {
+              handleInputChange('nombre', e.target.value);
+              handleInputChange('firstName', e.target.value);
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             placeholder="Nombre del agente"
           />
@@ -59,10 +62,13 @@ export default function AgentForm({
           </label>
           <input
             type="text"
-            name="lastName"
+            name="apellido"
             required
-            value={formData.lastName ?? ''}
-            onChange={(e) => handleInputChange('lastName', e.target.value)}
+            value={formData.apellido || formData.lastName || ''}
+            onChange={(e) => {
+              handleInputChange('apellido', e.target.value);
+              handleInputChange('lastName', e.target.value);
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             placeholder="Apellido del agente"
           />

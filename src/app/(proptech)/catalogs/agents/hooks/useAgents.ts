@@ -107,10 +107,11 @@ export function useAgents() {
     if (filters.searchTerm) {
       const searchTerm = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(agent =>
-        agent.firstName.toLowerCase().includes(searchTerm) ||
-        agent.lastName.toLowerCase().includes(searchTerm) ||
+        (agent.nombre || agent.firstName || '').toLowerCase().includes(searchTerm) ||
+        (agent.apellido || agent.lastName || '').toLowerCase().includes(searchTerm) ||
+        (agent.nombreCompleto || '').toLowerCase().includes(searchTerm) ||
         agent.email.toLowerCase().includes(searchTerm) ||
-        agent.phone.includes(searchTerm) ||
+        (agent.telefono || agent.phone || '').includes(searchTerm) ||
         (agent.username || '').toLowerCase().includes(searchTerm) ||
         (agent.position || '').toLowerCase().includes(searchTerm) ||
         (agent.agencyName || '').toLowerCase().includes(searchTerm)

@@ -68,10 +68,11 @@ export const searchAgents = async (searchTerm: string): Promise<Agent[]> => {
     const term = searchTerm.toLowerCase();
     
     return agents.filter(agent => 
-      agent.firstName.toLowerCase().includes(term) ||
-      agent.lastName.toLowerCase().includes(term) ||
+      (agent.nombre || agent.firstName || '').toLowerCase().includes(term) ||
+      (agent.apellido || agent.lastName || '').toLowerCase().includes(term) ||
+      (agent.nombreCompleto || '').toLowerCase().includes(term) ||
       agent.email.toLowerCase().includes(term) ||
-      agent.phone.includes(term) ||
+      (agent.telefono || agent.phone || '').includes(term) ||
       (agent.position || '').toLowerCase().includes(term) ||
       (agent.agencyName || '').toLowerCase().includes(term)
     );

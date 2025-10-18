@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
+import { apiClient } from '@/lib/api';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -44,20 +45,8 @@ const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
   onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
   onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
-
-  // Reset cuando cambia el src
-  useEffect(() => {
-    setIsLoaded(false);
-    setHasError(false);
-  }, [src]);
-
-  const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    setIsLoaded(true);
-    onLoad?.(e);
-  }, [onLoad]);
 
   const handleError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     setHasError(true);
@@ -78,29 +67,14 @@ const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
   }
 
   return (
-    <div className="relative w-full h-full">
-      {/* Skeleton loader */}
-      {!isLoaded && !hasError && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-          <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        </div>
-      )}
-      
-      {/* Imagen real */}
-      <img
-        ref={imgRef}
-        src={hasError ? '/images/placeholder.jpg' : getImageUrl(src)}
-        alt={alt}
-        className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-        loading="lazy"
-        onLoad={handleLoad}
-        onError={handleError}
-      />
-    </div>
+    <img
+      ref={imgRef}
+      src={hasError ? '/images/placeholder.jpg' : getImageUrl(src)}
+      alt={alt}
+      className={className}
+      onLoad={onLoad}
+      onError={handleError}
+    />
   );
 };
 
@@ -110,12 +84,9 @@ const propertyTypes = [
   { value: 'alquiler', label: 'Alquiler' }
 ];
 
-const propertyCategories = [
-  { value: '', label: 'Todas las Categorías' },
-  { value: 'casa', label: 'Casas' },
-  { value: 'apartamento', label: 'Departamentos' },
-  { value: 'oficina', label: 'Oficinas' },
-  { value: 'terreno', label: 'Terrenos' }
+// Las categorías de propiedades ahora se cargarán dinámicamente
+const defaultPropertyCategories = [
+  { value: '', label: 'Todas las Categorías' }
 ];
 
 const priceRanges = [
@@ -170,6 +141,9 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  
+  // Estado para categorías dinámicas
+  const [propertyCategories, setPropertyCategories] = useState(defaultPropertyCategories);
 
   // Calcular ciudades únicas dinámicamente desde las propiedades cargadas
   const availableCities = React.useMemo(() => {
@@ -213,17 +187,52 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     );
   }, [searchTerm, selectedType, selectedCategory, selectedCity, selectedPriceRange, selectedBedrooms, selectedBathrooms, selectedAreaRange, defaultCategory]);
 
+  // Cargar categorías de propiedades dinámicamente
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await apiClient.get('/api/property-types');
+        if (response.data && Array.isArray(response.data)) {
+          const categories = response.data
+            .filter((type: any) => type.active !== false)
+            .map((type: any) => ({
+              value: type.name.toLowerCase().replace(/ /g, '-'),
+              label: type.name
+            }));
+          setPropertyCategories([
+            { value: '', label: 'Todas las Categorías' },
+            ...categories
+          ]);
+        }
+      } catch (error) {
+        console.error('Error loading property categories:', error);
+        // Mantener las categorías por defecto si hay error
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   // Función para cargar propiedades iniciales
   const loadInitialProperties = async () => {
     try {
       setLoading(true);
-      setCurrentPage(1);
-      const data = await publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
-      setProperties(Array.isArray(data.properties) ? data.properties : []);
-      setHasMore(data.properties && data.properties.length === 6);
       setError('');
+      setCurrentPage(1);
+      
+      const data = await publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
+      
+      if (data && data.properties) {
+        setProperties(Array.isArray(data.properties) ? data.properties : []);
+        setHasMore(data.properties.length === 6);
+      } else {
+        setProperties([]);
+        setHasMore(false);
+      }
     } catch (e: any) {
-      setError('No se pudieron cargar propiedades');
+      console.error('Error al cargar propiedades:', e);
+      setError('No se pudieron cargar propiedades. Por favor, verifica que el backend esté funcionando.');
+      setProperties([]);
     } finally {
       setLoading(false);
     }
@@ -1116,14 +1125,101 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
           className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 items-stretch' : 'space-y-4 sm:space-y-6'}
         >
           {loading ? (
-            <div className="col-span-full text-center py-16 text-gray-600">Cargando propiedades...</div>
+            // Skeleton Loading Cards - Diseño premium con shimmer
+            <>
+              {[1, 2, 3, 4, 5, 6].map((index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className="bg-gradient-to-br from-white via-white to-gray-50/50 rounded-xl shadow-lg border border-gray-100/50 overflow-hidden relative h-full flex flex-col min-h-[420px]"
+                >
+                  {/* Shimmer overlay effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" style={{
+                    animation: 'shimmer 2s infinite linear',
+                  }}></div>
+                  
+                  {/* Skeleton Image */}
+                  <div className="relative h-48 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative">
+                        <div className="w-16 h-16 border-4 border-gray-300 border-t-cyan-500 rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+                      </div>
+                    </div>
+                    {/* Pulsos decorativos */}
+                    <div className="absolute top-4 left-4 w-20 h-20 bg-cyan-400/20 rounded-full blur-xl animate-pulse"></div>
+                    <div className="absolute bottom-4 right-4 w-24 h-24 bg-blue-400/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                  </div>
+                  
+                  {/* Skeleton Content */}
+                  <div className="p-4 flex-1 flex flex-col space-y-3">
+                    {/* Skeleton Title con animación */}
+                    <div className="space-y-2">
+                      <div className="h-5 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded-md w-full animate-pulse"></div>
+                      <div className="h-5 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded-md w-3/4 animate-pulse"></div>
+                    </div>
+                    
+                    {/* Skeleton Location */}
+                    <div className="flex items-center space-x-2 animate-pulse">
+                      <div className="h-4 w-4 bg-gray-300 rounded-full"></div>
+                      <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded w-2/3"></div>
+                    </div>
+                    
+                    {/* Skeleton Agent Box */}
+                    <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 rounded-xl p-3 animate-pulse">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-gray-300 rounded w-2/3"></div>
+                          <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                        <div className="flex space-x-1">
+                          <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                          <div className="w-6 h-6 bg-gray-300 rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Skeleton Features */}
+                    <div className="grid grid-cols-4 gap-2 animate-pulse">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="text-center space-y-1">
+                          <div className="h-5 bg-gray-300 rounded mx-auto w-10"></div>
+                          <div className="h-3 bg-gray-200 rounded"></div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Spacer */}
+                    <div className="flex-1"></div>
+                    
+                    {/* Skeleton Price */}
+                    <div className="text-center space-y-1 animate-pulse">
+                      <div className="h-7 bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300 rounded-lg w-3/4 mx-auto"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/3 mx-auto"></div>
+                    </div>
+                    
+                    {/* Skeleton Description */}
+                    <div className="space-y-2 animate-pulse">
+                      <div className="h-3 bg-gray-200 rounded w-full"></div>
+                      <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                    </div>
+                    
+                    {/* Skeleton Button */}
+                    <div className="h-12 bg-gradient-to-r from-blue-200 via-blue-300 to-indigo-300 rounded-xl relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]"></div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </>
           ) : error ? (
             <div className="col-span-full text-center py-16 text-red-600 font-medium">{error}</div>
           ) : filteredProperties.length > 0 ? (
             filteredProperties.map(property => {
               // Procesar datos del agente para el frontend
-              console.log('Property slug:', property.slug, 'ID:', property.id); // Debug para verificar slug
-              
               if (property.agent) {
                 const firstName = property.agent.firstName || '';
                 const lastName = property.agent.lastName || '';
@@ -1133,15 +1229,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 if (!property.agent.name) {
                   property.agent.name = property.agent.email || 'Agente';
                 }
-                console.log('Processed agent name:', property.agent.name); // Debug del nombre procesado
-                console.log('Agent data:', property.agent); // Debug completo del agente
-                console.log('Property agencyName:', property.agencyName); // Debug de agencyName
-                console.log('Property agency:', property.agency); // Debug de agency
               }
-              
-              // Debug temporal para verificar operacion
-              console.log('Property operacion:', property.operacion, 'Title:', property.title);
-              
               
               return (
               <Link href={`/propiedad/${property.slug || property.id}`} key={property.id || property.slug || Math.random()} className="block h-full">
@@ -1251,18 +1339,18 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                   <div className="flex items-center justify-between">
                     <div className="flex items-center flex-1 min-w-0">
                       <div className="relative flex-shrink-0">
-                        {property.agent?.name ? (
+                        {property.agent?.name || property.agentName ? (
                           <>
-                            {property.agent.avatar ? (
+                            {property.agent?.avatar || property.agent?.photo ? (
                               <img 
-                                src={getImageUrl(property.agent.avatar)} 
-                                alt={property.agent.name}
-                                className="w-8 h-8 rounded-full object-cover border-2 border-white shadow-md"
+                                src={getImageUrl(property.agent.avatar || property.agent.photo)} 
+                                alt={property.agent?.name || property.agentName}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
                               />
                             ) : (
-                              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
-                                <span className="text-white text-sm font-bold">
-                                  {property.agent.name.charAt(0).toUpperCase()}
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                                <span className="text-white text-base font-bold">
+                                  {(property.agent?.name || property.agentName || 'A').charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             )}
@@ -1270,47 +1358,49 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                               <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
                             </div>
                           </>
-                        ) : (
-                          <div className="w-8 h-8 bg-gradient-to-br from-slate-500 to-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        ) : property.agencyName ? (
+                          <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                           </div>
                         )}
                       </div>
                       <div className="ml-3 flex-1 min-w-0">
+                        {/* Nombre del agente o agencia */}
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-slate-900 truncate">
-                            {property.agent?.name || property.agencyName || 'ON Bienes Raíces'}
+                            {property.agent?.name || property.agentName || property.agencyName || 'Propietario'}
                           </p>
-                          {property.agent?.name && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              ✓ Verificado
+                          {(property.agent?.name || property.agentName) && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <svg className="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              Agente
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs font-semibold text-blue-700">
-                            {property.agent?.name ? 'Agente Inmobiliario' : 'Agencia Inmobiliaria'}
-                          </p>
-                          {/* Buscar información de agencia en diferentes campos */}
-                          {(() => {
-                            const agencyName = property.agencyName || 
-                                             property.agency?.name || 
-                                             property.agent?.agency?.name || 
-                                             property.agent?.agencyName ||
-                                             'ON Bienes Raíces'; // Fallback por defecto
-                            
-                            if (property.agent?.name) {
-                              return (
-                                <>
-                                  <span className="text-slate-400">•</span>
-                                  <p className="text-xs text-slate-600 truncate">{agencyName}</p>
-                                </>
-                              );
-                            }
-                            return null;
-                          })()}
+                        
+                        {/* Subtítulo con agencia */}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {(property.agent?.name || property.agentName) && property.agencyName && (
+                            <>
+                              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              <p className="text-xs text-slate-600 truncate font-medium">{property.agencyName}</p>
+                            </>
+                          )}
+                          {!(property.agent?.name || property.agentName) && property.agencyName && (
+                            <p className="text-xs text-blue-600 font-semibold">Agencia Inmobiliaria</p>
+                          )}
                         </div>
                         {/* Rating o badges */}
                         <div className="flex items-center gap-2 mt-1">
@@ -1510,31 +1600,55 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
             </div>
           )}
 
-          {/* Botón Cargar Más */}
+          {/* Botón Cargar Más - Mejorado */}
           {!loading && !error && filteredProperties.length > 0 && hasMore && (
             <div className="col-span-full flex justify-center mt-8">
-              <button
+              <motion.button
                 onClick={loadMoreProperties}
                 disabled={loadingMore}
-                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                whileHover={{ scale: loadingMore ? 1 : 1.05 }}
+                whileTap={{ scale: loadingMore ? 1 : 0.95 }}
+                className="group relative px-10 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white rounded-2xl font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
               >
-                {loadingMore ? (
-                  <div className="flex items-center space-x-2">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Cargando...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <span>Cargar más propiedades</span>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                {/* Shimmer effect on hover */}
+                {!loadingMore && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 )}
-              </button>
+                
+                {/* Loading spinner effect */}
+                {loadingMore && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 animate-pulse"></div>
+                )}
+                
+                {/* Content */}
+                <div className="relative z-10 flex items-center justify-center space-x-3">
+                  {loadingMore ? (
+                    <>
+                      <div className="relative">
+                        <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      </div>
+                      <span className="font-bold">Cargando propiedades</span>
+                      <div className="flex space-x-1">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-bold">Cargar más propiedades</span>
+                      <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </>
+                  )}
+                </div>
+                
+                {/* Glow effect */}
+                {!loadingMore && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-blue-400/20 to-blue-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+                )}
+              </motion.button>
             </div>
           )}
 
@@ -1555,7 +1669,21 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
 
 const PropertiesSection = ({ defaultCategory }: { defaultCategory?: string } = {}) => {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-64">Cargando...</div>}>
+    <Suspense fallback={
+      <div className="flex flex-col justify-center items-center h-96 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="relative">
+          {/* Spinner doble */}
+          <div className="w-20 h-20 border-4 border-gray-200 border-t-cyan-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-r-blue-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+        </div>
+        <p className="mt-6 text-lg font-semibold text-gray-700">Cargando propiedades</p>
+        <div className="flex space-x-2 mt-3">
+          <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"></div>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+          <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+        </div>
+      </div>
+    }>
       <PropertiesSectionContent defaultCategory={defaultCategory} />
     </Suspense>
   );

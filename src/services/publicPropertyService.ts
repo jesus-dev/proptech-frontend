@@ -9,14 +9,31 @@ class PublicPropertyService {
 
   async getPropertiesPaginated({ page = 1, limit = 12 }: { page: number; limit: number }) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/public/properties/paginated?page=${page}&limit=${limit}`);
+      const url = `${this.baseUrl}/api/public/properties/paginated?page=${page}&limit=${limit}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      throw error;
+    }
+  }
+
+  async getPropertyById(id: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/public/properties/${id}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching properties:', error);
+      console.error('Error fetching property by ID:', error);
       throw error;
     }
   }
@@ -170,10 +187,13 @@ class PublicPropertyService {
 
   async getPropertyBySlug(slug: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/public/properties/slug/${slug}`);
+      const url = `${this.baseUrl}/api/public/properties/slug/${slug}`;
+      const response = await fetch(url);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
+      
       const data = await response.json();
       return data;
     } catch (error) {

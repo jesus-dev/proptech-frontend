@@ -48,10 +48,10 @@ export const useAgents = (filters?: SalesAgentFilters) => {
       if (!canViewAll) {
         if (isAgencyAdmin && agencyId) {
           // Agency admin can see all agents in their agency
-          userFilters.agencyId = agencyId;
-        } else if (isAgent) {
+          userFilters.agencyId = String(agencyId);
+        } else if (isAgent && agentId) {
           // Agent can only see themselves
-          userFilters.agentId = agentId || undefined;
+          userFilters.agentId = String(agentId);
         }
       }
 

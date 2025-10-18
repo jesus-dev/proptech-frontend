@@ -130,7 +130,8 @@ export default function AgentSessionStatus({ onLogout }: AgentSessionStatusProps
           {/* Agent Avatar */}
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
             <span className="text-white font-semibold text-sm">
-              {currentAgent.firstName.charAt(0)}{currentAgent.lastName.charAt(0)}
+              {(currentAgent.nombre || currentAgent.firstName || '').charAt(0)}
+              {(currentAgent.apellido || currentAgent.lastName || '').charAt(0)}
             </span>
           </div>
           

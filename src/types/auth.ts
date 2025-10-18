@@ -66,9 +66,18 @@ export interface UserPermissions {
 export interface User {
   id: number;
   email: string;
+  username: string;
   fullName: string;
+  // Campos legacy (se obtienen desde agent si existe)
   firstName?: string;
   lastName?: string;
+  phone?: string;
+  // Multi-tenant
+  tenantId: number;
+  tenantName?: string;
+  agencyId?: number;
+  agencyName?: string;
+  // Auth
   role?: UserRole;
   roles?: string[];
   userType?: string;
@@ -78,8 +87,36 @@ export interface User {
   lastLogin?: string;
   createdAt: string;
   updatedAt: string;
-  agentId?: string;
-  agencyId?: string;
+  // Relación con Agent (1:1)
+  agentId?: number;
+  agent?: Agent;
+}
+
+// Tipo Agent referenciado desde User
+export interface Agent {
+  id: number;
+  nombre: string;
+  apellido: string;
+  nombreCompleto: string;
+  telefono?: string;
+  email: string;
+  licenciaInmobiliaria?: string;
+  zonaOperacion?: string;
+  fotoPerfilUrl?: string;
+  position?: string;
+  bio?: string;
+  isActive: boolean;
+  // Relaciones
+  userId: number;
+  agencyId?: number;
+  agencyName?: string;
+  tenantId?: number;
+  tenantName?: string;
+  // Suscripción (si es independiente)
+  isIndependent: boolean;
+  effectivePlan?: string;
+  canOperate: boolean;
+  maxProperties?: number;
 }
 
 export interface AuthState {

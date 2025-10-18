@@ -23,13 +23,13 @@ export const useProperties = (filters?: PropertyFilters) => {
       // Add user-specific filters
       if (!canViewAll) {
         if (isAgencyAdmin && agencyId) {
-          userFilters.agencyId = agencyId;
+          userFilters.agencyId = String(agencyId);
         } else if (isAgent && agencyId) {
           // Agent can see all properties from their agency
-          userFilters.agencyId = agencyId;
+          userFilters.agencyId = String(agencyId);
         } else if (isAgent && agentId && !agencyId) {
           // Agent without agency can only see their own properties
-          userFilters.agentId = agentId;
+          userFilters.agentId = String(agentId);
         }
       }
 

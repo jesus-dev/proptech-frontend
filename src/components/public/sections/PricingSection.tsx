@@ -1,96 +1,88 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CheckIcon, StarIcon, SparklesIcon, PlayIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { apiClient } from '@/lib/api';
 
 const PricingSection = () => {
   const [isAnnual, setIsAnnual] = useState(false);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const plans = [
-    {
-      name: 'Plan Terreno',
-      type: 'Básico',
-      icon: '🪵',
-      description: 'Perfecto para agentes independientes que están comenzando',
-      subtitle: 'Ideal para empezar tu carrera inmobiliaria',
-      monthlyPrice: 120000,
-      annualPrice: 1152000, // 20% discount
-      popular: false,
-      features: [
-        'Hasta 50 propiedades',
-        'Hasta 100 clientes',
-        'Gestión básica de contactos',
-        'Reportes mensuales',
-        'Soporte por email',
-        'App móvil básica'
-      ],
-      cta: 'Comenzar gratis'
-    },
-    {
-      name: 'Plan Casa',
-      type: 'Popular',
-      icon: '🏠',
-      description: 'La opción más elegida por agentes profesionales',
-      subtitle: 'Todo lo que necesitas para crecer tu negocio',
-      monthlyPrice: 325000,
-      annualPrice: 3120000, // 20% discount
-      popular: true,
-      features: [
-        'Propiedades ilimitadas',
-        'Clientes ilimitados',
-        'CRM completo',
-        'Agenda inteligente',
-        'Reportes avanzados',
-        'Integraciones',
-        'Soporte prioritario',
-        'App móvil completa'
-      ],
-      cta: 'Comenzar ahora'
-    },
-    {
-      name: 'Plan Edificio',
-      type: 'Profesional',
-      icon: '🏢',
-      description: 'Para inmobiliarias en crecimiento',
-      subtitle: 'Potencia tu equipo y escala tu negocio',
-      monthlyPrice: 650000,
-      annualPrice: 6240000, // 20% discount
-      popular: false,
-      features: [
-        'Todo del Plan Casa',
-        'Multi-usuario (hasta 10)',
-        'Gestión de equipos',
-        'Reportes personalizados',
-        'API completa',
-        'Integración avanzada',
-        'Soporte dedicado',
-        'Capacitación incluida'
-      ],
-      cta: 'Contactar ventas'
-    },
-    {
-      name: 'Plan Torre',
-      type: 'Empresarial',
-      icon: '🌇',
-      description: 'Para grandes inmobiliarias y corporaciones',
-      subtitle: 'La solución completa para empresas grandes',
-      monthlyPrice: 1250000,
-      annualPrice: 12000000, // 20% discount
-      popular: false,
-      features: [
-        'Todo del Plan Edificio',
-        'Usuarios ilimitados',
-        'Multi-sucursal',
-        'Reportes empresariales',
-        'API premium',
-        'Integración personalizada',
-        'Gerente de cuenta',
-        'Soporte 24/7'
-      ],
-      cta: 'Contactar ventas'
+  // Cargar planes dinámicamente del backend
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const response = await apiClient.get('/api/subscriptions/plans/proptech');
+        const backendPlans = response.data || [];
+        
+        // Mapear planes del backend a formato del componente
+        const mappedPlans = backendPlans.map((plan: any) => ({
+          name: plan.name,
+          type: plan.tier || 'Básico',
+          icon: getIconForTier(plan.tier),
+          description: plan.description || '',
+          subtitle: getSubtitleForTier(plan.tier),
+          monthlyPrice: plan.billingCycleDays === 30 ? plan.price : plan.price / 12,
+          annualPrice: plan.billingCycleDays === 365 ? plan.price : plan.price * 12 * 0.8,
+          popular: plan.tier === 'INTERMEDIO',
+          features: plan.features || getFeaturesForTier(plan),
+          cta: plan.tier === 'FREE' ? 'Comenzar gratis' : plan.tier === 'PREMIUM' || plan.tier === 'ENTERPRISE' ? 'Contactar ventas' : 'Comenzar ahora'
+        }));
+        
+        setPlans(mappedPlans);
+      } catch (error) {
+        console.error('Error cargando planes:', error);
+        // Fallback a array vacío si hay error
+        setPlans([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPlans();
+  }, []);
+
+  // Funciones helper para mapear datos del backend
+  const getIconForTier = (tier: string) => {
+    switch (tier) {
+      case 'FREE': return '🆓';
+      case 'INICIAL': return '🪵';
+      case 'INTERMEDIO': return '🏠';
+      case 'PREMIUM': return '🏢';
+      case 'ENTERPRISE': return '🌇';
+      default: return '📋';
     }
-  ];
+  };
+
+  const getSubtitleForTier = (tier: string) => {
+    switch (tier) {
+      case 'FREE': return 'Ideal para probar la plataforma';
+      case 'INICIAL': return 'Ideal para empezar tu carrera inmobiliaria';
+      case 'INTERMEDIO': return 'Todo lo que necesitas para crecer tu negocio';
+      case 'PREMIUM': return 'Potencia tu equipo y escala tu negocio';
+      case 'ENTERPRISE': return 'La solución completa para empresas grandes';
+      default: return '';
+    }
+  };
+
+  const getFeaturesForTier = (plan: any) => {
+    const features = [];
+    
+    if (plan.maxProperties > 0) {
+      features.push(plan.maxProperties === -1 ? 'Propiedades ilimitadas' : `Hasta ${plan.maxProperties} propiedades`);
+    }
+    if (plan.maxAgents > 0) {
+      features.push(plan.maxAgents === -1 ? 'Agentes ilimitados' : `Hasta ${plan.maxAgents} agentes`);
+    }
+    if (plan.hasCrm) features.push('CRM completo');
+    if (plan.hasAnalytics) features.push('Reportes avanzados');
+    if (plan.hasNetworkAccess) features.push('Acceso a network');
+    if (plan.hasPrioritySupport) features.push('Soporte prioritario');
+    
+    return features.length > 0 ? features : ['Características básicas incluidas'];
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -112,6 +104,42 @@ const PricingSection = () => {
       }
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <section id="pricing" className="py-16 bg-gradient-to-br from-slate-50 via-white to-blue-50 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-gray-900">
+              Planes de precios
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-3xl p-6 shadow-xl border-2 border-gray-200 animate-pulse">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
+                  <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-8"></div>
+                  <div className="h-12 bg-gray-300 rounded-2xl w-2/3 mx-auto"></div>
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div key={j} className="flex items-center gap-3">
+                      <div className="w-5 h-5 bg-gray-200 rounded-full"></div>
+                      <div className="h-4 bg-gray-200 rounded flex-1"></div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-8 h-12 bg-gray-300 rounded-2xl"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="pricing" className="py-16 bg-gradient-to-br from-slate-50 via-white to-blue-50 relative overflow-hidden">
@@ -175,14 +203,19 @@ const PricingSection = () => {
         </motion.div>
 
         {/* Pricing Cards */}
+        {plans.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-gray-600 text-lg">No hay planes disponibles en este momento.</p>
+          </div>
+        ) : (
         <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
-          {plans.filter((p) => p.name !== 'Plan Torre').map((plan) => (
+          {plans.filter((p) => p.type !== 'ENTERPRISE' && p.type !== 'Empresarial').map((plan) => (
             <motion.div
               key={plan.name}
               variants={itemVariants}
@@ -235,23 +268,24 @@ const PricingSection = () => {
                 </p>
                 
                 {/* Price Box */}
-                <div className={`flex flex-col items-center justify-center rounded-3xl p-4 mb-4 ${
+                <div className={`flex flex-col items-center justify-center rounded-2xl p-3 mb-4 ${
                   plan.popular 
                     ? 'bg-gradient-to-br from-blue-100 to-purple-100 border-2 border-blue-300' 
                     : 'bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200'
                 }`}>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-5xl font-extrabold ${
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-sm font-semibold text-gray-600">₲</span>
+                    <span className={`text-3xl font-bold ${
                       plan.popular ? 'bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent' : 'text-gray-900'
                     }`}>
-                      ₲{(isAnnual ? plan.annualPrice : plan.monthlyPrice).toLocaleString('es-PY')}
+                      {(isAnnual ? plan.annualPrice : plan.monthlyPrice).toLocaleString('es-PY')}
                     </span>
                   </div>
-                  <span className="text-lg font-semibold text-gray-600 mt-2">
+                  <span className="text-sm font-medium text-gray-600 mt-1">
                     /{isAnnual ? 'año' : 'mes'}
                   </span>
                   {isAnnual && (
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-xs text-gray-500 mt-1">
                       ₲{Math.round(plan.annualPrice / 12).toLocaleString('es-PY')}/mes
                     </p>
                   )}
@@ -273,7 +307,7 @@ const PricingSection = () => {
                   <span className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></span>
                   Incluye:
                 </h4>
-                {plan.features.map((feature, featureIndex) => (
+                {plan.features.map((feature: string, featureIndex: number) => (
                   <div key={featureIndex} className="flex items-start gap-4 group/feature">
                     <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 flex items-center justify-center mt-0.5 group-hover/feature:scale-110 transition-transform duration-300">
                       <CheckIcon className="w-4 h-4 text-green-600 font-bold" />
@@ -297,9 +331,10 @@ const PricingSection = () => {
             </motion.div>
           ))}
         </motion.div>
+        )}
 
-        {/* Plan Torre - renderizado abajo */}
-        {plans.find((p) => p.name === 'Plan Torre') && (
+        {/* Plan Torre/Empresarial - renderizado abajo si existe */}
+        {plans.find((p) => p.type === 'ENTERPRISE' || p.type === 'Empresarial' || p.name?.includes('Torre')) && (
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -308,7 +343,7 @@ const PricingSection = () => {
             className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8"
           >
             {(() => {
-              const plan = plans.find((p) => p.name === 'Plan Torre')!;
+              const plan = plans.find((p) => p.type === 'ENTERPRISE' || p.type === 'Empresarial' || p.name?.includes('Torre'))!;
               return (
                 <div className="md:col-start-2">
                   <motion.div
@@ -341,17 +376,18 @@ const PricingSection = () => {
                     </p>
                     
                     {/* Price Box */}
-                    <div className={`flex flex-col items-center justify-center rounded-3xl p-6 mb-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200`}>
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-5xl font-extrabold text-gray-900`}>
-                          ₲{(isAnnual ? plan.annualPrice : plan.monthlyPrice).toLocaleString('es-PY')}
+                    <div className={`flex flex-col items-center justify-center rounded-2xl p-3 mb-4 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200`}>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm font-semibold text-gray-600">₲</span>
+                        <span className={`text-3xl font-bold text-gray-900`}>
+                          {(isAnnual ? plan.annualPrice : plan.monthlyPrice).toLocaleString('es-PY')}
                         </span>
                       </div>
-                      <span className="text-lg font-semibold text-gray-600 mt-2">
+                      <span className="text-sm font-medium text-gray-600 mt-1">
                         /{isAnnual ? 'año' : 'mes'}
                       </span>
                       {isAnnual && (
-                        <p className="text-sm text-gray-500 mt-2">
+                        <p className="text-xs text-gray-500 mt-1">
                           ₲{Math.round(plan.annualPrice / 12).toLocaleString('es-PY')}/mes
                         </p>
                       )}
@@ -373,7 +409,7 @@ const PricingSection = () => {
                       <span className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></span>
                       Incluye:
                     </h4>
-                    {plan.features.map((feature, featureIndex) => (
+                    {plan.features.map((feature: string, featureIndex: number) => (
                       <div key={featureIndex} className="flex items-start gap-4 group/feature">
                         <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 flex items-center justify-center mt-0.5 group-hover/feature:scale-110 transition-transform duration-300">
                           <CheckIcon className="w-4 h-4 text-green-600 font-bold" />

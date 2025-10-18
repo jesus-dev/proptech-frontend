@@ -169,19 +169,19 @@ function AdminPlansPageContent() {
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'PREMIUM': return 'bg-yellow-100 text-yellow-800';
-      case 'INTERMEDIO': return 'bg-blue-100 text-blue-800';
-      case 'INICIAL': return 'bg-green-100 text-green-800';
-      case 'FREE': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'PREMIUM': return 'bg-yellow-500 text-white font-semibold';
+      case 'INTERMEDIO': return 'bg-blue-600 text-white font-semibold';
+      case 'INICIAL': return 'bg-green-600 text-white font-semibold';
+      case 'FREE': return 'bg-gray-600 text-white font-semibold';
+      default: return 'bg-gray-600 text-white font-semibold';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'PROPTECH': return 'bg-purple-100 text-purple-800';
-      case 'NETWORK': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'PROPTECH': return 'bg-purple-600 text-white font-semibold';
+      case 'NETWORK': return 'bg-orange-600 text-white font-semibold';
+      default: return 'bg-gray-600 text-white font-semibold';
     }
   };
 
@@ -201,8 +201,9 @@ function AdminPlansPageContent() {
         <h1 className="text-2xl font-bold text-gray-900">Gestión de Planes de Suscripción</h1>
         <Button
           onClick={() => setShowForm(true)}
-          className="bg-orange-500 hover:bg-orange-600 text-white"
+          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
         >
+          <Plus className="h-4 w-4 mr-2" />
           Nuevo Plan
         </Button>
       </div>
@@ -252,7 +253,8 @@ function AdminPlansPageContent() {
             onClick={() => {
               toast.info('Filtros aplicados');
             }}
-            className="bg-blue-500 hover:bg-blue-600 text-white"
+            variant="outline"
+            className="border-blue-600 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtrar
@@ -433,10 +435,15 @@ function AdminPlansPageContent() {
                   setEditingPlan(null);
                   resetForm();
                 }}
+                className="border-gray-300 text-gray-700 hover:bg-gray-100"
               >
+                <X className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-orange-500 hover:bg-orange-600">
+              <Button 
+                type="submit" 
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg"
+              >
                 <Save className="h-4 w-4 mr-2" />
                 {editingPlan ? 'Actualizar' : 'Crear'}
               </Button>
@@ -505,27 +512,27 @@ function AdminPlansPageContent() {
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <Button
-                        size="sm"
+                      <button
                         onClick={() => handleViewDetails(plan)}
-                        className="bg-gray-500 hover:bg-gray-600 text-white"
+                        className="px-3 py-2 bg-blue-700 text-white hover:bg-blue-800 shadow-lg hover:shadow-xl transition-all font-semibold rounded-md text-sm"
+                        title="Ver detalles"
                       >
                         <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
+                      </button>
+                      <button
                         onClick={() => handleEdit(plan)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        className="px-3 py-2 bg-green-700 text-white hover:bg-green-800 shadow-lg hover:shadow-xl transition-all font-semibold rounded-md text-sm"
+                        title="Editar"
                       >
                         <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
+                      </button>
+                      <button
                         onClick={() => handleDelete(plan.id, plan.name)}
-                        className="bg-red-500 hover:bg-red-600 text-white"
+                        className="px-3 py-2 bg-red-700 text-white hover:bg-red-800 shadow-lg hover:shadow-xl transition-all font-semibold rounded-md text-sm"
+                        title="Eliminar"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -73,16 +73,19 @@ export default function PropertyDetailPage() {
     const fetchProperty = async () => {
       try {
         setLoading(true);
+        setError('');
+        
         // Intentar obtener por slug primero, luego por ID si es numérico
         const propertyData = await publicPropertyService.getPropertyBySlug(slug);
-        setProperty(propertyData);
-        console.log('Property data:', propertyData);
-        console.log('Property amenities:', propertyData.amenities);
-        console.log('Property amenitiesDetails:', propertyData.amenitiesDetails);
-        console.log('All property keys:', Object.keys(propertyData));
+        
+        if (propertyData) {
+          setProperty(propertyData);
+        } else {
+          setError('Propiedad no encontrada');
+        }
       } catch (err) {
-        setError('Propiedad no encontrada');
-        console.error('Error fetching property:', err);
+        console.error('Error al cargar propiedad:', err);
+        setError('No se pudo cargar la propiedad. Verifica tu conexión al backend.');
       } finally {
         setLoading(false);
       }
@@ -97,16 +100,94 @@ export default function PropertyDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 flex items-center justify-center">
-        <div className="text-white text-xl">Cargando propiedad...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 flex items-center justify-center relative overflow-hidden">
+        {/* Efectos de fondo animados */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        
+        {/* Contenido */}
+        <div className="relative z-10 flex flex-col items-center space-y-6">
+          {/* Spinner principal con efecto dual */}
+          <div className="relative">
+            <div className="w-24 h-24 border-4 border-cyan-200/30 border-t-cyan-400 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-24 h-24 border-4 border-transparent border-r-blue-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            
+            {/* Icono de casa en el centro */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg className="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+          </div>
+          
+          {/* Texto */}
+          <div className="text-center space-y-3">
+            <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
+              Cargando propiedad
+            </h2>
+            <p className="text-cyan-100 text-lg drop-shadow-md">
+              Preparando los detalles para ti...
+            </p>
+          </div>
+          
+          {/* Puntos animados */}
+          <div className="flex space-x-3">
+            <div className="w-3 h-3 bg-cyan-400 rounded-full animate-bounce shadow-lg shadow-cyan-500/50"></div>
+            <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce shadow-lg shadow-blue-500/50" style={{ animationDelay: '0.1s' }}></div>
+            <div className="w-3 h-3 bg-indigo-400 rounded-full animate-bounce shadow-lg shadow-indigo-500/50" style={{ animationDelay: '0.2s' }}></div>
+          </div>
+          
+          {/* Barra de progreso */}
+          <div className="w-64 h-1.5 bg-white/20 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 rounded-full animate-[loading_1.5s_ease-in-out_infinite]" style={{
+              animation: 'loading 1.5s ease-in-out infinite',
+            }}></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !property) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 flex items-center justify-center">
-        <div className="text-white text-xl">{error || 'Propiedad no encontrada'}</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 flex items-center justify-center relative overflow-hidden px-4">
+        {/* Efectos de fondo */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-40 h-40 bg-red-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-60 h-60 bg-orange-500/10 rounded-full blur-3xl"></div>
+        </div>
+        
+        {/* Contenido */}
+        <div className="relative z-10 max-w-md text-center space-y-6">
+          {/* Icono de error */}
+          <div className="w-24 h-24 mx-auto bg-red-500/20 rounded-full flex items-center justify-center border-4 border-red-400/30 shadow-2xl">
+            <svg className="w-12 h-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          
+          {/* Mensaje */}
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold text-white drop-shadow-lg">
+              Propiedad no encontrada
+            </h2>
+            <p className="text-cyan-100 text-lg drop-shadow-md">
+              {error || 'La propiedad que buscas no existe o ya no está disponible'}
+            </p>
+          </div>
+          
+          {/* Botón volver */}
+          <button
+            onClick={() => router.push('/propiedades')}
+            className="inline-flex items-center gap-3 px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 font-bold rounded-xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95"
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+            Ver todas las propiedades
+          </button>
+        </div>
       </div>
     );
   }
@@ -250,68 +331,138 @@ export default function PropertyDetailPage() {
             <div className="lg:col-span-1">
               <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/30 sticky top-24">
                 <div className="text-center mb-6">
-                  <div className="relative w-20 h-20 mx-auto mb-4">
-                    {property.agent?.avatar ? (
+                  <div className="relative w-24 h-24 mx-auto mb-4">
+                    {property.agent?.avatar || property.agent?.photo ? (
                       <img 
-                        src={getImageUrl(property.agent.avatar)} 
-                        alt={property.agent.name} 
+                        src={getImageUrl(property.agent.avatar || property.agent.photo)} 
+                        alt={property.agent?.name || property.agentName || 'Agente'} 
                         className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg" 
                       />
-                    ) : (
+                    ) : (property.agent?.name || property.agentName) ? (
                       <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                        <span className="text-white text-2xl font-bold">
-                          {property.agent?.name ? property.agent.name.charAt(0).toUpperCase() : 'A'}
+                        <span className="text-white text-3xl font-bold">
+                          {(property.agent?.name || property.agentName).charAt(0).toUpperCase()}
                         </span>
                       </div>
+                    ) : property.agencyName ? (
+                      <div className="w-full h-full bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
                     )}
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white shadow-lg">
-                      <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
-                    </div>
+                    {(property.agent?.name || property.agentName) && (
+                      <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg">
+                        <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+                      </div>
+                    )}
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {property.agent?.name || property.agencyName || 'ON Bienes Raíces'}
-                  </h3>
-                  <p className="text-blue-600 font-semibold mb-2">
-                    {property.agent?.name ? 'Agente Inmobiliario' : 'Agencia Inmobiliaria'}
-                  </p>
+                  
+                  {/* Nombre y badge */}
+                  <div className="mb-3">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {property.agent?.name || property.agentName || property.agencyName || 'Propietario'}
+                    </h3>
+                    
+                    {/* Badge de tipo */}
+                    {(property.agent?.name || property.agentName) ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          Agente Verificado
+                        </span>
+                      </div>
+                    ) : property.agencyName ? (
+                      <p className="text-blue-600 font-semibold text-sm">
+                        Agencia Inmobiliaria
+                      </p>
+                    ) : null}
+                    
+                    {/* Agencia del agente */}
+                    {(property.agent?.name || property.agentName) && property.agencyName && (
+                      <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-600">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <span className="font-medium">{property.agencyName}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Rating */}
                   <div className="flex items-center justify-center gap-1 mb-4">
                     {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                      <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     ))}
-                    <span className="text-sm text-gray-600 ml-1">4.9</span>
+                    <span className="text-sm font-semibold text-gray-700 ml-2">4.9</span>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  {property.agent?.phone && (
+                  {(property.agent?.phone || property.agent?.mobile) && (
                     <a 
-                      href={`tel:${property.agent.phone}`} 
-                      className="flex items-center justify-center gap-3 w-full px-6 py-4 md:px-4 md:py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg text-lg md:text-base"
+                      href={`tel:${property.agent.phone || property.agent.mobile}`} 
+                      className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                     >
-                      <PhoneIcon className="w-6 h-6 md:w-5 md:h-5" />
-                      Llamar Ahora
+                      <PhoneIcon className="w-5 h-5 group-hover:animate-pulse" />
+                      <span>Llamar Ahora</span>
                     </a>
                   )}
-                  <a 
-                    href={property.agent?.phone ? `https://wa.me/${property.agent.phone.replace(/[^\d]/g, '')}` : '#'} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-3 w-full px-6 py-4 md:px-4 md:py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg text-lg md:text-base"
-                  >
-                    <ChatBubbleLeftRightIcon className="w-6 h-6 md:w-5 md:h-5" />
-                    WhatsApp
-                  </a>
+                  {(property.agent?.phone || property.agent?.mobile) && (
+                    <a 
+                      href={`https://wa.me/${(property.agent.phone || property.agent.mobile).replace(/[^\d]/g, '')}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                    >
+                      <ChatBubbleLeftRightIcon className="w-5 h-5 group-hover:animate-pulse" />
+                      <span>WhatsApp</span>
+                    </a>
+                  )}
                   {property.agent?.email && (
                     <a 
                       href={`mailto:${property.agent.email}`} 
-                      className="flex items-center justify-center gap-3 w-full px-6 py-4 md:px-4 md:py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg text-lg md:text-base"
+                      className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                     >
-                      <EnvelopeIcon className="w-6 h-6 md:w-5 md:h-5" />
-                      Enviar Email
+                      <EnvelopeIcon className="w-5 h-5 group-hover:animate-pulse" />
+                      <span>Enviar Email</span>
                     </a>
                   )}
+                  
+                  {/* Información adicional del agente/agencia */}
+                  {(property.agent?.bio || property.agent?.description || property.agencyName) && (
+                    <div className="pt-4 mt-4 border-t border-gray-200">
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        {property.agent?.bio || property.agent?.description || `Contacta con ${property.agencyName} para más información sobre esta propiedad.`}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Stats del agente */}
+                  <div className="pt-4 grid grid-cols-3 gap-3 border-t border-gray-200">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">{property.views || 0}</div>
+                      <div className="text-xs text-gray-500">Vistas</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">15+</div>
+                      <div className="text-xs text-gray-500">Ventas</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-900">5★</div>
+                      <div className="text-xs text-gray-500">Rating</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -781,15 +932,15 @@ export default function PropertyDetailPage() {
         <span className="hidden sm:inline">Volver</span>
       </button>
 
-      {/* Botón de contacto flotante */}
+      {/* Botón de contacto flotante - WhatsApp */}
       <a 
-        href={property.agent?.phone ? `https://wa.me/${property.agent.phone.replace(/[^\d]/g, '')}` : '#'} 
+        href={property.agent?.phone || property.agent?.mobile ? `https://wa.me/${(property.agent.phone || property.agent.mobile).replace(/[^\d]/g, '')}` : '#'} 
         target="_blank" 
         rel="noopener noreferrer" 
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold text-sm shadow-xl hover:scale-105 hover:from-green-600 hover:to-green-700 transition-all duration-200"
+        className="group fixed bottom-3 sm:bottom-32 right-6 z-50 flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-2xl hover:shadow-green-500/50 hover:scale-110 active:scale-95 transition-all duration-300"
       >
-        <ChatBubbleLeftRightIcon className="w-4 h-4" />
-        <span className="hidden sm:inline">WhatsApp</span>
+        <ChatBubbleLeftRightIcon className="w-5 h-5 group-hover:animate-pulse" />
+        <span className="text-sm font-bold">WhatsApp</span>
       </a>
     </main>
   );

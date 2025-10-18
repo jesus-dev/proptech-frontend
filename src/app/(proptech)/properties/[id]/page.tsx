@@ -161,6 +161,15 @@ export default function PropertyDetailsPage({ params }: PageProps) {
         const propertyData = await propertyService.getPropertyById(propertyId);
         
         if (propertyData) {
+          // Transformar galleryImages a images array
+          if (propertyData.galleryImages && Array.isArray(propertyData.galleryImages)) {
+            propertyData.images = propertyData.galleryImages
+              .sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0))
+              .map((img: any) => img.url);
+          } else if (!propertyData.images) {
+            propertyData.images = [];
+          }
+          
           setProperty(propertyData);
           setIsFavorite(propertyData.favorite || false);
         } else {
@@ -219,9 +228,11 @@ export default function PropertyDetailsPage({ params }: PageProps) {
   }
 
   const formatPrice = (price: number, currency: string = "USD") => {
+    // Validar currency y usar USD si es null/undefined/inválido
+    const validCurrency = currency && currency.trim() !== '' ? currency : 'USD';
     return new Intl.NumberFormat('es-PY', {
       style: 'currency',
-      currency: currency,
+      currency: validCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);

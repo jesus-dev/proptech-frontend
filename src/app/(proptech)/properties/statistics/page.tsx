@@ -21,7 +21,7 @@ import {
   EnvelopeIcon,
   GlobeAltIcon
 } from "@heroicons/react/24/outline";
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export default function PropertyStatisticsPage() {
   const [stats, setStats] = useState<any>(null);
@@ -40,9 +40,8 @@ export default function PropertyStatisticsPage() {
           operation: operation !== 'all' ? operation : ''
         });
         
-        const response = await fetch(`${getEndpoint('/api/properties/statistics/summary')}?${params}`);
-        const data = await response.json();
-        setStats(data);
+        const response = await apiClient.get(`/api/properties/statistics/summary?${params}`);
+        setStats(response.data);
       } catch (err) {
         setError("No se pudieron cargar las estadísticas");
       } finally {

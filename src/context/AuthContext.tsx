@@ -24,8 +24,8 @@ interface AuthContextType {
   getAvailableRoutes: () => string[];
   getUserContext: () => {
     canViewAll: boolean;
-    agentId: string | null;
-    agencyId: string | null;
+    agentId: number | string | null;
+    agencyId: number | string | null;
     isAdmin: boolean;
     isAgent: boolean;
     isAgencyAdmin: boolean;
@@ -228,19 +228,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Agency admin can see all agents in their agency
     if (context.isAgencyAdmin && context.agencyId) {
-      params.agencyId = context.agencyId;
+      params.agencyId = String(context.agencyId);
       return params;
     }
 
     // Agent can see all properties from their agency (not just their own)
     if (context.isAgent && context.agencyId) {
-      params.agencyId = context.agencyId;
+      params.agencyId = String(context.agencyId);
       return params;
     }
 
     // If agent doesn't have agencyId but has agentId, they can only see their own
     if (context.isAgent && context.agentId && !context.agencyId) {
-      params.agentId = context.agentId;
+      params.agentId = String(context.agentId);
       return params;
     }
 

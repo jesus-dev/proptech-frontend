@@ -83,13 +83,14 @@ export default function AgentTable({
                     ) : (
                       <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center mr-3">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {agent.firstName.charAt(0)}{agent.lastName.charAt(0)}
+                          {(agent.nombre || agent.firstName || '').charAt(0)}
+                          {(agent.apellido || agent.lastName || '').charAt(0)}
                         </span>
                       </div>
                     )}
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {agent.firstName} {agent.lastName}
+                        {agent.nombreCompleto || `${agent.nombre || agent.firstName || ''} ${agent.apellido || agent.lastName || ''}`.trim()}
                       </div>
                       {agent.position && (
                         <div className="text-xs text-gray-500 dark:text-gray-400">
