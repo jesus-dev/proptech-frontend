@@ -626,14 +626,14 @@ const AppSidebar: React.FC = () => {
                 : "justify-start"
           }`}
         >
-          <Link href="/">
+          <Link href="/dash">
             {isMobile || isExpanded || isHovered ? (
               <Image
                 src="/images/logo/proptech.png"
                 alt="PropTech"
                 width={150}
                 height={40}
-                className="object-contain"
+                className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
               />
             ) : (
               <Image
@@ -641,7 +641,7 @@ const AppSidebar: React.FC = () => {
                 alt="PropTech"
                 width={32}
                 height={32}
-                className="object-contain"
+                className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
               />
             )}
           </Link>

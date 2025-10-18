@@ -56,13 +56,49 @@ function transformPropertyResponse(backendProperty: any): Property {
     featuredImage = mappedImages[0];
   }
 
-
+  // Normalizar código de moneda usando SOLO los datos que vienen del backend
+  // Prioridad: currencyCode directo > currency.code > fallback a USD
+  let currencyCode = "USD"; // fallback por defecto
+  
+  // 1. Primero intentar con currencyCode directo del backend
+  if (backendProperty.currencyCode && typeof backendProperty.currencyCode === 'string') {
+    currencyCode = backendProperty.currencyCode;
+  }
+  // 2. Si no existe, intentar extraer del objeto currency
+  else if (backendProperty.currency) {
+    if (typeof backendProperty.currency === 'object' && backendProperty.currency.code) {
+      currencyCode = backendProperty.currency.code;
+    } else if (typeof backendProperty.currency === 'string') {
+      currencyCode = backendProperty.currency;
+    }
+  }
+  
+  // Convertir a mayúsculas para asegurar consistencia
+  currencyCode = currencyCode.toString().toUpperCase();
+  
+  // Validar que sea una moneda soportada
+  const validCurrencies = ['USD', 'ARS', 'EUR', 'PYG', 'MXN', 'BRL'];
+  if (!validCurrencies.includes(currencyCode)) {
+    console.warn(`⚠️ Moneda no soportada recibida del backend: "${currencyCode}". Usando USD como fallback.`);
+    console.warn(`   Considera agregar esta moneda al array de monedas soportadas en utils.ts`);
+    currencyCode = 'USD';
+  }
+  
+  // Log para debugging (solo en desarrollo) - comentado para reducir ruido
+  // if (process.env.NODE_ENV === 'development') {
+  //   console.log(`💰 Moneda transformada para propiedad ${backendProperty.id || 'unknown'}:`, {
+  //     currencyIdFromBackend: backendProperty.currencyId,
+  //     currencyCodeFromBackend: backendProperty.currencyCode,
+  //     currencyObjectFromBackend: backendProperty.currency,
+  //     finalCurrencyCode: currencyCode
+  //   });
+  // }
 
   return {
     ...backendProperty,
     // Convertir el objeto currency a string (código de moneda) y guardar el ID
-    currency: backendProperty.currency?.code || backendProperty.currency || "USD",
-    currencyId: backendProperty.currency?.id || null,
+    currency: currencyCode,
+    currencyId: backendProperty.currencyId || backendProperty.currency?.id || null,
     // Asegurar que los arrays estén definidos
     amenities: backendProperty.amenities || [],
     services: backendProperty.services || [],

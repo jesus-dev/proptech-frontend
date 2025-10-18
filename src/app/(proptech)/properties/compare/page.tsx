@@ -295,10 +295,10 @@ export default function PropertyComparePage() {
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full p-4 mb-4 shadow-lg">
           <Eye className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 text-center">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 text-center">
           Comparador de Propiedades
         </h1>
-        <p className="text-base md:text-lg text-gray-600 text-center max-w-2xl">
+        <p className="text-base md:text-lg text-gray-700 dark:text-gray-300 text-center max-w-2xl">
           Compara hasta {MAX_COMPARISON_PROPERTIES} propiedades lado a lado para tomar la mejor decisión de inversión.
         </p>
       </div>
@@ -309,7 +309,7 @@ export default function PropertyComparePage() {
           <Button
             onClick={() => setShowSearchModal(true)}
             disabled={!canAddMore}
-            className="bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="!bg-blue-600 !text-white hover:!bg-blue-700 dark:!bg-blue-500 dark:hover:!bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             size="sm"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -321,7 +321,7 @@ export default function PropertyComparePage() {
             <Button
               onClick={handleClearAll}
               variant="outline"
-              className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400"
+              className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-950 hover:border-red-400 dark:hover:border-red-500"
               size="sm"
             >
               <X className="w-4 h-4 mr-2" />
@@ -331,7 +331,7 @@ export default function PropertyComparePage() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
+        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
           {comparisonProperties.length} de {MAX_COMPARISON_PROPERTIES} propiedades
         </div>
@@ -339,18 +339,18 @@ export default function PropertyComparePage() {
 
       {/* Comparison Table */}
       {hasProperties ? (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 min-w-[200px]">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white min-w-[200px]">
                     Características
                   </th>
                   {comparisonProperties.map((property) => (
-                    <th key={property.comparisonId} className="px-6 py-4 text-center text-sm font-medium text-gray-900 min-w-[250px] relative">
+                    <th key={property.comparisonId} className="px-6 py-4 text-center text-sm font-medium text-gray-900 dark:text-white min-w-[250px] relative">
                       <div className="flex flex-col items-center">
-                        <div className="w-20 h-20 bg-gray-100 rounded-lg mb-2 overflow-hidden">
+                        <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg mb-2 overflow-hidden">
                           {property.galleryImages && property.galleryImages.length > 0 ? (
                             <img
                               src={getImageUrl(property.galleryImages[0].url) || ''}
@@ -362,19 +362,19 @@ export default function PropertyComparePage() {
                               }}
                             />
                           ) : null}
-                          <Home className="w-8 h-8 text-gray-300 hidden mx-auto mt-4" />
+                          <Home className="w-8 h-8 text-gray-400 dark:text-gray-500 hidden mx-auto mt-4" />
                         </div>
-                        <h3 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-1">
+                        <h3 className="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2 mb-1">
                           {property.title}
                         </h3>
-                        <p className="text-xs text-gray-500 mb-2">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                           {property.city}
                         </p>
                         <Button
                           onClick={() => handleRemoveProperty(property.comparisonId)}
                           size="sm"
                           variant="outline"
-                          className="text-red-600 border-red-300 hover:bg-red-50 text-xs"
+                          className="text-red-600 dark:text-red-400 border-red-300 dark:border-red-600 hover:bg-red-50 dark:hover:bg-red-950 text-xs"
                         >
                           <X className="w-3 h-3 mr-1" />
                           Remover
@@ -384,15 +384,15 @@ export default function PropertyComparePage() {
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {COMPARISON_FEATURES.map((feature, index) => (
-                  <tr key={feature.key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 flex items-center gap-2">
+                  <tr key={feature.key} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'}>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
                       {feature.icon}
                       {feature.label}
                     </td>
                     {comparisonProperties.map((property) => (
-                      <td key={property.comparisonId} className="px-6 py-4 text-sm text-gray-700 text-center">
+                      <td key={property.comparisonId} className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300 text-center">
                         {feature.formatter 
                           ? feature.formatter(property[feature.key])
                           : String(property[feature.key] || 'No especificado')
@@ -406,19 +406,19 @@ export default function PropertyComparePage() {
           </div>
         </div>
       ) : (
-        <div className="text-center py-12 md:py-16 bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-lg border border-gray-200">
-          <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-            <Eye className="w-12 h-12 text-blue-600" />
+        <div className="text-center py-12 md:py-16 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <Eye className="w-12 h-12 text-blue-600 dark:text-blue-400" />
           </div>
-          <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
+          <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-3">
             No hay propiedades para comparar
           </h3>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+          <p className="text-gray-700 dark:text-gray-300 mb-8 max-w-md mx-auto">
             Agrega al menos 2 propiedades para comenzar la comparación y tomar la mejor decisión de inversión.
           </p>
           <Button
             onClick={() => setShowSearchModal(true)}
-            className="bg-blue-600 text-white hover:bg-blue-700 shadow-md px-6 py-3"
+            className="!bg-blue-600 !text-white hover:!bg-blue-700 dark:!bg-blue-500 dark:hover:!bg-blue-600 shadow-md px-6 py-3"
             size="lg"
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -472,9 +472,9 @@ export default function PropertyComparePage() {
               {searchResults.map((property) => (
                 <div
                   key={property.id}
-                  className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                  className="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 bg-white dark:bg-gray-900"
                 >
-                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
                     {property.galleryImages && property.galleryImages.length > 0 ? (
                       <img
                         src={getImageUrl(property.galleryImages[0].url) || ''}
@@ -486,17 +486,17 @@ export default function PropertyComparePage() {
                         }}
                       />
                     ) : null}
-                    <Home className="w-6 h-6 text-gray-300 hidden mx-auto mt-3" />
+                    <Home className="w-6 h-6 text-gray-400 dark:text-gray-500 hidden mx-auto mt-3" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-gray-900 truncate">
+                    <h4 className="font-medium text-gray-900 dark:text-white truncate">
                       {property.title}
                     </h4>
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                       {property.city} • {property.type}
                     </p>
-                    <p className="text-sm font-medium text-brand-600">
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                       {property.price?.toLocaleString('es-PY', { 
                         style: 'currency', 
                         currency: 'PYG' 
@@ -507,7 +507,7 @@ export default function PropertyComparePage() {
                   <Button
                     onClick={() => handleAddProperty(property)}
                     size="sm"
-                    className="bg-brand-500 text-white hover:bg-brand-600"
+                    className="!bg-blue-600 !text-white hover:!bg-blue-700 dark:!bg-blue-500 dark:hover:!bg-blue-600 shadow-sm"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Agregar

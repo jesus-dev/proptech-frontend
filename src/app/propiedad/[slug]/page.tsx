@@ -668,11 +668,11 @@ export default function PropertyDetailPage() {
                         <span className="font-semibold text-gray-900">{property.propertyStatus}</span>
                       </div>
                     )}
-                    {(property.agencyPropertyNumber || property.id) && (
+                    {(property.houzezId || property.agencyPropertyNumber || property.id) && (
                       <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                        <span className="text-gray-700 font-medium">ID de Referencia</span>
+                        <span className="text-gray-700 font-medium">Código de Referencia</span>
                         <span className="font-mono text-sm text-gray-600 font-semibold">
-                          {property.agencyPropertyNumber || `#${property.id}`}
+                          {property.houzezId || property.agencyPropertyNumber || `#${property.id}`}
                         </span>
                       </div>
                     )}

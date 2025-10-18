@@ -142,10 +142,10 @@ export default function AgendaPage() {
                 <Calendar className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-6xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-6 leading-tight">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2 leading-tight">
               Agenda Inteligente
             </h1>
-            <p className="text-2xl text-slate-600 dark:text-slate-300 font-medium mb-8 max-w-2xl mx-auto">
+            <p className="text-base text-slate-600 dark:text-slate-300 mb-4 max-w-2xl mx-auto">
               Gestiona tus citas con elegancia y eficiencia
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -165,7 +165,7 @@ export default function AgendaPage() {
         </div>
 
         {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105 hover:-rotate-1">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
             <CardHeader className="p-6 relative z-10">
@@ -183,7 +183,7 @@ export default function AgendaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-blue-900 dark:text-blue-100 mb-2">
+              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-1">
                 {stats.totalAppointments}
               </div>
               <p className="text-blue-600 dark:text-blue-400 font-medium">Todas las citas</p>
@@ -207,7 +207,7 @@ export default function AgendaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-emerald-900 dark:text-emerald-100 mb-2">
+              <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100 mb-1">
                 {stats.todayAppointments}
               </div>
               <p className="text-emerald-600 dark:text-emerald-400 font-medium">Programadas</p>
@@ -231,7 +231,7 @@ export default function AgendaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-purple-900 dark:text-purple-100 mb-2">
+              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-1">
                 {stats.upcomingAppointments}
               </div>
               <p className="text-purple-600 dark:text-purple-400 font-medium">En los próximos días</p>
@@ -255,7 +255,7 @@ export default function AgendaPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-amber-900 dark:text-amber-100 mb-2">
+              <div className="text-2xl font-bold text-amber-900 dark:text-amber-100 mb-1">
                 {stats.pendingConfirmations}
               </div>
               <p className="text-amber-600 dark:text-amber-400 font-medium">Necesitan confirmación</p>
@@ -264,12 +264,12 @@ export default function AgendaPage() {
         </div>
 
         {/* Enhanced Quick Actions */}
-        <div className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-200 dark:to-slate-100 bg-clip-text text-transparent mb-4">
+        <div className="mb-6">
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-200 dark:to-slate-100 bg-clip-text text-transparent mb-2">
               Acciones Rápidas
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 font-medium">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Gestiona tu agenda de manera eficiente
             </p>
           </div>
@@ -356,12 +356,12 @@ export default function AgendaPage() {
         </div>
 
         {/* Enhanced Today's Appointments */}
-        <div className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-200 dark:to-slate-100 bg-clip-text text-transparent mb-4">
+        <div className="mb-6">
+          <div className="text-center mb-4">
+            <h2 className="text-xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-200 dark:to-slate-100 bg-clip-text text-transparent mb-2">
               Citas de Hoy
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 font-medium">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Mantente al día con tu agenda diaria
             </p>
           </div>

@@ -47,9 +47,11 @@ export default function ContactInfo({
   const { primaryContact, isLoading } = useContacts();
 
   // --- NUEVO: Selección de contacto ---
-  const contact = agent && (agent.phone || agent.email)
+  // Si se pasa un agent o agency explícitamente, SIEMPRE usarlo (incluso sin phone/email)
+  // Solo usar primaryContact si NO se pasa ni agent ni agency
+  const contact = agent
     ? agent
-    : agency && (agency.phone || agency.email)
+    : agency
     ? agency
     : primaryContact;
 
@@ -67,10 +69,21 @@ export default function ContactInfo({
     );
   }
 
-  if (!contact) {
+  // Verificar si el contacto tiene al menos algún dato útil
+  const hasAnyContactData = contact && (
+    contact.name || 
+    contact.phone || 
+    contact.email || 
+    contact.website || 
+    contact.whatsapp
+  );
+
+  if (!hasAnyContactData) {
     return (
       <div className={`text-gray-500 dark:text-gray-400 ${className}`}>
-        No hay información de contacto configurada
+        {agent ? 'No hay información del agente disponible' : 
+         agency ? 'No hay información de la agencia disponible' :
+         'No hay información de contacto configurada'}
       </div>
     );
   }

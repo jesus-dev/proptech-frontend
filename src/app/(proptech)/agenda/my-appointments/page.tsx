@@ -76,37 +76,36 @@ export default function MyAppointmentsPage() {
       <div className="absolute inset-0 opacity-40" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }}></div>
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="mb-10 relative">
+      <div className="container mx-auto px-4 py-4 relative z-10">
+        <div className="mb-4 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 via-blue-600/10 to-purple-600/10 rounded-3xl blur-3xl"></div>
-          <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl">
+          <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-lg">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
                 <Link href="/agenda">
-                  <Button variant="outline" className="group px-6 py-3 rounded-2xl border-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300">
-                    <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
+                  <Button variant="outline" size="sm" className="group px-3 py-2 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-700">
+                    <ArrowLeft className="w-4 h-4 mr-1" />
                     Volver
                   </Button>
                 </Link>
-                <div className="flex items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 shadow-lg">
-                    <CalendarDays className="w-10 h-10 text-white" />
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 shadow">
+                    <CalendarDays className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Mis Citas
                     </h1>
-                    <p className="text-lg text-slate-600 dark:text-slate-300 font-medium">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
                       Gestiona tus citas personales
                     </p>
                   </div>
                 </div>
               </div>
               <Link href="/agenda/new">
-                <Button className="group bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-6 md:px-8 py-3 md:py-4 text-sm md:text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-                  <Plus className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                <Button size="sm" className="group bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg shadow">
+                  <Plus className="w-4 h-4 mr-1" />
                   Nueva Cita
-                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5 ml-2 md:ml-3 group-hover:translate-x-1 transition-transform duration-300" />
                 </Button>
               </Link>
             </div>
@@ -115,13 +114,13 @@ export default function MyAppointmentsPage() {
 
         <Card className="relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5"></div>
-          <CardHeader className="p-8 relative z-10">
-            <CardTitle className="flex items-center text-2xl font-bold text-slate-800 dark:text-slate-200">
-              <User className="w-6 h-6 mr-3 text-green-600" />
+          <CardHeader className="p-4 relative z-10">
+            <CardTitle className="flex items-center text-xl font-bold text-slate-800 dark:text-slate-200">
+              <User className="w-5 h-5 mr-2 text-green-600" />
               Mis Citas Programadas
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 pt-0 relative z-10">
+          <CardContent className="p-4 pt-0 relative z-10">
           <div className="flex flex-col md:flex-row gap-3 mb-4">
             <div className="flex-1">
               <Input

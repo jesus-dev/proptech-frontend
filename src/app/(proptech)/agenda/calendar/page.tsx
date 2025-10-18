@@ -134,38 +134,36 @@ export default function CalendarPage() {
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }}></div>
       
-      <div className="container mx-auto px-4 py-8 relative z-10">
+      <div className="container mx-auto px-4 py-4 relative z-10">
         {/* Enhanced Header */}
-        <div className="mb-12 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 rounded-3xl blur-3xl"></div>
-          <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl">
+        <div className="mb-4 relative">
+          <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-lg">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
                 <Link href="/agenda">
-                  <Button variant="outline" className="group px-6 py-3 rounded-2xl border-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300">
-                    <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
+                  <Button variant="outline" size="sm" className="group px-3 py-2 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-700">
+                    <ArrowLeft className="w-4 h-4 mr-1" />
                     Volver
                   </Button>
                 </Link>
-                <div className="flex items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                    <CalendarDays className="w-10 h-10 text-white" />
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 shadow">
+                    <CalendarDays className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
                       Calendario de Citas
                     </h1>
-                    <p className="text-xl text-slate-600 dark:text-slate-300 font-medium">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
                       Visualiza todas las citas programadas
                     </p>
                   </div>
                 </div>
               </div>
               <Link href="/agenda/new">
-                <Button className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-                  <Plus className="w-6 h-6 mr-3 group-hover:rotate-90 transition-transform duration-300" />
+                <Button size="sm" className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg shadow">
+                  <Plus className="w-4 h-4 mr-1" />
                   Nueva Cita
-                  <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
                 </Button>
               </Link>
             </div>
@@ -173,27 +171,26 @@ export default function CalendarPage() {
         </div>
 
         {/* Enhanced Filters */}
-        <div className="mb-12">
-          <Card className="relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5"></div>
-            <CardHeader className="p-8 relative z-10">
-              <CardTitle className="flex items-center text-2xl font-bold text-slate-800 dark:text-slate-200">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg mr-4">
-                  <Filter className="w-6 h-6 text-white" />
+        <div className="mb-4">
+          <Card className="relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow">
+            <CardHeader className="p-3 relative z-10">
+              <CardTitle className="flex items-center text-base font-bold text-slate-800 dark:text-slate-200">
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 shadow mr-2">
+                  <Filter className="w-4 h-4 text-white" />
                 </div>
-                Filtros Avanzados
+                Filtros
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-8 pt-0 relative z-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <label className="block text-lg font-semibold text-slate-700 dark:text-slate-300">
+            <CardContent className="p-3 pt-0 relative z-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Tipo de Cita
                   </label>
                   <select
                     value={filterType}
                     onChange={(e) => setFilterType(e.target.value)}
-                    className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm text-slate-700 dark:text-slate-300 font-medium focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800 transition-all duration-300"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-200 dark:focus:ring-purple-800"
                   >
                     <option value="all">Todos los tipos</option>
                     <option value="PROPERTY_VISIT">Visita a Propiedad</option>
@@ -205,14 +202,14 @@ export default function CalendarPage() {
                     <option value="OTHER">Otro</option>
                   </select>
                 </div>
-                <div className="space-y-4">
-                  <label className="block text-lg font-semibold text-slate-700 dark:text-slate-300">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Estado
                   </label>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 backdrop-blur-sm text-slate-700 dark:text-slate-300 font-medium focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-800 transition-all duration-300"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-200 dark:focus:ring-purple-800"
                   >
                     <option value="all">Todos los estados</option>
                     <option value="Programada">Programada</option>
@@ -228,51 +225,50 @@ export default function CalendarPage() {
         </div>
 
         {/* Enhanced Calendar */}
-        <div className="mb-12">
-          <Card className="relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5"></div>
+        <div className="mb-4">
+          <Card className="relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
             
-            <CardHeader className="p-8 relative z-10">
+            <CardHeader className="p-4 relative z-10">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                    <Calendar className="w-8 h-8 text-white" />
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow">
+                    <Calendar className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-3xl font-bold text-slate-800 dark:text-slate-200">
+                    <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200">
                       {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                     </CardTitle>
-                    <p className="text-slate-600 dark:text-slate-400 font-medium mt-1">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       Calendario interactivo de citas
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <Button 
                     variant="outline" 
-                    size="lg" 
+                    size="sm" 
                     onClick={prevMonth}
-                    className="p-3 rounded-2xl border-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300"
+                    className="p-2 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-700"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
-                    size="lg" 
+                    size="sm" 
                     onClick={nextMonth}
-                    className="p-3 rounded-2xl border-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300"
+                    className="p-2 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-700"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
             
-            <CardContent className="p-8 pt-0 relative z-10">
-              <div className="grid grid-cols-7 gap-2">
+            <CardContent className="p-4 pt-0 relative z-10">
+              <div className="grid grid-cols-7 gap-1">
                 {/* Días de la semana */}
                 {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-                  <div key={day} className="p-4 text-center text-lg font-bold text-slate-600 dark:text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-2xl">
+                  <div key={day} className="p-2 text-center text-sm font-bold text-slate-600 dark:text-slate-400 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 rounded-lg">
                     {day}
                   </div>
                 ))}
@@ -280,7 +276,7 @@ export default function CalendarPage() {
                 {/* Días del mes */}
                 {days.map((day, index) => {
                   if (!day) {
-                    return <div key={index} className="p-2 min-h-[120px] bg-slate-50 dark:bg-slate-700 rounded-2xl"></div>;
+                    return <div key={index} className="p-1 min-h-[80px] bg-slate-50 dark:bg-slate-700 rounded-lg"></div>;
                   }
                   
                   const dayAppointments = getAppointmentsForDate(day);
@@ -290,7 +286,7 @@ export default function CalendarPage() {
                   return (
                     <div
                       key={index}
-                      className={`group p-3 min-h-[120px] rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 ${
+                      className={`group p-2 min-h-[80px] rounded-lg cursor-pointer transition-all duration-300 hover:scale-105 ${
                         isToday 
                           ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
                           : isSelected 
@@ -299,31 +295,31 @@ export default function CalendarPage() {
                       }`}
                       onClick={() => setSelectedDate(day)}
                     >
-                      <div className={`text-lg font-bold mb-2 ${
+                      <div className={`text-sm font-bold mb-1 ${
                         isToday || isSelected ? 'text-white' : 'text-slate-700 dark:text-slate-300'
                       }`}>
                         {day.getDate()}
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {dayAppointments.slice(0, 2).map(appointment => (
                           <div
                             key={appointment.id}
-                            className={`text-xs p-2 rounded-xl truncate transition-all duration-300 ${
+                            className={`text-xs p-1 rounded-md truncate transition-all duration-300 ${
                               isToday || isSelected 
                                 ? 'bg-white/20 text-white backdrop-blur-sm' 
                                 : 'bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 text-blue-800 dark:text-blue-300'
                             }`}
                             title={appointment.title}
                           >
-                            <div className="font-semibold">{formatTime(appointment.appointmentDate)}</div>
-                            <div className="truncate">{appointment.title}</div>
+                            <div className="font-semibold text-[10px]">{formatTime(appointment.appointmentDate)}</div>
+                            <div className="truncate text-[10px]">{appointment.title}</div>
                           </div>
                         ))}
                         {dayAppointments.length > 2 && (
-                          <div className={`text-xs text-center font-semibold ${
+                          <div className={`text-[10px] text-center font-semibold ${
                             isToday || isSelected ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'
                           }`}>
-                            +{dayAppointments.length - 2} más
+                            +{dayAppointments.length - 2}
                           </div>
                         )}
                       </div>

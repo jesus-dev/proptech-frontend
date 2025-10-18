@@ -146,4 +146,8 @@ export interface Property {
   
   // Información del Propietario (Solo CRM)
   propietarioId?: number;
+  
+  // Campos de referencia
+  houzezId?: string;
+  agencyPropertyNumber?: string;
 } 

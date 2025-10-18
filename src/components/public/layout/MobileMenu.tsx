@@ -34,14 +34,30 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, activeSubmenu,
 
   return (
     <div 
-      className="lg:hidden mobile-menu-overlay bg-black/50" 
+      className="lg:hidden fixed inset-0 z-50 bg-black/50" 
       onClick={onClose}
     >
       <div 
-        className="mobile-menu-content bg-white overflow-y-auto pt-14" 
+        className="fixed top-0 right-0 w-80 h-full bg-white shadow-xl overflow-y-auto overscroll-contain mobile-menu-content" 
         onClick={(e) => e.stopPropagation()}
+        style={{ 
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#3b82f6 #f1f5f9'
+        }}
       >
         <div className="px-6 py-8">
+          {/* Header con botón cerrar */}
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900">Menú</h2>
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <span className="text-2xl text-gray-500 hover:text-gray-700">✕</span>
+            </button>
+          </div>
+          
           <nav className="space-y-1">
             {navigation.map((item) => (
               <div key={item.name}>

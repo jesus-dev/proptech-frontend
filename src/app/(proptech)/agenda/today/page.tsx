@@ -145,7 +145,7 @@ export default function TodayAppointmentsPage() {
                     <CalendarDays className="w-10 h-10 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-5xl font-black bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Citas de Hoy
                     </h1>
                     <p className="text-xl text-slate-600 dark:text-slate-300 font-medium">
@@ -189,7 +189,7 @@ export default function TodayAppointmentsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-blue-900 dark:text-blue-100 mb-2">
+              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-1">
                 {stats.totalAppointments}
               </div>
               <p className="text-blue-600 dark:text-blue-400 font-medium">Programadas para hoy</p>
@@ -213,7 +213,7 @@ export default function TodayAppointmentsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-emerald-900 dark:text-emerald-100 mb-2">
+              <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100 mb-1">
                 {stats.completedAppointments}
               </div>
               <p className="text-emerald-600 dark:text-emerald-400 font-medium">Finalizadas</p>
@@ -237,7 +237,7 @@ export default function TodayAppointmentsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-purple-900 dark:text-purple-100 mb-2">
+              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-1">
                 {stats.upcomingAppointments}
               </div>
               <p className="text-purple-600 dark:text-purple-400 font-medium">Por realizar</p>
@@ -261,7 +261,7 @@ export default function TodayAppointmentsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 pt-0 relative z-10">
-              <div className="text-4xl font-black text-amber-900 dark:text-amber-100 mb-2">
+              <div className="text-2xl font-bold text-amber-900 dark:text-amber-100 mb-1">
                 {stats.pendingConfirmations}
               </div>
               <p className="text-amber-600 dark:text-amber-400 font-medium">Necesitan confirmación</p>

@@ -152,6 +152,7 @@ export default function UsersPage() {
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
     const matchesRole = roleFilter === 'all' || user.roles?.includes(roleFilter);
+    
     return matchesSearch && matchesStatus && matchesRole;
   }).sort((a, b) => {
     let aValue: any, bValue: any;
@@ -287,32 +288,32 @@ export default function UsersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1">
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 flex items-center gap-1 px-2 py-1 text-sm font-medium">
           <CheckCircle className="h-3 w-3" />
           Activo
         </Badge>;
       case 'INACTIVE':
-        return <Badge className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1">
+        return <Badge className="bg-red-100 text-red-800 border-red-300 flex items-center gap-1 px-2 py-1 text-sm font-medium">
           <XCircle className="h-3 w-3" />
           Inactivo
         </Badge>;
       case 'SUSPENDED':
-        return <Badge className="bg-orange-50 text-orange-700 border-orange-200 flex items-center gap-1">
+        return <Badge className="bg-orange-100 text-orange-800 border-orange-300 flex items-center gap-1 px-2 py-1 text-sm font-medium">
           <AlertCircle className="h-3 w-3" />
           Suspendido
         </Badge>;
       case 'LOCKED':
-        return <Badge className="bg-gray-50 text-gray-700 border-gray-200 flex items-center gap-1">
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-300 flex items-center gap-1 px-2 py-1 text-sm font-medium">
           <Lock className="h-3 w-3" />
           Bloqueado
         </Badge>;
       default:
-        return <Badge className="bg-gray-50 text-gray-700 border-gray-200">{status}</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-300 px-2 py-1 text-sm font-medium">{status}</Badge>;
     }
   };
 
   const getRoleBadge = (role: string) => {
-    return <Badge className="text-xs bg-blue-50 border border-blue-200 text-blue-700">{role}</Badge>;
+    return <Badge className="bg-blue-100 text-blue-800 border-blue-300 px-2 py-1 text-sm font-medium">{role}</Badge>;
   };
 
   const getActiveUsersCount = () => users.filter(u => u.status === 'ACTIVE').length;
@@ -362,6 +363,53 @@ export default function UsersPage() {
     }
   };
 
+  const handleDeleteDemoUsers = async () => {
+    const demoUsers = users.filter(user => 
+      user.email.toLowerCase().includes('test') ||
+      user.email.toLowerCase().includes('demo') ||
+      user.email.toLowerCase().includes('ejemplo') ||
+      user.email.toLowerCase().includes('example') ||
+      user.email.toLowerCase().includes('prueba') ||
+      user.userType === 'CUSTOMER'
+    );
+    
+    if (demoUsers.length === 0) {
+      toast.info('No hay usuarios demo/prueba para eliminar');
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `¿Estás seguro de eliminar ${demoUsers.length} usuarios demo/prueba?\n\n` +
+      `Esto incluye:\n` +
+      `- Usuarios con emails de prueba/demo\n` +
+      `- Usuarios tipo CUSTOMER\n\n` +
+      `Esta acción NO se puede deshacer.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      let deleted = 0;
+      let failed = 0;
+
+      for (const user of demoUsers) {
+        try {
+          await authService.deleteUser(user.id);
+          deleted++;
+        } catch (error) {
+          failed++;
+          console.error(`Error al eliminar usuario ${user.email}:`, error);
+        }
+      }
+
+      toast.success(`✅ ${deleted} usuarios demo eliminados exitosamente${failed > 0 ? ` (${failed} fallaron)` : ''}`);
+      loadData();
+    } catch (error) {
+      toast.error('Error al eliminar usuarios demo');
+      console.error('Error:', error);
+    }
+  };
+
   if (!canView) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -379,16 +427,16 @@ export default function UsersPage() {
   return (
     <div className="space-y-8">
       {/* Enhanced Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-2 rounded-lg">
-                <Users className="h-6 w-6 text-white" />
+                <Users className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
             </div>
-            <p className="text-gray-600">Administra usuarios, roles y permisos del sistema de manera eficiente</p>
+            <p className="text-gray-600 text-sm">Administra usuarios, roles y permisos del sistema</p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -408,6 +456,30 @@ export default function UsersPage() {
               <RefreshCw className="h-4 w-4" />
               Actualizar
             </Button>
+            {canDelete && users.filter(u => 
+              u.email.toLowerCase().includes('test') ||
+              u.email.toLowerCase().includes('demo') ||
+              u.email.toLowerCase().includes('ejemplo') ||
+              u.email.toLowerCase().includes('example') ||
+              u.email.toLowerCase().includes('prueba') ||
+              u.userType === 'CUSTOMER'
+            ).length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleDeleteDemoUsers}
+                className="flex items-center gap-2 border-red-200 text-red-700 hover:bg-red-50 font-semibold"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar Usuarios Demo ({users.filter(u => 
+                  u.email.toLowerCase().includes('test') ||
+                  u.email.toLowerCase().includes('demo') ||
+                  u.email.toLowerCase().includes('ejemplo') ||
+                  u.email.toLowerCase().includes('example') ||
+                  u.email.toLowerCase().includes('prueba') ||
+                  u.userType === 'CUSTOMER'
+                ).length})
+              </Button>
+            )}
             {selectedUsers.length > 0 && (
               <div className="flex gap-2">
                 <Button
@@ -458,95 +530,97 @@ export default function UsersPage() {
             <Filter className="h-4 w-4" />
             Filtros Avanzados
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Buscar usuarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
-              />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar usuarios..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                  <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="ACTIVE">Activos</SelectItem>
+                  <SelectItem value="INACTIVE">Inactivos</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspendidos</SelectItem>
+                  <SelectItem value="LOCKED">Bloqueados</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
+                  <SelectValue placeholder="Filtrar por rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los roles</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                <SelectValue placeholder="Filtrar por estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="ACTIVE">Activos</SelectItem>
-                <SelectItem value="INACTIVE">Inactivos</SelectItem>
-                <SelectItem value="SUSPENDED">Suspendidos</SelectItem>
-                <SelectItem value="LOCKED">Bloqueados</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-                <SelectValue placeholder="Filtrar por rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los roles</SelectItem>
-                {roles.map((role) => (
-                  <SelectItem key={role.id} value={role.name}>
-                    {role.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
       )}
 
       {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-6 rounded-xl text-white shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 p-4 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium mb-1">Total Usuarios</p>
-              <p className="text-3xl font-bold">{users.length}</p>
+              <p className="text-2xl font-bold">{users.length}</p>
               <p className="text-blue-200 text-xs mt-1">En el sistema</p>
             </div>
-            <div className="bg-blue-400/20 p-3 rounded-lg">
-              <Users className="h-8 w-8 text-blue-200" />
+            <div className="bg-blue-400/20 p-2 rounded-lg">
+              <Users className="h-6 w-6 text-blue-200" />
             </div>
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 p-4 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-emerald-100 text-sm font-medium mb-1">Activos</p>
-              <p className="text-3xl font-bold">{getActiveUsersCount()}</p>
+              <p className="text-2xl font-bold">{getActiveUsersCount()}</p>
               <p className="text-emerald-200 text-xs mt-1">Usuarios activos</p>
             </div>
-            <div className="bg-emerald-400/20 p-3 rounded-lg">
-              <UserCheck className="h-8 w-8 text-emerald-200" />
+            <div className="bg-emerald-400/20 p-2 rounded-lg">
+              <UserCheck className="h-6 w-6 text-emerald-200" />
             </div>
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-red-500 via-red-600 to-red-700 p-4 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium mb-1">Inactivos</p>
-              <p className="text-3xl font-bold">{getInactiveUsersCount()}</p>
+              <p className="text-2xl font-bold">{getInactiveUsersCount()}</p>
               <p className="text-red-200 text-xs mt-1">Usuarios inactivos</p>
             </div>
-            <div className="bg-red-400/20 p-3 rounded-lg">
-              <UserX className="h-8 w-8 text-red-200" />
+            <div className="bg-red-400/20 p-2 rounded-lg">
+              <UserX className="h-6 w-6 text-red-200" />
             </div>
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 p-4 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium mb-1">Nuevos (7 días)</p>
-              <p className="text-3xl font-bold">{getRecentUsersCount()}</p>
+              <p className="text-2xl font-bold">{getRecentUsersCount()}</p>
               <p className="text-purple-200 text-xs mt-1">Registros recientes</p>
             </div>
-            <div className="bg-purple-400/20 p-3 rounded-lg">
-              <UserPlus className="h-8 w-8 text-purple-200" />
+            <div className="bg-purple-400/20 p-2 rounded-lg">
+              <UserPlus className="h-6 w-6 text-purple-200" />
             </div>
           </div>
         </div>
@@ -554,7 +628,7 @@ export default function UsersPage() {
 
       {/* Enhanced Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Activity className="h-5 w-5 text-indigo-600" />
@@ -785,52 +859,47 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
-                          <Button 
-                            variant="outline"
-                            className="h-8 w-8 p-0"
+                          <button 
+                            className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Ver detalles"
                             onClick={() => openUserModal(user)}
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                            <Eye className="h-5 w-5 text-blue-600" />
+                          </button>
                           {canUpdate && (
-                            <Button 
-                              variant="outline"
-                              className="h-8 w-8 p-0"
+                            <button 
+                              className="p-2 hover:bg-green-50 rounded-lg transition-colors"
                               title="Editar"
                               onClick={() => openUserModal(user)}
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                              <Edit className="h-5 w-5 text-green-600" />
+                            </button>
                           )}
                           {user.status === 'ACTIVE' ? (
-                            <Button 
-                              variant="outline"
-                              className="h-8 w-8 p-0"
+                            <button 
+                              className="p-2 hover:bg-orange-50 rounded-lg transition-colors"
                               title="Desactivar"
                               onClick={() => handleDeactivateUser(user.id)}
                             >
-                              <UserX className="h-4 w-4" />
-                            </Button>
+                              <UserX className="h-5 w-5 text-orange-600" />
+                            </button>
                           ) : (
-                            <Button 
-                              variant="outline"
-                              className="h-8 w-8 p-0"
+                            <button 
+                              className="p-2 hover:bg-green-50 rounded-lg transition-colors"
                               title="Activar"
                               onClick={() => handleActivateUser(user.id)}
                             >
-                              <UserCheck className="h-4 w-4" />
-                            </Button>
+                              <UserCheck className="h-5 w-5 text-green-600" />
+                            </button>
                           )}
                           {canDelete && (
-                            <Button 
-                              variant="outline"
-                              className="h-8 w-8 p-0"
+                            <button 
+                              className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                               title="Eliminar"
                               onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }}
                             >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
+                              <Trash2 className="h-5 w-5 text-red-600" />
+                            </button>
                           )}
                         </div>
                       </TableCell>

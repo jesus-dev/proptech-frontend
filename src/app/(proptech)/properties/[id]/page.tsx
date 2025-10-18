@@ -721,6 +721,12 @@ export default function PropertyDetailsPage({ params }: PageProps) {
                         <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
                           <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4 text-center">Detalles Adicionales</h4>
                           <div className="space-y-3">
+                            {(property.houzezId || property.agencyPropertyNumber) && (
+                              <div className="flex items-center text-gray-700 dark:text-gray-300">
+                                <FileText className="h-5 w-5 mr-3 text-brand-500" />
+                                <span>Código de Referencia: {property.houzezId || property.agencyPropertyNumber}</span>
+                              </div>
+                            )}
                             {property.yearBuilt && property.yearBuilt > 0 && (
                               <div className="flex items-center text-gray-700 dark:text-gray-300">
                                 <Calendar className="h-5 w-5 mr-3 text-brand-500" />

@@ -177,36 +177,36 @@ export default function NewAppointmentPage() {
       <div className="absolute inset-0 opacity-40" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }}></div>
-      <div className="container mx-auto px-4 py-8 relative z-10">
+      <div className="container mx-auto px-4 py-4 relative z-10">
         {/* Header */}
-        <div className="mb-10 relative">
+        <div className="mb-4 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 via-blue-600/10 to-purple-600/10 rounded-3xl blur-3xl"></div>
-          <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl">
+          <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-lg">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
                 <Link href="/agenda">
-                  <Button variant="outline" className="group px-6 py-3 rounded-2xl border-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-300">
-                    <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
+                  <Button variant="outline" size="sm" className="group px-3 py-2 rounded-lg border hover:bg-slate-50 dark:hover:bg-slate-700">
+                    <ArrowLeft className="w-4 h-4 mr-1" />
                     Volver
                   </Button>
                 </Link>
-                <div className="flex items-center gap-4">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 shadow-lg">
-                    <CalendarDays className="w-10 h-10 text-white" />
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 shadow">
+                    <CalendarDays className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                       Nueva Cita
                     </h1>
-                    <p className="text-lg text-slate-600 dark:text-slate-300 font-medium">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
                       Programa una nueva cita o reunión
                     </p>
                   </div>
                 </div>
               </div>
               <Link href="/agenda">
-                <Button className="group bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-6 md:px-8 py-3 md:py-4 text-sm md:text-lg font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5 mr-2 md:mr-3 group-hover:translate-x-1 transition-transform duration-300" />
+                <Button size="sm" className="group bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg shadow">
+                  <ArrowRight className="w-4 h-4 mr-1" />
                   Volver a Agenda
                 </Button>
               </Link>
@@ -215,7 +215,7 @@ export default function NewAppointmentPage() {
         </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Información Básica */}
           <Card className="card-modern hover-lift">
             <CardHeader className="p-6">

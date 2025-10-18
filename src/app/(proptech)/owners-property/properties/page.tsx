@@ -139,11 +139,11 @@ export default function PropertiesManagementPage() {
                 <div className="p-2 bg-gradient-to-r from-orange-500 to-red-600 rounded-lg shadow-sm">
                   <Home className="h-5 w-5 text-white" />
                 </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
                   Propiedades de Propietarios
                 </h1>
               </div>
-              <p className="text-gray-600 text-sm md:text-base">
+              <p className="text-gray-700 dark:text-gray-300 text-sm md:text-base">
                 Administra la relación entre propietarios y sus propiedades
               </p>
             </div>
@@ -151,24 +151,24 @@ export default function PropertiesManagementPage() {
         </div>
 
         {/* Controles y Filtros Modernos */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Buscar propiedades o propietarios..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm"
                 />
               </div>
               
               <select
                 value={filterOwner}
                 onChange={(e) => setFilterOwner(e.target.value)}
-                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm min-w-[180px]"
+                className="px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm min-w-[180px]"
               >
                 <option value="all">Todos los propietarios</option>
                 {owners.map(owner => (
@@ -181,7 +181,7 @@ export default function PropertiesManagementPage() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm min-w-[150px]"
+                className="px-3 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors text-sm min-w-[150px]"
               >
                 <option value="all">Todos los estados</option>
                 <option value="FOR_SALE">En Venta</option>
@@ -193,7 +193,7 @@ export default function PropertiesManagementPage() {
             
             <button
               onClick={() => setShowLinkModal(true)}
-              className="px-4 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center text-sm font-medium shadow-sm"
+              className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center justify-center text-sm font-medium shadow-sm"
             >
               <Link className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Vincular Propiedad</span>
@@ -204,54 +204,54 @@ export default function PropertiesManagementPage() {
 
         {/* Estadísticas Modernas */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg mr-3">
-                <Home className="w-5 h-5 text-orange-600" />
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg mr-3">
+                <Home className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <p className="text-xs md:text-sm font-medium text-gray-600">Total Propiedades</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">{ownerProperties.length}</p>
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Total Propiedades</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">{ownerProperties.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg mr-3">
-                <User className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-xs md:text-sm font-medium text-gray-600">Propietarios Activos</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Propietarios Activos</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
                   {owners.filter(o => o.status === 'ACTIVE').length}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg mr-3">
-                <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3">
+                <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-xs md:text-sm font-medium text-gray-600">Valor Total</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Valor Total</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
                   {ownerProperties.reduce((sum, op) => sum + (op.property?.price || 0), 0).toLocaleString('es-ES')}€
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg mr-3">
-                <Eye className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3">
+                <Eye className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs md:text-sm font-medium text-gray-600">Vistas Totales</p>
-                <p className="text-lg md:text-2xl font-bold text-gray-900">
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">Vistas Totales</p>
+                <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
                   {ownerProperties.length * 150}
                 </p>
               </div>
@@ -260,83 +260,83 @@ export default function PropertiesManagementPage() {
         </div>
 
         {/* Tabla de Propiedades Moderna */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Propiedad
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">
                     Propietario
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
                     Tipo de Propiedad
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden xl:table-cell">
                     Métricas
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredProperties.map((ownerProperty) => (
-                  <tr key={`${ownerProperty.owner.id}-${ownerProperty.property.id}`} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={`${ownerProperty.owner.id}-${ownerProperty.property.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-3 sm:px-6 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                            <Home className="h-5 w-5 text-orange-600" />
+                          <div className="h-10 w-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                            <Home className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                           </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{ownerProperty.property.title}</div>
-                          <div className="text-sm text-gray-500 flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {ownerProperty.property.address}
+                        <div className="ml-3 min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{ownerProperty.property.title}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center truncate">
+                            <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{ownerProperty.property.address}</span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-4 hidden lg:table-cell">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-8 w-8">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-blue-600" />
+                          <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                            <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           </div>
                         </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">{ownerProperty.owner.name}</div>
-                          <div className="text-sm text-gray-500">{ownerProperty.owner.email}</div>
+                        <div className="ml-3 min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{ownerProperty.owner.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{ownerProperty.owner.email}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-4 hidden md:table-cell">
+                      <div className="text-sm text-gray-900 dark:text-white">
                         {OwnersPropertyService.getOwnershipTypeDisplayName(ownerProperty.ownershipType)}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
                         {ownerProperty.ownershipPercentage}% de propiedad
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        ownerProperty.property.status === 'FOR_SALE' ? 'bg-green-100 text-green-800' :
-                        ownerProperty.property.status === 'FOR_RENT' ? 'bg-blue-100 text-blue-800' :
-                        ownerProperty.property.status === 'SOLD' ? 'bg-purple-100 text-purple-800' :
-                        'bg-gray-100 text-gray-800'
+                        ownerProperty.property.status === 'FOR_SALE' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' :
+                        ownerProperty.property.status === 'FOR_RENT' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400' :
+                        ownerProperty.property.status === 'SOLD' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400' :
+                        'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                       }`}>
                         {ownerProperty.property.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden xl:table-cell">
+                      <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
                         <span className="flex items-center">
                           <Eye className="w-4 h-4 mr-1" />
                           150
@@ -355,19 +355,19 @@ export default function PropertiesManagementPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => handleUnlinkProperty(ownerProperty.owner.id, ownerProperty.property.id)}
-                          className="text-red-600 hover:text-red-900 p-1"
+                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1"
                           title="Desvincular"
                         >
                           <Unlink className="w-4 h-4" />
                         </button>
-                        <button className="text-orange-600 hover:text-orange-900 p-1" title="Editar">
+                        <button className="text-orange-600 dark:text-orange-400 hover:text-orange-900 dark:hover:text-orange-300 p-1" title="Editar">
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button className="text-gray-600 hover:text-gray-900 p-1" title="Más opciones">
+                        <button className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 p-1" title="Más opciones">
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
                       </div>

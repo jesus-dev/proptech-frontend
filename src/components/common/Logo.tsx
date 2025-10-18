@@ -1,12 +1,14 @@
 import React from 'react';
+import Link from 'next/link';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
   className?: string;
+  href?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, className = '' }) => {
+const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, className = '', href = '/dash' }) => {
   const sizeClasses = {
     sm: 'w-6 h-6',
     md: 'w-8 h-8',
@@ -19,7 +21,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, className = '
     lg: 'text-lg'
   };
 
-  return (
+  const logoContent = (
     <div className={`flex items-center space-x-2 ${className}`}>
       <div className={`${sizeClasses[size]} bg-blue-600 rounded-lg flex items-center justify-center`}>
         <span className={`text-white font-bold ${textSizes[size]}`}>ON</span>
@@ -34,6 +36,12 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, className = '
       )}
     </div>
   );
+
+  return href ? (
+    <Link href={href} className="hover:opacity-80 transition-opacity">
+      {logoContent}
+    </Link>
+  ) : logoContent;
 };
 
 export default Logo; 

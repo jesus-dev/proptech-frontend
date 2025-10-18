@@ -137,18 +137,33 @@ export function formatPriceWithSuffix(
 // Formatea el precio con símbolo y código de moneda (ej: $84,618 USD, ₲1.000.000 PYG)
 export function formatCurrency(
   price: number,
-  currency: CurrencyCode = 'USD',
+  currency: CurrencyCode | string = 'USD',
   options?: {
     minimumFractionDigits?: number;
     maximumFractionDigits?: number;
   }
 ): string {
-  const formatted = formatPrice(price, currency, {
+  // Normalizar la moneda a mayúsculas
+  const normalizedCurrency = currency?.toString().toUpperCase() as CurrencyCode;
+  
+  // Validar que sea una moneda soportada
+  const validCurrency = isValidCurrency(normalizedCurrency) ? normalizedCurrency : 'USD';
+  
+  // Log de debug si la moneda no es válida o falta
+  if (process.env.NODE_ENV === 'development' && (!currency || !isValidCurrency(normalizedCurrency))) {
+    console.warn(`⚠️ formatCurrency: moneda inválida o faltante`, {
+      currencyReceived: currency,
+      normalized: normalizedCurrency,
+      usingFallback: validCurrency
+    });
+  }
+  
+  const formatted = formatPrice(price, validCurrency, {
     minimumFractionDigits: options?.minimumFractionDigits,
     maximumFractionDigits: options?.maximumFractionDigits,
     showSymbol: true
   });
-  return `${formatted} ${currency}`;
+  return `${formatted} ${validCurrency}`;
 }
 
 // Función para acceder de forma segura a elementos de arrays

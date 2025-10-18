@@ -319,6 +319,16 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
        
       console.log('AmenitiesDetails de propiedad 1:', prop1.amenitiesDetails);
     }
+    
+    // Debug: verificar monedas en las primeras 3 propiedades - comentado para reducir ruido
+    // console.log('💵 PropertyList - Monedas en primeras 3 propiedades:', properties.slice(0, 3).map(p => ({
+    //   id: p.id,
+    //   title: p.title,
+    //   price: p.price,
+    //   currency: p.currency,
+    //   currencyType: typeof p.currency,
+    //   formatted: formatCurrency(p.price, p.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    // })));
   }
 
   if (view === "grid") {

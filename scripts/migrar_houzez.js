@@ -212,24 +212,25 @@ async function getOrCreateCurrencyId(currencyCode) {
   // Validar entrada
   if (!currencyCode || currencyCode.trim() === '') {
     console.warn(`⚠️ Código de moneda vacío, usando USD por defecto`);
-    return 2; // USD tiene ID 2
+    return 1; // USD tiene ID 1 en la base de datos
   }
 
   const cleanCode = currencyCode.trim().toUpperCase();
   
   // Usar los IDs específicos de la base de datos
-  if (cleanCode === 'PYG') {
-    console.log(`✅ Moneda PYG encontrada, usando ID: 1`);
-    return 1;
-  }
+  // IMPORTANTE: Estos IDs deben coincidir con la tabla currencies en la BD
   if (cleanCode === 'USD') {
-    console.log(`✅ Moneda USD encontrada, usando ID: 2`);
-    return 2;
+    console.log(`✅ Moneda USD encontrada, usando ID: 1`);
+    return 1; // USD = ID 1 en la base de datos
+  }
+  if (cleanCode === 'PYG') {
+    console.log(`✅ Moneda PYG encontrada, usando ID: 2`);
+    return 2; // PYG = ID 2 en la base de datos
   }
 
   // Para cualquier otra moneda, usar USD por defecto
-  console.warn(`⚠️ Moneda "${cleanCode}" no reconocida, usando USD por defecto (ID: 2)`);
-  return 2;
+  console.warn(`⚠️ Moneda "${cleanCode}" no reconocida, usando USD por defecto (ID: 1)`);
+  return 1; // USD = ID 1
 }
 
 // Función para mapear el status de WordPress a status de backend
@@ -289,53 +290,155 @@ async function migrateProperties() {
         countryName = await getTaxonomyName('property_country', prop.property_country[0]);
       }
       let propertyTypeName = prop.property_type_name || '';
+      console.log(`\n🔍 [TIPO DE HOUZEZ] Para propiedad "${prop.title?.rendered}"`);
+      console.log(`   property_type_name: "${prop.property_type_name || 'NO EXISTE'}"`);
+      console.log(`   property_type array: ${JSON.stringify(prop.property_type || 'NO EXISTE')}`);
+      
       if (!propertyTypeName && prop.property_type?.[0]) {
+        console.log(`   Buscando nombre de taxonomía para ID: ${prop.property_type[0]}`);
         propertyTypeName = await getTaxonomyName('property_type', prop.property_type[0]);
+        console.log(`   Taxonomía retornó: "${propertyTypeName}"`);
+      }
+      
+      // Log del tipo original de Houzez
+      console.log(`   ✅ propertyTypeName RAW FINAL de Houzez: "${propertyTypeName}"`);
+      
+      // Mapeo de tipos de Houzez a tipos del backend
+      // IMPORTANTE: Estos nombres deben coincidir EXACTAMENTE con los del backend
+      const propertyTypeMapping = {
+        // Tipos principales
+        'Casa': 'Residencial',                        // En el backend se llama "Residencial"
+        'Departamento': 'Departamento',               // ✓ Existe (ID: 6)
+        'Apartamento': 'Departamento',                // → Departamento
+        'Edificio': 'Edificio',                       // ✓ Existe (ID: 5)
+        'Terreno': 'Terreno Urbano',                  // Por defecto urbano
+        'Terreno Rural': 'Terreno Rural',             // ✓ Existe (ID: 1)
+        'Terreno Urbano': 'Terreno Urbano',           // ✓ Existe (ID: 4)
+        'Depósito': 'Depósito o Galpón',              // ✓ Existe (ID: 9)
+        'Galpón': 'Depósito o Galpón',                // ✓ Existe (ID: 9)
+        'Depósito o Galpón': 'Depósito o Galpón',     // ✓ Existe (ID: 9)
+        'Dúplex': 'Dúplex',                           // ✓ Existe (ID: 10)
+        'Duplex': 'Dúplex',                           // → Dúplex
+        'Penthouse': 'Departamento',                  // → Departamento
+        'Comercial': 'Comercial',                     // ✓ Existe (ID: 8)
+        'Oficina': 'Comercial',                       // → Comercial
+        'Local Comercial': 'Comercial',               // → Comercial
+        'Residencial': 'Residencial',                 // ✓ Existe (ID: 7)
+        'Condominio': 'Condominio/Barrio Cerrado',    // ✓ Existe (ID: 2)
+        'Barrio Cerrado': 'Condominio/Barrio Cerrado', // ✓ Existe (ID: 2)
+        'Casa Colonial': 'Casa Colonial'              // ✓ Existe (ID: 3)
+      };
+      
+      // Normalizar el tipo de propiedad
+      if (propertyTypeName && propertyTypeName.trim()) {
+        const originalType = propertyTypeName;
+        
+        // 1. Buscar mapeo exacto (case-sensitive)
+        if (propertyTypeMapping[propertyTypeName]) {
+          propertyTypeName = propertyTypeMapping[propertyTypeName];
+          console.log(`[MAPEO EXACTO] "${originalType}" → "${propertyTypeName}"`);
+        }
+        // 2. Buscar mapeo case-insensitive
+        else {
+          const foundKey = Object.keys(propertyTypeMapping).find(key => 
+            key.toLowerCase() === propertyTypeName.toLowerCase()
+          );
+          if (foundKey) {
+            propertyTypeName = propertyTypeMapping[foundKey];
+            console.log(`[MAPEO CASE-INSENSITIVE] "${originalType}" → "${propertyTypeName}"`);
+          }
+          // 3. Buscar mapeo parcial (contiene)
+          else {
+            const partialKey = Object.keys(propertyTypeMapping).find(key => 
+              key.toLowerCase().includes(propertyTypeName.toLowerCase()) ||
+              propertyTypeName.toLowerCase().includes(key.toLowerCase())
+            );
+            if (partialKey) {
+              propertyTypeName = propertyTypeMapping[partialKey];
+              console.log(`[MAPEO PARCIAL] "${originalType}" → "${propertyTypeName}"`);
+            } else {
+              console.warn(`[MAPEO] No se encontró mapeo para tipo "${originalType}", usando tal cual`);
+            }
+          }
+        }
       }
       
       // Log de depuración de nombres
       console.log(`[DEBUG] countryName: ${countryName}, stateName: ${stateName}, cityName: ${cityName}, propertyTypeName: ${propertyTypeName}`);
-      // Validar nombres de catálogos antes de crear
+      
+      // Usar valores por defecto si faltan datos en lugar de saltar la propiedad
       if (!countryName || !countryName.trim()) {
-        console.error(`[MIGRACIÓN] countryName vacío para propiedad ${prop.title?.rendered || prop.id}`);
-        skipped++;
-        continue;
+        console.warn(`[MIGRACIÓN] countryName vacío para propiedad ${prop.title?.rendered || prop.id}, usando "Paraguay" por defecto`);
+        countryName = 'Paraguay';
       }
       if (!cityName || !cityName.trim()) {
-        console.error(`[MIGRACIÓN] cityName vacío para propiedad ${prop.title?.rendered || prop.id}`);
-        skipped++;
-        continue;
+        console.warn(`[MIGRACIÓN] cityName vacío para propiedad ${prop.title?.rendered || prop.id}, usando "Asunción" por defecto`);
+        cityName = 'Asunción';
       }
-      // Permitir migrar aunque falte stateName o propertyTypeName, pero loguear
       if (!stateName || !stateName.trim()) {
-        console.warn(`[MIGRACIÓN] stateName vacío para propiedad ${prop.title?.rendered || prop.id}`);
+        console.warn(`[MIGRACIÓN] stateName vacío para propiedad ${prop.title?.rendered || prop.id}, usando "Central" por defecto`);
+        stateName = 'Central';
       }
       if (!propertyTypeName || !propertyTypeName.trim()) {
-        console.warn(`[MIGRACIÓN] propertyTypeName vacío para propiedad ${prop.title?.rendered || prop.id}`);
+        console.warn(`[MIGRACIÓN] propertyTypeName vacío para propiedad ${prop.title?.rendered || prop.id}, usando "Residencial" por defecto`);
+        propertyTypeName = 'Residencial';
       }
 
       // Obtener IDs de catálogos usando los endpoints estándar
-      const countryId = await getCatalogIdOnly('http://localhost:8080/api/countries', countryName);
+      let countryId = await getCatalogIdOnly('http://localhost:8080/api/countries', countryName);
       if (!countryId) {
-        console.error(`[ERROR] No se encontró el país en catálogos: ${countryName}`);
-        skipped++;
-        continue;
+        console.warn(`[MIGRACIÓN] No se encontró el país "${countryName}", intentando crear...`);
+        countryId = await getOrCreateCatalog('http://localhost:8080/api/countries', countryName);
+        if (!countryId) {
+          console.error(`[ERROR] No se pudo crear el país: ${countryName}, usando país por defecto`);
+          // Intentar obtener Paraguay como fallback
+          countryId = await getCatalogIdOnly('http://localhost:8080/api/countries', 'Paraguay');
+          if (!countryId) {
+            console.error(`[ERROR CRÍTICO] No se encontró país por defecto, saltando propiedad`);
+            skipped++;
+            continue;
+          }
+        }
       }
-      const departmentId = stateName && stateName.trim() ? await getCatalogIdOnly('http://localhost:8080/api/departments', stateName, { countryId }) : null;
+      
+      let departmentId = stateName && stateName.trim() ? await getCatalogIdOnly('http://localhost:8080/api/departments', stateName, { countryId }) : null;
       if (stateName && stateName.trim() && !departmentId) {
-        console.error(`[ERROR] No se encontró el departamento en catálogos: ${stateName}`);
+        console.warn(`[MIGRACIÓN] No se encontró el departamento "${stateName}", intentando crear...`);
+        departmentId = await getOrCreateCatalog('http://localhost:8080/api/departments', stateName);
       }
-      const cityId = cityName ? await getCatalogIdOnly('http://localhost:8080/api/cities', cityName, { departmentId }) : null;
+      
+      let cityId = cityName ? await getCatalogIdOnly('http://localhost:8080/api/cities', cityName, { departmentId }) : null;
       if (!cityId) {
-        console.error(`[ERROR] No se encontró la ciudad en catálogos: ${cityName}`);
-        skipped++;
-        continue;
+        console.warn(`[MIGRACIÓN] No se encontró la ciudad "${cityName}", intentando crear...`);
+        cityId = await getOrCreateCatalog('http://localhost:8080/api/cities', cityName);
+        if (!cityId) {
+          console.error(`[ERROR] No se pudo crear la ciudad: ${cityName}, usando ciudad por defecto`);
+          // Intentar obtener Asunción como fallback
+          cityId = await getCatalogIdOnly('http://localhost:8080/api/cities', 'Asunción');
+          if (!cityId) {
+            console.error(`[ERROR CRÍTICO] No se encontró ciudad por defecto, saltando propiedad`);
+            skipped++;
+            continue;
+          }
+        }
       }
-      const propertyTypeId = propertyTypeName && propertyTypeName.trim() ? await getCatalogIdOnly('http://localhost:8080/api/property-types', propertyTypeName) : null;
+      
+      console.log(`\n🏠 [TIPO DE PROPIEDAD] Buscando tipo: "${propertyTypeName}"`);
+      let propertyTypeId = propertyTypeName && propertyTypeName.trim() ? await getCatalogIdOnly('http://localhost:8080/api/property-types', propertyTypeName) : null;
+      console.log(`   propertyTypeId encontrado: ${propertyTypeId || 'null'}`);
       if (!propertyTypeId) {
-        console.error(`[ERROR] No se encontró el tipo de propiedad en catálogos: ${propertyTypeName}`);
-        skipped++;
-        continue;
+        console.warn(`[MIGRACIÓN] No se encontró el tipo "${propertyTypeName}", intentando crear...`);
+        propertyTypeId = await getOrCreateCatalog('http://localhost:8080/api/property-types', propertyTypeName);
+        if (!propertyTypeId) {
+          console.error(`[ERROR] No se pudo crear el tipo: ${propertyTypeName}, usando tipo por defecto`);
+          // Intentar obtener "Residencial" como fallback
+          propertyTypeId = await getCatalogIdOnly('http://localhost:8080/api/property-types', 'Residencial');
+          if (!propertyTypeId) {
+            console.error(`[ERROR CRÍTICO] No se encontró tipo por defecto "Residencial", saltando propiedad`);
+            skipped++;
+            continue;
+          }
+        }
       }
 
       // Detectar tipo de operación (venta/alquiler)
@@ -354,11 +457,28 @@ async function migrateProperties() {
       const currencyId = await getOrCreateCurrencyId(currencyCode);
       
       // Validar campos obligatorios antes de enviar
+      // Log para debug de precio - mostrar TODOS los campos relacionados con precio
+      console.log(`\n🔍 DEBUG PRECIO para ${prop.title?.rendered}:`);
+      console.log(`  📋 TODOS los campos de precio en meta:`);
+      Object.keys(meta).filter(key => key.toLowerCase().includes('price')).forEach(key => {
+        console.log(`     - ${key}: "${meta[key]?.[0]}"`);
+      });
+      console.log(`  - fave_currency: ${meta.fave_currency?.[0]}`);
+      console.log(`  - Código de moneda detectado: ${currencyCode}`);
+      
+      // Tomar el precio directamente de Houzez
+      let rawPrice = meta.fave_property_price?.[0] || '0';
+      let parsedPrice = parseFloat(rawPrice) || 0;
+      
+      console.log(`  - Precio RAW de Houzez: "${rawPrice}"`);
+      console.log(`  - Precio parseado: ${parsedPrice}`);
+      console.log(`  - Precio final a guardar: ${parsedPrice} ${currencyCode} (Currency ID: ${currencyId})\n`);
+      
       const requiredFields = {
         title: prop.title?.rendered || 'Sin título',
         description: prop.content?.rendered || '',
         address: meta.fave_property_address?.[0] || 'Sin dirección',
-        price: parseFloat(meta.fave_property_price?.[0] || '0'),
+        price: parsedPrice,
         currency: currencyCode, // <-- Asegurar que sea el código real
         currencyId: currencyId,
         bedrooms: parseInt(meta.fave_property_bedrooms?.[0] || '0'),
@@ -386,26 +506,30 @@ async function migrateProperties() {
         console.error(`[ERROR] Agencia no encontrada en catálogos: ${agencyName}`);
       }
 
-      // Verificar si ya existe una propiedad con el mismo slug
-      const existsRes = await fetch(`http://localhost:8080/api/properties?slug=${encodeURIComponent(prop.slug)}`);
-      if (existsRes.ok) {
-        const items = await existsRes.json();
-        const found = Array.isArray(items) && items.some(item => item.slug === prop.slug);
-        console.log(`[DEBUG] Respuesta de búsqueda de slug ${prop.slug}:`, items, '¿Coincidencia exacta?', found);
-        if (found) {
-          console.warn(`⚠️ Propiedad con slug ${prop.slug} ya existe. Saltando...`);
-          skipped++;
-          continue;
-        }
-      }
+      // VERIFICACIÓN DESACTIVADA TEMPORALMENTE - El backend aún no soporta filtro por houzezId
+      // TODO: Implementar endpoint /api/properties/by-houzez-id/{houzezId} en el backend
+      // const existsRes = await fetch(`http://localhost:8080/api/properties?houzezId=${houzezId}`);
+      // if (existsRes.ok) {
+      //   const items = await existsRes.json();
+      //   if (Array.isArray(items) && items.length > 0) {
+      //     console.warn(`⚠️ Propiedad con houzezId ${houzezId} ya existe (ID: ${items[0].id}). Saltando migración...`);
+      //     console.log(`   Título: ${items[0].title}`);
+      //     console.log(`   Puedes eliminarla manualmente si quieres re-migrarla.`);
+      //     skipped++;
+      //     continue;
+      //   }
+      // }
+      
+      // El slug puede ser el mismo que Houzez o generar uno único si hay conflicto
+      let finalSlug = prop.slug || `propiedad-${houzezId}`;
 
       // Log de depuración de campos críticos antes de crear/actualizar
       console.log(`[PAYLOAD DEBUG] status: ${mapPropertyStatus(prop.status)}, cityId: ${cityId}, propertyTypeId: ${propertyTypeId}`);
       const basicProperty = {
-        externalId: houzezId,
+        houzezId: String(houzezId), // ID de Houzez para evitar duplicados
         title: requiredFields.title,
         description: requiredFields.description,
-        slug: prop.slug,
+        slug: finalSlug,
         status: mapPropertyStatus(prop.status), // Debe ser 'ACTIVE' o 'INACTIVE'
         createdAt: prop.date,
         updatedAt: prop.modified,
@@ -426,7 +550,9 @@ async function migrateProperties() {
       };
 
       // Crear la propiedad en el backend
-      console.log(`Creando propiedad: ${basicProperty.title} (CurrencyId: ${basicProperty.currencyId})`);
+      console.log(`\n📤 Creando propiedad: ${basicProperty.title}`);
+      console.log(`   🏷️  Houzez ID: ${houzezId}`);
+      console.log(`   💰 Precio: ${requiredFields.price} (Currency ID: ${basicProperty.currencyId})`);
       console.log(`🔍 JSON completo a enviar:`, JSON.stringify(basicProperty, null, 2));
       
       const backendRes = await fetch(BACKEND_API, {
@@ -637,12 +763,53 @@ async function migrateProperties() {
       // Eliminar duplicados
       const uniqueServiceIds = [...new Set(serviceIds)];
 
+      // Procesar Floor Plans desde Houzez
+      const floorPlans = [];
+      // Houzez guarda floor plans como arrays separados para cada campo
+      const floorPlanTitles = meta.fave_floor_plan_title || [];
+      const floorPlanBeds = meta.fave_floor_plan_beds || [];
+      const floorPlanBaths = meta.fave_floor_plan_baths || [];
+      const floorPlanPrices = meta.fave_floor_plan_price || [];
+      const floorPlanSizes = meta.fave_floor_plan_size || [];
+      const floorPlanDescriptions = meta.fave_floor_plan_description || [];
+      const floorPlanImages = meta.fave_floor_plan_image || [];
+      
+      console.log(`🏗️  Procesando Floor Plans para propiedad: ${basicProperty.title}`);
+      console.log(`   Títulos: ${floorPlanTitles.length}, Beds: ${floorPlanBeds.length}, Precios: ${floorPlanPrices.length}`);
+      
+      // Determinar cuántos floor plans hay (el array más largo)
+      const floorPlanCount = Math.max(
+        floorPlanTitles.length,
+        floorPlanBeds.length,
+        floorPlanBaths.length,
+        floorPlanPrices.length,
+        floorPlanSizes.length
+      );
+      
+      for (let i = 0; i < floorPlanCount; i++) {
+        const floorPlan = {
+          title: floorPlanTitles[i] || `Plano ${i + 1}`,
+          bedrooms: parseInt(floorPlanBeds[i] || '0'),
+          bathrooms: parseInt(floorPlanBaths[i] || '0'),
+          price: parseFloat(floorPlanPrices[i] || '0'),
+          priceSuffix: 'mensual', // o detectar desde el tipo de operación
+          size: parseFloat(floorPlanSizes[i] || '0'),
+          description: floorPlanDescriptions[i] || '',
+          image: floorPlanImages[i] || null
+        };
+        
+        console.log(`   Floor Plan ${i + 1}: ${floorPlan.title} - ${floorPlan.bedrooms} dorm, ${floorPlan.bathrooms} baños, ${floorPlan.size}m²`);
+        floorPlans.push(floorPlan);
+      }
+
       // Actualizar la propiedad con las imágenes y relaciones
       const updateData = {
+        houzezId: String(houzezId), // ID de Houzez para evitar duplicados
         images,
         featuredImage,
         amenities: uniqueAmenityIds,
         services: uniqueServiceIds,
+        floorPlans: floorPlans.length > 0 ? floorPlans : undefined, // Solo incluir si hay floor plans
         agencyId: agencyId, // ID dinámico para agencia
         agentId: agentId, // ID dinámico para agente
         status: mapPropertyStatus(prop.status), // Usar el status mapeado
@@ -650,12 +817,12 @@ async function migrateProperties() {
         // Incluir todos los campos obligatorios para evitar errores de null
         title: prop.title?.rendered || 'Sin título',
         description: prop.content?.rendered || '',
-        slug: prop.slug,
+        slug: finalSlug,
         address: meta.fave_property_address?.[0] || 'Sin dirección',
         cityId: cityId,         // Debe ser un número válido
         countryId: countryId,
         propertyTypeId: propertyTypeId, // Debe ser un número válido
-        price: parseFloat(meta.fave_property_price?.[0] || '0'),
+        price: parsedPrice, // Usar el precio ya limpiado y parseado
         currencyId: currencyId, // <-- Solo usar el ID que sabemos que funciona
         bedrooms: parseInt(meta.fave_property_bedrooms?.[0] || '0'),
         bathrooms: parseInt(meta.fave_property_bathrooms?.[0] || '0'),
@@ -664,7 +831,12 @@ async function migrateProperties() {
         operacion: operationType === 'VENTA' ? 'SALE' : operationType === 'ALQUILER' ? 'RENT' : 'BOTH'
       };
       // Log de depuración
-      console.log('Payload enviado al backend:', JSON.stringify(updateData, null, 2));
+      console.log(`\n📤 Actualizando propiedad ID ${realPropertyId}: ${basicProperty.title}`);
+      console.log(`   🏷️  Houzez ID: ${houzezId}`);
+      console.log(`   💰 Precio: ${parsedPrice} (Currency ID: ${currencyId})`);
+      console.log(`   🖼️  Imágenes: ${images.length} en galería${featuredImage ? ' + 1 destacada' : ''}`);
+      console.log(`   🏷️  Amenities: ${uniqueAmenityIds.length}, Servicios: ${uniqueServiceIds.length}`);
+      console.log(`   🏗️  Floor Plans: ${floorPlans.length}`);
 
       // Actualizar la propiedad con las imágenes
       const updateRes = await fetch(`${BACKEND_API}/${realPropertyId}`, {

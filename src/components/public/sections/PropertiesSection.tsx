@@ -249,8 +249,9 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
   }, [currentPage, hasMore, loadingMore]);
 
   const formatPrice = (price: number, currency: string, period?: string) => {
+    const currencySymbol = currency === 'PYG' ? 'Gs.' : '$';
     const formattedPrice = new Intl.NumberFormat('es-PY').format(price);
-    return `$${formattedPrice} ${currency}${period ? `/${period}` : ''}`;
+    return `${currencySymbol} ${formattedPrice}${period ? `/${period}` : ''}`;
   };
 
   const getPropertyCategory = (property: any) => {
