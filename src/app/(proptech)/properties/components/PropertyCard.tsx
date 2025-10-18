@@ -45,8 +45,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   };
 
   return (
-    <div className="card-modern overflow-hidden hover-lift">
-      <div className="relative h-48">
+    <Link href={`/properties/${property.id}`} className="block">
+      <div className="card-modern overflow-hidden hover-lift cursor-pointer">
+        <div className="relative h-48">
         {(() => {
           // Usar la primera imagen de la galería si no hay featuredImage
           const mainImage = property.featuredImage || 
@@ -88,12 +89,14 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         </div>
       </div>
         <div className="absolute top-4 right-4 flex flex-col gap-2">
-          <FavoriteButton 
-            propertyId={property.id.toString()} 
-            initialIsFavorite={isFavorite}
-            size="sm"
-            onToggle={handleToggleFavorite}
-          />
+          <div onClick={(e) => e.stopPropagation()}>
+            <FavoriteButton 
+              propertyId={property.id.toString()} 
+              initialIsFavorite={isFavorite}
+              size="sm"
+              onToggle={handleToggleFavorite}
+            />
+          </div>
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
               property.status === "active"
@@ -141,12 +144,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           )}
         </div>
 
-        <Link
-          href={`/properties/${property.id}`}
-          className="block mb-3 text-xl font-bold text-gray-900 dark:text-white hover:text-gradient transition-all duration-300"
-        >
+        <h3 className="block mb-3 text-xl font-bold text-gray-900 dark:text-white hover:text-gradient transition-all duration-300">
           {property.title}
-        </Link>
+        </h3>
 
         <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
           {property.address}
@@ -268,6 +268,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </Link>
   );
 } 

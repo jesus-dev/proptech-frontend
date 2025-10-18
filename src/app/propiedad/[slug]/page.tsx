@@ -288,9 +288,9 @@ export default function PropertyDetailPage() {
                   {property.agent?.phone && (
                     <a 
                       href={`tel:${property.agent.phone}`} 
-                      className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg"
+                      className="flex items-center justify-center gap-3 w-full px-6 py-4 md:px-4 md:py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg text-lg md:text-base"
                     >
-                      <PhoneIcon className="w-5 h-5" />
+                      <PhoneIcon className="w-6 h-6 md:w-5 md:h-5" />
                       Llamar Ahora
                     </a>
                   )}
@@ -298,17 +298,17 @@ export default function PropertyDetailPage() {
                     href={property.agent?.phone ? `https://wa.me/${property.agent.phone.replace(/[^\d]/g, '')}` : '#'} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg"
+                    className="flex items-center justify-center gap-3 w-full px-6 py-4 md:px-4 md:py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg text-lg md:text-base"
                   >
-                    <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                    <ChatBubbleLeftRightIcon className="w-6 h-6 md:w-5 md:h-5" />
                     WhatsApp
                   </a>
                   {property.agent?.email && (
                     <a 
                       href={`mailto:${property.agent.email}`} 
-                      className="flex items-center justify-center gap-3 w-full px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg"
+                      className="flex items-center justify-center gap-3 w-full px-6 py-4 md:px-4 md:py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors duration-200 shadow-md hover:shadow-lg text-lg md:text-base"
                     >
-                      <EnvelopeIcon className="w-5 h-5" />
+                      <EnvelopeIcon className="w-6 h-6 md:w-5 md:h-5" />
                       Enviar Email
                     </a>
                   )}

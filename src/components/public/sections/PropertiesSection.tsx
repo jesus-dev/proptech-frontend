@@ -1122,13 +1122,13 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
               
               
               return (
+              <Link href={`/propiedad/${property.slug || property.id}`} key={property.id || property.slug || Math.random()} className="block h-full">
               <motion.div
-                key={property.id || property.slug || Math.random()}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
-                className={`group bg-gradient-to-br from-white via-white to-gray-50/50 rounded-xl shadow-lg hover:shadow-xl border border-gray-100/50 overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] relative h-full flex flex-col min-h-[420px] backdrop-blur-sm hover:backdrop-blur-md ${viewMode === 'list' ? 'sm:flex-row sm:min-h-[280px]' : ''}`}
+                className={`group bg-gradient-to-br from-white via-white to-gray-50/50 rounded-xl shadow-lg hover:shadow-xl border border-gray-100/50 overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] relative h-full flex flex-col min-h-[420px] backdrop-blur-sm hover:backdrop-blur-md cursor-pointer ${viewMode === 'list' ? 'sm:flex-row sm:min-h-[280px]' : ''}`}
               >
               {/* Imagen con overlay premium y efectos mágicos ✨ */}
               <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-full sm:w-80 h-40 sm:h-48' : 'h-40 sm:h-48'}`}>
@@ -1359,7 +1359,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 </p>
 
                 {/* Botón premium mejorado */}
-                <Link href={`/propiedad/${property.slug || property.id}`}>
+                <div>
                   <button className="group relative w-full bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-700 hover:via-blue-800 hover:to-indigo-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-blue-500/25 hover:-translate-y-0.5 active:translate-y-0 overflow-hidden">
                     {/* Efecto de brillo animado */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -1378,9 +1378,10 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                       <div className="absolute bottom-3 left-4 w-1 h-1 bg-white/50 rounded-full animate-ping delay-200"></div>
                     </div>
                   </button>
-                </Link>
+                </div>
               </div>
               </motion.div>
+              </Link>
               );
             })
           ) : (
