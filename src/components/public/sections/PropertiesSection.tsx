@@ -38,7 +38,7 @@ const stripHtml = (html: string | null | undefined): string => {
 
 // Componente de imagen optimizada con lazy loading
 const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
-  src: string;
+  src: string | null;
   alt: string;
   className: string;
   onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
@@ -47,6 +47,12 @@ const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  // Reset cuando cambia el src
+  useEffect(() => {
+    setIsLoaded(false);
+    setHasError(false);
+  }, [src]);
 
   const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     setIsLoaded(true);
@@ -57,6 +63,19 @@ const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
     setHasError(true);
     onError?.(e);
   }, [onError]);
+
+  // Si no hay src, mostrar placeholder directamente
+  if (!src) {
+    return (
+      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+        <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full">
@@ -1115,6 +1134,9 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                   property.agent.name = property.agent.email || 'Agente';
                 }
                 console.log('Processed agent name:', property.agent.name); // Debug del nombre procesado
+                console.log('Agent data:', property.agent); // Debug completo del agente
+                console.log('Property agencyName:', property.agencyName); // Debug de agencyName
+                console.log('Property agency:', property.agency); // Debug de agency
               }
               
               // Debug temporal para verificar operacion
@@ -1271,12 +1293,24 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                           <p className="text-xs font-semibold text-blue-700">
                             {property.agent?.name ? 'Agente Inmobiliario' : 'Agencia Inmobiliaria'}
                           </p>
-                          {property.agencyName && property.agent?.name && (
-                            <>
-                              <span className="text-slate-400">•</span>
-                              <p className="text-xs text-slate-600 truncate">{property.agencyName}</p>
-                            </>
-                          )}
+                          {/* Buscar información de agencia en diferentes campos */}
+                          {(() => {
+                            const agencyName = property.agencyName || 
+                                             property.agency?.name || 
+                                             property.agent?.agency?.name || 
+                                             property.agent?.agencyName ||
+                                             'ON Bienes Raíces'; // Fallback por defecto
+                            
+                            if (property.agent?.name) {
+                              return (
+                                <>
+                                  <span className="text-slate-400">•</span>
+                                  <p className="text-xs text-slate-600 truncate">{agencyName}</p>
+                                </>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                         {/* Rating o badges */}
                         <div className="flex items-center gap-2 mt-1">

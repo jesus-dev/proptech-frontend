@@ -260,13 +260,13 @@ export default function PropertiesTabsPage() {
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Activas</p>
                     <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                      {sampleProperties.filter(p => p.status === "active").length}
+                      {sampleProperties.filter(p => p.status?.toLowerCase() === "active").length}
                     </p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Inactivas</p>
                     <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                      {sampleProperties.filter(p => p.status === "inactive").length}
+                      {sampleProperties.filter(p => p.status?.toLowerCase() === "inactive").length}
                     </p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">

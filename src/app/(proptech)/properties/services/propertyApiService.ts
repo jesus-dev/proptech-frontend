@@ -88,6 +88,21 @@ export interface BackendPropertyDetailed extends BackendProperty {
   };
 }
 
+// Función para normalizar el status de la propiedad
+function normalizePropertyStatus(status: string | undefined): string {
+  if (!status) return "active";
+  
+  const statusLower = status.toLowerCase();
+  
+  // Estados que se consideran "activo"
+  if (statusLower === "disponible" || statusLower === "active" || statusLower === "activo" || statusLower === "activa") {
+    return "active";
+  }
+  
+  // Cualquier otro estado se considera "inactive"
+  return "inactive";
+}
+
 function mapBackendToFrontend(backend: BackendProperty): Property {
   return {
     id: backend.id.toString(),
@@ -99,7 +114,7 @@ function mapBackendToFrontend(backend: BackendProperty): Property {
     price: backend.precio,
     currency: backend.moneda as any,
     type: backend.tipoPropiedad || 'Casa',
-    status: backend.estadoPropiedad || 'Disponible',
+    status: normalizePropertyStatus(backend.estadoPropiedad),
     description: backend.descripcion,
     images: backend.imagenes?.map(img => img.url) || [],
     bedrooms: backend.habitaciones,

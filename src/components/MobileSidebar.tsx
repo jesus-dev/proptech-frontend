@@ -649,10 +649,10 @@ const MobileSidebar: React.FC = () => {
           backgroundColor: 'white',
           borderRight: '1px solid #e5e7eb',
           zIndex: 99999,
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
           transform: isAnimating ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 0.2s ease-out'
+          transition: 'transform 0.2s ease-out',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {/* Header con botón de cerrar */}
@@ -676,7 +676,13 @@ const MobileSidebar: React.FC = () => {
           </button>
         </div>
         
-        <div className="flex flex-col overflow-y-auto duration-75 ease-out px-3">
+        <div 
+          className="flex-1 overflow-y-auto px-3"
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin'
+          }}
+        >
           <nav className="mb-6">
             <div className="flex flex-col gap-4">
               <div>

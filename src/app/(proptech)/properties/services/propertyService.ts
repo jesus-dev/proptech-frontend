@@ -42,6 +42,21 @@ export interface PaginatedPropertiesResponse {
   size: number;
 }
 
+// Función para normalizar el status de la propiedad
+function normalizePropertyStatus(status: string | undefined): string {
+  if (!status) return "active";
+  
+  const statusLower = status.toLowerCase();
+  
+  // Estados que se consideran "activo"
+  if (statusLower === "disponible" || statusLower === "active" || statusLower === "activo" || statusLower === "activa") {
+    return "active";
+  }
+  
+  // Cualquier otro estado se considera "inactive"
+  return "inactive";
+}
+
 // Función para transformar la respuesta del backend al formato del frontend
 function transformPropertyResponse(backendProperty: any): Property {
   // Mapear galleryImages a images
@@ -119,7 +134,7 @@ function transformPropertyResponse(backendProperty: any): Property {
     zip: backendProperty.zip || backendProperty.postalCode || "",
     // Asegurar que el tipo sea string
     type: backendProperty.type || backendProperty.propertyTypeName || "",
-    status: backendProperty.status || backendProperty.propertyStatus || "active"
+    status: normalizePropertyStatus(backendProperty.status || backendProperty.propertyStatus)
   };
 }
 

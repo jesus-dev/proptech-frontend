@@ -14,7 +14,7 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
-  const [status, setStatus] = useState(property.status);
+  const [status, setStatus] = useState(property.status?.toLowerCase() || "inactive");
   const [loading, setLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(property.favorite || false);
   const imageService = new ImageService();
@@ -33,7 +33,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       const res = await fetch(endpoint, { method: "PATCH" });
       if (res.ok) {
         const data = await res.json();
-        setStatus(data.propertyStatus === "Disponible" ? "active" : "inactive");
+        const newStatus = (data.propertyStatus === "Disponible" || data.propertyStatus?.toLowerCase() === "active") ? "active" : "inactive";
+        setStatus(newStatus);
       }
     } finally {
       setLoading(false);
@@ -54,31 +55,21 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : '');
           const fullImageUrl = imageService.getFullImageUrl(mainImage, property.id);
           
-          // Debug log
-          console.log('PropertyCard Image Debug:', {
-            propertyId: property.id,
-            featuredImage: property.featuredImage,
-            galleryImages: property.galleryImages,
-            mainImage,
-            fullImageUrl
-          });
-          
           return fullImageUrl ? (
             <img
               src={fullImageUrl}
               alt={property.title}
               className="w-full h-full object-cover"
-              onLoad={() => console.log('Property image loaded:', fullImageUrl)}
               onError={(e) => {
-                console.log('Property image failed to load:', fullImageUrl);
                 e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
               }}
             />
           ) : null;
         })()}
       {/* Fallback image */}
-      <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 flex items-center justify-center text-gray-500">
+      <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 flex items-center justify-center text-gray-500" style={{ display: 'none' }}>
         <div className="text-center p-4">
           <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-lg">
             <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -98,13 +89,22 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             />
           </div>
           <span
-            className={`px-2 py-1 text-xs font-medium rounded-full ${
-              property.status === "active"
+            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
+              status === "active"
                 ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400"
                 : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400"
             }`}
           >
-            {property.status === "active" ? "Activa" : "Inactiva"}
+            {status === "active" ? (
+              <>
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Activa
+              </>
+            ) : (
+              "Inactiva"
+            )}
           </span>
         </div>
         <div className="absolute top-4 left-4 flex flex-col gap-1">

@@ -19,7 +19,7 @@ export const environment = {
   // API Configuration
   apiUrl: resolveApiUrl(),
   API_BASE_URL: resolveApiUrl(),
-  UPLOADS_BASE_URL: process.env.NEXT_PUBLIC_UPLOADS_URL || (process.env.NODE_ENV === 'production' ? 'https://181.1.154.85:9091/uploads' : 'http://localhost:8080/uploads'),
+  UPLOADS_BASE_URL: process.env.NEXT_PUBLIC_UPLOADS_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py/uploads' : 'http://localhost:8080/uploads'),
   
   // Environment
   isDevelopment: process.env.NODE_ENV === 'development',

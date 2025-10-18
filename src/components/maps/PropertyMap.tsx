@@ -350,11 +350,11 @@ export default function PropertyMap({
                     />
                     <div className="absolute top-2 left-2">
                       <span className={`px-2 py-1 text-xs font-medium rounded ${
-                        property.status === 'active' 
+                        property.status?.toLowerCase() === 'active' 
                           ? 'bg-green-500 text-white' 
                           : 'bg-gray-500 text-white'
                       }`}>
-                        {property.status === 'active' ? 'Disponible' : 'No disponible'}
+                        {property.status?.toLowerCase() === 'active' ? 'Disponible' : 'No disponible'}
                       </span>
                     </div>
                   </div>

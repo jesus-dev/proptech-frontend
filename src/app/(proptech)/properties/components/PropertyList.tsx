@@ -95,17 +95,14 @@ const CrownIcon = ({ className = "size-4" }: { className?: string }) => (
 );
 
 const CheckCircleIcon = ({ className = "size-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.76488 14.1003 1.98232 16.07 2.85999" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
   </svg>
 );
 
 const XCircleIcon = ({ className = "size-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M15 9L9 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M9 9L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
   </svg>
 );
 
@@ -366,27 +363,17 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                    property.propertyStatus === "Disponible"
+                    property.status === "active"
                       ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                      : property.propertyStatus === "Alquilada"
-                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                       : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                   }`}>
-                    {property.propertyStatus === "Disponible" ? (
+                    {property.status === "active" ? (
                       <>
                         <CheckCircleIcon className="w-3 h-3" />
-                        Disponible
-                      </>
-                    ) : property.propertyStatus === "Alquilada" ? (
-                      <>
-                        <CheckCircleIcon className="w-3 h-3" />
-                        Alquilada
+                        Activa
                       </>
                     ) : (
-                      <>
-                        <XCircleIcon className="w-3 h-3" />
-                        {property.propertyStatus || "Sin estado"}
-                      </>
+                      "Inactiva"
                     )}
                   </span>
                 </div>
@@ -686,27 +673,17 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                      property.propertyStatus === "Disponible"
+                      property.status === "active"
                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
-                        : property.propertyStatus === "Alquilada"
-                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                         : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                     }`}>
-                      {property.propertyStatus === "Disponible" ? (
+                      {property.status === "active" ? (
                         <>
                           <CheckCircleIcon className="w-3 h-3" />
-                          Disponible
-                        </>
-                      ) : property.propertyStatus === "Alquilada" ? (
-                        <>
-                          <CheckCircleIcon className="w-3 h-3" />
-                          Alquilada
+                          Activa
                         </>
                       ) : (
-                        <>
-                          <XCircleIcon className="w-3 h-3" />
-                          {property.propertyStatus || "Sin estado"}
-                        </>
+                        "Inactiva"
                       )}
                     </span>
                   </td>
