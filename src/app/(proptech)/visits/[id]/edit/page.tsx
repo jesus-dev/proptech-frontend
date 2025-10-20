@@ -55,7 +55,6 @@ export default function EditVisitPage({ params }: { params: Promise<{ id: string
       try {
         setLoading(true);
         const foundVisit = await visitService.getVisitById(visitId);
-        console.log("🔍 EditVisitPage: Found visit:", foundVisit);
         
         if (foundVisit) {
           setVisit(foundVisit);
@@ -150,12 +149,10 @@ export default function EditVisitPage({ params }: { params: Promise<{ id: string
         clientPhone: selectedClient?.phone || "",
       };
 
-      console.log("🔍 EditVisitPage: Submitting visit data:", visitData);
       
       const success = await visitService.updateVisit(visitId, visitData);
       
       if (success) {
-        console.log("✅ EditVisitPage: Visit updated successfully");
         router.push(`/visits/${visitId}`);
       } else {
         setError("Error al actualizar la visita.");

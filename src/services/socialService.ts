@@ -166,14 +166,6 @@ export class SocialService {
     const seenUrls = new Set<string>();
     const seenFileNames = new Set<string>(); // Para evitar duplicados por nombre de archivo
     
-    console.log(`🔍 DEBUG getPostImages para post ${post.id}:`, {
-      linkImage: post.linkImage,
-      images: post.images,
-      imageUrl: post.imageUrl,
-      allImages: post.allImages,
-      hasImage: post.hasImage
-    });
-    
     // Función helper para extraer nombre de archivo
     const getFileName = (imagePath: string): string => {
       return imagePath.split('/').pop() || imagePath;
@@ -209,49 +201,41 @@ export class SocialService {
     // Función helper para agregar imagen sin duplicados
     const addImageIfNotDuplicate = (imageUrl: string | undefined) => {
       if (!imageUrl) {
-        console.log(`❌ Imagen undefined o null ignorada`);
         return;
       }
       
       // Filtrar blob URLs (imágenes temporales que no funcionan)
       if (imageUrl.startsWith('blob:')) {
-        console.log(`🚫 Blob URL ignorada (imagen temporal): ${imageUrl}`);
         return;
       }
       
       const fileName = getFileName(imageUrl);
-      console.log(`🔍 Procesando imagen: ${imageUrl} (nombre: ${fileName})`);
       
       // Verificar si ya tenemos una imagen con el mismo nombre de archivo
       if (seenFileNames.has(fileName)) {
-        console.log(`⚠️ Imagen con nombre duplicado ignorada: ${fileName} (${imageUrl})`);
         return;
       }
       
       // Verificar si ya tenemos la misma URL
       if (seenUrls.has(imageUrl)) {
-        console.log(`⚠️ URL duplicada ignorada: ${imageUrl}`);
         return;
       }
       
       images.push(imageUrl);
       seenUrls.add(imageUrl);
       seenFileNames.add(fileName);
-      console.log(`✅ Agregada imagen: ${imageUrl} (nombre: ${fileName})`);
     };
     
     // Agregar imagen principal si existe
     if (post.linkImage) {
       const normalizedPath = normalizeImagePath(post.linkImage);
       const mainImage = this.buildImageUrl(normalizedPath);
-      console.log(`📸 Procesando linkImage: ${post.linkImage} -> ${normalizedPath} -> ${mainImage}`);
       addImageIfNotDuplicate(mainImage);
     }
     
     // Agregar imágenes adicionales si existen
     if (post.images) {
       const additionalImages = post.images.split(',').map(img => img.trim()).filter(img => img.length > 0);
-      console.log(`🖼️ Procesando campo images: ${post.images} -> [${additionalImages.join(', ')}]`);
       additionalImages.forEach((img, index) => {
         const normalizedPath = normalizeImagePath(img);
         const imageUrl = this.buildImageUrl(normalizedPath);
@@ -264,12 +248,10 @@ export class SocialService {
     if (post.imageUrl) {
       const normalizedPath = normalizeImagePath(post.imageUrl);
       const imageUrl = this.buildImageUrl(normalizedPath);
-      console.log(`🖼️ Procesando imageUrl: ${post.imageUrl} -> ${normalizedPath} -> ${imageUrl}`);
       addImageIfNotDuplicate(imageUrl);
     }
     
     if (post.allImages && Array.isArray(post.allImages)) {
-      console.log(`🖼️ Procesando allImages: [${post.allImages.join(', ')}]`);
       post.allImages.forEach((img, index) => {
         const normalizedPath = normalizeImagePath(img);
         const imageUrl = this.buildImageUrl(normalizedPath);
@@ -278,7 +260,6 @@ export class SocialService {
       });
     }
     
-    console.log(`📊 Resumen del post ${post.id}:`);
     console.log(`  - URLs únicas encontradas: ${images.length}`);
     console.log(`  - URLs: [${images.join(', ')}]`);
     
@@ -290,11 +271,8 @@ export class SocialService {
       }
     }
     
-    console.log(`  - Imágenes válidas: ${validImages.length}`);
-    console.log(`  - Imágenes válidas: [${validImages.join(', ')}]`);
     
     const result = validImages.length > 0 ? validImages : images; // Fallback a todas si la validación falla
-    console.log(`🎯 Resultado final para post ${post.id}: ${result.length} imágenes`);
     
     return result;
   }

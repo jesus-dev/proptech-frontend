@@ -81,11 +81,6 @@ export class PropShotService {
   // Subir video al servidor
   static async uploadVideo(videoFile: File): Promise<UploadResponse> {
     try {
-      console.log('🔍 DEBUG: Iniciando upload de video en frontend');
-      console.log('🔍 DEBUG: videoFile:', videoFile);
-      console.log('🔍 DEBUG: videoFile.name:', videoFile.name);
-      console.log('🔍 DEBUG: videoFile.size:', videoFile.size);
-      console.log('🔍 DEBUG: videoFile.type:', videoFile.type);
       
       // Verificar que el archivo sea válido
       if (!videoFile || videoFile.size === 0) {
@@ -97,22 +92,15 @@ export class PropShotService {
       formData.append('fileName', videoFile.name);
       
       // Verificar que el FormData se haya construido correctamente
-      console.log('🔍 DEBUG: FormData creado');
-      console.log('🔍 DEBUG: FormData entries:');
       for (let [key, value] of formData.entries()) {
         console.log('  -', key, ':', value);
       }
-      console.log('🔍 DEBUG: API_BASE_URL:', config.API_BASE_URL);
       
       const response = await fetch(`${config.API_BASE_URL}/api/social/propshots/upload/video`, {
         method: 'POST',
         body: formData,
       });
       
-      console.log('🔍 DEBUG: Response recibida:', response);
-      console.log('🔍 DEBUG: Response status:', response.status);
-      console.log('🔍 DEBUG: Response statusText:', response.statusText);
-      console.log('🔍 DEBUG: Response headers:', response.headers);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -123,7 +111,6 @@ export class PropShotService {
       }
       
       const videoUrl = await response.text();
-      console.log('✅ DEBUG: Video subido exitosamente:', videoUrl);
       
       return {
         url: videoUrl,
@@ -308,10 +295,8 @@ export class PropShotService {
   // Obtener PropShots por usuario
   static async getPropShotsByUser(userId: number): Promise<PropShot[]> {
     try {
-      console.log('🔍 DEBUG: Fetching PropShots for user:', userId);
       
       const apiUrl = buildApiUrl(`api/social/propshots/user/${userId}`);
-      console.log('🔍 DEBUG: API URL:', apiUrl);
       
       const response = await fetchWithRetry(apiUrl, {
         method: 'GET',
@@ -324,7 +309,6 @@ export class PropShotService {
       }
       
       const data = await response.json();
-      console.log('✅ DEBUG: PropShots fetched successfully:', data);
       return data;
     } catch (error) {
       console.error('❌ ERROR fetching user PropShots:', error);

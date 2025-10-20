@@ -265,16 +265,12 @@ export default function ProfilePage() {
         
         if (token && userData) {
           const parsedUser = JSON.parse(userData) as any;
-          console.log('📋 User data from localStorage:', parsedUser);
           
           // Buscar nombre y apellido en todas las propiedades posibles
           const firstName = parsedUser.firstName || parsedUser.name || parsedUser.first_name || parsedUser.nombre || parsedUser.primerNombre || parsedUser.first || parsedUser.givenName || parsedUser.displayName || '';
           const lastName = parsedUser.lastName || parsedUser.surname || parsedUser.last_name || parsedUser.apellido || parsedUser.segundoNombre || parsedUser.last || parsedUser.familyName || '';
           const phone = parsedUser.phone || parsedUser.telephone || parsedUser.telefono || '';
           
-          console.log('🔍 DEBUG - firstName encontrado:', firstName);
-          console.log('🔍 DEBUG - lastName encontrado:', lastName);
-          console.log('🔍 DEBUG - phone encontrado:', phone);
           
           const profileDataToSet = {
             firstName: firstName,
@@ -297,13 +293,11 @@ export default function ProfilePage() {
               marketing: false
             }
       };
-      console.log('✅ Setting profile data from localStorage:', profileDataToSet);
       setProfileData(profileDataToSet);
       setProfileUser(parsedUser);
       setIsLoadingUser(false);
     } else {
       // Si no hay token, redirigir al login
-      console.log('❌ No token found, redirecting to login');
       window.location.href = '/login';
     }
   } catch (error) {
@@ -449,11 +443,8 @@ loadUserData();
 
   // Cambiar contraseña usando la API real
   const handlePasswordChange = async () => {
-    console.log('🔐 Iniciando cambio de contraseña...');
-    console.log('📝 Datos de seguridad:', securityData);
     
     const errors = validatePassword(securityData);
-    console.log('❌ Errores de validación:', errors);
     
     setPasswordErrors(errors);
     setPasswordSuccess(null);
@@ -466,12 +457,10 @@ loadUserData();
     
     setPasswordLoading(true);
     try {
-      console.log('🚀 Llamando a la API de cambio de contraseña...');
       const result = await authApi.changePassword({ 
         oldPassword: securityData.currentPassword, 
         newPassword: securityData.newPassword 
       });
-      console.log('✅ Respuesta de la API:', result);
       
       setPasswordSuccess('Contraseña cambiada exitosamente');
       toast.success('Contraseña cambiada exitosamente');
@@ -480,7 +469,6 @@ loadUserData();
     } catch (error) {
       console.error('❌ Error en cambio de contraseña:', error);
       const errorMessage = handleApiError(error);
-      console.log('📝 Mensaje de error procesado:', errorMessage);
       
       setApiError(errorMessage);
       toast.error(errorMessage);

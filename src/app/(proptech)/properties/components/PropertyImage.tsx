@@ -26,7 +26,6 @@ export default function PropertyImage({
   useEffect(() => {
     if (imageUrl) {
       const fullUrl = getImageUrl(imageUrl);
-      console.log(`🖼️ PropertyImage: Original URL: ${imageUrl}, Full URL: ${fullUrl}`);
       setCurrentImageUrl(fullUrl);
       setImageError(false);
       setImageLoaded(false);
@@ -71,7 +70,6 @@ export default function PropertyImage({
       
       if (validFallbacks.length > 0) {
         const nextFallback = validFallbacks[0];
-        console.log(`🔄 PropertyImage: Trying fallback URL: ${nextFallback}`);
         setCurrentImageUrl(nextFallback);
         setImageError(false);
         return;

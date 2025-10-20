@@ -95,8 +95,6 @@ export default function HeatmapPage() {
     // Asegurar que properties sea un array
     const propertiesArray = Array.isArray(properties) ? properties : [];
     
-    console.log('🔍 HeatmapPage: Total properties loaded:', propertiesArray.length);
-    console.log('🔍 HeatmapPage: Properties with coordinates:', propertiesArray.filter(p => p.latitude && p.longitude).length);
     
     const filteredProperties = propertiesArray.filter(property => {
       // Filtro por búsqueda
@@ -170,7 +168,6 @@ export default function HeatmapPage() {
       }
     });
 
-    console.log('🔍 HeatmapPage: Heatmap points generated:', heatmapPoints.length);
     
     // Si no hay datos reales, no mostrar nada en el heatmap
     if (heatmapPoints.length === 0) {

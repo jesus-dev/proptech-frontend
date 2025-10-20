@@ -208,7 +208,6 @@ export default function ContractTemplatesPage() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => {
-                          console.log('🔍 Click en botón Ver:', template);
                           router.push(`/contracts/templates/view/${template.id}`);
                         }}
                         className="inline-flex items-center p-2 text-gray-600 hover:text-brand-700 hover:bg-brand-50 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-gray-700 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-300"
@@ -219,7 +218,6 @@ export default function ContractTemplatesPage() {
                       </button>
                       <button
                         onClick={() => {
-                          console.log('🔍 Click en botón Editar:', template);
                           router.push(`/contracts/templates/edit/${template.id}`);
                         }}
                         className="inline-flex items-center p-2 text-gray-600 hover:text-brand-700 hover:bg-brand-50 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-gray-700 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-300"

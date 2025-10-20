@@ -158,9 +158,7 @@ const usePropertySearch = () => {
         operation: mapOperationToBackend((customFilters || filters).operation) 
       };
       
-      console.log('🔍 Búsqueda con filtros:', filtersToSend);
       const response = await propertyService.advancedSearch(filtersToSend);
-      console.log('✅ Respuesta recibida:', response);
       setResults(response || []);
     } catch (err) {
       console.error('❌ Error fetching properties:', err);

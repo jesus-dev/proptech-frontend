@@ -37,14 +37,12 @@ export const CommentList: React.FC<CommentListProps> = ({
   const loadComments = async () => {
     setIsLoading(true);
     try {
-      console.log('🔍 DEBUG: Cargando comentarios para postId:', postId, 'userId:', user?.id);
       
       const fetchedComments = await commentService.getTopLevelCommentsByPostId(
         postId, 
         user?.id
       );
       
-      console.log('✅ DEBUG: Comentarios cargados:', fetchedComments);
       setComments(fetchedComments);
       
       // Notificar cambio en el conteo de comentarios
@@ -52,7 +50,6 @@ export const CommentList: React.FC<CommentListProps> = ({
         const totalCount = fetchedComments.reduce((total, comment) => {
           return total + 1 + (comment.replies?.length || 0);
         }, 0);
-        console.log('📊 DEBUG: Total de comentarios:', totalCount);
         onCommentCountChange(totalCount);
       }
     } catch (error) {
@@ -75,13 +72,6 @@ export const CommentList: React.FC<CommentListProps> = ({
       return;
     }
 
-    console.log('🔍 DEBUG: Creando comentario:', {
-      content: newComment.trim(),
-      postId,
-      userId: user.id,
-      userName: user.fullName
-    });
-
     setIsSubmitting(true);
     try {
       const createdComment = await commentService.createComment(
@@ -93,7 +83,6 @@ export const CommentList: React.FC<CommentListProps> = ({
         user.fullName
       );
 
-      console.log('✅ DEBUG: Comentario creado:', createdComment);
 
       if (createdComment) {
         setNewComment('');

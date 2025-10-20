@@ -14,7 +14,6 @@ export async function fetchWithRetry(url: string, options: FetchOptions = {}): P
   
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`🔍 DEBUG: Fetch attempt ${attempt}/${retries} for URL: ${url}`);
       
       const response = await fetch(url, {
         ...fetchOptions,
@@ -24,27 +23,22 @@ export async function fetchWithRetry(url: string, options: FetchOptions = {}): P
         },
       });
       
-      console.log(`🔍 DEBUG: Response status: ${response.status} for attempt ${attempt}`);
       
       // Si la petición fue exitosa, retornar la respuesta
       if (response.ok) {
-        console.log(`✅ DEBUG: Successful fetch on attempt ${attempt}`);
         return response;
       }
       
       // Si no es un error de servidor (4xx, 5xx), no reintentar
       if (response.status >= 400 && response.status < 500) {
-        console.log(`❌ DEBUG: Client error ${response.status}, not retrying`);
         return response;
       }
       
       // Si es el último intento, retornar la respuesta aunque haya fallado
       if (attempt === retries) {
-        console.log(`❌ DEBUG: Max retries reached, returning failed response`);
         return response;
       }
       
-      console.log(`⚠️ DEBUG: Retrying in ${retryDelay}ms...`);
       await new Promise(resolve => setTimeout(resolve, retryDelay));
       
     } catch (error) {
@@ -55,7 +49,6 @@ export async function fetchWithRetry(url: string, options: FetchOptions = {}): P
         throw new Error(`Failed to fetch after ${retries} attempts: ${error}`);
       }
       
-      console.log(`⚠️ DEBUG: Retrying in ${retryDelay}ms...`);
       await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
   }

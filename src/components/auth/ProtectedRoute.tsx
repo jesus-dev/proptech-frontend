@@ -32,17 +32,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     hasAnyRole 
   } = useAuthContext();
 
-  console.log('🛡️ PROTECTED ROUTE - Estado actual:', {
-    isAuthenticated,
-    isLoading,
-    user: user ? 'Usuario presente' : 'Sin usuario',
-    requiredPermissions,
-    requiredRoles
-  });
-
   // Mostrar loader mientras se verifica la autenticación
   if (isLoading) {
-    console.log('🛡️ PROTECTED ROUTE - Mostrando loader...');
     return showLoader ? (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />

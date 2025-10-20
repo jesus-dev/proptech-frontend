@@ -250,12 +250,10 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
 
   const confirmDelete = async () => {
     try {
-      console.log('🔍 PropertyList: Deleting property with ID:', deleteDialog.propertyId);
       setDeletingProperties(prev => new Set(prev).add(deleteDialog.propertyId));
       
       await propertyService.deleteProperty(deleteDialog.propertyId);
       
-      console.log('✅ PropertyList: Property deleted successfully');
       if (onPropertyDeleted) {
         onPropertyDeleted(deleteDialog.propertyId);
       }
@@ -274,12 +272,10 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
 
   const confirmRemoveFromFavorites = async () => {
     try {
-      console.log('🔍 PropertyList: Removing from favorites property with ID:', favoriteDialog.propertyId);
       setUpdatingFavorites(prev => new Set(prev).add(favoriteDialog.propertyId));
       
       await propertyService.removeFromFavorites(favoriteDialog.propertyId);
       
-      console.log('✅ PropertyList: Property removed from favorites successfully');
       if (onPropertyRemovedFromFavorites) {
         onPropertyRemovedFromFavorites(favoriteDialog.propertyId);
       }
@@ -318,7 +314,6 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
     }
     
     // Debug: verificar monedas en las primeras 3 propiedades - comentado para reducir ruido
-    // console.log('💵 PropertyList - Monedas en primeras 3 propiedades:', properties.slice(0, 3).map(p => ({
     //   id: p.id,
     //   title: p.title,
     //   price: p.price,

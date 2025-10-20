@@ -644,6 +644,7 @@ const MobileSidebar: React.FC = () => {
               alt="PropTech"
               width={150}
               height={40}
+              style={{ width: 'auto', height: 'auto' }}
               className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
             />
           </Link>

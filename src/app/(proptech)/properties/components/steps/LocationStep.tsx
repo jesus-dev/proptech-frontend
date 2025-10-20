@@ -278,6 +278,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
       if (registerMode === 'city') {
         if (!registerFormData.name.trim() || !registerFormData.departmentId) {
           setRegisterError('Nombre y departamento son obligatorios');
+          setRegisterLoading(false);
           return;
         }
 
@@ -304,6 +305,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
       } else {
         if (!registerFormData.name.trim() || !registerFormData.cityId) {
           setRegisterError('Nombre y ciudad son obligatorios');
+          setRegisterLoading(false);
           return;
         }
 
@@ -941,26 +943,26 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
 
       {/* Popup de Registro de Ciudad/Barrio */}
       {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Fondo degradado con blur */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-brand-900/30 backdrop-blur-sm"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-brand-900/30 backdrop-blur-sm" onClick={handleRegisterCancel}></div>
           
-          {/* Contenido del popup */}
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-100 animate-in fade-in-0 zoom-in-95">
-            {/* Header con gradiente */}
-            <div className="bg-gradient-to-r from-brand-500 to-brand-600 rounded-t-2xl p-6">
+          {/* Contenido del popup - más compacto */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-xs mx-auto transform transition-all duration-300 scale-100 animate-in fade-in-0 zoom-in-95 max-h-[90vh] overflow-y-auto">
+            {/* Header con gradiente - más compacto */}
+            <div className="bg-gradient-to-r from-brand-500 to-brand-600 rounded-t-xl p-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-base font-bold text-white">
                   {registerMode === 'city' ? '🏙️ Nueva Ciudad' : '🏘️ Nuevo Barrio'}
                 </h2>
                 <button
                   onClick={handleRegisterCancel}
                   className="text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/20"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-white/80 text-sm mt-1">
+              <p className="text-white/80 text-xs mt-1">
                 {registerMode === 'city' 
                   ? 'Registra una nueva ciudad en el sistema' 
                   : 'Registra un nuevo barrio para la ciudad seleccionada'
@@ -968,19 +970,19 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
               </p>
             </div>
 
-            {/* Contenido del formulario */}
-            <div className="p-6">
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+            {/* Contenido del formulario - más compacto */}
+            <div className="p-3">
+              <form onSubmit={handleRegisterSubmit} className="space-y-3">
                 {/* Nombre */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     Nombre *
                   </label>
                   <input
                     type="text"
                     value={registerFormData.name}
                     onChange={(e) => setRegisterFormData({ ...registerFormData, name: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
                     placeholder={registerMode === 'city' ? 'Ej: Asunción' : 'Ej: Villa Morra'}
                     required
                   />
@@ -989,7 +991,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 {/* País (solo para ciudades) */}
                 {registerMode === 'city' && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                       País *
                     </label>
                     <select
@@ -1001,7 +1003,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                           departmentId: '' // Reset department when country changes
                         });
                       }}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
                       required
                     >
                       <option value="">🌍 Seleccionar país</option>
@@ -1017,13 +1019,13 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 {/* Departamento (solo para ciudades) */}
                 {registerMode === 'city' && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                       Departamento *
                     </label>
                     <select
                       value={registerFormData.departmentId}
                       onChange={(e) => setRegisterFormData({ ...registerFormData, departmentId: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
                       required
                       disabled={!registerFormData.countryId}
                     >
@@ -1042,13 +1044,13 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 {/* Ciudad (solo para barrios) */}
                 {registerMode === 'neighborhood' && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                       Ciudad *
                     </label>
                     <select
                       value={registerFormData.cityId}
                       onChange={(e) => setRegisterFormData({ ...registerFormData, cityId: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
                       required
                     >
                       <option value="">🏙️ Seleccionar ciudad</option>
@@ -1063,7 +1065,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
 
                 {/* Error */}
                 {registerError && (
-                  <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
+                  <div className="text-red-600 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
                     <div className="flex items-center gap-2">
                       <span className="text-red-500">⚠️</span>
                       {registerError}
@@ -1072,18 +1074,18 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 )}
 
                 {/* Botones */}
-                <div className="flex justify-end gap-3 pt-6">
+                <div className="flex justify-end gap-2 pt-4">
                   <button
                     type="button"
                     onClick={handleRegisterCancel}
-                    className="px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-all duration-200"
                     disabled={registerLoading}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-brand-500 to-brand-600 border border-transparent rounded-xl hover:from-brand-600 hover:to-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-brand-500 to-brand-600 border border-transparent rounded-lg hover:from-brand-600 hover:to-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg"
                     disabled={registerLoading}
                   >
                     {registerLoading ? (

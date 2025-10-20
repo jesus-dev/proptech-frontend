@@ -59,15 +59,12 @@ export default function NotificationDropdown() {
 
   const loadNotifications = async () => {
     if (!user?.id) {
-      console.log('🔔 No user ID available for notifications');
       return;
     }
     
-    console.log('🔔 Loading notifications for user:', user.id);
     setLoading(true);
     try {
       const data = await notificationService.getUnreadNotifications(user.id, 5);
-      console.log('🔔 Notifications loaded:', data);
       
       // Solo actualizar si hay datos válidos
       if (Array.isArray(data)) {
@@ -85,7 +82,6 @@ export default function NotificationDropdown() {
   const unreadCount = notifications.length;
 
   const toggleDropdown = async () => {
-    console.log('🔔 Toggle dropdown clicked, current state:', isOpen);
     setIsOpen(!isOpen);
     
     // Solo recargar notificaciones si se está abriendo el dropdown

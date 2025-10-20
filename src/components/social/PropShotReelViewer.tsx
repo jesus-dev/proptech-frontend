@@ -45,8 +45,6 @@ export default function PropShotReelViewer({
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play()
-        .then(() => console.log('✅ Video playing'))
-        .catch(err => console.log('⚠️ Autoplay bloqueado:', err));
     }
     
     onView(currentPropShot.id);

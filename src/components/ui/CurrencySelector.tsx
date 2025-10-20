@@ -30,9 +30,11 @@ export default function CurrencySelector({
     try {
       setLoading(true);
       const activeCurrencies = await currencyService.getActive();
-      setCurrencies(activeCurrencies);
+      console.log("🔍 CurrencySelector: Monedas cargadas:", activeCurrencies);
+      setCurrencies(activeCurrencies || []);
     } catch (error) {
-      console.error("Error loading currencies:", error);
+      console.error("❌ Error loading currencies:", error);
+      setCurrencies([]);
     } finally {
       setLoading(false);
     }
@@ -45,6 +47,13 @@ export default function CurrencySelector({
     setIsOpen(false);
   };
 
+  console.log("🎨 CurrencySelector render:", { 
+    loading, 
+    currenciesCount: currencies.length, 
+    selectedCurrencyId,
+    currencies: currencies.map(c => ({ id: c.id, code: c.code }))
+  });
+
   if (loading) {
     return (
       <div className={`relative ${className}`}>
@@ -55,13 +64,26 @@ export default function CurrencySelector({
     );
   }
 
+  if (currencies.length === 0) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="w-full h-12 px-3 py-2 border-2 border-red-300 rounded-md bg-red-50 flex items-center">
+          <span className="text-red-600 text-sm">⚠️ No hay monedas disponibles</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`relative ${className}`}>
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log("🔽 Click en selector de moneda, isOpen:", !isOpen);
+          !disabled && setIsOpen(!isOpen);
+        }}
         disabled={disabled}
-        className={`w-full h-12 px-3 py-2 text-left border border-gray-300 rounded-md shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 ${
+        className={`w-full h-12 px-3 py-2 text-left border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 ${
           disabled ? 'bg-gray-50 cursor-not-allowed' : 'hover:border-gray-400'
         }`}
       >
@@ -70,11 +92,11 @@ export default function CurrencySelector({
             {selectedCurrencyData ? (
               <>
                 <span className="text-lg">{selectedCurrencyData.symbol}</span>
-                <span className="font-medium">{selectedCurrencyData.code}</span>
-                <span className="text-gray-500 text-sm">({selectedCurrencyData.name})</span>
+                <span className="font-medium dark:text-white">{selectedCurrencyData.code}</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">({selectedCurrencyData.name})</span>
               </>
             ) : (
-              <span className="text-gray-500">Seleccionar moneda</span>
+              <span className="text-gray-500 dark:text-gray-400">Seleccionar moneda</span>
             )}
           </div>
           <ChevronDownIcon className="h-5 w-5 text-gray-400" />
@@ -82,23 +104,29 @@ export default function CurrencySelector({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-          {currencies.map((currency) => (
-            <button
-              key={currency.id}
-              type="button"
-              onClick={() => handleCurrencySelect(currency)}
-              className={`w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none ${
-                selectedCurrencyId === currency.id ? 'bg-brand-50 text-brand-700' : ''
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">{currency.symbol}</span>
-                <span className="font-medium">{currency.code}</span>
-                <span className="text-gray-500 text-sm">({currency.name})</span>
-              </div>
-            </button>
-          ))}
+        <div className="absolute z-[9999] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-60 overflow-auto">
+          {currencies.length > 0 ? (
+            currencies.map((currency) => (
+              <button
+                key={currency.id}
+                type="button"
+                onClick={() => handleCurrencySelect(currency)}
+                className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none transition-colors ${
+                  selectedCurrencyId === currency.id ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400' : ''
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">{currency.symbol}</span>
+                  <span className="font-medium dark:text-white">{currency.code}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">({currency.name})</span>
+                </div>
+              </button>
+            ))
+          ) : (
+            <div className="px-4 py-3 text-center text-gray-500 dark:text-gray-400">
+              No hay monedas disponibles
+            </div>
+          )}
         </div>
       )}
     </div>

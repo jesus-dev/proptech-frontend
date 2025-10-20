@@ -77,18 +77,6 @@ export default function PermissionsPage() {
   const canDelete = hasPermission('PERMISSION_DELETE');
   const canView = hasPermission('PERMISSION_READ');
 
-  // Debug info
-  console.log('🔐 Permissions Page - User info:', {
-    userType: user?.userType,
-    roles: user?.roles,
-    permissions: user?.permissions,
-    email: user?.email,
-    canView,
-    canCreate,
-    canUpdate,
-    canDelete
-  });
-
   useEffect(() => {
     loadData();
   }, []);

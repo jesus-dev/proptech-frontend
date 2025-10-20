@@ -83,11 +83,8 @@ class PartnerApiService {
       if (params?.agencyId) searchParams.append('agencyId', params.agencyId.toString());
 
       const url = getEndpoint(`/api/partners?${searchParams.toString()}`);
-      console.log('🔍 Fetching partners from URL:', url);
       
       const response = await fetch(url);
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response ok:', response.ok);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -96,9 +93,6 @@ class PartnerApiService {
       }
       
       const data = await response.json();
-      console.log('📦 Response data:', data);
-      console.log('📦 Data type:', typeof data);
-      console.log('📦 Is array:', Array.isArray(data));
       
       // Si el backend devuelve un array simple, convertirlo al formato paginado
       if (Array.isArray(data)) {
@@ -109,12 +103,10 @@ class PartnerApiService {
           currentPage: 1,
           size: data.length
         };
-        console.log('✅ Returning paginated result:', result);
         return result;
       }
       
       // Si ya es un objeto paginado, devolverlo tal como está
-      console.log('✅ Returning existing paginated result:', data);
       return data;
     } catch (error) {
       console.error('❌ Error fetching partners:', error);

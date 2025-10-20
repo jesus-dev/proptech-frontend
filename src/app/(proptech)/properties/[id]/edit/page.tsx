@@ -400,9 +400,9 @@ export default function EditPropertyPage({ params }: PageProps) {
     {
       id: 11,
       title: "Propietario",
-      description: "Información del propietario (Solo CRM)",
+      description: "Información del propietario (opcional)",
       icon: <User className="h-5 w-5" aria-label="Icono de propietario" />,
-      requiredFields: ['propietarioId'],
+      requiredFields: [],
       isCompleted: false,
       hasErrors: false
     }

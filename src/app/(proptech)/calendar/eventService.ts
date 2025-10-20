@@ -17,7 +17,6 @@ const API_URL = getEndpoint("/api/calendar-events");
 
 export const eventService = {
   async getEvents(): Promise<CalendarEvent[]> {
-    console.log('🔍 eventService: Fetching events from:', API_URL);
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error("Error al obtener eventos");
     const data = await res.json();
@@ -29,8 +28,6 @@ export const eventService = {
     }));
   },
   async createEvent(event: CalendarEvent): Promise<CalendarEvent> {
-    console.log('🔍 eventService: Creating event with data:', event);
-    console.log('🔍 eventService: Using API URL:', API_URL);
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,11 +46,9 @@ export const eventService = {
       throw new Error(`Error al crear evento: ${res.status} ${res.statusText} - ${errorText}`);
     }
     const result = await res.json();
-    console.log('✅ eventService: Event created successfully:', result);
     return result;
   },
   async updateEvent(id: number, event: CalendarEvent): Promise<CalendarEvent> {
-    console.log('🔍 eventService: Updating event with ID:', id, 'data:', event);
     const res = await fetch(`${API_URL}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -69,11 +64,9 @@ export const eventService = {
       throw new Error(`Error al actualizar evento: ${res.status} ${res.statusText} - ${errorText}`);
     }
     const result = await res.json();
-    console.log('✅ eventService: Event updated successfully:', result);
     return result;
   },
   async deleteEvent(id: number): Promise<void> {
-    console.log('🔍 eventService: Deleting event with ID:', id);
     const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const errorText = await res.text();
@@ -84,6 +77,5 @@ export const eventService = {
       });
       throw new Error(`Error al eliminar evento: ${res.status} ${res.statusText} - ${errorText}`);
     }
-    console.log('✅ eventService: Event deleted successfully');
   },
 }; 

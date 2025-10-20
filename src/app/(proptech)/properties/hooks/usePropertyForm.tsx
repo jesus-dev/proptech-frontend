@@ -139,7 +139,6 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
   useEffect(() => {
     const autoSaveInterval = setInterval(async () => {
       if (hasUnsavedChanges && !isAutoSaving) {
-        console.log('🔄 Auto-guardando cambios...');
         setIsAutoSaving(true);
         
         try {
@@ -155,13 +154,11 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
           if (draftPropertyId) {
             // Actualizar borrador existente
             await propertyService.updateProperty(draftPropertyId, propertyData);
-            console.log('✅ Auto-guardado: Borrador actualizado');
           } else if (formData.agentId && formData.propertyTypeId) {
             // Crear nuevo borrador solo si hay datos mínimos
             const newProperty = await propertyService.createProperty(propertyData);
             if (newProperty) {
               setDraftPropertyId(newProperty.id);
-              console.log('✅ Auto-guardado: Borrador creado con ID:', newProperty.id);
             }
           }
           
@@ -200,7 +197,6 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
               agentId: agent.id,
               agencyId: agent.agencyId || undefined
             }));
-            console.log('✅ Agente asignado automáticamente:', agent.firstName, agent.lastName);
           }
         } catch (error) {
           console.error('❌ Error obteniendo agente del usuario:', error);
@@ -475,9 +471,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     const isValid = Object.keys(newErrors).length === 0;
     
     if (!isValid) {
-      // console.log('❌ PropertyForm: Validation failed:', newErrors);
     } else {
-      // console.log('✅ PropertyForm: Validation passed');
     }
     
     return isValid;
@@ -566,7 +560,6 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
               const errorText = await response.text();
               console.warn('⚠️ usePropertyForm: Failed to save floor plans:', errorText);
             } else {
-              // console.log('✅ usePropertyForm: Floor plans saved successfully');
             }
           } catch (floorPlanError) {
             console.error('❌ usePropertyForm: Error saving floor plans:', floorPlanError);

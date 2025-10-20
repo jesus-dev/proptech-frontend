@@ -19,9 +19,6 @@ export const fetchLogo = async (): Promise<Uint8Array> => {
 };
 
 export const generateContractDocument = async (contract: Contract, logoData: Uint8Array): Promise<Blob> => {
-  console.log('🔍 DocumentService: Starting document generation');
-  console.log('🔍 DocumentService: Contract templateContent:', contract.templateContent);
-  console.log('🔍 DocumentService: Contract templateContent length:', contract.templateContent?.length || 0);
   
   // Preparar las firmas si existen
   const clientSignatureImage = contract.clientSignature ? base64ToUint8Array(contract.clientSignature) : null;
@@ -56,8 +53,6 @@ El presente contrato tendrá una duración de 6 meses a partir de su firma.
 
 En fe de lo cual se firma el presente contrato.`;
 
-  console.log('🔍 DocumentService: Final contract content length:', contractContent.length);
-  console.log('🔍 DocumentService: Contract content preview:', contractContent.substring(0, 200) + '...');
 
   // Convertir el contenido de texto a párrafos de Word
   const contentParagraphs = contractContent.split('\n\n').map(paragraph => {
@@ -90,7 +85,6 @@ En fe de lo cual se firma el presente contrato.`;
     });
   });
 
-  console.log('🔍 DocumentService: Generated', contentParagraphs.length, 'paragraphs');
 
   const doc = new Document({
     sections: [{

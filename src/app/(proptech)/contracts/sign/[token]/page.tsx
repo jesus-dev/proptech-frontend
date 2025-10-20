@@ -80,7 +80,6 @@ export default function ContractSignPage({ params }: { params: Promise<{ token: 
         200  // CANVAS_HEIGHT
       );
       
-      console.log('🔍 Audit data created:', auditData);
       
       // Guardar la auditoría en la base de datos
       await SignatureAuditService.logSignatureEvent(
@@ -102,7 +101,6 @@ export default function ContractSignPage({ params }: { params: Promise<{ token: 
         sessionInfo: auditData.sessionInfo
       };
       
-      console.log("🔍 Signature payload to send:", signaturePayload);
       await contractService.saveSignature(signaturePayload);
       setSuccess(true);
       setSubmitting(false);
@@ -166,7 +164,7 @@ export default function ContractSignPage({ params }: { params: Promise<{ token: 
       <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-8">
         {/* Branding */}
         <div className="flex items-center mb-6">
-          <ImageComponent src="/images/logo/proptech.png" alt="Proptech" className="h-10 mr-4" width={500} height={300} />
+          <ImageComponent src="/images/logo/proptech.png" alt="Proptech" className="h-10 mr-4" width={500} height={150} style={{ width: 'auto', height: '40px' }} />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Firma Digital de Contrato</h1>
             <p className="text-sm text-gray-600">

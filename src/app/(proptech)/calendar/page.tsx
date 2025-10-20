@@ -113,7 +113,6 @@ export default function CalendarPage() {
     setSaving(true);
     setError(null);
     try {
-      console.log('🔍 CalendarPage: Saving event:', selectedEvent);
       
       if (selectedEvent.id) {
         const updated = await eventService.updateEvent(selectedEvent.id, {
@@ -122,7 +121,6 @@ export default function CalendarPage() {
           end: selectedEvent.end,
         });
         setEvents(evts => evts.map(ev => ev.id === updated.id ? updated : ev));
-        console.log('✅ CalendarPage: Event updated successfully');
       } else {
         const created = await eventService.createEvent({
           ...selectedEvent,
@@ -130,7 +128,6 @@ export default function CalendarPage() {
           end: selectedEvent.end,
         });
         setEvents(evts => [...evts, created]);
-        console.log('✅ CalendarPage: Event created successfully');
       }
       setModalOpen(false);
       setSelectedEvent(null);

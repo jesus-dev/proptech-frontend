@@ -96,11 +96,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
 
           if (isMounted) {
-            console.log('🔐 AuthContext: Usuario encontrado en localStorage:', user.email);
             setUser(user);
             setIsAuthenticated(true);
             setIsLoading(false);
-            console.log('🔐 AuthContext: Estado de autenticación establecido a true');
           }
         } catch (parseError) {
           // Datos corruptos, limpiar
@@ -141,15 +139,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       localStorage.setItem('user', JSON.stringify(response.user));
 
-      console.log('🔐 AuthContext: Login exitoso, guardando datos:', {
-        hasToken: !!response.accessToken,
-        hasUser: !!response.user,
-        userEmail: response.user?.email
-      });
-
       setUser(response.user);
       setIsAuthenticated(true);
-      console.log('🔐 AuthContext: Estado de autenticación actualizado a true');
       
       return response.user;
     } catch (error: any) {
@@ -257,7 +248,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                    (user.email && (user.email.includes('admin') || user.email.includes('@idear.com')));
     
     if (isAdmin) {
-      console.log('🔐 AuthContext: Usuario detectado como admin, otorgando permiso:', permission);
       return true;
     }
     

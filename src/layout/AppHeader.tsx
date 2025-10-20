@@ -90,7 +90,8 @@ const AppHeaderCRM: React.FC = () => {
                 alt="PropTech CRM"
                 width={200}
                 height={55}
-                className="object-contain h-12 w-auto"
+                style={{ width: 'auto', height: '48px' }}
+                className="object-contain"
               />
             </button>
           </div>

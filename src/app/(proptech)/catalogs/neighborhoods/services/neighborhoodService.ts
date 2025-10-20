@@ -35,7 +35,11 @@ export const createNeighborhood = async (data: { name: string; cityId: number })
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error('Error al crear barrio');
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Error creating neighborhood:', { status: res.status, error: errorText });
+    throw new Error(`Error al crear barrio: ${errorText || res.statusText}`);
+  }
   return res.json();
 };
 

@@ -101,7 +101,6 @@ function transformPropertyResponse(backendProperty: any): Property {
   
   // Log para debugging (solo en desarrollo) - comentado para reducir ruido
   // if (process.env.NODE_ENV === 'development') {
-  //   console.log(`💰 Moneda transformada para propiedad ${backendProperty.id || 'unknown'}:`, {
   //     currencyIdFromBackend: backendProperty.currencyId,
   //     currencyCodeFromBackend: backendProperty.currencyCode,
   //     currencyObjectFromBackend: backendProperty.currency,
@@ -464,10 +463,8 @@ class PropertyService {
   // Publicar propiedad (cambiar de DRAFT a ACTIVE)
   async publishProperty(propertyId: string): Promise<Property> {
     try {
-      console.log('📢 Publicando propiedad:', propertyId);
       const response = await apiClient.post(`/api/properties/${propertyId}/publish`);
       const transformedProperty = transformPropertyResponse(response.data);
-      console.log('✅ Propiedad publicada exitosamente');
       return transformedProperty;
     } catch (error) {
       console.error('❌ Error al publicar propiedad:', error);
@@ -478,9 +475,7 @@ class PropertyService {
   // Método de prueba para verificar conectividad
   async testConnection(): Promise<boolean> {
     try {
-      console.log('🧪 Probando conexión con el backend...');
       const response = await apiClient.get('/api/propiedades?limit=1');
-      console.log('✅ Conexión exitosa:', response.status);
       return true;
     } catch (error) {
       console.error('❌ Error de conexión:', error);
@@ -493,7 +488,6 @@ class PropertyService {
   // Búsqueda simple de propiedades
   async advancedSearch(filters: any): Promise<Property[]> {
     try {
-      console.log('🔍 Búsqueda simple con filtros:', filters);
       
       // Siempre usar paginación para habilitar búsqueda de texto
       const searchParams = new URLSearchParams();
@@ -502,33 +496,26 @@ class PropertyService {
       
       if (filters.search) {
         searchParams.append('search', filters.search);
-        console.log('📝 Agregando search:', filters.search);
       }
       if (filters.type) {
         searchParams.append('type', filters.type);
-        console.log('📝 Agregando type:', filters.type);
       }
       if (filters.operation) {
         let operacionValue = filters.operation;
         if (filters.operation === 'venta') operacionValue = 'SALE';
         else if (filters.operation === 'alquiler') operacionValue = 'RENT';
         searchParams.append('operacion', operacionValue);
-        console.log('📝 Agregando operacion:', operacionValue);
       }
       if (filters.city) {
         searchParams.append('city', filters.city);
-        console.log('📝 Agregando city:', filters.city);
       }
       
       const url = `/api/properties?${searchParams.toString()}`;
-      console.log('🌐 URL de búsqueda:', url);
       
       const response = await apiClient.get(url);
-      console.log('📡 Respuesta del servidor:', response.data);
       
       // El backend devuelve un objeto con 'properties' array cuando usa paginación
       const properties = response.data.properties || [];
-      console.log('✅ Propiedades encontradas:', properties.length);
       
       return properties;
     } catch (error) {

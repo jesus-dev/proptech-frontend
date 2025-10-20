@@ -168,18 +168,6 @@ export class SignatureAuditService {
       height: window.innerHeight
     };
 
-    console.log('🔍 Device Info Debug:', {
-      userAgent,
-      detectedBrowser: browser,
-      detectedVersion: browserVersion,
-      detectedPlatform: platform,
-      screenInfo,
-      viewportInfo,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      language: navigator.language,
-      languages: navigator.languages
-    });
-
     return {
       platform,
       browser,
@@ -578,30 +566,6 @@ export class SignatureAuditService {
         logTimestamp: formatDateTimeForBackend(logEntry.logTimestamp)
       };
 
-      // Log de debug para verificar todos los campos
-      console.log('🔍 Sending audit data to backend:', {
-        contractId: backendData.contractId,
-        signatureType: backendData.signatureType,
-        eventType: backendData.eventType,
-        timestamp: backendData.timestamp,
-        ipAddress: backendData.ipAddress,
-        userAgent: backendData.userAgent,
-        platform: backendData.platform,
-        browser: backendData.browser,
-        browserVersion: backendData.browserVersion,
-        screenResolution: backendData.screenResolution,
-        timezone: backendData.timezone,
-        language: backendData.language,
-        sessionId: backendData.sessionId,
-        pageUrl: backendData.pageUrl,
-        referrer: backendData.referrer,
-        canvasWidth: backendData.canvasWidth,
-        canvasHeight: backendData.canvasHeight,
-        signatureHash: backendData.signatureHash,
-        signatureLength: backendData.signatureLength,
-        logTimestamp: backendData.logTimestamp
-      });
-
       const response = await fetch(getEndpoint('/api/contracts/signature-audit'), {
         method: 'POST',
         headers: {
@@ -617,7 +581,6 @@ export class SignatureAuditService {
       }
 
       const result = await response.json();
-      console.log('✅ Auditoría guardada en BD:', result);
       return true;
     } catch (error) {
       console.error('❌ Error al guardar auditoría en BD:', error);

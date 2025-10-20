@@ -65,7 +65,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { systemService, SystemStats, SystemActivity, SystemProperty, PropertyTypeData, RevenueTrendData, PerformanceMetrics } from "@/services/systemService";
+import { systemService, SystemStats, SystemActivity, SystemProperty, PropertyTypeData, RevenueTrendData, PerformanceMetrics, AgentStats, AgentLead, AgentAppointment, PropertyAlert } from "@/services/systemService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { PropShot, PropShotService } from "@/services/propShotService";
 import { Play, Camera } from "lucide-react";
@@ -113,6 +113,12 @@ export default function UserDashboardPage() {
     lastLogin: new Date().toISOString()
   });
   
+  // Agent-specific data states
+  const [agentStats, setAgentStats] = useState<AgentStats | null>(null);
+  const [agentLeads, setAgentLeads] = useState<AgentLead[]>([]);
+  const [agentAppointments, setAgentAppointments] = useState<AgentAppointment[]>([]);
+  const [propertyAlerts, setPropertyAlerts] = useState<PropertyAlert[]>([]);
+  
   const [savedProperties, setSavedProperties] = useState<SystemProperty[]>([]);
   const [recentViews, setRecentViews] = useState<SystemProperty[]>([]);
   const [recommendedProperties, setRecommendedProperties] = useState<SystemProperty[]>([]);
@@ -148,10 +154,12 @@ export default function UserDashboardPage() {
     setError(null);
     
     try {
-      console.log('🔄 Cargando datos del usuario...');
-      
       const [
         userStatsData,
+        agentStatsData,
+        agentLeadsData,
+        agentAppointmentsData,
+        propertyAlertsData,
         savedPropsData,
         recentViewsData,
         recommendedPropsData,
@@ -161,6 +169,10 @@ export default function UserDashboardPage() {
         propShotsData
       ] = await Promise.all([
         systemService.getUserStats(),
+        systemService.getAgentStats(),
+        systemService.getAgentLeads('new', 'high'),
+        systemService.getAgentAppointments('today'),
+        systemService.getPropertyAlerts(),
         systemService.getUserSavedProperties(),
         systemService.getUserRecentViews(),
         systemService.getUserRecommendedProperties(),
@@ -171,6 +183,10 @@ export default function UserDashboardPage() {
       ]);
 
       setUserStats(userStatsData);
+      setAgentStats(agentStatsData);
+      setAgentLeads(agentLeadsData);
+      setAgentAppointments(agentAppointmentsData);
+      setPropertyAlerts(propertyAlertsData);
       setSavedProperties(savedPropsData);
       setRecentViews(recentViewsData);
       setRecommendedProperties(recommendedPropsData);
@@ -179,9 +195,8 @@ export default function UserDashboardPage() {
       setUserNotifications(notificationsData);
       setPropShots(propShotsData);
       
-      console.log('✅ Datos del usuario cargados exitosamente');
     } catch (error: any) {
-      console.error('❌ Error loading user dashboard data:', error);
+      console.error('❌ Error loading dashboard data:', error);
       setError(error?.message || 'Error al cargar los datos del dashboard');
     } finally {
       setLoading(false);
@@ -540,6 +555,277 @@ export default function UserDashboardPage() {
           </Card>
 
         </div>
+
+        {/* Agent Stats Cards - Métricas clave para agentes */}
+        {agentStats && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Target className="h-5 w-5 text-blue-600" />
+              Panel del Agente
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              
+              {/* Mis Propiedades Activas */}
+              <Card className="group hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-white border-blue-100">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Mis Propiedades</p>
+                      <p className="text-3xl font-bold text-gray-900">{agentStats.myProperties}</p>
+                      <p className="text-xs text-green-600 mt-2 flex items-center">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Activas
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 bg-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Building2 className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Leads Activos */}
+              <Card className="group hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-50 to-white border-green-100">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Leads Activos</p>
+                      <p className="text-3xl font-bold text-gray-900">{agentStats.activeLeads}</p>
+                      <p className="text-xs text-orange-600 mt-2 flex items-center">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        {agentStats.newLeadsToday} nuevos hoy
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 bg-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Citas de Hoy */}
+              <Card className="group hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-purple-50 to-white border-purple-100">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Citas Hoy</p>
+                      <p className="text-3xl font-bold text-gray-900">{agentStats.todayAppointments}</p>
+                      <p className="text-xs text-purple-600 mt-2 flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {agentStats.weekAppointments} esta semana
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 bg-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <CalendarIcon className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Comisiones del Mes */}
+              <Card className="group hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-yellow-50 to-white border-yellow-100">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Comisiones</p>
+                      <p className="text-2xl font-bold text-gray-900">{formatCurrency(agentStats.monthCommissions, 'PYG')}</p>
+                      <p className="text-xs text-green-600 mt-2 flex items-center">
+                        <Award className="h-3 w-3 mr-1" />
+                        {agentStats.closedDealsMonth} cerrados
+                      </p>
+                    </div>
+                    <div className="h-12 w-12 bg-yellow-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <DollarSign className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Alertas y Acciones Rápidas para Agentes */}
+        {agentStats && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            {/* Leads de Alta Prioridad */}
+            <Card className="lg:col-span-2 bg-white/90 backdrop-blur-sm border border-red-100/50 shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                      <AlertTriangle className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold text-gray-900">
+                        Leads de Alta Prioridad
+                      </CardTitle>
+                      <p className="text-sm text-gray-600">
+                        Requieren atención inmediata
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="destructive" className="text-xs">
+                    {agentLeads.length} urgentes
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {agentLeads.slice(0, 3).map((lead) => (
+                    <div 
+                      key={lead.id} 
+                      className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50/50 transition-all cursor-pointer group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-gray-900">{lead.clientName}</p>
+                          <Badge 
+                            variant={lead.priority === 'urgent' ? 'destructive' : 'default'} 
+                            className="text-xs"
+                          >
+                            {lead.priority}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 truncate">{lead.propertyTitle || 'Consulta general'}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(lead.createdAt).toLocaleDateString('es-PY')}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <PhoneCall className="h-3 w-3" />
+                            {lead.phone}
+                          </span>
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="ml-4 group-hover:bg-red-600 group-hover:text-white group-hover:border-red-600 transition-colors"
+                      >
+                        <PhoneCall className="h-4 w-4 mr-1" />
+                        Contactar
+                      </Button>
+                    </div>
+                  ))}
+                  {agentLeads.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-500" />
+                      <p>¡Excelente! No tienes leads urgentes pendientes</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Citas de Hoy */}
+            <Card className="bg-white/90 backdrop-blur-sm border border-purple-100/50 shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold text-gray-900">
+                      Agenda de Hoy
+                    </CardTitle>
+                    <p className="text-sm text-gray-600">
+                      {agentAppointments.length} citas programadas
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {agentAppointments.map((appointment) => (
+                    <div 
+                      key={appointment.id}
+                      className="p-3 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="font-semibold text-gray-900 text-sm">{appointment.clientName}</p>
+                        <Badge variant="secondary" className="text-xs">
+                          {appointment.type}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2">{appointment.propertyTitle}</p>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1 text-purple-600">
+                          <Clock className="h-3 w-3" />
+                          {new Date(appointment.dateTime).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                          Ver detalles
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {agentAppointments.length === 0 && (
+                    <div className="text-center py-6 text-gray-500">
+                      <Calendar className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">No tienes citas programadas para hoy</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Alertas de Propiedades que Necesitan Atención */}
+        {propertyAlerts.length > 0 && (
+          <Card className="mb-8 bg-white/90 backdrop-blur-sm border border-orange-100/50 shadow-xl">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                    <AlertTriangle className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold text-gray-900">
+                      Propiedades que Necesitan Atención
+                    </CardTitle>
+                    <p className="text-sm text-gray-600">
+                      {propertyAlerts.length} alertas activas
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {propertyAlerts.map((alert) => (
+                  <div 
+                    key={alert.id}
+                    className={`p-4 rounded-lg border-2 ${
+                      alert.severity === 'critical' ? 'border-red-300 bg-red-50' :
+                      alert.severity === 'warning' ? 'border-orange-300 bg-orange-50' :
+                      'border-blue-300 bg-blue-50'
+                    } hover:shadow-md transition-all`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge 
+                        variant={alert.severity === 'critical' ? 'destructive' : 'default'}
+                        className="text-xs"
+                      >
+                        {alert.severity}
+                      </Badge>
+                    </div>
+                    <p className="font-semibold text-gray-900 text-sm mb-1">{alert.propertyTitle}</p>
+                    <p className="text-xs text-gray-600 mb-3">{alert.message}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-500">{alert.actionRequired}</span>
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-xs">
+                        Resolver
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* PropShots Section */}
         <div className="mb-8">

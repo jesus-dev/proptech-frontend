@@ -112,17 +112,13 @@ export default function NewPropertyPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🔍 NewPropertyPage: onSubmit called');
     
     // Validar todos los campos obligatorios antes de enviar
     const allRequiredFields = steps.flatMap(step => step.requiredFields);
-    console.log('🔍 NewPropertyPage: Validating all required fields:', allRequiredFields);
     
     const isValidForm = validate(allRequiredFields);
-    console.log('🔍 NewPropertyPage: Form validation result:', isValidForm);
     
     if (!isValidForm) {
-      console.log('❌ NewPropertyPage: Form validation failed, showing errors');
       // Mostrar el primer paso con errores
       const firstStepWithErrors = steps.find(step => 
         step.requiredFields.some(field => errors[field])
@@ -145,15 +141,11 @@ export default function NewPropertyPage() {
     setSaveSuccess(false);
     
     try {
-      console.log('🔍 NewPropertyPage: Calling handleSubmit with formData:', formData);
       const success = await handleSubmit(e);
-      console.log('🔍 NewPropertyPage: handleSubmit result:', success);
       
       if (success) {
-        console.log('🔍 NewPropertyPage: Save successful');
         setSaveSuccess(true);
       } else {
-        console.log('❌ NewPropertyPage: Save failed');
       }
     } catch (error) {
       console.error('❌ NewPropertyPage: Error in onSubmit:', error);
@@ -282,9 +274,9 @@ export default function NewPropertyPage() {
     {
       id: 11,
       title: "Propietario",
-      description: "Información del propietario (Solo CRM)",
+      description: "Información del propietario (opcional)",
       icon: <User className="h-5 w-5" aria-label="Icono de propietario" />,
-      requiredFields: ['propietarioId'],
+      requiredFields: [],
       isCompleted: false,
       hasErrors: false
     }

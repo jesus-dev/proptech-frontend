@@ -17,7 +17,8 @@ const AcercaDePage = () => {
                 src="/images/logo/proptech.png"
                 alt="Proptech CRM"
                 width={300}
-                height={180}
+                height={88}
+                style={{ width: 'auto', height: 'auto' }}
                 className="mx-auto"
               />
             </div>

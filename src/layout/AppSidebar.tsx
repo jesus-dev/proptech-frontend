@@ -633,6 +633,7 @@ const AppSidebar: React.FC = () => {
                 alt="PropTech"
                 width={150}
                 height={40}
+                style={{ width: 'auto', height: 'auto' }}
                 className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
               />
             ) : (
@@ -641,6 +642,7 @@ const AppSidebar: React.FC = () => {
                 alt="PropTech"
                 width={32}
                 height={32}
+                style={{ width: 'auto', height: 'auto' }}
                 className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
               />
             )}

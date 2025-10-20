@@ -49,12 +49,8 @@ export default function ContractDetailPage({ params }: PageProps) {
         }
         
         // Test directo de la API
-        console.log('🔍 DEBUG - Testing direct API call...');
         const response = await fetch(`http://localhost:8080/api/contracts/${id}`);
         const rawData = await response.json();
-        console.log('🔍 DEBUG - Raw API response:', rawData);
-        console.log('🔍 DEBUG - Raw clientSignatureAudit:', rawData.clientSignatureAudit);
-        console.log('🔍 DEBUG - Raw brokerSignatureAudit:', rawData.brokerSignatureAudit);
         
       } catch (err) {
         setError("Error al cargar el contrato");
@@ -107,13 +103,6 @@ export default function ContractDetailPage({ params }: PageProps) {
     };
     
     setContractStatus(newStatus);
-    console.log('🔄 Estado de firmas actualizado:', {
-      ...newStatus,
-      hasPhysicalDocument,
-      hasContractDocuments,
-      hasDigitalClientSignature,
-      hasDigitalBrokerSignature
-    });
   };
 
   // Función para refrescar el contrato y estado de firmas
@@ -141,7 +130,6 @@ export default function ContractDetailPage({ params }: PageProps) {
           setTimeout(() => setShowUpdateNotification(false), 3000);
         }
         
-        console.log('✅ Estado de firmas actualizado:', newStatus);
       }
     } catch (error) {
       console.error('Error refreshing contract:', error);
@@ -223,35 +211,16 @@ export default function ContractDetailPage({ params }: PageProps) {
   }
 
   // Debug del contrato completo
-  console.log('🔍 DEBUG - Contract completo:', contract);
 
   // Debug cuando cambian los datos de auditoría
   useEffect(() => {
     if (clientAudit) {
-      console.log('🔍 DEBUG - Client audit changed:', clientAudit);
-      console.log('🔍 DEBUG - Client userAgent:', (clientAudit as any).userAgent);
-      console.log('🔍 DEBUG - Client signatureHash:', (clientAudit as any).signatureHash);
     }
     if (brokerAudit) {
-      console.log('🔍 DEBUG - Broker audit changed:', brokerAudit);
-      console.log('🔍 DEBUG - Broker userAgent:', (brokerAudit as any).userAgent);
-      console.log('🔍 DEBUG - Broker signatureHash:', (brokerAudit as any).signatureHash);
     }
   }, [clientAudit, brokerAudit]);
 
   const renderAudit = (audit: any) => {
-    console.log('🔍 DEBUG - renderAudit called with:', audit);
-    console.log('🔍 DEBUG - browser value:', audit?.browser);
-    console.log('🔍 DEBUG - browserVersion value:', audit?.browserVersion);
-    console.log('🔍 DEBUG - sessionId value:', audit?.sessionId);
-    console.log('🔍 DEBUG - pageUrl value:', audit?.pageUrl);
-    console.log('🔍 DEBUG - canvasWidth value:', audit?.canvasWidth);
-    console.log('🔍 DEBUG - canvasHeight value:', audit?.canvasHeight);
-    console.log('🔍 DEBUG - signatureHash value:', audit?.signatureHash);
-    console.log('🔍 DEBUG - platform value:', audit?.platform);
-    console.log('🔍 DEBUG - screenResolution value:', audit?.screenResolution);
-    console.log('🔍 DEBUG - timezone value:', audit?.timezone);
-    console.log('🔍 DEBUG - language value:', audit?.language);
     
     // Los datos ya vienen como objeto, no necesitamos parsear JSON
     return (

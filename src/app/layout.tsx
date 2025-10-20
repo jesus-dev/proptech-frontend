@@ -1,5 +1,3 @@
-'use client';
-
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
@@ -8,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import FooterCRM from "@/layout/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import MobileOptimizer from "@/components/mobile/MobileOptimizer";
-import { usePathname } from "next/navigation";
+import ClientLayout from "./ClientLayout";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -28,7 +26,7 @@ const mainOrganizationSchema = {
   "url": "https://onproptech.com",
   "logo": {
     "@type": "ImageObject",
-    "url": "https://onproptech.com/images/logo/on-logo.png",
+    "url": "https://proptech.com.py/images/logo/on-logo.png",
     "width": 200,
     "height": 60
   },
@@ -173,16 +171,26 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = usePathname();
-  const isPublic = pathname?.startsWith("/public");
-
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Favicon - Next.js will use app/icon.png automatically */}
+        <link rel="icon" type="image/png" sizes="48x48" href="/images/logo/logo-icon-48.png" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/images/logo/logo-icon-96.png" />
+        
+        {/* Apple Touch Icons */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/logo/logo-icon-180.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/images/logo/logo-icon-152.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/images/logo/logo-icon-167.png" />
+        
+        {/* Android Chrome Icons */}
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/logo/logo-icon-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/logo/logo-icon-512.png" />
+        
+        {/* Manifest & Theme */}
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#1e40af" />
+        <meta name="theme-color" content="#1e40af" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1e3a8a" media="(prefers-color-scheme: dark)" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -213,26 +221,9 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        {isPublic ? (
-          <MobileOptimizer>
-            <Providers>
-              {children}
-              <div id="modal-root" />
-              <Toaster />
-            </Providers>
-          </MobileOptimizer>
-        ) : (
-          <AuthProvider>
-            <MobileOptimizer>
-              <Providers>
-                {children}
-                <div id="modal-root" />
-                <Toaster />
-              </Providers>
-            </MobileOptimizer>
-          </AuthProvider>
-        )}
-        
+        <ClientLayout>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );

@@ -38,28 +38,23 @@ export default function InboxPage() {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 
   useEffect(() => {
-    console.log('🔍 InboxPage: Iniciando carga de consultas...');
     setLoading(true);
     apiClient.get('/api/inquiries')
       .then(response => {
         const data = response.data;
         if (Array.isArray(data) && data.length > 0) {
-          console.log('🔍 InboxPage: Using real data from API');
           setInquiries(data);
         } else {
-          console.log('🔍 InboxPage: No real data, using mock data');
           // MOCK DE DATOS DE PRUEBA
           setInquiries([]); // No hay datos, no usar mock
         }
       })
       .catch(error => {
         console.error('❌ InboxPage: Error fetching inquiries:', error);
-        console.log('🔍 InboxPage: Using mock data due to error');
         // En caso de error, mostrar datos de prueba
         setInquiries([]); // No hay datos, no usar mock
       })
       .finally(() => {
-        console.log('🔍 InboxPage: Loading finished');
         setLoading(false);
       });
   }, []);

@@ -8,27 +8,22 @@ const localTemplates: ContractTemplate[] = [...sampleTemplates];
 export const templateService = {
   async getAllTemplates(): Promise<ContractTemplate[]> {
     try {
-      console.log('🔍 TemplateService: Fetching all templates from API');
       const response = await templateApi.getAll();
       const data = response.data;
       const templates = Array.isArray(data) ? data : (data?.content || []);
-      console.log('✅ TemplateService: Successfully fetched', templates.length, 'templates');
       // Convertir IDs de number a string para compatibilidad
       return templates.map((template: any) => ({
         ...template,
         id: template.id?.toString() || template.id
       }));
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, using local data');
       return localTemplates;
     }
   },
 
   async getTemplateById(id: string): Promise<ContractTemplate | undefined> {
     try {
-      console.log('🔍 TemplateService: Fetching template by ID:', id);
       const response = await templateApi.getById(id);
-      console.log('✅ TemplateService: Successfully fetched template:', response.data);
       // Convertir el ID de number a string para compatibilidad
       if (response.data) {
         return {
@@ -38,16 +33,13 @@ export const templateService = {
       }
       return response.data;
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, using local data');
       return localTemplates.find(t => t.id === id);
     }
   },
 
   async createTemplate(templateData: TemplateFormData): Promise<ContractTemplate> {
     try {
-      console.log('🔍 TemplateService: Creating new template:', templateData);
       const response = await templateApi.create(templateData);
-      console.log('✅ TemplateService: Successfully created template:', response.data);
       // Convertir el ID de number a string para compatibilidad
       if (response.data) {
         return {
@@ -57,7 +49,6 @@ export const templateService = {
       }
       return response.data;
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, creating local template');
       const newTemplate: ContractTemplate = {
         id: Date.now().toString(),
         name: templateData.name,
@@ -77,12 +68,9 @@ export const templateService = {
 
   async updateTemplate(id: string, templateData: Partial<TemplateFormData>): Promise<ContractTemplate | undefined> {
     try {
-      console.log('🔍 TemplateService: Updating template with ID:', id, 'Data:', templateData);
       const response = await templateApi.update(id, templateData);
-      console.log('✅ TemplateService: Successfully updated template:', response.data);
       return response.data;
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, updating local template');
       const index = localTemplates.findIndex(t => t.id === id);
       if (index === -1) return undefined;
       
@@ -97,12 +85,9 @@ export const templateService = {
 
   async deleteTemplate(id: string): Promise<boolean> {
     try {
-      console.log('🔍 TemplateService: Deleting template with ID:', id);
       await templateApi.delete(id);
-      console.log('✅ TemplateService: Successfully deleted template');
       return true;
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, deleting local template');
       const index = localTemplates.findIndex(t => t.id === id);
       if (index === -1) return false;
       
@@ -113,40 +98,31 @@ export const templateService = {
 
   async getTemplatesByType(type: string): Promise<ContractTemplate[]> {
     try {
-      console.log('🔍 TemplateService: Fetching templates by type:', type);
       const response = await templateApi.getAll({ type });
       const data = response.data;
       const templates = Array.isArray(data) ? data : (data?.content || []);
-      console.log('✅ TemplateService: Successfully fetched', templates.length, 'templates by type');
       return templates;
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, using local data');
       return localTemplates.filter(t => t.type === type);
     }
   },
 
   async getDefaultTemplate(type: string): Promise<ContractTemplate | undefined> {
     try {
-      console.log('🔍 TemplateService: Fetching default template for type:', type);
       const response = await templateApi.getAll({ type, isDefault: true });
       const data = response.data;
       const templates = Array.isArray(data) ? data : (data?.content || []);
-      console.log('✅ TemplateService: Successfully fetched default template:', templates[0]);
       return templates[0];
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, using local data');
       return localTemplates.find(t => t.type === type && t.isDefault);
     }
   },
 
   async setDefaultTemplate(id: string): Promise<ContractTemplate | undefined> {
     try {
-      console.log('🔍 TemplateService: Setting default template with ID:', id);
       const response = await templateApi.update(id, { isDefault: true });
-      console.log('✅ TemplateService: Successfully set default template:', response.data);
       return response.data;
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, updating local template');
       const index = localTemplates.findIndex(t => t.id === id);
       if (index === -1) return undefined;
       
@@ -171,12 +147,9 @@ export const templateService = {
 
   async generateContractFromTemplate(templateId: string, data: Record<string, string>): Promise<string> {
     try {
-      console.log('🔍 TemplateService: Generating contract from template:', templateId, 'Data:', data);
       const response = await templateApi.generateContract(templateId, data);
-      console.log('✅ TemplateService: Successfully generated contract from template');
       return response.data || '';
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, generating local contract');
       const template = localTemplates.find(t => t.id === templateId);
       if (!template) {
         throw new Error('Template not found');
@@ -195,12 +168,9 @@ export const templateService = {
 
   async duplicateTemplate(id: string, newName: string): Promise<ContractTemplate> {
     try {
-      console.log('🔍 TemplateService: Duplicating template with ID:', id, 'New name:', newName);
       const response = await templateApi.duplicate(id, newName);
-      console.log('✅ TemplateService: Successfully duplicated template:', response.data);
       return response.data;
     } catch (error) {
-      console.log('⚠️ TemplateService: API not available, creating local duplicate');
       const template = localTemplates.find(t => t.id === id);
       if (!template) {
         throw new Error('Template not found');

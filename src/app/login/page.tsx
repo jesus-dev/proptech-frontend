@@ -74,17 +74,11 @@ export default function LoginPage() {
       // Usar el método login del contexto de autenticación
       const user = await login({ email: formData.email, password: formData.password });
       
-      console.log('🔑 Login: Usuario autenticado:', {
-        userEmail: user?.email,
-        userId: user?.id
-      });
-      
       setLoginAttempts(0);
       setError(null);
       
       // Small delay to show success state
       setTimeout(() => {
-        console.log('🔑 Login: Redirigiendo a /dash');
         router.push('/dash');
       }, 800);
     } catch (error: any) {

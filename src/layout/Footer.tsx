@@ -10,7 +10,8 @@ export default function FooterCRM() {
           src="/images/logo/proptech.png"
           alt="PropTech"
           width={236}
-          height={236}
+          height={70}
+          style={{ width: 'auto', height: 'auto' }}
           className="object-contain opacity-70 w-24 sm:w-32"
         />
         <span className="text-sm text-gray-500 dark:text-gray-200 font-medium tracking-wide select-none">

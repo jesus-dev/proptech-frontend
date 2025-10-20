@@ -53,9 +53,7 @@ class ErrorBoundary extends React.Component<
 
 // Importar dinámicamente el ContractForm para evitar problemas de dependencias circulares
 const ContractForm = lazy(() => {
-  console.log('🔍 NewContractPage: Loading ContractForm component...');
   return import("../components/ContractForm").then(module => {
-    console.log('✅ NewContractPage: ContractForm loaded successfully');
     return module;
   }).catch(error => {
     console.error('❌ NewContractPage: Error loading ContractForm:', error);
@@ -71,16 +69,13 @@ export default function NewContractPage() {
   const [showContractForm, setShowContractForm] = useState(false);
 
   useEffect(() => {
-    console.log('🔍 NewContractPage: Component mounted, fetching templates...');
     fetchTemplates();
   }, []);
 
   const fetchTemplates = async () => {
     try {
-      console.log('🔍 NewContractPage: Starting to fetch templates...');
       setLoading(true);
       const fetchedTemplates = await templateService.getAllTemplates();
-      console.log('✅ NewContractPage: Templates fetched successfully:', fetchedTemplates.length, 'templates');
       setTemplates(fetchedTemplates);
     } catch (error) {
       console.error('❌ NewContractPage: Error fetching templates:', error);
@@ -90,17 +85,14 @@ export default function NewContractPage() {
   };
 
   const handleTemplateSelect = (template: ContractTemplate) => {
-    console.log('🔍 NewContractPage: Template selected:', template.name, 'with', template.variables?.length || 0, 'variables');
     setSelectedTemplate(template);
     setShowContractForm(true);
   };
 
   const handleSaveNewContract = async (formData: Omit<Contract, "id" | "generatedDocumentUrl">) => {
     try {
-      console.log('🔍 NewContractPage: Saving new contract with data:', formData);
       setLoading(true);
       await contractService.createContract(formData);
-      console.log('✅ NewContractPage: Contract created successfully');
       alert("Contrato creado exitosamente!");
       router.push("/contracts");
     } catch (error) {
@@ -112,7 +104,6 @@ export default function NewContractPage() {
   };
 
   const handleBack = () => {
-    console.log('🔍 NewContractPage: Back button clicked, showContractForm:', showContractForm);
     if (showContractForm) {
       setShowContractForm(false);
       setSelectedTemplate(null);
@@ -152,9 +143,6 @@ export default function NewContractPage() {
   }
 
   if (showContractForm && selectedTemplate) {
-    console.log('🔍 NewContractPage: Rendering contract form with template:', selectedTemplate.name);
-    console.log('🔍 NewContractPage: Template variables:', selectedTemplate.variables);
-    console.log('🔍 NewContractPage: Template content length:', selectedTemplate.content?.length || 0);
     
     return (
       <div className="min-h-screen bg-gray-50 py-8">

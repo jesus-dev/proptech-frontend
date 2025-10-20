@@ -156,31 +156,22 @@ export default function ContractForm({
   };
 
   const generateContractContent = () => {
-    // console.log('🔍 ContractForm: generateContractContent called');
-    // console.log('🔍 ContractForm: formData.templateContent:', formData.templateContent);
-    // console.log('🔍 ContractForm: templateVariables:', templateVariables);
-    // console.log('🔍 ContractForm: loadedTemplateVariables:', loadedTemplateVariables);
-    // console.log('🔍 ContractForm: templateVariableValues:', templateVariableValues);
     
     // Si estamos editando un contrato existente y ya tiene contenido procesado, usarlo directamente
     if (contractId && formData.templateContent && !formData.templateContent.includes('{{')) {
-      // console.log('🔍 ContractForm: Using existing processed templateContent for editing');
       return formData.templateContent;
     }
     
     // Si no hay contenido de plantilla, retornar vacío
     if (!formData.templateContent) {
-      // console.log('⚠️ ContractForm: No template content found, returning empty string');
       return '';
     }
     
     // Procesar variables solo si el contenido tiene variables sin procesar
     if (formData.templateContent.includes('{{')) {
-      // console.log('🔍 ContractForm: Processing variables in template content');
       let content = formData.templateContent;
       const allVariables = templateVariables || loadedTemplateVariables;
       
-              // console.log('🔍 ContractForm: Processing', allVariables?.length || 0, 'variables');
       
       allVariables?.forEach(variable => {
         const value = templateVariableValues[variable.name] || `[${variable.label}]`;
@@ -188,20 +179,14 @@ export default function ContractForm({
         const originalContent = content;
         content = content.replace(regex, value);
         
-                  // console.log(`🔍 ContractForm: Replacing {{${variable.name}}} with "${value}"`);
         if (originalContent !== content) {
-                      // console.log(`✅ ContractForm: Variable ${variable.name} replaced successfully`);
         } else {
-                      // console.log(`⚠️ ContractForm: Variable ${variable.name} not found in content`);
         }
       });
       
-              // console.log('🔍 ContractForm: Final generated content length:', content.length);
-        // console.log('🔍 ContractForm: Final content preview:', content.substring(0, 200) + '...');
       
       return content;
     } else {
-      // console.log('🔍 ContractForm: Using existing processed content without variable processing');
       return formData.templateContent;
     }
   };
@@ -260,8 +245,6 @@ export default function ContractForm({
     }
 
     // Log del payload limpio para debug
-    // console.log('🔍 ContractForm: Payload limpio:', cleaned);
-    // console.log('🔍 ContractForm: Tamaño del payload:', JSON.stringify(cleaned).length, 'caracteres');
 
     return cleaned;
   };
@@ -308,13 +291,10 @@ export default function ContractForm({
       templateVariableValues,
     };
     
-    // console.log('🔍 ContractForm: Submitting contract with variables:', templateVariableValues);
-    // console.log('🔍 ContractForm: System data:', {
     //   clientId: formData.clientId,
     //   agentId: formData.agentId,
     //   propertyId: formData.propertyId
     // });
-    // console.log('🔍 ContractForm: Generated content length:', generatedContent?.length || 0);
     
     onSubmit(cleanContractPayload(contractPayload));
   };

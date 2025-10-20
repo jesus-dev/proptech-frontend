@@ -51,10 +51,8 @@ export default function EditContactPage({ params }: PageProps) {
       setSaving(true);
       setError(null);
       
-      console.log('🔍 EditContactPage: Updating contact with data:', formData);
       await contactService.updateContact(id, formData);
       
-      console.log('✅ EditContactPage: Contact updated successfully');
       router.push(`/contacts/${id}`);
     } catch (err) {
       console.error("Error updating contact:", err);

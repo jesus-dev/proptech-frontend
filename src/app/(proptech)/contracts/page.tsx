@@ -236,9 +236,7 @@ export default function ContractsPage() {
 
   const confirmDelete = async () => {
     try {
-      console.log('🔍 ContractsPage: Deleting contract:', deleteDialog.contractId);
       await contractService.deleteContract(deleteDialog.contractId);
-      console.log('✅ ContractsPage: Contract deleted successfully');
       
       // Refresh the contracts list
       await fetchContracts();

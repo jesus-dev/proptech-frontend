@@ -29,23 +29,12 @@ export default function PropertyListItem({ property }: PropertyListItemProps) {
             (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : '');
           const fullImageUrl = imageService.getFullImageUrl(mainImage, property.id);
           
-          // Debug log
-          console.log('PropertyListItem Image Debug:', {
-            propertyId: property.id,
-            featuredImage: property.featuredImage,
-            galleryImages: property.galleryImages,
-            mainImage,
-            fullImageUrl
-          });
-          
           return fullImageUrl ? (
             <img
               src={fullImageUrl}
               alt={property.title}
               className="w-full h-full object-cover"
-              onLoad={() => console.log('Property list image loaded:', fullImageUrl)}
               onError={(e) => {
-                console.log('Property list image failed to load:', fullImageUrl);
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}

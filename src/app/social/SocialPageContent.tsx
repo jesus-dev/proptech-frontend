@@ -59,7 +59,6 @@ const detectCountryByIP = async (): Promise<string> => {
     const data = await response.json();
     return data.country_name || data.country || 'Unknown';
   } catch (error) {
-    console.log('⚠️ No se pudo detectar país por IP:', error);
     return 'Unknown';
   }
 };
@@ -69,16 +68,13 @@ const getLocationByIP = async (): Promise<string> => {
   try {
     // Primero detectar si estamos en Paraguay
     const country = await detectCountryByIP();
-    console.log(`🌍 País detectado por IP: ${country}`);
     
     // Si es Paraguay, BLOQUEAR completamente la detección por IP
     if (country === 'Paraguay' || country === 'PY') {
-      console.log('🚫 Paraguay detectado - BLOQUEANDO detección por IP (siempre imprecisa)');
       return 'IP bloqueada para Paraguay - Usar GPS para precisión';
     }
     
     // Solo usar IP para otros países donde sea más precisa
-    console.log(`✅ País ${country} - IP puede ser precisa, continuando...`);
     
     // Interfaz común para los resultados de ubicación
     interface LocationResult {
@@ -115,7 +111,6 @@ const getLocationByIP = async (): Promise<string> => {
     
     for (const service of services) {
       try {
-        console.log(`🌐 Intentando servicio: ${service.name}`);
         const response = await fetch(service.url, { 
           signal: AbortSignal.timeout(4000)
         });
@@ -133,7 +128,6 @@ const getLocationByIP = async (): Promise<string> => {
           }
         }
       } catch (error) {
-        console.log(`⚠️ Servicio ${service.name} falló:`, error);
         continue;
       }
     }
@@ -149,18 +143,15 @@ const getLocationByIP = async (): Promise<string> => {
 const getLocationByGPS = (): Promise<{ location: string; accuracy: number; method: string }> => {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
-      console.log('❌ Navegador no soporta geolocalización');
       resolve({ location: 'GPS no disponible', accuracy: 0, method: 'none' });
       return;
     }
     
-    console.log('🔍 Iniciando detección GPS de alta precisión...');
     
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
           const { latitude, longitude, accuracy } = position.coords;
-          console.log(`📍 Coordenadas GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (precisión: ${accuracy}m)`);
           
           // Usar múltiples servicios de reverse geocoding para máxima precisión
           let cityName = '';
@@ -180,10 +171,8 @@ const getLocationByGPS = (): Promise<{ location: string; accuracy: number; metho
               countryName = bigDataData.countryName;
               regionName = bigDataData.principalSubdivision || bigDataData.locality || '';
               bestService = 'BigDataCloud';
-              console.log('📍 BigDataCloud:', cityName, regionName, countryName);
             }
           } catch (error) {
-            console.log('⚠️ BigDataCloud falló:', error);
           }
           
           // Servicio 2: OpenStreetMap Nominatim (gratuito, buena precisión)
@@ -200,10 +189,8 @@ const getLocationByGPS = (): Promise<{ location: string; accuracy: number; metho
                 countryName = parts[parts.length - 1];
                 regionName = parts.length > 2 ? parts[1] : '';
                 bestService = 'Nominatim';
-                console.log('📍 Nominatim:', cityName, regionName, countryName);
               }
             } catch (error) {
-              console.log('⚠️ Nominatim falló:', error);
             }
           }
           
@@ -220,10 +207,8 @@ const getLocationByGPS = (): Promise<{ location: string; accuracy: number; metho
                 countryName = locationIQData.address.country;
                 regionName = locationIQData.address.state || locationIQData.address.county;
                 bestService = 'LocationIQ';
-                console.log('📍 LocationIQ:', cityName, regionName, countryName);
               }
             } catch (error) {
-              console.log('⚠️ LocationIQ falló:', error);
             }
           }
           
@@ -377,7 +362,6 @@ export default function SocialPage() {
     setSelectedLocation(location);
     setUserLocation(location.address);
     setShowLocationPicker(false);
-    console.log('📍 Ubicación seleccionada manualmente:', location);
   };
 
   // Función para detectar ubicación automáticamente
@@ -480,17 +464,8 @@ export default function SocialPage() {
         // Cargar conteo de comentarios para cada post
         fetchedPosts.forEach(post => {
           loadCommentCounts(post.id);
-          console.log(`🔍 Post ${post.id}:`, { 
-            hasLinkImage: !!post.linkImage, 
-            hasImages: !!post.images,
-            linkImage: post.linkImage,
-            images: post.images
-          });
           if (post.linkImage || post.images) {
-            console.log(`🔄 Post ${post.id} tiene imágenes, cargando...`);
             loadPostImages(post);
-          } else {
-            console.log(`📝 Post ${post.id} no tiene imágenes`);
           }
         });
       } catch (err) {
@@ -566,28 +541,23 @@ export default function SocialPage() {
   // Función para cargar imágenes de un post
   const loadPostImages = async (post: Post) => {
     try {
-      console.log(`🔄 Cargando imágenes para post ${post.id}...`);
       
       // Primero verificar si el post ya tiene imágenes en el estado
       const existingImages = postImages.get(post.id);
       if (existingImages && existingImages.length > 0) {
-        console.log(`✅ Imágenes ya cargadas para post ${post.id}:`, existingImages);
         return;
       }
       
       // Intentar cargar imágenes del servicio
       const images = await SocialService.getPostImages(post);
-      console.log(`📸 Imágenes obtenidas del servicio para post ${post.id}:`, images);
       
       // Si no hay imágenes del servicio, verificar si el post tiene linkImage
       if (!images || images.length === 0) {
         if (post.linkImage) {
-          console.log(`🔗 Usando linkImage del post ${post.id}:`, post.linkImage);
           const linkImages = [post.linkImage!];
           setPostImages(prev => {
             const newMap = new Map(prev);
             newMap.set(post.id, linkImages);
-            console.log(`🗺️ Estado postImages actualizado con linkImage para post ${post.id}:`, linkImages);
             return newMap;
           });
           return;
@@ -603,18 +573,15 @@ export default function SocialPage() {
           }
           
           if (processedImages.length > 0) {
-            console.log(`🖼️ Usando images del post ${post.id}:`, processedImages);
             setPostImages(prev => {
               const newMap = new Map(prev);
               newMap.set(post.id, processedImages);
-              console.log(`🗺️ Estado postImages actualizado con images del post ${post.id}:`, processedImages);
               return newMap;
             });
             return;
           }
         }
         
-        console.log(`❌ No se encontraron imágenes para el post ${post.id}`);
         return;
       }
       
@@ -622,8 +589,6 @@ export default function SocialPage() {
       setPostImages(prev => {
         const newMap = new Map(prev);
         newMap.set(post.id, images);
-        console.log(`🗺️ Estado postImages actualizado del servicio para post ${post.id}:`, images);
-        console.log(`📊 Estado completo de postImages después de actualizar:`, Array.from(newMap.entries()));
         return newMap;
       });
     } catch (error) {
@@ -631,7 +596,6 @@ export default function SocialPage() {
       
       // Fallback: intentar usar linkImage o images del post
       if (post.linkImage) {
-        console.log(`🔄 Fallback: usando linkImage del post ${post.id}:`, post.linkImage);
         setPostImages(prev => {
           const newMap = new Map(prev);
           if (post.linkImage) {
@@ -648,7 +612,6 @@ export default function SocialPage() {
         }
         
         if (processedImages.length > 0) {
-          console.log(`🔄 Fallback: usando images del post ${post.id}:`, processedImages);
           setPostImages(prev => {
             const newMap = new Map(prev);
             newMap.set(post.id, processedImages);
@@ -861,7 +824,6 @@ export default function SocialPage() {
     const path = url.startsWith('/') ? url : `/${url}`;
     const fullUrl = `${base}${path}`;
     
-    console.log('🔗 getFullUrl:', { original: url, base, fullUrl });
     return fullUrl;
   };
 
@@ -1255,18 +1217,11 @@ export default function SocialPage() {
                       loop
                       playsInline
                       preload="metadata"
-                      onLoadStart={() => console.log('🎬 Card video iniciando carga:', shot.id, getFullUrl(shot.mediaUrl || ''))}
                       onLoadedData={(e) => {
-                        console.log('🎬 Card video datos cargados:', shot.id);
                         const videoElement = e.currentTarget;
                         videoElement.muted = true;
                         videoElement.play()
-                          .then(() => console.log('🎬 Card video reproduciéndose:', shot.id))
-                          .catch(err => console.log('❌ Card auto-play bloqueado:', shot.id, err));
                       }}
-                      onCanPlay={() => console.log('🎬 Card video puede reproducirse:', shot.id)}
-                      onPlay={() => console.log('🎬 Card video comenzó a reproducirse:', shot.id)}
-                      onError={(e) => console.log('❌ Error en card video:', shot.id, e.currentTarget.error)}
                     />
                     
                     {/* Overlay de información */}
@@ -1406,7 +1361,6 @@ export default function SocialPage() {
                 {/* Imágenes del post */}
                 {(() => {
                   const currentPostImages = postImages.get(post.id) || [];
-                  console.log(`🖼️ Post ${post.id} - Imágenes cargadas:`, currentPostImages);
                   if (currentPostImages && currentPostImages.length > 0) {
                     return (
                       <div className="mb-4">
@@ -1418,8 +1372,6 @@ export default function SocialPage() {
                               alt="Post image"
                               className="w-full h-80 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                               onClick={() => {
-                                console.log('🖱️ Click en imagen del post', post.id, 'índice 0');
-                                console.log('🖼️ Imágenes disponibles:', currentPostImages);
                                 openImageGallery(post.id, 0);
                               }}
                               loading="lazy"
@@ -1440,7 +1392,6 @@ export default function SocialPage() {
                                   alt={`Post image ${index + 1}`}
                                   className="w-full h-48 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                   onClick={() => {
-                                    console.log('🖱️ Click en imagen del post', post.id, 'índice', index);
                                     openImageGallery(post.id, index);
                                   }}
                                   loading="lazy"
@@ -1462,7 +1413,6 @@ export default function SocialPage() {
                                 alt="Post image 1"
                                 className="w-full h-48 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                 onClick={() => {
-                                  console.log('🖱️ Click en imagen del post', post.id, 'índice 0');
                                   openImageGallery(post.id, 0);
                                 }}
                                 loading="lazy"
@@ -1481,7 +1431,6 @@ export default function SocialPage() {
                                     alt={`Post image ${index + 2}`}
                                     className="w-full h-20 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                     onClick={() => {
-                                      console.log('🖱️ Click en imagen del post', post.id, 'índice', index + 1);
                                       openImageGallery(post.id, index + 1);
                                     }}
                                     loading="lazy"
@@ -1505,7 +1454,6 @@ export default function SocialPage() {
                                   alt={`Post image ${index + 1}`}
                                   className="w-full h-40 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                   onClick={() => {
-                                    console.log('🖱️ Click en imagen del post', post.id, 'índice', index);
                                     openImageGallery(post.id, index);
                                   }}
                                   loading="lazy"
@@ -1779,27 +1727,18 @@ export default function SocialPage() {
                       loop
                       playsInline
                       preload="metadata"
-                      onLoadStart={() => console.log('🎬 Video iniciando carga:', videoPreview)}
                       onLoadedData={(e) => {
-                        console.log('🎬 Video datos cargados:', videoPreview);
                         const videoElement = e.currentTarget;
                         videoElement.muted = true;
                         // Múltiples intentos de auto-play
                         videoElement.play()
-                          .then(() => console.log('🎬 Video reproduciéndose automáticamente'))
                           .catch(err => {
-                            console.log('❌ Auto-play bloqueado:', err);
                             // Intentar de nuevo después de un delay
                             setTimeout(() => {
                               videoElement.play()
-                                .then(() => console.log('🎬 Segundo intento exitoso'))
-                                .catch(e2 => console.log('❌ Segundo intento falló:', e2));
                             }, 1000);
                           });
                       }}
-                      onCanPlay={() => console.log('🎬 Video puede reproducirse:', videoPreview)}
-                      onPlay={() => console.log('🎬 Video comenzó a reproducirse')}
-                      onError={(e) => console.log('❌ Error en video:', e.currentTarget.error)}
                     />
                     
                     {/* Botón de sonido */}
@@ -1809,10 +1748,8 @@ export default function SocialPage() {
                         if (videoElement) {
                           if (videoElement.muted) {
                             videoElement.muted = false;
-                            console.log('🔊 Sonido activado');
                           } else {
                             videoElement.muted = true;
-                            console.log('🔇 Sonido desactivado');
                           }
                         }
                       }}
@@ -1857,20 +1794,15 @@ export default function SocialPage() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          console.log('🎬 Video seleccionado:', file.name);
-                          console.log('🎬 Tamaño del archivo:', file.size);
-                          console.log('🎬 Tipo de archivo:', file.type);
                           
                           setSelectedVideo(file);
                           
                           // Crear preview del video
                           const videoUrl = URL.createObjectURL(file);
-                          console.log('🎬 URL del preview creada:', videoUrl);
                           setVideoPreview(videoUrl);
                           
                           // Log adicional para verificar que el estado se actualiza
                           setTimeout(() => {
-                            console.log('🎬 Estado videoPreview después de 100ms:', videoPreview);
                           }, 100);
                         }
                       }}

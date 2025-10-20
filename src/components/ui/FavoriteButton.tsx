@@ -30,11 +30,9 @@ const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   }, [initialIsFavorite]);
 
   const handleToggle = async () => {
-    console.log('🔍 FavoriteButton: handleToggle called for propertyId:', propertyId);
     setIsLoading(true);
     try {
       const newFavoriteState = await publicPropertyService.toggleFavorite(propertyId);
-      console.log('🔍 FavoriteButton: toggleFavorite returned:', newFavoriteState);
       setIsFavorite(newFavoriteState);
       onToggle?.(newFavoriteState);
     } catch (error) {

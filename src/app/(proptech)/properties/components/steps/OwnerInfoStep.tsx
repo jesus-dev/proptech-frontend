@@ -286,8 +286,8 @@ export default function OwnerInfoStep({ formData, handleChange, errors }: OwnerI
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                Requerido
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                Opcional
               </span>
             </div>
           </div>
@@ -302,15 +302,15 @@ export default function OwnerInfoStep({ formData, handleChange, errors }: OwnerI
           />
 
           {!formData.propietarioId && (
-            <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <div className="flex items-start space-x-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
                     Propietario no seleccionado
                   </p>
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                    Seleccione un propietario existente o cree uno nuevo para continuar con el registro de la propiedad.
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Puede continuar sin seleccionar un propietario. Esta información se puede agregar más tarde desde el CRM.
                   </p>
                 </div>
               </div>

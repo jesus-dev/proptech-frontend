@@ -63,10 +63,8 @@ const clientToContact = (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>)
 export const clientService = {
   async getAllClients(): Promise<Client[]> {
     try {
-      console.log('🔍 ClientService: Fetching all clients from API');
       const response = await apiClient.get<ContactDTO[]>('/api/contacts?type=client');
       
-      console.log('🔍 ClientService: Raw response:', response);
       
       // Manejar diferentes estructuras de respuesta
       let contacts: ContactDTO[] = [];
@@ -79,7 +77,6 @@ export const clientService = {
         contacts = [];
       }
       
-      console.log('✅ ClientService: Successfully fetched', contacts.length, 'clients');
       return contacts.map(contactToClient);
     } catch (error) {
       console.error('❌ ClientService: Error fetching clients:', error);
@@ -90,16 +87,13 @@ export const clientService = {
 
   async getClientById(id: string): Promise<Client | undefined> {
     try {
-      console.log('🔍 ClientService: Fetching client by ID:', id);
       const response = await apiClient.get<ContactDTO>(`/api/contacts/${id}`);
       
       if (!response.data) {
-        console.log('🔍 ClientService: No data received');
         return undefined;
       }
 
       const contact: ContactDTO = response.data;
-      console.log('✅ ClientService: Successfully fetched client:', contact);
       return contactToClient(contact);
     } catch (error) {
       console.error('❌ ClientService: Error fetching client:', error);
@@ -109,9 +103,7 @@ export const clientService = {
 
   async createClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client> {
     try {
-      console.log('🔍 ClientService: Creating new client:', client);
       const contactData = clientToContact(client);
-      console.log('🔍 ClientService: Mapped to contact format:', contactData);
 
       const response = await apiClient.post<ContactDTO>('/api/contacts', contactData);
       
@@ -120,7 +112,6 @@ export const clientService = {
       }
 
       const createdContact: ContactDTO = response.data;
-      console.log('✅ ClientService: Successfully created client:', createdContact);
       return contactToClient(createdContact);
     } catch (error) {
       console.error('❌ ClientService: Error creating client:', error);
@@ -130,19 +121,15 @@ export const clientService = {
 
   async updateClient(id: string, updates: Partial<Client>): Promise<Client | undefined> {
     try {
-      console.log('🔍 ClientService: Updating client with ID:', id, 'Updates:', updates);
       const contactData = clientToContact(updates as Omit<Client, 'id' | 'createdAt' | 'updatedAt'>);
-      console.log('🔍 ClientService: Mapped to contact format:', contactData);
       
       const response = await apiClient.put<ContactDTO>(`/api/contacts/${id}`, contactData);
       
       if (!response.data) {
-        console.log('🔍 ClientService: No data received');
         return undefined;
       }
 
       const updatedContact: ContactDTO = response.data;
-      console.log('✅ ClientService: Successfully updated client:', updatedContact);
       return contactToClient(updatedContact);
     } catch (error) {
       console.error('❌ ClientService: Error updating client:', error);
@@ -152,10 +139,8 @@ export const clientService = {
 
   async deleteClient(id: string): Promise<boolean> {
     try {
-      console.log('🔍 ClientService: Deleting client with ID:', id);
       await apiClient.delete(`/api/contacts/${id}`);
       
-      console.log('✅ ClientService: Successfully deleted client');
       return true;
     } catch (error) {
       console.error('❌ ClientService: Error deleting client:', error);
@@ -165,7 +150,6 @@ export const clientService = {
 
   async searchClients(query: string): Promise<Client[]> {
     try {
-      console.log('🔍 ClientService: Searching clients with query:', query);
       const response = await apiClient.get<ContactDTO[]>(`/api/contacts/search?q=${encodeURIComponent(query)}`);
       
       let contacts: ContactDTO[] = [];
@@ -176,7 +160,6 @@ export const clientService = {
       
       // Filtrar solo clientes (type = CLIENT)
       const clientContacts = contacts.filter(contact => contact.type === 'CLIENT');
-      console.log('✅ ClientService: Successfully found', clientContacts.length, 'clients matching query');
       return clientContacts.map(contactToClient);
     } catch (error) {
       console.error('❌ ClientService: Error searching clients:', error);

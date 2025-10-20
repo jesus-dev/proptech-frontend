@@ -73,27 +73,18 @@ export default function CreatePropShotModal({
                   loop
                   playsInline
                   preload="metadata"
-                  onLoadStart={() => console.log('🎬 Video iniciando carga:', videoPreview)}
                   onLoadedData={(e) => {
-                    console.log('🎬 Video datos cargados:', videoPreview);
                     const videoElement = e.currentTarget;
                     videoElement.muted = true;
                     // Múltiples intentos de auto-play
                     videoElement.play()
-                      .then(() => console.log('🎬 Video reproduciéndose automáticamente'))
                       .catch(err => {
-                        console.log('❌ Auto-play bloqueado:', err);
                         // Intentar de nuevo después de un delay
                         setTimeout(() => {
                           videoElement.play()
-                            .then(() => console.log('🎬 Segundo intento exitoso'))
-                            .catch(e2 => console.log('❌ Segundo intento falló:', e2));
                         }, 1000);
                       });
                   }}
-                  onCanPlay={() => console.log('🎬 Video puede reproducirse:', videoPreview)}
-                  onPlay={() => console.log('🎬 Video comenzó a reproducirse')}
-                  onError={(e) => console.log('❌ Error en video:', e.currentTarget.error)}
                 />
                 
                 {/* Botón de sonido */}
@@ -103,10 +94,8 @@ export default function CreatePropShotModal({
                     if (videoElement) {
                       if (videoElement.muted) {
                         videoElement.muted = false;
-                        console.log('🔊 Sonido activado');
                       } else {
                         videoElement.muted = true;
-                        console.log('🔇 Sonido desactivado');
                       }
                     }
                   }}
@@ -152,20 +141,15 @@ export default function CreatePropShotModal({
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      console.log('🎬 Video seleccionado:', file.name);
-                      console.log('🎬 Tamaño del archivo:', file.size);
-                      console.log('🎬 Tipo de archivo:', file.type);
                       
                       setSelectedVideo(file);
                       
                       // Crear preview del video
                       const videoUrl = URL.createObjectURL(file);
-                      console.log('🎬 URL del preview creada:', videoUrl);
                       setVideoPreview(videoUrl);
                       
                       // Log adicional para verificar que el estado se actualiza
                       setTimeout(() => {
-                        console.log('🎬 Estado videoPreview después de 100ms:', videoPreview);
                       }, 100);
                     }
                   }}

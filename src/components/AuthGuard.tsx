@@ -26,40 +26,24 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🛡️ AuthGuard: Verificando autenticación...', {
-        pathname,
-        isPublicRoute,
-        requireAuth,
-        isLoading,
-        isAuthenticated,
-        hasUser: !!user
-      });
-
       // Si es una ruta pública, no verificar autenticación
       if (isPublicRoute) {
-        console.log('🛡️ AuthGuard: Ruta pública, permitiendo acceso');
         setIsChecking(false);
         return;
       }
 
-        // Si no requiere autenticación, permitir acceso
-  if (!requireAuth) {
-    console.log('🛡️ AuthGuard: No requiere autenticación, permitiendo acceso');
-    setIsChecking(false);
-    return;
-  }
-
-
-
+      // Si no requiere autenticación, permitir acceso
+      if (!requireAuth) {
+        setIsChecking(false);
+        return;
+      }
 
 
       // Verificar si hay token en localStorage
       const token = localStorage.getItem('token');
-      console.log('🛡️ AuthGuard: Token en localStorage:', !!token);
       
       if (!token || token === 'undefined' || token === 'null') {
         // No hay token válido, redirigir al login
-        console.log('🛡️ AuthGuard: No hay token válido, redirigiendo al login');
         localStorage.clear();
         router.push(redirectTo);
         return;
@@ -67,20 +51,17 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
 
       // Si hay token pero el contexto no está cargado, esperar
       if (isLoading) {
-        console.log('🛡️ AuthGuard: Contexto cargando, esperando...');
         return;
       }
 
       // Si no está autenticado según el contexto, redirigir
       if (!isAuthenticated || !user) {
-        console.log('🛡️ AuthGuard: No autenticado según contexto, redirigiendo al login');
         localStorage.clear();
         router.push(redirectTo);
         return;
       }
 
       // Todo está bien, permitir acceso
-      console.log('🛡️ AuthGuard: Autenticación exitosa, permitiendo acceso');
       setIsChecking(false);
     };
 

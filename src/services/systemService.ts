@@ -17,6 +17,62 @@ export interface SystemStats {
   averageResponseTime: number;
 }
 
+export interface AgentStats {
+  myProperties: number;
+  activeLeads: number;
+  todayAppointments: number;
+  weekAppointments: number;
+  monthCommissions: number;
+  conversionRate: number;
+  avgResponseTime: number; // en minutos
+  propertiesNeedingAttention: number;
+  newLeadsToday: number;
+  closedDealsMonth: number;
+  activeClients: number;
+  avgDaysToClose: number;
+}
+
+export interface AgentLead {
+  id: number;
+  clientName: string;
+  email: string;
+  phone?: string;
+  propertyId?: number;
+  propertyTitle?: string;
+  status: 'new' | 'contacted' | 'viewing_scheduled' | 'negotiating' | 'closed' | 'lost';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  source: string;
+  createdAt: string;
+  lastContactDate?: string;
+  notes?: string;
+  estimatedValue?: number;
+}
+
+export interface AgentAppointment {
+  id: number;
+  clientName: string;
+  propertyId: number;
+  propertyTitle: string;
+  propertyAddress: string;
+  dateTime: string;
+  duration: number; // en minutos
+  type: 'viewing' | 'signing' | 'meeting' | 'call';
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  notes?: string;
+  reminderSent: boolean;
+}
+
+export interface PropertyAlert {
+  id: number;
+  propertyId: number;
+  propertyTitle: string;
+  alertType: 'no_activity' | 'price_update_needed' | 'photos_missing' | 'description_incomplete' | 'expired_soon';
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  daysInactive?: number;
+  actionRequired: string;
+}
+
 export interface SystemActivity {
   id: number;
   type: string;
@@ -139,7 +195,6 @@ export const systemService = {
       const response = await apiClient.get('/api/user/dashboard/stats');
       return response.data;
     } catch (error) {
-      console.error('Error fetching user stats:', error);
       // Fallback para que el dashboard no se rompa sin backend
       return {
         savedProperties: 0,
@@ -159,7 +214,6 @@ export const systemService = {
       const response = await apiClient.get('/api/user/saved-properties');
       return response.data;
     } catch (error) {
-      console.error('Error fetching saved properties:', error);
       return [];
     }
   },
@@ -169,7 +223,6 @@ export const systemService = {
       const response = await apiClient.get('/api/user/recent-views');
       return response.data;
     } catch (error) {
-      console.error('Error fetching recent views:', error);
       return [];
     }
   },
@@ -179,7 +232,6 @@ export const systemService = {
       const response = await apiClient.get('/api/user/recommended-properties');
       return response.data;
     } catch (error) {
-      console.error('Error fetching recommended properties:', error);
       return [];
     }
   },
@@ -189,7 +241,6 @@ export const systemService = {
       const response = await apiClient.get('/api/user/scheduled-visits');
       return response.data;
     } catch (error) {
-      console.error('Error fetching scheduled visits:', error);
       return [];
     }
   },
@@ -199,7 +250,6 @@ export const systemService = {
       const response = await apiClient.get('/api/user/activities');
       return response.data;
     } catch (error) {
-      console.error('Error fetching user activities:', error);
       return [];
     }
   },
@@ -209,7 +259,6 @@ export const systemService = {
       const response = await apiClient.get('/api/user/notifications');
       return response.data;
     } catch (error) {
-      console.error('Error fetching user notifications:', error);
       return [];
     }
   },
@@ -219,7 +268,6 @@ export const systemService = {
     try {
       await apiClient.post(`/api/user/save-property/${propertyId}`);
     } catch (error) {
-      console.error('Error saving property:', error);
       throw error;
     }
   },
@@ -228,7 +276,6 @@ export const systemService = {
     try {
       await apiClient.delete(`/api/user/save-property/${propertyId}`);
     } catch (error) {
-      console.error('Error unsaving property:', error);
       throw error;
     }
   },
@@ -237,7 +284,6 @@ export const systemService = {
     try {
       await apiClient.post(`/api/user/schedule-visit/${propertyId}`, visitData);
     } catch (error) {
-      console.error('Error scheduling visit:', error);
       throw error;
     }
   },
@@ -246,7 +292,6 @@ export const systemService = {
     try {
       await apiClient.post(`/api/user/inquiry/${propertyId}`, inquiryData);
     } catch (error) {
-      console.error('Error sending inquiry:', error);
       throw error;
     }
   },
@@ -255,7 +300,6 @@ export const systemService = {
     try {
       await apiClient.patch(`/api/user/notifications/${notificationId}/read`);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
       throw error;
     }
   },
@@ -264,7 +308,107 @@ export const systemService = {
     try {
       await apiClient.put('/api/user/preferences', preferences);
     } catch (error) {
-      console.error('Error updating user preferences:', error);
+      throw error;
+    }
+  },
+
+  // ===== AGENT-SPECIFIC APIs =====
+  
+  // Get agent statistics
+  getAgentStats: async (): Promise<AgentStats> => {
+    try {
+      const response = await apiClient.get('/api/agent/stats');
+      return response.data;
+    } catch (error) {
+      // Fallback con datos de ejemplo para desarrollo
+      return {
+        myProperties: 12,
+        activeLeads: 8,
+        todayAppointments: 3,
+        weekAppointments: 7,
+        monthCommissions: 45000000,
+        conversionRate: 23.5,
+        avgResponseTime: 45,
+        propertiesNeedingAttention: 2,
+        newLeadsToday: 2,
+        closedDealsMonth: 3,
+        activeClients: 15,
+        avgDaysToClose: 45
+      };
+    }
+  },
+
+  // Get agent leads
+  getAgentLeads: async (status?: string, priority?: string): Promise<AgentLead[]> => {
+    try {
+      let url = '/api/agent/leads';
+      const params = new URLSearchParams();
+      if (status) params.append('status', status);
+      if (priority) params.append('priority', priority);
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      const response = await apiClient.get(url);
+      return response.data;
+    } catch (error) {
+      return [];
+    }
+  },
+
+  // Get agent appointments
+  getAgentAppointments: async (timeframe: 'today' | 'week' | 'month' = 'week'): Promise<AgentAppointment[]> => {
+    try {
+      const response = await apiClient.get(`/api/agent/appointments?timeframe=${timeframe}`);
+      return response.data;
+    } catch (error) {
+      return [];
+    }
+  },
+
+  // Get property alerts
+  getPropertyAlerts: async (): Promise<PropertyAlert[]> => {
+    try {
+      const response = await apiClient.get('/api/agent/property-alerts');
+      return response.data;
+    } catch (error) {
+      return [];
+    }
+  },
+
+  // Get agent's properties
+  getAgentProperties: async (status?: string): Promise<SystemProperty[]> => {
+    try {
+      let url = '/api/agent/properties';
+      if (status) url += `?status=${status}`;
+      const response = await apiClient.get(url);
+      return response.data;
+    } catch (error) {
+      return [];
+    }
+  },
+
+  // Update lead status
+  updateLeadStatus: async (leadId: number, status: string, notes?: string): Promise<void> => {
+    try {
+      await apiClient.patch(`/api/agent/leads/${leadId}/status`, { status, notes });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Confirm appointment
+  confirmAppointment: async (appointmentId: number): Promise<void> => {
+    try {
+      await apiClient.patch(`/api/agent/appointments/${appointmentId}/confirm`);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Mark alert as resolved
+  resolvePropertyAlert: async (alertId: number): Promise<void> => {
+    try {
+      await apiClient.patch(`/api/agent/property-alerts/${alertId}/resolve`);
+    } catch (error) {
       throw error;
     }
   }
