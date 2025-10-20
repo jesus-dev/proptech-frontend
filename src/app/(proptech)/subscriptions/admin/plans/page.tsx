@@ -25,6 +25,7 @@ interface PlanFormData {
   hasNetworkAccess: boolean;
   hasPrioritySupport: boolean;
   isActive: boolean;
+  features: string[];
 }
 
 function AdminPlansPageContent() {
@@ -45,7 +46,8 @@ function AdminPlansPageContent() {
     hasCrm: false,
     hasNetworkAccess: false,
     hasPrioritySupport: false,
-    isActive: true
+    isActive: true,
+    features: []
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -69,7 +71,25 @@ function AdminPlansPageContent() {
     try {
       setLoading(true);
       const plansData = await subscriptionService.getAllPlans();
-      setPlans(plansData);
+      
+      // Ordenar por tipo y tier
+      const tierOrder = { 'FREE': 0, 'INICIAL': 1, 'INTERMEDIO': 2, 'PREMIUM': 3 };
+      const typeOrder = { 'PROPTECH': 0, 'NETWORK': 1 };
+      
+      const sortedPlans = plansData.sort((a, b) => {
+        // Primero por tipo
+        const typeCompare = (typeOrder[a.type as keyof typeof typeOrder] || 99) - (typeOrder[b.type as keyof typeof typeOrder] || 99);
+        if (typeCompare !== 0) return typeCompare;
+        
+        // Luego por tier
+        const tierCompare = (tierOrder[a.tier as keyof typeof tierOrder] || 99) - (tierOrder[b.tier as keyof typeof tierOrder] || 99);
+        if (tierCompare !== 0) return tierCompare;
+        
+        // Finalmente por días de facturación (mensual antes que anual)
+        return a.billingCycleDays - b.billingCycleDays;
+      });
+      
+      setPlans(sortedPlans);
     } catch (error) {
       console.error('Error loading plans:', error);
       toast.error('Error al cargar los planes');
@@ -82,11 +102,18 @@ function AdminPlansPageContent() {
     e.preventDefault();
     
     try {
+      // Normalizar features (quitar vacíos y espacios extra)
+      const normalizedFeatures = (formData.features || [])
+        .map((f) => (f || '').trim())
+        .filter((f) => f.length > 0);
+
+      const payload = { ...formData, features: normalizedFeatures };
+
       if (editingPlan) {
-        await subscriptionService.updatePlan(editingPlan.id, formData);
+        await subscriptionService.updatePlan(editingPlan.id, payload);
         toast.success('Plan actualizado exitosamente');
       } else {
-        await subscriptionService.createPlan(formData);
+        await subscriptionService.createPlan(payload);
         toast.success('Plan creado exitosamente');
       }
       
@@ -115,7 +142,8 @@ function AdminPlansPageContent() {
       hasCrm: plan.hasCrm,
       hasNetworkAccess: plan.hasNetworkAccess,
       hasPrioritySupport: plan.hasPrioritySupport,
-      isActive: plan.isActive
+      isActive: plan.isActive,
+      features: Array.isArray(plan.features) ? plan.features : []
     });
     setShowForm(true);
   };
@@ -156,7 +184,8 @@ function AdminPlansPageContent() {
       hasCrm: false,
       hasNetworkAccess: false,
       hasPrioritySupport: false,
-      isActive: true
+      isActive: true,
+      features: []
     });
   };
 
@@ -168,20 +197,22 @@ function AdminPlansPageContent() {
   };
 
   const getTierColor = (tier: string) => {
+    // Texto azul sobrio para todos los tiers
     switch (tier) {
-      case 'PREMIUM': return 'bg-yellow-500 text-white font-semibold';
-      case 'INTERMEDIO': return 'bg-blue-600 text-white font-semibold';
-      case 'INICIAL': return 'bg-green-600 text-white font-semibold';
-      case 'FREE': return 'bg-gray-600 text-white font-semibold';
-      default: return 'bg-gray-600 text-white font-semibold';
+      case 'PREMIUM': return 'bg-white text-blue-700 border border-blue-300 uppercase';
+      case 'INTERMEDIO': return 'bg-white text-blue-700 border border-blue-300 uppercase';
+      case 'INICIAL': return 'bg-white text-blue-700 border border-blue-300 uppercase';
+      case 'FREE': return 'bg-white text-blue-700 border border-blue-300 uppercase';
+      default: return 'bg-white text-blue-700 border border-blue-300 uppercase';
     }
   };
 
   const getTypeColor = (type: string) => {
+    // Estilo más sobrio
     switch (type) {
-      case 'PROPTECH': return 'bg-purple-600 text-white font-semibold';
-      case 'NETWORK': return 'bg-orange-600 text-white font-semibold';
-      default: return 'bg-gray-600 text-white font-semibold';
+      case 'PROPTECH': return 'bg-white text-blue-700 border border-blue-300 uppercase';
+      case 'NETWORK': return 'bg-white text-blue-700 border border-blue-300 uppercase';
+      default: return 'bg-white text-blue-700 border border-blue-300 uppercase';
     }
   };
 
@@ -293,6 +324,20 @@ function AdminPlansPageContent() {
                   placeholder="Ej: Plan Premium"
                   required
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descripción (subtítulo público)
+                </label>
+                <textarea
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                  placeholder="Ej: Plan inicial para pequeñas inmobiliarias y agentes independientes"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+                <p className="mt-1 text-xs text-gray-500">Se muestra debajo del nombre del plan en PropTech público.</p>
               </div>
 
               <div>
@@ -426,6 +471,31 @@ function AdminPlansPageContent() {
               </label>
             </div>
 
+            {/* Features editable */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+                <span>Incluye (uno por línea)</span>
+                <span className="text-xs text-gray-500">
+                  {formData.features?.filter(f => f.trim()).length || 0} ítems
+                </span>
+              </label>
+              <textarea
+                rows={6}
+                value={(formData.features || []).join('\n')}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    features: e.target.value.split('\n')
+                  })
+                }
+                placeholder="Ej.:\nHasta ilimitadas propiedades\nHasta ilimitados agentes\nCRM integrado\nAnálisis y reportes avanzados\nSoporte prioritario"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm font-mono"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Esto controla la lista "INCLUYE" que se muestra en la card de precios. Escribe un ítem por línea.
+              </p>
+            </div>
+
             <div className="flex justify-end space-x-3">
               <Button
                 type="button"
@@ -489,12 +559,8 @@ function AdminPlansPageContent() {
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
                     <div className="flex flex-col space-y-1">
-                      <Badge className={`${getTypeColor(plan.type)} text-xs`}>
-                        {plan.type}
-                      </Badge>
-                      <Badge className={`${getTierColor(plan.tier)} text-xs`}>
-                        {plan.tier}
-                      </Badge>
+                      <span className={`${getTypeColor(plan.type)} inline-flex items-center rounded-full px-3 py-1 text-xs font-medium`}>{plan.type}</span>
+                      <span className={`${getTierColor(plan.tier)} inline-flex items-center rounded-full px-3 py-1 text-xs font-medium`}>{plan.tier}</span>
                     </div>
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">

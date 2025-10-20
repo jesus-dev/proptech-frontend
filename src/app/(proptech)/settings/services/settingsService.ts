@@ -3,17 +3,33 @@ import { apiClient } from '@/lib/api';
 
 const SETTINGS_KEY = 'appSettings';
 
+// Flag para evitar llamadas concurrentes
+let isLoadingDefaults = false;
+let defaultSettingsPromise: Promise<AppSettings> | null = null;
+
+// Cache de settings para evitar loops
+let cachedSettings: AppSettings | null = null;
+let lastLoadTime = 0;
+const CACHE_DURATION = 60000; // 1 minuto
+
 // Función para obtener la configuración por defecto con datos dinámicos del backend
 const getDefaultSettings = async (): Promise<AppSettings> => {
-    try {
-        // Obtener datos dinámicos desde el backend
-        const [cities, cityZones, amenities, propertyTypes, agencies] = await Promise.all([
-            apiClient.get('/api/cities').catch(() => ({ data: [] })),
-            apiClient.get('/api/city-zones').catch(() => ({ data: [] })),
-            apiClient.get('/api/amenities').catch(() => ({ data: [] })),
-            apiClient.get('/api/property-types').catch(() => ({ data: [] })),
-            apiClient.get('/api/agencies').catch(() => ({ data: [] }))
-        ]);
+    // Si ya se está cargando, retornar la misma promesa
+    if (isLoadingDefaults && defaultSettingsPromise) {
+        return defaultSettingsPromise;
+    }
+    
+    isLoadingDefaults = true;
+    defaultSettingsPromise = (async () => {
+        try {
+            // Obtener datos dinámicos desde el backend
+            const [cities, cityZones, amenities, propertyTypes, agencies] = await Promise.all([
+                apiClient.get('/api/cities').catch(() => ({ data: [] })),
+                apiClient.get('/api/city-zones').catch(() => ({ data: [] })),
+                apiClient.get('/api/amenities').catch(() => ({ data: [] })),
+                apiClient.get('/api/property-types').catch(() => ({ data: [] })),
+                apiClient.get('/api/agencies').catch(() => ({ data: [] }))
+            ]);
 
         // Extraer solo los nombres de las ciudades activas
         const allCities = (cities.data || [])
@@ -53,7 +69,7 @@ const getDefaultSettings = async (): Promise<AppSettings> => {
             logoUrl: ""
         };
 
-        return {
+        const result = {
             companyInfo,
             contacts: [], // Los contactos se cargarán dinámicamente
             propertySettings: {
@@ -85,8 +101,13 @@ const getDefaultSettings = async (): Promise<AppSettings> => {
                 }
             }
         };
+        isLoadingDefaults = false;
+        defaultSettingsPromise = null;
+        return result;
     } catch (error) {
         console.error('Error loading default settings from backend:', error);
+        isLoadingDefaults = false;
+        defaultSettingsPromise = null;
         // Fallback en caso de error - valores mínimos sin datos hardcodeados
         return {
             companyInfo: {
@@ -128,6 +149,9 @@ const getDefaultSettings = async (): Promise<AppSettings> => {
             }
         };
     }
+    })();
+    
+    return defaultSettingsPromise;
 };
 
 const loadContactsFromBackend = async (): Promise<any[]> => {
@@ -166,22 +190,25 @@ const loadContactsFromBackend = async (): Promise<any[]> => {
 };
 
 const getSettings = async (): Promise<AppSettings> => {
+    // Retornar cache si existe y es reciente
+    const now = Date.now();
+    if (cachedSettings && (now - lastLoadTime) < CACHE_DURATION) {
+        return cachedSettings;
+    }
+    
     if (typeof window !== 'undefined') {
         const settingsStr = localStorage.getItem(SETTINGS_KEY);
-        console.log('Settings from localStorage:', settingsStr);
         
         let settings: AppSettings;
         
         if (settingsStr) {
             try {
                 const parsedSettings = JSON.parse(settingsStr);
-                console.log('Parsed settings:', parsedSettings);
                 
                 // Verificar que la estructura es correcta
                 if (!parsedSettings.propertySettings || 
                     !parsedSettings.propertySettings.featured || 
                     !parsedSettings.propertySettings.premium) {
-                    console.warn('Settings structure incomplete, using defaults');
                     settings = await getDefaultSettings();
                 } else {
                     settings = parsedSettings;
@@ -191,21 +218,23 @@ const getSettings = async (): Promise<AppSettings> => {
                 settings = await getDefaultSettings();
             }
         } else {
-            console.log('No settings found in localStorage, creating defaults');
             settings = await getDefaultSettings();
         }
         
-        // Cargar contactos dinámicamente del backend
+        // Cargar contactos dinámicamente del backend solo si hay token
         const contacts = await loadContactsFromBackend();
         settings.contacts = contacts;
         
         // Guardar los settings actualizados
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         
+        // Actualizar cache
+        cachedSettings = settings;
+        lastLoadTime = Date.now();
+        
         return settings;
     } else {
         // For SSR or environments without window
-        console.log('Server-side: returning default settings');
         return await getDefaultSettings();
     }
 };

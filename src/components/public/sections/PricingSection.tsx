@@ -14,23 +14,53 @@ const PricingSection = () => {
   useEffect(() => {
     const loadPlans = async () => {
       try {
-        const response = await apiClient.get('/api/subscriptions/plans/proptech');
-        const backendPlans = response.data || [];
+        // Traer exactamente lo de la base (PropTech + Network)
+        let backendPlans: any[] = [];
+        const [respAll, respNetwork] = await Promise.allSettled([
+          apiClient.get('/api/subscriptions/plans/proptech/all'),
+          apiClient.get('/api/subscriptions/plans/network')
+        ]);
+        if (respAll.status === 'fulfilled') {
+          backendPlans = Array.isArray(respAll.value.data) ? respAll.value.data : [];
+        }
+        if (respNetwork.status === 'fulfilled' && respNetwork.value?.data) {
+          const networkPlan = respNetwork.value.data;
+          backendPlans.push(networkPlan);
+        }
         
         // Mapear planes del backend a formato del componente
-        const mappedPlans = backendPlans.map((plan: any) => ({
-          name: plan.name,
-          type: plan.tier || 'Básico',
-          icon: getIconForTier(plan.tier),
-          description: plan.description || '',
-          subtitle: getSubtitleForTier(plan.tier),
-          monthlyPrice: plan.billingCycleDays === 30 ? plan.price : plan.price / 12,
-          annualPrice: plan.billingCycleDays === 365 ? plan.price : plan.price * 12 * 0.8,
-          popular: plan.tier === 'INTERMEDIO',
-          features: plan.features || getFeaturesForTier(plan),
-          cta: plan.tier === 'FREE' ? 'Comenzar gratis' : plan.tier === 'PREMIUM' || plan.tier === 'ENTERPRISE' ? 'Contactar ventas' : 'Comenzar ahora'
-        }));
-        
+        const mappedPlans = backendPlans.map((plan: any) => {
+          const tier = plan.tier;
+          const price = Number(plan.price) || 0;
+          const billingCycleDays = Number(plan.billingCycleDays) || 30;
+          const monthlyPrice = billingCycleDays === 30 ? price : Math.round(price / 12);
+          const annualPrice = billingCycleDays === 365 ? price : price * 12;
+          return {
+            name: plan.name,
+            type: tier,
+            sourceType: plan.type, // PROPTECH o NETWORK
+            icon: getIconForTier(tier),
+            // Descripción visible en la card tomada del backend
+            description: (plan.description || '').trim(),
+            // También la usamos como subtítulo si existe; si no, fallback por tier
+            subtitle: (plan.description || '').trim() || getSubtitleForTier(tier),
+            monthlyPrice,
+            annualPrice,
+            popular: tier === 'INTERMEDIO',
+            features: Array.isArray(plan.features) ? plan.features : [],
+            cta: tier === 'FREE' ? 'Comenzar gratis' : (tier === 'PREMIUM' || tier === 'ENTERPRISE' ? 'Contactar ventas' : 'Comenzar ahora')
+          };
+        });
+
+        // Ordenar: primero NETWORK (Red Social PropTech), luego por tier
+        const order: Record<string, number> = { INICIAL: 0, INTERMEDIO: 1, PREMIUM: 2, FREE: 3 };
+        mappedPlans.sort((a: any, b: any) => {
+          if (a.sourceType === 'NETWORK' && b.sourceType !== 'NETWORK') return -1;
+          if (b.sourceType === 'NETWORK' && a.sourceType !== 'NETWORK') return 1;
+          return (order[a.type] ?? 99) - (order[b.type] ?? 99);
+        });
+
+        // Mostrar todos los planes (ningún filtro)
         setPlans(mappedPlans);
       } catch (error) {
         console.error('Error cargando planes:', error);
@@ -215,7 +245,7 @@ const PricingSection = () => {
           viewport={{ once: true }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
-          {plans.filter((p) => p.type !== 'ENTERPRISE' && p.type !== 'Empresarial').map((plan) => (
+          {plans.map((plan) => (
             <motion.div
               key={plan.name}
               variants={itemVariants}
@@ -263,9 +293,7 @@ const PricingSection = () => {
                   {plan.name}
                 </h3>
                 
-                <p className="text-gray-600 mb-8 leading-relaxed text-base">
-                  {plan.description}
-                </p>
+                {/* Descripción superior removida por solicitud */}
                 
                 {/* Price Box */}
                 <div className={`flex flex-col items-center justify-center rounded-2xl p-3 mb-4 ${
@@ -292,7 +320,7 @@ const PricingSection = () => {
                 </div>
               </div>
 
-              {/* Subtitle */}
+              {/* Subtitle debajo del título */}
               {plan.subtitle && (
                 <div className="mb-8 p-4 bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-2xl border border-blue-200">
                   <p className="text-sm text-gray-700 text-center font-medium leading-snug">

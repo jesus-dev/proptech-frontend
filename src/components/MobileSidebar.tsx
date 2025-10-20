@@ -512,7 +512,7 @@ const MobileSidebar: React.FC = () => {
               } cursor-pointer justify-start`}
             >
               <span
-                className={`${
+                className={` ${
                   openSubmenu?.type === menuType && openSubmenu?.index === index
                     ? "text-blue-500 dark:text-blue-400"
                     : "text-gray-500 group-hover:text-gray-700 dark:text-gray-400"
@@ -553,7 +553,7 @@ const MobileSidebar: React.FC = () => {
               ref={(el) => {
                 subMenuRefs.current[`${menuType}-${index}`] = el;
               }}
-              className="overflow-hidden transition-all duration-300"
+              className="overflow-hidden transition-all duration-300 ease-in-out"
               style={{
                 height:
                   openSubmenu?.type === menuType && openSubmenu?.index === index
@@ -624,51 +624,32 @@ const MobileSidebar: React.FC = () => {
 
   const sidebarContent = (
     <>
-      {/* Backdrop */}
+      {/* Backdrop mejorado */}
       <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 99998
-        }}
+        className="fixed inset-0 bg-black bg-opacity-50 z-[99998]"
         onClick={toggleMobileSidebar}
       />
       
-      {/* Sidebar */}
+      {/* Sidebar mejorado */}
       <aside
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '290px',
-          height: '100vh',
-          backgroundColor: 'white',
-          borderRight: '1px solid #e5e7eb',
-          zIndex: 99999,
-          transform: isAnimating ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 0.2s ease-out',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
+        className={`fixed top-0 left-0 w-80 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-[99999] flex flex-col transform transition-transform duration-300 ease-out ${
+          isAnimating ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
-        {/* Header con botón de cerrar */}
-        <div className="py-4 px-3 flex items-center justify-between border-b border-gray-200">
-          <Link href="/">
+        {/* Header mejorado */}
+        <div className="flex-shrink-0 py-6 px-4 flex items-center justify-between">
+          <Link href="/dash" onClick={toggleMobileSidebar}>
             <Image
               src="/images/logo/proptech.png"
               alt="PropTech"
-              width={120}
-              height={32}
-              className="object-contain"
+              width={150}
+              height={40}
+              className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
             />
           </Link>
           <button
             onClick={toggleMobileSidebar}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -676,20 +657,37 @@ const MobileSidebar: React.FC = () => {
           </button>
         </div>
         
+        {/* Contenido con scroll móvil */}
         <div 
-          className="flex-1 overflow-y-auto px-3"
+          className="flex flex-col overflow-y-auto duration-300 ease-linear px-4"
           style={{
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'thin'
+            WebkitOverflowScrolling: 'touch'
           }}
         >
           <nav className="mb-6">
             <div className="flex flex-col gap-4">
+              {/* Menú Principal */}
               <div>
-                <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start pl-2">
+                <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start">
                   Menu
                 </h2>
                 {renderMenuItems(navItems, "main")}
+              </div>
+              
+              {/* Catálogos */}
+              <div>
+                <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start">
+                  Catálogos
+                </h2>
+                {renderMenuItems(catalogItems, "catalogs")}
+              </div>
+              
+              {/* Otros */}
+              <div>
+                <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start">
+                  Otros
+                </h2>
+                {renderMenuItems(othersItems, "others")}
               </div>
             </div>
           </nav>

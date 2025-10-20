@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyForm";
 import { getAllCountries, Country } from "@/app/(proptech)/catalogs/countries/services/countryService";
 import { getDepartmentsByCountry } from "@/app/(proptech)/catalogs/departments/services/departmentService";
@@ -54,6 +55,46 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
+  // Portal/positioning for mobile: render dropdowns in a fixed portal above everything
+  const cityAnchorRef = useRef<HTMLDivElement | null>(null);
+  const neighborhoodAnchorRef = useRef<HTMLDivElement | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const updateDropdownPosition = (anchor: HTMLElement | null) => {
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    setDropdownStyle({
+      position: 'fixed',
+      top: Math.round(rect.bottom + 4),
+      left: Math.round(rect.left),
+      width: Math.round(rect.width),
+      zIndex: 99999,
+    });
+  };
+
+  // Actualizar posición del dropdown cuando se abre
+  useEffect(() => {
+    if (showDropdown && isMobile) {
+      if (searchMode === 'city' && cityAnchorRef.current) {
+        updateDropdownPosition(cityAnchorRef.current);
+      } else if (searchMode === 'neighborhood' && neighborhoodAnchorRef.current) {
+        updateDropdownPosition(neighborhoodAnchorRef.current);
+      }
+    }
+  }, [showDropdown, searchMode, isMobile]);
+
+  // Detectar mobile para usar portal solo en móviles
+  useEffect(() => {
+    const detect = () => {
+      if (typeof window === 'undefined') return;
+      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      setIsMobile(isTouch || window.innerWidth <= 768);
+    };
+    detect();
+    window.addEventListener('resize', detect);
+    return () => window.removeEventListener('resize', detect);
+  }, []);
+
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -87,7 +128,8 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (!target.closest('.location-search-container')) {
+      // No cerrar si el clic fue dentro del contenedor de búsqueda o dentro del dropdown portal
+      if (!target.closest('.location-search-container') && !target.closest('.location-dropdown-portal')) {
         setShowDropdown(false);
       }
     };
@@ -429,7 +471,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Ciudad <span className="text-red-500">*</span>
           </label>
-          <div className="relative">
+          <div className="relative" ref={cityAnchorRef}>
             <div className="relative">
               <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-brand-600" />
               <input
@@ -442,9 +484,119 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
               />
             </div>
 
-            {/* Dropdown de ciudades */}
+            {/* Dropdown de ciudades: portal en mobile, absoluto en web */}
             {showDropdown && searchMode === 'city' && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+              isMobile ? createPortal(
+              <div style={dropdownStyle} className="location-dropdown-portal bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl pointer-events-auto">
+                {/* Filtros dentro del dropdown */}
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {/* Filtro País */}
+                    <div className="relative flex-1 min-w-0">
+                      <select
+                        value={selectedCountry?.id || ""}
+                        onChange={(e) => {
+                          const country = countries.find(c => c.id === Number(e.target.value));
+                          if (country) handleCountryChange(country);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      >
+                        <option value="">Todos los países</option>
+                        {countries.map((country) => (
+                          <option key={country.id} value={country.id}>{country.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Filtro Departamento */}
+                    <div className="relative flex-1 min-w-0">
+                      <select
+                        value={selectedDepartment?.id || ""}
+                        onChange={(e) => {
+                          const department = departments.find(d => d.id === Number(e.target.value));
+                          if (department) handleDepartmentChange(department);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                        disabled={!selectedCountry}
+                      >
+                        <option value="">{selectedCountry ? "Todos los departamentos" : "Seleccione país primero"}</option>
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.id}>{department.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Botón limpiar filtros */}
+                    {(selectedCountry || selectedDepartment) && (
+                      <button
+                        onClick={clearFilters}
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1 border border-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <X className="w-4 h-4" />
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Campo de búsqueda */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={handleSearchInputChange}
+                      placeholder="Buscar ciudad..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                {/* Resultados */}
+                {filteredResults.length > 0 && (
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredResults.slice(0, 10).map((result) => (
+                      <button
+                        key={result.id}
+                        onClick={() => handleResultSelect(result)}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      >
+                        <Building className="w-4 h-4 text-brand-600 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 dark:text-white">{result.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {result.departmentName && `${result.departmentName}`}
+                            {result.countryName && result.departmentName && ", "}
+                            {result.countryName && result.countryName}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                    {filteredResults.length > 10 && (
+                      <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 text-center border-t border-gray-100 dark:border-gray-700">
+                        Mostrando 10 de {filteredResults.length} ciudades. Refina tu búsqueda para ver más.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Mensaje cuando no hay resultados */}
+                {searchTerm && filteredResults.length === 0 && (
+                  <div className="p-4 text-center">
+                    <div className="text-gray-500 dark:text-gray-400 mb-3">
+                      No se encontraron ciudades que coincidan con "{searchTerm}"
+                    </div>
+                    <button
+                      onClick={handleRegisterNew}
+                      className="w-full px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Registrar nueva ciudad
+                    </button>
+                  </div>
+                )}
+              </div>, document.body) : (
+              <div className="absolute z-[9999] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl pointer-events-auto">
                 {/* Filtros dentro del dropdown */}
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -553,6 +705,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                   </div>
                 )}
               </div>
+              )
             )}
           </div>
 
@@ -568,7 +721,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Barrio <span className="text-gray-500 text-xs">(opcional)</span>
           </label>
-          <div className="relative">
+          <div className="relative" ref={neighborhoodAnchorRef}>
             <div className="relative">
               <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-600" />
               <input
@@ -582,9 +735,91 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
               />
             </div>
 
-            {/* Dropdown de barrios */}
+            {/* Dropdown de barrios: portal en mobile, absoluto en web */}
             {showDropdown && searchMode === 'neighborhood' && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+              isMobile ? createPortal(
+              <div style={dropdownStyle} className="location-dropdown-portal bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl pointer-events-auto">
+                {/* Campo de búsqueda */}
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={handleSearchInputChange}
+                      placeholder="Buscar barrio..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                {/* Resultados */}
+                {filteredResults.length > 0 && (
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredResults.slice(0, 10).map((result) => (
+                      <button
+                        key={result.id}
+                        onClick={() => handleResultSelect(result)}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      >
+                        <Home className="w-4 h-4 text-green-600 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {result.name}
+                            {result.type === 'neighborhood' && result.cityName && (
+                              <span className="text-sm text-gray-500 ml-2">({result.cityName})</span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {result.departmentName && `${result.departmentName}`}
+                            {result.countryName && result.departmentName && ", "}
+                            {result.countryName && result.countryName}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                    {filteredResults.length > 10 && (
+                      <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 text-center border-t border-gray-100 dark:border-gray-700">
+                        Mostrando 10 de {filteredResults.length} barrios. Refina tu búsqueda para ver más.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Mensaje cuando no hay resultados */}
+                {searchTerm && filteredResults.length === 0 && (
+                  <div className="p-4 text-center">
+                    <div className="text-gray-500 dark:text-gray-400 mb-3">
+                      No se encontraron barrios que coincidan con "{searchTerm}"
+                    </div>
+                    <button
+                      onClick={handleRegisterNew}
+                      className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Registrar nuevo barrio
+                    </button>
+                  </div>
+                )}
+
+                {/* Mensaje cuando no hay barrios para la ciudad seleccionada */}
+                {!searchTerm && filteredResults.length === 0 && (
+                  <div className="p-4 text-center">
+                    <div className="text-gray-500 dark:text-gray-400 mb-3">
+                      No hay barrios registrados para esta ciudad
+                    </div>
+                    <button
+                      onClick={handleRegisterNew}
+                      className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Registrar nuevo barrio
+                    </button>
+                  </div>
+                )}
+              </div>, document.body) : (
+              <div className="absolute z-[9999] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl pointer-events-auto">
                 {/* Campo de búsqueda */}
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                   <div className="relative">
@@ -665,6 +900,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                   </div>
                 )}
               </div>
+              )
             )}
           </div>
         </div>

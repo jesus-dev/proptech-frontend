@@ -45,7 +45,7 @@ export const subscriptionService = {
   // Obtener todos los planes disponibles
   async getAllPlans(): Promise<SubscriptionPlan[]> {
     try {
-      const response = await apiClient.get('/api/subscriptions/plans');
+      const response = await apiClient.get('/api/subscriptions/admin/plans');
       return response.data;
     } catch (error) {
       console.error('Error fetching subscription plans:', error);

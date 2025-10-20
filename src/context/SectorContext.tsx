@@ -182,29 +182,37 @@ export const SectorProvider: React.FC<SectorProviderProps> = ({ children }) => {
     setError(null);
   };
 
-  // Cargar sector/agencia guardado en localStorage
+  // Cargar datos iniciales UNA SOLA VEZ
   useEffect(() => {
-    const savedSectorId = localStorage.getItem('currentSectorId');
-    const savedAgencyId = localStorage.getItem('currentAgencyId');
+    let isMounted = true;
     
-    if (savedSectorId && savedAgencyId) {
-      const sectorId = parseInt(savedSectorId);
-      const agencyId = parseInt(savedAgencyId);
+    const init = async () => {
+      await loadSectorsAndAgencies();
       
-      const sector = availableSectors.find(s => s.id === sectorId);
-      const agency = availableAgencies.find(a => a.id === agencyId);
-      
-      if (sector && agency) {
-        setCurrentSector(sector);
-        setCurrentAgency(agency);
+      // Después de cargar, restaurar desde localStorage si existe
+      if (isMounted && typeof window !== 'undefined') {
+        const savedSectorId = localStorage.getItem('currentSectorId');
+        const savedAgencyId = localStorage.getItem('currentAgencyId');
+        
+        if (savedSectorId && savedAgencyId) {
+          const sectorId = parseInt(savedSectorId);
+          const agencyId = parseInt(savedAgencyId);
+          
+          // Timeout para asegurar que availableSectors/Agencies están cargados
+          setTimeout(() => {
+            setCurrentSector(prev => availableSectors.find(s => s.id === sectorId) || prev);
+            setCurrentAgency(prev => availableAgencies.find(a => a.id === agencyId) || prev);
+          }, 100);
+        }
       }
-    }
-  }, [availableSectors, availableAgencies]);
-
-  // Cargar datos iniciales
-  useEffect(() => {
-    loadSectorsAndAgencies();
-  }, [isAuthenticated]);
+    };
+    
+    init();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Sin dependencias - solo al montar
 
   const value: SectorContextType = {
     // Estado

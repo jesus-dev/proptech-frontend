@@ -63,7 +63,7 @@ import {
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 interface StepInfo {
@@ -77,7 +77,7 @@ interface StepInfo {
 }
 
 export default function EditPropertyPage({ params }: PageProps) {
-  const [propertyId, setPropertyId] = useState<string>('');
+  const [propertyId, setPropertyId] = useState<string>(params.id || '');
   const router = useRouter();
   const [initialPropertyData, setInitialPropertyData] = useState<PropertyFormData & { id?: string } | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -102,21 +102,14 @@ export default function EditPropertyPage({ params }: PageProps) {
     handleSubmit, 
     resetForm,
     handleFloorPlansChange,
-    handleFloorPlanImageUpload
+    handleFloorPlanImageUpload,
+    handleNearbyFacilitiesChange
   } = usePropertyForm(initialPropertyData);
 
-  // Resolve params Promise
+  // Sin promesas: params ya viene resuelto
   useEffect(() => {
-    const resolveParams = async () => {
-      try {
-        const resolvedParams = await params;
-        setPropertyId(resolvedParams.id);
-      } catch (error) {
-        setError("Error al obtener los parámetros de la URL");
-      }
-    };
-    resolveParams();
-  }, [params]);
+    setPropertyId(params.id);
+  }, [params.id]);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -586,6 +579,7 @@ export default function EditPropertyPage({ params }: PageProps) {
         return (
           <NearbyFacilitiesStep
             propertyId={propertyId}
+            onDataChange={handleNearbyFacilitiesChange}
           />
         );
       case 11:

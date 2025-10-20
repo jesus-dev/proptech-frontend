@@ -150,4 +150,21 @@ export interface Property {
   // Campos de referencia
   houzezId?: string;
   agencyPropertyNumber?: string;
+  
+  // Facilidades cercanas
+  nearbyFacilities?: Array<{
+    id?: number;
+    nearbyFacilityId: number;
+    nearbyFacility?: {
+      id: number;
+      name: string;
+      type: string;
+      address: string;
+    };
+    distanceKm?: number;
+    walkingTimeMinutes?: number;
+    drivingTimeMinutes?: number;
+    isFeatured: boolean;
+    notes?: string;
+  }>;
 } 

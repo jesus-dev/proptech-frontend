@@ -461,6 +461,20 @@ class PropertyService {
     }
   }
 
+  // Publicar propiedad (cambiar de DRAFT a ACTIVE)
+  async publishProperty(propertyId: string): Promise<Property> {
+    try {
+      console.log('📢 Publicando propiedad:', propertyId);
+      const response = await apiClient.post(`/api/properties/${propertyId}/publish`);
+      const transformedProperty = transformPropertyResponse(response.data);
+      console.log('✅ Propiedad publicada exitosamente');
+      return transformedProperty;
+    } catch (error) {
+      console.error('❌ Error al publicar propiedad:', error);
+      throw new Error('Error al publicar la propiedad');
+    }
+  }
+
   // Método de prueba para verificar conectividad
   async testConnection(): Promise<boolean> {
     try {

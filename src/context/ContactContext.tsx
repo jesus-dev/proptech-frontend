@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
+import useSWR from 'swr';
 import { settingsService } from '../app/(proptech)/settings/services/settingsService';
 import { AppSettings, CompanyInfo, ContactSettings } from '../app/(proptech)/settings/types';
 
@@ -26,29 +27,48 @@ interface ContactProviderProps {
   children: ReactNode;
 }
 
-export const ContactProvider: React.FC<ContactProviderProps> = ({ children }) => {
-  const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// Fetcher para SWR
+const settingsFetcher = async () => {
+  try {
+    return await settingsService.getSettings();
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    // Retornar settings por defecto en caso de error
+    return {
+      companyInfo: {
+        name: "PropTech",
+        address: "",
+        phone: "",
+        email: "",
+        website: "",
+        logoUrl: ""
+      },
+      contacts: [],
+      propertySettings: {
+        featured: { enabled: false, criteria: {} as any, autoSelection: false, manualSelection: [] },
+        premium: { enabled: false, criteria: {} as any, autoSelection: false, manualSelection: [] }
+      }
+    } as AppSettings;
+  }
+};
 
-  const loadContacts = async () => {
-    try {
-      setIsLoading(true);
-      const appSettings = await settingsService.getSettings();
-      setSettings(appSettings);
-    } catch (error) {
-      console.error('Error loading contacts:', error);
-    } finally {
-      setIsLoading(false);
+export const ContactProvider: React.FC<ContactProviderProps> = ({ children }) => {
+  // SWR maneja automáticamente cache, revalidación y deduplicación
+  const { data: settings, isLoading, mutate } = useSWR<AppSettings>(
+    'app-settings', 
+    settingsFetcher,
+    {
+      revalidateOnFocus: false, // No revalidar al hacer focus en la ventana
+      revalidateOnReconnect: false, // No revalidar al reconectar
+      dedupingInterval: 60000, // Deduplicar requests por 1 minuto
+      refreshInterval: 0, // No refrescar automáticamente
+      shouldRetryOnError: false, // No reintentar en errores
     }
-  };
+  );
 
   const refreshContacts = async () => {
-    await loadContacts();
+    await mutate(); // Forzar revalidación
   };
-
-  useEffect(() => {
-    loadContacts();
-  }, []);
 
   const value: ContactContextType = {
     companyInfo: settings?.companyInfo || null,

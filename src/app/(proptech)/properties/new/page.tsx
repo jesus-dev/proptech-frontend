@@ -52,7 +52,11 @@ export default function NewPropertyPage() {
   const [isInitializing, setIsInitializing] = useState(true);
   const { 
     formData, 
-    errors, 
+    errors,
+    draftPropertyId,
+    isAutoSaving,
+    lastSaved,
+    hasUnsavedChanges,
     handleChange, 
     handleFileChange, 
     removeImage, 
@@ -65,7 +69,9 @@ export default function NewPropertyPage() {
     handleSubmit, 
     resetForm,
     handleFloorPlansChange,
-    handleFloorPlanImageUpload
+    handleFloorPlanImageUpload,
+    handleNearbyFacilitiesChange,
+    publishProperty
   } = usePropertyForm();
 
   useEffect(() => {
@@ -89,6 +95,20 @@ export default function NewPropertyPage() {
 
     initializeData();
   }, []);
+
+  // Advertir al usuario si intenta salir con cambios sin guardar
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,12 +152,6 @@ export default function NewPropertyPage() {
       if (success) {
         console.log('🔍 NewPropertyPage: Save successful');
         setSaveSuccess(true);
-        
-        // Redirigir a la página de propiedades después de 2 segundos
-        setTimeout(() => {
-          console.log('🔍 NewPropertyPage: Redirecting to properties list');
-          router.push("/properties");
-        }, 2000);
       } else {
         console.log('❌ NewPropertyPage: Save failed');
       }
@@ -145,6 +159,31 @@ export default function NewPropertyPage() {
       console.error('❌ NewPropertyPage: Error in onSubmit:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const onPublish = async () => {
+    if (!draftPropertyId) {
+      // Si no hay ID de borrador, primero guardar
+      const e = new Event('submit') as any;
+      await onSubmit(e);
+    }
+    
+    if (draftPropertyId) {
+      setSaving(true);
+      try {
+        await publishProperty();
+        setSaveSuccess(true);
+        
+        // Redirigir después de publicar
+        setTimeout(() => {
+          router.push("/properties");
+        }, 2000);
+      } catch (error) {
+        console.error('❌ Error al publicar:', error);
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -397,7 +436,9 @@ export default function NewPropertyPage() {
         );
       case 10:
         return (
-          <NearbyFacilitiesStep />
+          <NearbyFacilitiesStep
+            onDataChange={handleNearbyFacilitiesChange}
+          />
         );
       case 11:
         return (
@@ -428,12 +469,36 @@ export default function NewPropertyPage() {
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Nueva Propiedad
-                </h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Paso {currentStep} de {steps.length} • {progressPercentage.toFixed(0)}% completado
-                </p>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Nueva Propiedad
+                  </h1>
+                  {draftPropertyId && (
+                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                      📝 Borrador
+                    </span>
+                  )}
+                  {isAutoSaving && (
+                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      💾 Guardando...
+                    </span>
+                  )}
+                  {hasUnsavedChanges && !isAutoSaving && (
+                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                      ⚠️ Cambios sin guardar
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Paso {currentStep} de {steps.length} • {progressPercentage.toFixed(0)}% completado
+                  </p>
+                  {lastSaved && !hasUnsavedChanges && (
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      • Último guardado: {new Date(lastSaved).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -453,14 +518,14 @@ export default function NewPropertyPage() {
                 </div>
               )}
               
-              {/* Save button */}
+              {/* Save as Draft button */}
               <button
                 onClick={onSubmit}
                 disabled={saving || isInitializing}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                   saving || isInitializing
                     ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-brand-500 text-white hover:bg-brand-600 shadow-lg'
+                    : 'bg-gray-600 text-white hover:bg-gray-700 shadow-lg'
                 }`}
               >
                 {saving ? (
@@ -471,12 +536,40 @@ export default function NewPropertyPage() {
                 ) : saveSuccess ? (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    ¡Perfecto! Guardado
+                    Guardado
                   </>
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    Crear Propiedad
+                    {draftPropertyId ? 'Actualizar Borrador' : 'Guardar Borrador'}
+                  </>
+                )}
+              </button>
+
+              {/* Publish button */}
+              <button
+                onClick={onPublish}
+                disabled={saving || isInitializing}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  saving || isInitializing
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <LoadingSpinner size="md" />
+                    <span className="ml-2">Publicando...</span>
+                  </>
+                ) : saveSuccess ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    ¡Publicado!
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Publicar Propiedad
                   </>
                 )}
               </button>

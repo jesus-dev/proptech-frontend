@@ -667,6 +667,44 @@ const AppSidebar: React.FC = () => {
                 </h2>
                 {renderMenuItems(navItems, "main")}
               </div>
+              
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                    isMobile 
+                      ? "justify-start"
+                      : !isExpanded && !isHovered
+                        ? "lg:justify-center"
+                        : "justify-start"
+                  }`}
+                >
+                  {isMobile || isExpanded || isHovered ? (
+                    "Catálogos"
+                  ) : (
+                    "•••"
+                  )}
+                </h2>
+                {renderMenuItems(catalogItems, "catalogs")}
+              </div>
+              
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                    isMobile 
+                      ? "justify-start"
+                      : !isExpanded && !isHovered
+                        ? "lg:justify-center"
+                        : "justify-start"
+                  }`}
+                >
+                  {isMobile || isExpanded || isHovered ? (
+                    "Otros"
+                  ) : (
+                    "•••"
+                  )}
+                </h2>
+                {renderMenuItems(othersItems, "others")}
+              </div>
             </div>
           </nav>
         </div>

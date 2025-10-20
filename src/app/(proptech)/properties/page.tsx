@@ -209,7 +209,7 @@ export default function PropertiesPage() {
   const [allProperties, setAllProperties] = useState<Property[]>([]); // Todas las propiedades
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusOptions, setStatusOptions] = useState<{id: number, name: string}[]>([]);
+  const [statusOptions, setStatusOptions] = useState<{id: number, name: string, code: string}[]>([]);
   const { propertyTypes } = usePropertyTypes();
   const [cities, setCities] = useState<City[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -319,7 +319,11 @@ export default function PropertiesPage() {
     
     // Filtros básicos (exactos)
     if (statusFilter.trim()) {
-      filtered = filtered.filter(property => property.status === statusFilter.trim());
+      filtered = filtered.filter(property => 
+        property.propertyStatusCode === statusFilter.trim() || 
+        property.propertyStatus === statusFilter.trim() ||
+        property.status === statusFilter.trim()
+      );
     }
     
     if (typeFilter.trim()) {
@@ -586,7 +590,7 @@ export default function PropertiesPage() {
                       >
                         <option value="">Todos los estados</option>
                         {statusOptions.map(opt => (
-                          <option key={opt.id} value={opt.name}>{opt.name}</option>
+                          <option key={opt.id} value={opt.code}>{opt.name}</option>
                         ))}
                       </select>
                     </div>

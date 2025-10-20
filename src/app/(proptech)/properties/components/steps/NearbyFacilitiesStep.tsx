@@ -118,8 +118,9 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
         };
       }
 
-      setFacilities(prev => [...prev, newFacility]);
-      onDataChange?.(facilities);
+      const updatedFacilities = [...facilities, newFacility];
+      setFacilities(updatedFacilities);
+      onDataChange?.(updatedFacilities);
       setIsModalOpen(false);
       setSelectedFacility(null);
     } catch (error) {
@@ -140,8 +141,9 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
         await apiClient.delete(`/api/properties/${propertyId}/nearby-facilities/${facility.nearbyFacilityId}`);
       }
       
-      setFacilities(prev => prev.filter(f => f.nearbyFacilityId !== facility.nearbyFacilityId));
-      onDataChange?.(facilities.filter(f => f.nearbyFacilityId !== facility.nearbyFacilityId));
+      const updatedFacilities = facilities.filter(f => f.nearbyFacilityId !== facility.nearbyFacilityId);
+      setFacilities(updatedFacilities);
+      onDataChange?.(updatedFacilities);
     } catch (error) {
       console.error('Error removing facility:', error);
       setError('Error al eliminar la facilidad');
@@ -164,12 +166,11 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
         });
       }
       
-      setFacilities(prev => prev.map(f => 
+      const updatedFacilities = facilities.map(f => 
         f.nearbyFacilityId === facility.nearbyFacilityId ? updatedFacility : f
-      ));
-      onDataChange?.(facilities.map(f => 
-        f.nearbyFacilityId === facility.nearbyFacilityId ? updatedFacility : f
-      ));
+      );
+      setFacilities(updatedFacilities);
+      onDataChange?.(updatedFacilities);
     } catch (error) {
       console.error('Error updating facility:', error);
       setError('Error al actualizar la facilidad');

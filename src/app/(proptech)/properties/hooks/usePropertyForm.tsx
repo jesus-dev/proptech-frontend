@@ -108,10 +108,15 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     currencyId: initialData?.currencyId,
     additionalPropertyTypes: initialData?.additionalPropertyTypes || [],
     floorPlans: initialData?.floorPlans || [],
+    nearbyFacilities: initialData?.nearbyFacilities || [],
     ...initialData,
   });
 
   const [errors, setErrors] = useState<PropertyFormErrors>({});
+  const [draftPropertyId, setDraftPropertyId] = useState<string | null>(initialData?.id || null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{
     featuredImage: File | null;
     galleryImages: File[];
@@ -129,6 +134,59 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
       setFormData(initialData);
     }
   }, [initialData]);
+
+  // Auto-guardado cada 30 segundos si hay cambios sin guardar
+  useEffect(() => {
+    const autoSaveInterval = setInterval(async () => {
+      if (hasUnsavedChanges && !isAutoSaving) {
+        console.log('🔄 Auto-guardando cambios...');
+        setIsAutoSaving(true);
+        
+        try {
+          // Preparar datos sin las imágenes
+          const { currency, ...propertyDataWithoutCurrency } = formData;
+          const propertyData: any = {
+            ...propertyDataWithoutCurrency,
+            images: [],
+            featuredImage: "",
+            currencyId: formData.currencyId,
+          };
+
+          if (draftPropertyId) {
+            // Actualizar borrador existente
+            await propertyService.updateProperty(draftPropertyId, propertyData);
+            console.log('✅ Auto-guardado: Borrador actualizado');
+          } else if (formData.agentId && formData.propertyTypeId) {
+            // Crear nuevo borrador solo si hay datos mínimos
+            const newProperty = await propertyService.createProperty(propertyData);
+            if (newProperty) {
+              setDraftPropertyId(newProperty.id);
+              console.log('✅ Auto-guardado: Borrador creado con ID:', newProperty.id);
+            }
+          }
+          
+          setHasUnsavedChanges(false);
+          setLastSaved(new Date());
+          
+          // Mostrar notificación sutil
+          if (typeof window !== 'undefined') {
+            toast({
+              variant: 'default',
+              title: '💾 Guardado automático',
+              description: 'Tus cambios se han guardado como borrador.',
+              duration: 2000,
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error en auto-guardado:', error);
+        } finally {
+          setIsAutoSaving(false);
+        }
+      }
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(autoSaveInterval);
+  }, [hasUnsavedChanges, isAutoSaving, formData, draftPropertyId, toast]);
 
   // Obtener automáticamente el agente del usuario logueado
   useEffect(() => {
@@ -210,6 +268,9 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         
         return newData;
       });
+      
+      // Marcar que hay cambios sin guardar
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -288,6 +349,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         amenities: updatedAmenities,
       };
     });
+    setHasUnsavedChanges(true);
   };
 
   const toggleService = (serviceId: number) => {
@@ -301,6 +363,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         services: updatedServices,
       };
     });
+    setHasUnsavedChanges(true);
   };
 
   const toggleBooleanField = (field: 'featured' | 'premium') => {
@@ -308,6 +371,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
       ...prev,
       [field]: !prev[field],
     }));
+    setHasUnsavedChanges(true);
   };
 
   const removePrivateFile = (indexToRemove: number) => {
@@ -337,6 +401,13 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
       console.error('Error uploading floor plan image:', error);
       throw error;
     }
+  };
+
+  const handleNearbyFacilitiesChange = (facilities: any[]) => {
+    setFormData(prev => ({
+      ...prev,
+      nearbyFacilities: facilities
+    }));
   };
 
   const validate = useCallback((fieldsToValidate?: (keyof PropertyFormData)[]) => {
@@ -450,12 +521,13 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
           const newProperty = await propertyService.createProperty(propertyData);
           if (newProperty) {
             propertyId = newProperty.id;
+            setDraftPropertyId(propertyId); // Guardar ID para poder publicar después
             // Mostrar notificación de éxito
             if (typeof window !== 'undefined') {
               toast({
                 variant: 'success',
                 title: '¡Excelente!',
-                description: 'La propiedad ha sido creada exitosamente. Los cambios están ahora disponibles en el sistema.'
+                description: 'La propiedad ha sido guardada como borrador. Podrás publicarla cuando esté lista.'
               });
             }
           } else {
@@ -689,9 +761,38 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     }
   };
 
+  // Método para publicar propiedad (cambiar de DRAFT a ACTIVE)
+  const publishProperty = async () => {
+    if (!draftPropertyId) {
+      throw new Error('No hay propiedad en borrador para publicar');
+    }
+    
+    try {
+      const published = await propertyService.publishProperty(draftPropertyId);
+      toast({
+        variant: 'success',
+        title: '¡Publicado!',
+        description: 'La propiedad ha sido publicada y ahora es visible al público.'
+      });
+      return published;
+    } catch (error) {
+      console.error('Error al publicar propiedad:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo publicar la propiedad. Intenta nuevamente.'
+      });
+      throw error;
+    }
+  };
+
   return {
     formData,
     errors,
+    draftPropertyId,
+    isAutoSaving,
+    lastSaved,
+    hasUnsavedChanges,
     handleChange,
     handleFileChange,
     removeImage,
@@ -706,5 +807,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     handleCurrencyChange,
     handleFloorPlansChange,
     handleFloorPlanImageUpload,
+    handleNearbyFacilitiesChange,
+    publishProperty,
   };
 } 
