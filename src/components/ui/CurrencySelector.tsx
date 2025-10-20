@@ -30,11 +30,9 @@ export default function CurrencySelector({
     try {
       setLoading(true);
       const activeCurrencies = await currencyService.getActive();
-      console.log("🔍 CurrencySelector: Monedas cargadas:", activeCurrencies);
       setCurrencies(activeCurrencies || []);
     } catch (error) {
       console.error("❌ Error loading currencies:", error);
-    
       setCurrencies([]);
     } finally {
       setLoading(false);
@@ -47,13 +45,6 @@ export default function CurrencySelector({
     onCurrencyChange(currency.id, currency.code);
     setIsOpen(false);
   };
-
-  console.log("🎨 CurrencySelector render:", { 
-    loading, 
-    currenciesCount: currencies.length, 
-    selectedCurrencyId,
-    currencies: currencies.map(c => ({ id: c.id, code: c.code }))
-  });
 
   if (loading) {
     return (
