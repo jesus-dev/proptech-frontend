@@ -64,6 +64,7 @@ export interface Property {
   featuredImage?: string;
   propertyId?: string;
   propertyStatus?: string;
+  propertyStatusCode?: string; // Código interno del estado (DRAFT, ACTIVE, etc.)
   propertyLabel?: string;
   propertyType?: string;
   propertyTypeLabel?: string;
