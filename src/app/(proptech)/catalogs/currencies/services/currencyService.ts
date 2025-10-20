@@ -1,6 +1,7 @@
 import { Currency } from "./types";
+import { getEndpoint } from "@/lib/api-config";
 
-const API_URL = process.env.NEXT_PUBLIC_API_CURRENCIES_URL || 'http://localhost:8080/api/currencies';
+const API_URL = getEndpoint('/api/currencies');
 
 export const currencyService = {
   async getAll(): Promise<Currency[]> {

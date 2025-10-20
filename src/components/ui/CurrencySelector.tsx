@@ -34,6 +34,7 @@ export default function CurrencySelector({
       setCurrencies(activeCurrencies || []);
     } catch (error) {
       console.error("❌ Error loading currencies:", error);
+    
       setCurrencies([]);
     } finally {
       setLoading(false);
@@ -64,15 +65,15 @@ export default function CurrencySelector({
     );
   }
 
-  if (currencies.length === 0) {
-    return (
-      <div className={`relative ${className}`}>
-        <div className="w-full h-12 px-3 py-2 border-2 border-red-300 rounded-md bg-red-50 flex items-center">
-          <span className="text-red-600 text-sm">⚠️ No hay monedas disponibles</span>
-        </div>
-      </div>
-    );
-  }
+      if (currencies.length === 0) {
+        return (
+          <div className={`relative ${className}`}>
+            <div className="w-full h-12 px-3 py-2 border-2 border-red-300 rounded-md bg-red-50 flex items-center">
+              <span className="text-red-600 text-sm">⚠️ No hay monedas disponibles - Revisar conexión con el backend</span>
+            </div>
+          </div>
+        );
+      }
 
   return (
     <div className={`relative ${className}`}>
