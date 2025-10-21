@@ -166,7 +166,7 @@ export interface Role {
   id: number;
   name: string;
   description: string;
-  permissions?: string[];
+  permissions?: (string | Permission)[];
   permissionDetails?: Permission[];
   active: boolean;
 } 

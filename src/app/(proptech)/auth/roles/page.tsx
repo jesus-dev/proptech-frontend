@@ -97,7 +97,9 @@ export default function RolesPage() {
     setRoleForm({
       name: role.name,
       description: role.description || '',
-      permissions: role.permissions?.map(p => p.name) || [],
+      permissions: Array.isArray(role.permissions) 
+        ? role.permissions.map((p: string | Permission) => typeof p === 'string' ? p : p.name) 
+        : [],
       active: !!role.active,
     });
     setShowRoleModal(true);
@@ -386,7 +388,7 @@ export default function RolesPage() {
                               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 dark:from-purple-900/30 dark:to-purple-800/30 dark:text-purple-300 border border-purple-200 dark:border-purple-700 shadow-sm hover:shadow-md transition-shadow duration-200"
                             >
                               <Key className="h-3 w-3 mr-1" />
-                              {permission.name}
+                              {typeof permission === 'string' ? permission : permission.name}
                             </span>
                       ))}
                       {role.permissions && role.permissions.length > 3 && (
