@@ -67,7 +67,15 @@ export const authService = {
   },
 
   deleteUser: async (id: number): Promise<void> => {
-    await apiClient.delete(`/api/auth/users/${id}`);
+    console.log('authService.deleteUser llamado con ID:', id);
+    try {
+      const response = await apiClient.delete(`/api/auth/users/${id}`);
+      console.log('authService.deleteUser respuesta:', response);
+      return response.data;
+    } catch (error) {
+      console.error('authService.deleteUser error:', error);
+      throw error;
+    }
   },
 
   activateUser: async (id: number): Promise<User> => {
@@ -166,5 +174,16 @@ export const authService = {
 
   deleteMenuPermission: async (id: number): Promise<void> => {
     await apiClient.delete(`/api/auth/menu-permissions/${id}`);
+  },
+
+  // Tenants Management
+  getTenants: async (): Promise<any[]> => {
+    try {
+      const response = await apiClient.get('/api/tenants');
+      return response.data!;
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      return [];
+    }
   },
 }; 

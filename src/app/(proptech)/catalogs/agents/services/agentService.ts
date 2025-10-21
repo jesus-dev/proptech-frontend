@@ -1,18 +1,27 @@
 import { Agent, AgentFormData, AgentStats } from '../types';
+import { apiClient } from '@/lib/api';
 import { getEndpoint } from '@/lib/api-config';
 
 // Get all agents
 export const getAllAgents = async (): Promise<Agent[]> => {
-  const res = await fetch(getEndpoint('/api/agents'));
-  if (!res.ok) throw new Error('Error al obtener agentes');
-  return res.json();
+  try {
+    const response = await apiClient.get('/api/agents');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching agents:', error);
+    throw new Error('Error al obtener agentes');
+  }
 };
 
 // Get agent by ID
 export const getAgentById = async (id: string): Promise<Agent | null> => {
-  const res = await fetch(getEndpoint(`/api/agents/${id}`));
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const response = await apiClient.get(`/api/agents/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching agent by id:', error);
+    return null;
+  }
 };
 
 // Get agent by email
@@ -28,37 +37,35 @@ export const getAgentByEmail = async (email: string): Promise<Agent | null> => {
 
 // Create new agent
 export const createAgent = async (data: AgentFormData): Promise<Agent> => {
-  const res = await fetch(getEndpoint('/api/agents'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Error al crear agente');
+  try {
+    const response = await apiClient.post('/api/agents', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating agent:', error);
+    throw new Error('Error al crear agente');
   }
-  return res.json();
 };
 
 // Update agent
 export const updateAgent = async (id: string, data: Partial<AgentFormData>): Promise<Agent> => {
-  const res = await fetch(getEndpoint(`/api/agents/${id}`), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Error al actualizar agente');
+  try {
+    const response = await apiClient.put(`/api/agents/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating agent:', error);
+    throw new Error('Error al actualizar agente');
   }
-  return res.json();
 };
 
 // Delete agent
 export const deleteAgent = async (id: string): Promise<boolean> => {
-  const res = await fetch(getEndpoint(`/api/agents/${id}`), { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar agente');
-  return true;
+  try {
+    await apiClient.delete(`/api/agents/${id}`);
+    return true;
+  } catch (error) {
+    console.error('Error deleting agent:', error);
+    throw new Error('Error al eliminar agente');
+  }
 };
 
 // Search agents
@@ -85,18 +92,11 @@ export const searchAgents = async (searchTerm: string): Promise<Agent[]> => {
 // Get agent statistics
 export const getAgentStats = async (): Promise<AgentStats> => {
   try {
-    const res = await fetch(getEndpoint('/api/agents/stats'));
-    if (!res.ok) {
-      console.warn('Endpoint de estadísticas no disponible, calculando desde agentes existentes');
-      // Intentar calcular estadísticas desde la lista de agentes
-      const agents = await getAllAgents();
-      return calculateStatsFromAgents(agents);
-    }
-    return res.json();
+    const response = await apiClient.get('/api/agents/stats');
+    return response.data;
   } catch (error) {
     console.warn('Error al obtener estadísticas, calculando desde agentes:', error);
     try {
-      // Fallback: calcular desde agentes
       const agents = await getAllAgents();
       return calculateStatsFromAgents(agents);
     } catch (fallbackError) {
@@ -147,25 +147,13 @@ export const getAgentsByAgency = async (agencyId: string): Promise<Agent[]> => {
 // Get all agencies for dropdown
 export const getAllAgencies = async (): Promise<Array<{id: string, name: string, active: boolean}>> => {
   try {
-    const res = await fetch(getEndpoint('/api/agencies'));
-    if (!res.ok) throw new Error('Error al obtener agencias');
-    const agencies = await res.json();
-    return agencies.map((agency: unknown) => {
-      if (
-        typeof agency === 'object' &&
-        agency !== null &&
-        'id' in agency &&
-        'name' in agency &&
-        'active' in agency
-      ) {
-        return {
-          id: (agency as any).id.toString(),
-          name: (agency as any).name,
-          active: (agency as any).active,
-        };
-      }
-      return { id: '', name: '', active: false };
-    });
+    const response = await apiClient.get('/api/agencies');
+    const agencies = response.data;
+    return agencies.map((agency: any) => ({
+      id: agency.id.toString(),
+      name: agency.name,
+      active: agency.active,
+    }));
   } catch (error) {
     console.error('Error getting agencies:', error);
     return [];

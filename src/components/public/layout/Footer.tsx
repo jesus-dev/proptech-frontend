@@ -62,7 +62,7 @@ const Footer = () => {
               />
             </Link>
             <p className="text-gray-300 text-sm leading-relaxed">
-              CRM inmobiliario completo y avanzado
+              PropTech revoluciona el sector inmobiliario
             </p>
           </div>
 
@@ -159,8 +159,8 @@ const Footer = () => {
               />
             </Link>
             <p className="text-gray-300 mb-6 text-base leading-relaxed max-w-md">
-              El CRM inmobiliario más completo y avanzado del mercado. 
-              Gestiona propiedades, clientes y ventas desde una sola plataforma.
+              PropTech revoluciona la forma de trabajar en el sector inmobiliario.
+              Gestioná propiedades, clientes y operaciones desde una única plataforma conectada, automatizada y lista para escalar tu negocio.
             </p>
             
             {/* Social Links */}
@@ -284,12 +284,12 @@ const Footer = () => {
                   src="/images/logo/OnTech.png"
                   alt="OnTech"
                   style={{
-                    height: '42px',
+                    height: '56px',
                     width: 'auto',
                     filter: 'brightness(0) invert(1)',
                     WebkitFilter: 'brightness(0) invert(1)',
-                    maxHeight: '42px',
-                    minHeight: '42px'
+                    maxHeight: '56px',
+                    minHeight: '56px'
                   }}
                 />
               </a>
@@ -318,7 +318,7 @@ const Footer = () => {
                   <img
                     src="/images/logo/OnTech.png"
                     alt="OnTech"
-                    className="h-6 w-auto"
+                    className="h-10 w-auto"
                     style={{
                       filter: 'brightness(0) invert(1)',
                       WebkitFilter: 'brightness(0) invert(1)'

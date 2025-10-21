@@ -37,25 +37,16 @@ export default function ReportDetailPage() {
         setLoading(true);
         const reportId = parseInt(params.id as string);
         
-        // Buscar el reporte en el localStorage o generar uno mock
-        const storedReports = localStorage.getItem('generatedReports');
-        let reports: OwnerReport[] = [];
+        // Cargar el reporte desde el backend
+        const reportData = await OwnersPropertyService.getOwnerReportById(reportId);
         
-        if (storedReports) {
-          reports = JSON.parse(storedReports);
-        }
-        
-        const foundReport = reports.find(r => r.id === reportId);
-        
-        if (foundReport) {
-          setReport(foundReport);
+        if (reportData) {
+          setReport(reportData);
         } else {
-          // Si no se encuentra, generar un reporte mock
-          const mockReport = generateMockReport(reportId);
-          setReport(mockReport);
+          setError('Reporte no encontrado');
         }
       } catch (err) {
-        setError('Error cargando el reporte');
+        setError('Error cargando el reporte. Verifica que exista en el sistema.');
         console.error('Error loading report:', err);
       } finally {
         setLoading(false);
@@ -64,72 +55,6 @@ export default function ReportDetailPage() {
 
     loadReport();
   }, [params.id]);
-
-  const generateMockReport = (reportId: number): OwnerReport => {
-    // Generar datos mock para el reporte
-    const mockOwners = [
-      { id: 1, name: 'María García', email: 'maria@example.com', phone: '+34 600 123 456', address: 'Madrid, España', status: 'ACTIVE' as const, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 2, name: 'Carlos López', email: 'carlos@example.com', phone: '+34 600 789 012', address: 'Barcelona, España', status: 'ACTIVE' as const, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: 3, name: 'Ana Martínez', email: 'ana@example.com', phone: '+34 600 345 678', address: 'Valencia, España', status: 'ACTIVE' as const, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
-    ];
-    
-    const mockOwner = mockOwners[Math.floor(Math.random() * mockOwners.length)];
-    
-    return {
-      id: reportId,
-      owner: mockOwner,
-      period: 'Este mes',
-      propertiesCount: Math.floor(Math.random() * 5) + 1,
-      totalViews: Math.floor(Math.random() * 1000) + 500,
-      totalFavorites: Math.floor(Math.random() * 100) + 20,
-      totalComments: Math.floor(Math.random() * 50) + 10,
-      totalShares: Math.floor(Math.random() * 30) + 5,
-      totalValue: Math.floor(Math.random() * 2000000) + 500000,
-      status: 'PENDING',
-      generatedAt: new Date().toISOString(),
-      emailSent: false,
-      pdfGenerated: false,
-      recommendations: 'Propiedades de alto valor: Considera estrategias de marketing premium. Portfolio diversificado: Implementa estrategias de gestión centralizada. Mercado ascendente: Ajusta estrategias según tendencias del sector. Temporada alta: Aprovecha el aumento de demanda en primavera. ROI estimado: 25.3% - Considera optimizaciones para mejorar retornos.',
-      propertyMetrics: JSON.stringify([
-        {
-          propertyId: 1,
-          propertyTitle: 'Apartamento de lujo en Madrid',
-          viewsCount: 450,
-          favoritesCount: 35,
-          commentsCount: 12,
-          sharesCount: 8,
-          performanceScore: 85,
-          performanceLevel: 'EXCELLENT',
-          conversionRate: '0.078',
-          marketPosition: 'TOP 10%',
-          engagementRate: '7.8',
-          pricePerM2: '3500'
-        }
-      ]),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      // Required properties for OwnerReport interface
-      marketAnalysis: {
-        marketTrend: 'BULL',
-        priceIndex: 5.2,
-        demandLevel: 'HIGH',
-        competitionLevel: 'MEDIUM',
-        seasonality: 'PEAK',
-        marketInsights: ['Mercado en alza', 'Alta demanda', 'Temporada pico']
-      },
-      strategicRecommendations: [],
-      performanceMetrics: {
-        overallScore: 85,
-        marketPosition: 'LEADER',
-        engagementRate: 7.8,
-        conversionRate: 0.078,
-        priceCompetitiveness: 75,
-        visibilityScore: 80,
-        buyerInterest: 85
-      },
-      followUpActions: []
-    };
-  };
 
   const handleDownload = () => {
     // Simular descarga

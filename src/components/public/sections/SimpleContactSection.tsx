@@ -37,8 +37,8 @@ const SimpleContactSection = () => {
               icon: PhoneIcon,
               title: "Teléfono",
               subtitle: "Llámanos ahora",
-              value: "+595 21 123-4567",
-              action: "tel:+59521123456",
+              value: "+595 985 940797",
+              action: "tel:+595985940797",
               color: "from-emerald-500 to-teal-600"
             },
             {
@@ -53,7 +53,7 @@ const SimpleContactSection = () => {
               icon: MapPinIcon,
               title: "Ubicación",
               subtitle: "Visítanos",
-              value: "Asunción, Paraguay",
+              value: "Ciudad del Este, Paraguay",
               action: "#",
               color: "from-purple-500 to-indigo-600"
             }

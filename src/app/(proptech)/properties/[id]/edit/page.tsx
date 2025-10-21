@@ -127,11 +127,23 @@ export default function EditPropertyPage({ params }: PageProps) {
             const foundType = propertyTypes.find((pt: unknown) => (pt as any).id === propertyData.propertyTypeId);
             if (foundType) typeName = (foundType as any).name;
           }
+          // Función para procesar la URL de la imagen destacada
+          const processFeaturedImageUrl = (imageUrl: string | null | undefined): string => {
+            if (!imageUrl || imageUrl.trim() === '') return '';
+            if (imageUrl.startsWith('http')) return imageUrl;
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+            if (imageUrl.startsWith('/') && apiBaseUrl.endsWith('/')) {
+              return `${apiBaseUrl.slice(0, -1)}${imageUrl}`;
+            }
+            return `${apiBaseUrl}${imageUrl}`;
+          };
+
           const initialData = {
             ...propertyData,
             id: propertyId,
             amenities: amenitiesIds,
-            type: typeName
+            type: typeName,
+            featuredImage: processFeaturedImageUrl(propertyData.featuredImage)
           };
           setInitialPropertyData(initialData);
         } else {

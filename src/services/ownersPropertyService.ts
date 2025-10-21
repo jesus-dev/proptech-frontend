@@ -603,6 +603,17 @@ export class OwnersPropertyService {
     }
   }
 
+  // Obtener reporte específico por ID
+  static async getOwnerReportById(reportId: number): Promise<OwnerReport | null> {
+    try {
+      const response = await apiClient.get(`/api/owner-reports/${reportId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching owner report by id:', error);
+      throw error;
+    }
+  }
+
   // Actualizar acciones de seguimiento
   static async updateFollowUpAction(actionId: string, updates: Partial<FollowUpAction>): Promise<boolean> {
     try {

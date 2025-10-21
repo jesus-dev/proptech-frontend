@@ -70,31 +70,51 @@ interface UserFormData {
   lastName: string;
   email: string;
   password: string;
-  userType: 'ADMIN' | 'MANAGER' | 'AGENT' | 'VIEWER' | 'CUSTOMER';
+  userType: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'AGENCY_ADMIN' | 'AGENT' | 'MANAGER' | 'VIEWER' | 'CUSTOMER';
   roles: string[];
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING_ACTIVATION' | 'LOCKED';
+  tenantId?: number;
+  agencyId?: number;
+  agentId?: number;
 }
 
 const USER_TYPE_ICONS = {
-  ADMIN: Crown,
-  MANAGER: Building,
-  AGENT: Briefcase,
+  SUPER_ADMIN: Crown,
+  TENANT_ADMIN: Building,
+  AGENCY_ADMIN: Briefcase,
+  AGENT: UserCheck,
+  MANAGER: Settings,
   VIEWER: EyeIcon,
   CUSTOMER: UserIcon
 };
 
 const USER_TYPE_LABELS = {
-  ADMIN: 'Administrador',
-  MANAGER: 'Gerente',
+  SUPER_ADMIN: 'Super Administrador',
+  TENANT_ADMIN: 'Admin Tenant',
+  AGENCY_ADMIN: 'Admin Agencia',
   AGENT: 'Agente',
+  MANAGER: 'Gerente',
   VIEWER: 'Visualizador',
   CUSTOMER: 'Cliente'
+};
+
+const USER_TYPE_DESCRIPTIONS = {
+  SUPER_ADMIN: 'Control total del SaaS - Gestiona todos los tenants',
+  TENANT_ADMIN: 'Administra un tenant - Gestiona agencias del tenant',
+  AGENCY_ADMIN: 'Administra una agencia - Gestiona agentes de la agencia',
+  AGENT: 'Agente inmobiliario - Gestiona sus propias propiedades',
+  MANAGER: 'Gerente/Supervisor - Puede ver pero tiene acceso limitado',
+  VIEWER: 'Solo lectura - No puede modificar nada',
+  CUSTOMER: 'Cliente final - Búsqueda y favoritos'
 };
 
 export default function UsersPage() {
   const { hasPermission } = useAuthContext();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [agencies, setAgencies] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -115,9 +135,12 @@ export default function UsersPage() {
     lastName: '',
     email: '',
     password: '',
-    userType: 'ADMIN',
+    userType: 'AGENT',
     roles: [],
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    tenantId: undefined,
+    agencyId: undefined,
+    agentId: undefined
   });
 
   // Check permissions
@@ -139,6 +162,37 @@ export default function UsersPage() {
       ]);
       setUsers(usersData);
       setRoles(rolesData);
+      
+      // Cargar catálogos adicionales
+      try {
+        const { getAllAgencies } = await import('@/app/(proptech)/catalogs/agencies/services/agencyService');
+        const { getAllAgents } = await import('@/app/(proptech)/catalogs/agents/services/agentService');
+        
+        // Cargar tenants primero
+        const tenantsData = await authService.getTenants().catch((err) => { 
+          console.error('❌ Error loading tenants:', err); 
+          return []; 
+        });
+        
+        // Cargar agencias
+        const agenciesData = await getAllAgencies().catch((err) => { 
+          console.error('❌ Error loading agencies:', err.message || err); 
+          return []; 
+        });
+        
+        // Cargar agentes
+        const agentsData = await getAllAgents().catch((err) => { 
+          console.error('❌ Error loading agents:', err.message || err);
+          console.error('Stack:', err);
+          return []; 
+        });
+        
+        setTenants(tenantsData);
+        setAgencies(agenciesData);
+        setAgents(agentsData);
+      } catch (error) {
+        console.error('💥 Error general loading catalogs:', error);
+      }
     } catch (error) {
       toast.error('Error al cargar los datos');
       console.error('Error loading data:', error);
@@ -188,12 +242,15 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (userId: number) => {
     try {
+      console.log('Intentando eliminar usuario con ID:', userId);
       await authService.deleteUser(userId);
       toast.success('Usuario eliminado exitosamente');
       loadData();
       setShowDeleteModal(false);
-    } catch (error) {
-      toast.error('Error al eliminar el usuario');
+    } catch (error: any) {
+      console.error('Error al eliminar usuario:', error);
+      const errorMessage = error?.response?.data?.error || error?.message || 'Error al eliminar el usuario';
+      toast.error(errorMessage);
     }
   };
 
@@ -227,7 +284,10 @@ export default function UsersPage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           userType: formData.userType,
-          status: formData.status
+          status: formData.status,
+          tenantId: formData.tenantId,
+          agencyId: formData.agencyId,
+          agentId: formData.agentId
         });
         toast.success('Usuario actualizado exitosamente');
       } else {
@@ -238,7 +298,10 @@ export default function UsersPage() {
           email: formData.email,
           password: formData.password,
           userType: formData.userType,
-          roleIds: roles.filter(r => formData.roles.includes(r.name)).map(r => r.id)
+          roleIds: roles.filter(r => formData.roles.includes(r.name)).map(r => r.id),
+          tenantId: formData.tenantId,
+          agencyId: formData.agencyId,
+          agentId: formData.agentId
         });
         toast.success('Usuario creado exitosamente');
       }
@@ -260,9 +323,12 @@ export default function UsersPage() {
       lastName: '',
       email: '',
       password: '',
-      userType: 'ADMIN',
+      userType: 'AGENT',
       roles: [],
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      tenantId: undefined,
+      agencyId: undefined,
+      agentId: undefined
     });
     setSelectedUser(null);
   };
@@ -277,7 +343,10 @@ export default function UsersPage() {
         password: '',
         userType: (user.userType as any) || 'ADMIN',
         roles: user.roles || [],
-        status: (user.status as any) || 'ACTIVE'
+        status: (user.status as any) || 'ACTIVE',
+        tenantId: (user as any).tenantId || undefined,
+        agencyId: (user as any).agencyId || undefined,
+        agentId: (user as any).agentId || undefined
       });
     } else {
       resetForm();
@@ -370,7 +439,14 @@ export default function UsersPage() {
       user.email.toLowerCase().includes('ejemplo') ||
       user.email.toLowerCase().includes('example') ||
       user.email.toLowerCase().includes('prueba') ||
-      user.userType === 'CUSTOMER'
+      user.userType === 'CUSTOMER' ||
+      // Usuarios de prueba específicos del sistema
+      user.email === 'maria.gonzalez@proptech.com' ||
+      user.email === 'carlos.mendoza@proptech.com' ||
+      user.email === 'ana.silva@proptech.com' ||
+      user.email === 'ana.patricia@proptech.com' ||
+      // Usuarios sin tenant/agencia asignados y sin roles (probablemente demo)
+      (!user.tenantId && user.roles && user.roles.length === 0 && user.id !== 1)
     );
     
     if (demoUsers.length === 0) {
@@ -462,7 +538,12 @@ export default function UsersPage() {
               u.email.toLowerCase().includes('ejemplo') ||
               u.email.toLowerCase().includes('example') ||
               u.email.toLowerCase().includes('prueba') ||
-              u.userType === 'CUSTOMER'
+              u.userType === 'CUSTOMER' ||
+              u.email === 'maria.gonzalez@proptech.com' ||
+              u.email === 'carlos.mendoza@proptech.com' ||
+              u.email === 'ana.silva@proptech.com' ||
+              u.email === 'ana.patricia@proptech.com' ||
+              (!u.tenantId && u.roles && u.roles.length === 0 && u.id !== 1)
             ).length > 0 && (
               <Button
                 variant="outline"
@@ -476,7 +557,12 @@ export default function UsersPage() {
                   u.email.toLowerCase().includes('ejemplo') ||
                   u.email.toLowerCase().includes('example') ||
                   u.email.toLowerCase().includes('prueba') ||
-                  u.userType === 'CUSTOMER'
+                  u.userType === 'CUSTOMER' ||
+                  u.email === 'maria.gonzalez@proptech.com' ||
+                  u.email === 'carlos.mendoza@proptech.com' ||
+                  u.email === 'ana.silva@proptech.com' ||
+                  u.email === 'ana.patricia@proptech.com' ||
+                  (!u.tenantId && u.roles && u.roles.length === 0 && u.id !== 1)
                 ).length})
               </Button>
             )}
@@ -982,7 +1068,7 @@ export default function UsersPage() {
           )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Tipo de Usuario *
               </label>
@@ -992,12 +1078,25 @@ export default function UsersPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
                 required
               >
-                <option value="ADMIN">Administrador</option>
-                <option value="MANAGER">Gerente</option>
-                <option value="AGENT">Agente</option>
-                <option value="VIEWER">Visualizador</option>
-                <option value="CUSTOMER">Cliente</option>
+                <optgroup label="🔐 Administradores">
+                  <option value="SUPER_ADMIN">🌟 Super Administrador (SaaS)</option>
+                  <option value="TENANT_ADMIN">🏢 Admin Tenant</option>
+                  <option value="AGENCY_ADMIN">🏪 Admin Agencia</option>
+                </optgroup>
+                <optgroup label="👥 Operativos">
+                  <option value="AGENT">👔 Agente Inmobiliario</option>
+                  <option value="MANAGER">⚙️ Gerente/Supervisor</option>
+                </optgroup>
+                <optgroup label="👀 Otros">
+                  <option value="VIEWER">👁️ Visualizador</option>
+                  <option value="CUSTOMER">🛍️ Cliente</option>
+                </optgroup>
               </select>
+              {formData.userType && USER_TYPE_DESCRIPTIONS[formData.userType] && (
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  ℹ️ {USER_TYPE_DESCRIPTIONS[formData.userType]}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -1014,6 +1113,89 @@ export default function UsersPage() {
                 <option value="SUSPENDED">Suspendido</option>
                 <option value="LOCKED">Bloqueado</option>
               </select>
+            </div>
+          </div>
+
+          {/* Campos de asignación: Tenant, Agencia, Agente */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Tenant *
+              </label>
+              <select
+                value={formData.tenantId || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, tenantId: e.target.value ? Number(e.target.value) : undefined }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+                required
+              >
+                <option value="">Seleccionar tenant...</option>
+                {tenants.map((tenant) => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.name || `Tenant ${tenant.id}`}
+                  </option>
+                ))}
+              </select>
+              {tenants.length === 0 && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                  ⚠️ No hay tenants disponibles. Cargando...
+                </p>
+              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Organización (obligatorio)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Agencia
+              </label>
+              <select
+                value={formData.agencyId || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, agencyId: e.target.value ? Number(e.target.value) : undefined }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+              >
+                <option value="">Sin agencia asignada</option>
+                {agencies.filter(a => a.active || a.isActive).map((agency) => (
+                  <option key={agency.id} value={agency.id}>
+                    {agency.name}
+                  </option>
+                ))}
+              </select>
+              {agencies.length === 0 && (
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                  ⚠️ No hay agencias disponibles. Cargando...
+                </p>
+              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Agencia inmobiliaria (opcional)
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Agente
+              </label>
+              <select
+                value={formData.agentId || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, agentId: e.target.value ? Number(e.target.value) : undefined }))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+              >
+                <option value="">Se creará automáticamente con los datos del usuario</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.firstName || agent.nombre} {agent.lastName || agent.apellido}
+                  </option>
+                ))}
+              </select>
+              {agents.length === 0 ? (
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  ℹ️ No hay agentes previos. Se creará automáticamente un perfil de agente con el Nombre y Apellido que ingreses arriba.
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Deja vacío para crear un nuevo agente automáticamente, o selecciona uno existente
+                </p>
+              )}
             </div>
           </div>
           
@@ -1089,18 +1271,33 @@ export default function UsersPage() {
         subtitle={`¿Estás seguro de que quieres eliminar al usuario "${selectedUser?.fullName}"? Esta acción no se puede deshacer.`}
         icon={<Trash2 className="w-6 h-6 text-white" />}
         maxWidth="max-w-md"
+        closeOnBackdropClick={false}
       >
         <div className="flex justify-end space-x-3 pt-6">
           <button
             type="button"
-            onClick={() => setShowDeleteModal(false)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowDeleteModal(false);
+            }}
             className="px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-all duration-200"
           >
             Cancelar
           </button>
           <button
             type="button"
-            onClick={() => selectedUser && handleDeleteUser(selectedUser.id)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Botón de eliminar clickeado, selectedUser:', selectedUser);
+              if (selectedUser) {
+                handleDeleteUser(selectedUser.id);
+              } else {
+                console.error('No hay usuario seleccionado para eliminar');
+                toast.error('No se ha seleccionado ningún usuario');
+              }
+            }}
             className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-red-600 border border-transparent rounded-xl hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
             <div className="flex items-center gap-2">

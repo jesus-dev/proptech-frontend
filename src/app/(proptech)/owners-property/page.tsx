@@ -40,16 +40,18 @@ export default function OwnersPropertyDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const mockOwners = OwnersPropertyService.getMockOwners();
-      setOwners(mockOwners);
       
-      // Cargar propiedades de todos los propietarios
+      // Cargar datos reales del backend
+      const ownersData = await OwnersPropertyService.getOwners();
+      setOwners(ownersData);
+      
+      // Cargar propiedades y reportes de todos los propietarios
       const allProperties: OwnerProperty[] = [];
       const allReports: OwnerReport[] = [];
       
-      for (const owner of mockOwners) {
-        const properties = OwnersPropertyService.getMockOwnerProperties(owner.id);
-        const reports = OwnersPropertyService.getMockOwnerReports(owner.id);
+      for (const owner of ownersData) {
+        const properties = await OwnersPropertyService.getOwnerProperties(owner.id);
+        const reports = await OwnersPropertyService.getOwnerReports(owner.id);
         allProperties.push(...properties);
         allReports.push(...reports);
       }
@@ -58,6 +60,10 @@ export default function OwnersPropertyDashboard() {
       setOwnerReports(allReports);
     } catch (error) {
       console.error('Error cargando datos del dashboard:', error);
+      // En producción, mostrar estado vacío en lugar de datos mock
+      setOwners([]);
+      setOwnerProperties([]);
+      setOwnerReports([]);
     } finally {
       setLoading(false);
     }

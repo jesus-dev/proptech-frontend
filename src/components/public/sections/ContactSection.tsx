@@ -64,7 +64,7 @@ const ContactSection = () => {
     {
       icon: PhoneIcon,
       title: 'Teléfono',
-      details: ['+595 21 123-4567', '+595 981 123-456'],
+      details: ['+595 985 940797'],
       description: 'Lunes a Viernes 8:00 - 18:00'
     },
     {

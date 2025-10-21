@@ -7,7 +7,7 @@ export const paraguayConfig = {
   phoneFormats: {
     mobile: '+595 9XX XXX-XXX',
     landline: '+595 21 XXX-XXXX',
-    example: '+595 981 123-456'
+    example: '+595 985 940797'
   },
   
   // Ciudades principales

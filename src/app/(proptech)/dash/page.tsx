@@ -448,6 +448,74 @@ export default function UserDashboardPage() {
           </div>
         </div>
 
+        {/* Acciones Rápidas - Moved to top for better visibility */}
+        <div className="mb-8">
+          <Card className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <CardHeader>
+              <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">
+                Acciones Rápidas
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Acceso directo a las funciones principales
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
+                
+                <Link href="/properties/new">
+                  <Button className="w-full h-16 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <Plus className="h-5 w-5 mr-2" />
+                    Nueva Propiedad
+                  </Button>
+                </Link>
+
+                <Link href="/properties">
+                  <Button className="w-full h-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <BuildingIcon className="h-5 w-5 mr-2" />
+                    Propiedades
+                  </Button>
+                </Link>
+
+                <Link href="/agenda/my-appointments">
+                  <Button className="w-full h-16 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <CalendarIcon className="h-5 w-5 mr-2" />
+                    Mis Citas
+                  </Button>
+                </Link>
+
+                <Link href="/developments">
+                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <BuildingIcon className="h-5 w-5 mr-2" />
+                    Desarrollos
+                  </Button>
+                </Link>
+
+                <Link href="/favorites">
+                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <Star className="h-5 w-5 mr-2" />
+                    Mis Favoritas
+                  </Button>
+                </Link>
+
+                <Link href="/social/propshots">
+                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <Camera className="h-5 w-5 mr-2" />
+                    PropShots
+                  </Button>
+                </Link>
+
+                <Link href="/profile">
+                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <UserIcon className="h-5 w-5 mr-2" />
+                    Mi Perfil
+                  </Button>
+                </Link>
+
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Stats Cards Grid con Efectos Avanzados - Optimizado para móvil */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-10">
           
@@ -1143,7 +1211,7 @@ export default function UserDashboardPage() {
                           {property.title}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Visto hace {Math.floor(Math.random() * 7 + 1)} días
+                          {property.views || 0} vistas
                         </p>
                       </div>
                     </div>
@@ -1305,60 +1373,6 @@ export default function UserDashboardPage() {
                 <Eye className="h-4 w-4 mr-2" />
                 Ver Todas
               </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Acciones Rápidas */}
-        <div className="mt-8">
-          <Card className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">
-                Acciones Rápidas
-              </CardTitle>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Acceso directo a las funciones principales
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                
-                <Link href="/search">
-                  <Button className="w-full h-16 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <Search className="h-5 w-5 mr-2" />
-                    Buscar Propiedades
-                  </Button>
-                </Link>
-
-                <Link href="/favorites">
-                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <Star className="h-5 w-5 mr-2" />
-                    Mis Favoritas
-                  </Button>
-                </Link>
-
-                <Link href="/visits">
-                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <Calendar className="h-5 w-5 mr-2" />
-                    Mis Visitas
-                  </Button>
-                </Link>
-
-                <Link href="/social/propshots">
-                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <Camera className="h-5 w-5 mr-2" />
-                    PropShots
-                  </Button>
-                </Link>
-
-                <Link href="/profile">
-                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <UserIcon className="h-5 w-5 mr-2" />
-                    Mi Perfil
-                  </Button>
-                </Link>
-
-              </div>
             </CardContent>
           </Card>
         </div>

@@ -289,12 +289,9 @@ const navItems: NavItem[] = [
         path: "/auth/roles",
       },
       {
-        name: "Permisos",
-        path: "/auth/permissions",
-      },
-      {
-        name: "Permisos de Menús",
-        path: "/auth/menu-permissions",
+        name: "Roles y Permisos",
+        path: "/auth/role-permissions",
+        nuevo: true,
       },
     ],
   },

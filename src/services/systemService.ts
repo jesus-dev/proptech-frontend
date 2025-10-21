@@ -192,7 +192,7 @@ export const systemService = {
   // User Dashboard APIs
   getUserStats: async (): Promise<any> => {
     try {
-      const response = await apiClient.get('/api/user/dashboard/stats');
+      const response = await apiClient.get('/api/dashboard/user/stats');
       return response.data;
     } catch (error) {
       // Fallback para que el dashboard no se rompa sin backend
@@ -211,7 +211,7 @@ export const systemService = {
 
   getUserSavedProperties: async (): Promise<SystemProperty[]> => {
     try {
-      const response = await apiClient.get('/api/user/saved-properties');
+      const response = await apiClient.get('/api/dashboard/user/saved-properties');
       return response.data;
     } catch (error) {
       return [];
@@ -220,7 +220,7 @@ export const systemService = {
 
   getUserRecentViews: async (): Promise<SystemProperty[]> => {
     try {
-      const response = await apiClient.get('/api/user/recent-views');
+      const response = await apiClient.get('/api/dashboard/user/recent-views');
       return response.data;
     } catch (error) {
       return [];
@@ -229,7 +229,7 @@ export const systemService = {
 
   getUserRecommendedProperties: async (): Promise<SystemProperty[]> => {
     try {
-      const response = await apiClient.get('/api/user/recommended-properties');
+      const response = await apiClient.get('/api/dashboard/user/recommended-properties');
       return response.data;
     } catch (error) {
       return [];
@@ -238,7 +238,7 @@ export const systemService = {
 
   getUserScheduledVisits: async (): Promise<any[]> => {
     try {
-      const response = await apiClient.get('/api/user/scheduled-visits');
+      const response = await apiClient.get('/api/dashboard/user/scheduled-visits');
       return response.data;
     } catch (error) {
       return [];
@@ -247,7 +247,7 @@ export const systemService = {
 
   getUserActivities: async (): Promise<SystemActivity[]> => {
     try {
-      const response = await apiClient.get('/api/user/activities');
+      const response = await apiClient.get('/api/dashboard/user/activities');
       return response.data;
     } catch (error) {
       return [];
@@ -256,7 +256,7 @@ export const systemService = {
 
   getUserNotifications: async (): Promise<any[]> => {
     try {
-      const response = await apiClient.get('/api/user/notifications');
+      const response = await apiClient.get('/api/dashboard/user/notifications');
       return response.data;
     } catch (error) {
       return [];
@@ -317,23 +317,24 @@ export const systemService = {
   // Get agent statistics
   getAgentStats: async (): Promise<AgentStats> => {
     try {
-      const response = await apiClient.get('/api/agent/stats');
+      const response = await apiClient.get('/api/dashboard/agent/stats');
       return response.data;
     } catch (error) {
-      // Fallback con datos de ejemplo para desarrollo
+      console.error('Error getting agent stats:', error);
+      // Retornar datos vacíos en lugar de fallback con datos ficticios
       return {
-        myProperties: 12,
-        activeLeads: 8,
-        todayAppointments: 3,
-        weekAppointments: 7,
-        monthCommissions: 45000000,
-        conversionRate: 23.5,
-        avgResponseTime: 45,
-        propertiesNeedingAttention: 2,
-        newLeadsToday: 2,
-        closedDealsMonth: 3,
-        activeClients: 15,
-        avgDaysToClose: 45
+        myProperties: 0,
+        activeLeads: 0,
+        todayAppointments: 0,
+        weekAppointments: 0,
+        monthCommissions: 0,
+        conversionRate: 0,
+        avgResponseTime: 0,
+        propertiesNeedingAttention: 0,
+        newLeadsToday: 0,
+        closedDealsMonth: 0,
+        activeClients: 0,
+        avgDaysToClose: 0
       };
     }
   },
@@ -341,7 +342,7 @@ export const systemService = {
   // Get agent leads
   getAgentLeads: async (status?: string, priority?: string): Promise<AgentLead[]> => {
     try {
-      let url = '/api/agent/leads';
+      let url = '/api/dashboard/agent/leads';
       const params = new URLSearchParams();
       if (status) params.append('status', status);
       if (priority) params.append('priority', priority);
@@ -357,7 +358,7 @@ export const systemService = {
   // Get agent appointments
   getAgentAppointments: async (timeframe: 'today' | 'week' | 'month' = 'week'): Promise<AgentAppointment[]> => {
     try {
-      const response = await apiClient.get(`/api/agent/appointments?timeframe=${timeframe}`);
+      const response = await apiClient.get(`/api/dashboard/agent/appointments?timeframe=${timeframe}`);
       return response.data;
     } catch (error) {
       return [];
@@ -367,7 +368,7 @@ export const systemService = {
   // Get property alerts
   getPropertyAlerts: async (): Promise<PropertyAlert[]> => {
     try {
-      const response = await apiClient.get('/api/agent/property-alerts');
+      const response = await apiClient.get('/api/dashboard/agent/property-alerts');
       return response.data;
     } catch (error) {
       return [];

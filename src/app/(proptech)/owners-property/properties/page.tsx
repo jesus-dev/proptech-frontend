@@ -44,18 +44,23 @@ export default function PropertiesManagementPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const mockOwners = OwnersPropertyService.getMockOwners();
-      setOwners(mockOwners);
+      
+      // Cargar datos reales del backend
+      const ownersData = await OwnersPropertyService.getOwners();
+      setOwners(ownersData);
       
       // Cargar propiedades de todos los propietarios
       const allProperties: OwnerProperty[] = [];
-      for (const owner of mockOwners) {
-        const properties = OwnersPropertyService.getMockOwnerProperties(owner.id);
+      for (const owner of ownersData) {
+        const properties = await OwnersPropertyService.getOwnerProperties(owner.id);
         allProperties.push(...properties);
       }
       setOwnerProperties(allProperties);
     } catch (error) {
       console.error('Error cargando datos:', error);
+      // En producción, mostrar estado vacío
+      setOwners([]);
+      setOwnerProperties([]);
     } finally {
       setLoading(false);
     }

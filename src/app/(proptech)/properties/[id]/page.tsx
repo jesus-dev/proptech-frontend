@@ -172,6 +172,14 @@ export default function PropertyDetailsPage({ params }: PageProps) {
           
           setProperty(propertyData);
           setIsFavorite(propertyData.favorite || false);
+          
+          // Incrementar vistas después de cargar la propiedad
+          try {
+            await propertyService.incrementViews(propertyId);
+            console.log('✅ Vista registrada para propiedad:', propertyId);
+          } catch (error) {
+            console.error('Error incrementing views:', error);
+          }
         } else {
           setError("La propiedad no fue encontrada.");
         }
@@ -189,11 +197,11 @@ export default function PropertyDetailsPage({ params }: PageProps) {
   useEffect(() => {
     if (!property) return;
     
-    // Estadísticas simuladas por ahora
+    // Usar estadísticas reales de la propiedad
     setStats({
-      views: Math.floor(Math.random() * 100) + 10,
-      favorites: Math.floor(Math.random() * 20) + 1,
-      shared: Math.floor(Math.random() * 15),
+      views: property.views || 0,
+      favorites: property.favoritesCount || 0,
+      shared: property.shares || 0,
       amenities: amenitiesDetails?.length || 0,
       services: servicesDetails?.length || 0,
       documents: privateFiles?.length || 0

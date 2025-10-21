@@ -194,17 +194,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
     }
     
-    const isAdmin = user.userType === 'ADMIN' || 
-                   user.roles?.includes('ADMIN') || 
-                   (user.email && (user.email.includes('admin') || user.email.includes('@idear.com')));
+    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
+                        user.roles?.includes('SUPER_ADMIN') ||
+                        user.roles?.includes('ADMIN'); // Retrocompatibilidad
+    
+    const isTenantAdmin = user.userType === 'TENANT_ADMIN' || user.roles?.includes('TENANT_ADMIN');
+    const isAgencyAdmin = user.userType === 'AGENCY_ADMIN' || user.roles?.includes('AGENCY_ADMIN');
+    const isAnyAdmin = isSuperAdmin || isTenantAdmin || isAgencyAdmin;
     
     return {
-      canViewAll: Boolean(isAdmin),
+      canViewAll: Boolean(isSuperAdmin || isTenantAdmin),
       agentId: user.agentId || null,
       agencyId: user.agencyId || null,
-      isAdmin: Boolean(isAdmin),
+      isAdmin: Boolean(isAnyAdmin),
       isAgent: Boolean(user.userType === 'AGENT' || user.roles?.includes('AGENT')),
-      isAgencyAdmin: Boolean(user.userType === 'AGENCY_ADMIN' || user.roles?.includes('AGENCY_ADMIN')),
+      isAgencyAdmin: Boolean(isAgencyAdmin),
     };
   }, [user]);
 
@@ -242,15 +246,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hasPermission = useCallback((permission: any) => {
     if (!user) return false;
     
-    // Si el usuario es ADMIN (por userType, rol o email), tiene todos los permisos
-    const isAdmin = user.userType === 'ADMIN' || 
-                   user.roles?.includes('ADMIN') || 
-                   (user.email && (user.email.includes('admin') || user.email.includes('@idear.com')));
+    // Jerarquía de roles: SUPER_ADMIN tiene todos los permisos
+    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
+                        user.roles?.includes('SUPER_ADMIN') ||
+                        user.roles?.includes('ADMIN'); // Retrocompatibilidad
     
-    if (isAdmin) {
+    if (isSuperAdmin) {
       return true;
     }
     
+    // TENANT_ADMIN tiene casi todos los permisos excepto gestionar tenants
+    const isTenantAdmin = user.userType === 'TENANT_ADMIN' || user.roles?.includes('TENANT_ADMIN');
+    if (isTenantAdmin && permission !== 'TENANT_MANAGE') {
+      return true;
+    }
+    
+    // Verificar permisos específicos del usuario
     if (!user.permissions) return false;
     if (Array.isArray(user.permissions)) {
       return (user.permissions as string[]).includes(permission);
@@ -261,12 +272,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hasAnyPermission = useCallback((permissions: any[]) => {
     if (!user) return false;
     
-    // Si el usuario es ADMIN, tiene todos los permisos
-    const isAdmin = user.userType === 'ADMIN' || 
-                   user.roles?.includes('ADMIN') || 
-                   (user.email && (user.email.includes('admin') || user.email.includes('@idear.com')));
+    // SUPER_ADMIN o TENANT_ADMIN tienen casi todos los permisos
+    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
+                        user.roles?.includes('SUPER_ADMIN') ||
+                        user.roles?.includes('ADMIN');
+    const isTenantAdmin = user.userType === 'TENANT_ADMIN' || user.roles?.includes('TENANT_ADMIN');
     
-    if (isAdmin) return true;
+    if (isSuperAdmin || isTenantAdmin) return true;
     
     if (!user.permissions) return false;
     if (Array.isArray(user.permissions)) {
@@ -278,12 +290,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const hasAllPermissions = useCallback((permissions: any[]) => {
     if (!user) return false;
     
-    // Si el usuario es ADMIN, tiene todos los permisos
-    const isAdmin = user.userType === 'ADMIN' || 
-                   user.roles?.includes('ADMIN') || 
-                   (user.email && (user.email.includes('admin') || user.email.includes('@idear.com')));
+    // SUPER_ADMIN tiene todos los permisos
+    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
+                        user.roles?.includes('SUPER_ADMIN') ||
+                        user.roles?.includes('ADMIN');
     
-    if (isAdmin) return true;
+    if (isSuperAdmin) return true;
     
     if (!user.permissions) return false;
     if (Array.isArray(user.permissions)) {
@@ -307,8 +319,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const canAccessRoute = useCallback((route: string) => {
     if (!user) return false;
     
-    // Si el usuario es ADMIN, puede acceder a todas las rutas
-    if (user.userType === 'ADMIN' || user.roles?.includes('ADMIN')) {
+    // SUPER_ADMIN puede acceder a todas las rutas
+    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
+                        user.roles?.includes('SUPER_ADMIN') ||
+                        user.roles?.includes('ADMIN');
+    if (isSuperAdmin) {
       return true;
     }
     

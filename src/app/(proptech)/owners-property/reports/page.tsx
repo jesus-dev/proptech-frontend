@@ -73,15 +73,11 @@ export default function ReportsPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      // Fallback a datos mock si la API falla
-      const mockOwners = OwnersPropertyService.getMockOwners();
-      const mockProperties = OwnersPropertyService.getMockOwnerProperties(mockOwners[0].id);
-      const mockReports = OwnersPropertyService.getMockOwnerReports(mockOwners[0].id);
-      
-      setOwners(mockOwners);
-      setOwnerProperties(mockProperties);
-      setReports(mockReports);
-      setSelectedOwner(mockOwners[0]);
+      // En producción, mostrar estado vacío en lugar de fallback a mock
+      setOwners([]);
+      setOwnerProperties([]);
+      setReports([]);
+      setSelectedOwner(null);
     }
   };
 
@@ -96,11 +92,9 @@ export default function ReportsPage() {
         setReports(ownerReports);
       } catch (error) {
         console.error('Error loading owner data:', error);
-        // Fallback a mock data
-        const mockProperties = OwnersPropertyService.getMockOwnerProperties(ownerId);
-        const mockReports = OwnersPropertyService.getMockOwnerReports(ownerId);
-        setOwnerProperties(mockProperties);
-        setReports(mockReports);
+        // En producción, mostrar estado vacío
+        setOwnerProperties([]);
+        setReports([]);
       }
     }
   };

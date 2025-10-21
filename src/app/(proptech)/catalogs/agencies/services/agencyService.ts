@@ -1,46 +1,58 @@
 import { Agency, AgencyFormData } from '../types';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 // Get all agencies
 export const getAllAgencies = async (): Promise<Agency[]> => {
-  const res = await fetch(getEndpoint('/api/agencies'));
-  if (!res.ok) throw new Error('Error al obtener agencias');
-  return res.json();
+  try {
+    const response = await apiClient.get('/api/agencies');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching agencies:', error);
+    throw new Error('Error al obtener agencias');
+  }
 };
 
 // Get agency by ID
 export const getAgencyById = async (id: number): Promise<Agency | null> => {
-  const res = await fetch(getEndpoint(`/api/agencies/${id}`));
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const response = await apiClient.get(`/api/agencies/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching agency by id:', error);
+    return null;
+  }
 };
 
 // Create new agency
 export const createAgency = async (data: AgencyFormData): Promise<Agency> => {
-  const res = await fetch(getEndpoint('/api/agencies'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Error al crear agencia');
-  return res.json();
+  try {
+    const response = await apiClient.post('/api/agencies', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating agency:', error);
+    throw new Error('Error al crear agencia');
+  }
 };
 
 // Update agency
 export const updateAgency = async (id: number, data: Partial<AgencyFormData>): Promise<Agency> => {
-  const res = await fetch(getEndpoint(`/api/agencies/${id}`), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Error al actualizar agencia');
-  return res.json();
+  try {
+    const response = await apiClient.put(`/api/agencies/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating agency:', error);
+    throw new Error('Error al actualizar agencia');
+  }
 };
 
 // Delete agency
 export const deleteAgency = async (id: number): Promise<void> => {
-  const res = await fetch(getEndpoint(`/api/agencies/${id}`), { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar agencia');
+  try {
+    await apiClient.delete(`/api/agencies/${id}`);
+  } catch (error) {
+    console.error('Error deleting agency:', error);
+    throw new Error('Error al eliminar agencia');
+  }
 };
 
 // Get active agencies only

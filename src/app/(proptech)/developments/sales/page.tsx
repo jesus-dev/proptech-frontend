@@ -643,25 +643,25 @@ export default function SalesPage() {
               </span>
             )}
           </h2>
-          {sales.length === 0 && (
+          {sales.length === 0 && process.env.NODE_ENV === 'development' && (
             <div className="flex gap-3 justify-center">
               <button
                 onClick={generateSampleData}
                 className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
               >
-                Generar Datos de Prueba
+                [DEV] Generar Datos de Prueba
               </button>
               <button
                 onClick={generateSampleSales}
                 className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
               >
-                Solo Generar Ventas
+                [DEV] Solo Generar Ventas
               </button>
               <button
                 onClick={clearAndReloadAll}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
-                Limpiar y Recargar
+                [DEV] Limpiar y Recargar
               </button>
             </div>
           )}
@@ -790,29 +790,29 @@ export default function SalesPage() {
                 : "No hay ventas registradas."
               }
             </p>
-            {selectedDevelopment === "all" && filterStatus === "all" && (
+            {selectedDevelopment === "all" && filterStatus === "all" && process.env.NODE_ENV === 'development' && (
               <>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Para ver ventas aquí, primero necesitas generar datos de prueba.
+                  [DESARROLLO] Herramientas para generar datos de prueba.
                 </p>
                 <div className="flex gap-3 justify-center">
                   <button
                     onClick={generateSampleData}
                     className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                   >
-                    Generar Datos de Prueba
+                    [DEV] Generar Datos de Prueba
                   </button>
                   <button
                     onClick={generateSampleSales}
                     className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                   >
-                    Solo Generar Ventas
+                    [DEV] Solo Generar Ventas
                   </button>
                   <button
                     onClick={clearAndReloadAll}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                   >
-                    Limpiar y Recargar
+                    [DEV] Limpiar y Recargar
                   </button>
                 </div>
               </>

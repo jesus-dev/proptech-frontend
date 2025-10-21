@@ -128,7 +128,7 @@ function mapBackendToFrontend(backend: BackendProperty): Property {
     agent: {
       name: 'Agente',
       email: 'agente@example.com',
-      phone: '+1234567890',
+      phone: '+595 985 940797',
       photo: '/images/user/user-01.png'
     },
     yearBuilt: backend.anoConstruccion,
@@ -185,7 +185,7 @@ function mapBackendToFrontend(backend: BackendProperty): Property {
     propertyAgent: {
       name: 'Agente',
       email: 'agente@example.com',
-      phone: '+1234567890',
+      phone: '+595 985 940797',
       photo: '/images/user/user-01.png'
     }
   };

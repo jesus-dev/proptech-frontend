@@ -155,17 +155,18 @@ export interface RefreshTokenResponse {
 export interface Permission {
   id: number;
   name: string;
-  description?: string;
-  resource?: string;
-  action?: string;
-  category?: string;
-  active?: boolean;
+  description: string;
+  resource: string;
+  action: string;
+  category: string | null;
+  active: boolean;
 }
 
 export interface Role {
   id: number;
   name: string;
-  description?: string;
-  permissions?: Permission[];
+  description: string;
+  permissions?: string[];
+  permissionDetails?: Permission[];
   active: boolean;
 } 

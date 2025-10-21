@@ -119,15 +119,20 @@ export default function MultimediaStep({
       await setImageAsFeatured(imageId);
       console.log('✅ Set image as featured:', imageId);
       
-      // Actualizar la imagen destacada en el formData
-      if (setFormData) {
-        setFormData({ featuredImage: imageUrl });
-      }
+      // Actualizar la imagen destacada en el formData usando handleChange
+      const syntheticEvent = {
+        target: {
+          name: 'featuredImage',
+          value: imageUrl
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
       
-      alert('Imagen establecida como destacada correctamente');
+      handleChange(syntheticEvent);
+      
+      alert('✅ Imagen establecida como destacada correctamente');
     } catch (error) {
       console.error('Error setting featured image:', error);
-      alert('Error al establecer imagen destacada. Por favor, intenta nuevamente.');
+      alert('❌ Error al establecer imagen destacada. Por favor, intenta nuevamente.');
     } finally {
       setSettingFeaturedId(null);
     }

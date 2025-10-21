@@ -88,8 +88,8 @@ class PriceHistoryService {
       return filteredHistory;
     } catch (error) {
       console.error('Error fetching price history:', error);
-      // Fallback a datos mock si hay error
-      return this.getMockPriceHistory(filters);
+      // En producción, retornar array vacío en lugar de datos mock
+      throw error;
     }
   }
   
@@ -102,71 +102,6 @@ class PriceHistoryService {
       return 'RENT';
     }
     return 'SALE';
-  }
-  
-  // Método auxiliar para generar datos mock como fallback
-  private getMockPriceHistory(filters: PriceHistoryFilters = {}): PriceHistory[] {
-    const mockHistory: PriceHistory[] = [];
-    
-    // Generar algunos registros de ejemplo
-    const properties = [
-      { id: '1', title: 'Casa en Villa Morra', price: 150000000 },
-      { id: '2', title: 'Departamento en Centro', price: 80000000 },
-      { id: '3', title: 'Casa en San Lorenzo', price: 120000000 },
-      { id: '4', title: 'Oficina en Asunción', price: 200000000 },
-      { id: '5', title: 'Terreno en Luque', price: 50000000 }
-    ];
-    
-    properties.forEach((property, index) => {
-      // Crear 3-4 registros de historial por propiedad
-      for (let i = 0; i < 4; i++) {
-        const basePrice = property.price;
-        const variation = (Math.random() - 0.5) * 0.1; // ±5% variación
-        const newPrice = Math.round(basePrice * (1 + variation));
-        const change = newPrice - basePrice;
-        const changePercent = (change / basePrice) * 100;
-        
-        mockHistory.push({
-          id: `${property.id}_${i}`,
-          propertyId: property.id,
-          propertyTitle: property.title,
-          date: new Date(Date.now() - (i * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
-          price: newPrice,
-          change: change,
-          changePercent: changePercent,
-          operation: i % 2 === 0 ? 'SALE' : 'RENT',
-          source: ['Portal Inmobiliario', 'Agencia Local', 'Sitio Web', 'App Móvil'][i % 4]
-        });
-      }
-    });
-    
-    // Aplicar filtros
-    let filteredHistory = mockHistory;
-    
-    if (filters.propertyId) {
-      filteredHistory = filteredHistory.filter(h => h.propertyId === filters.propertyId);
-    }
-    
-    if (filters.startDate) {
-      filteredHistory = filteredHistory.filter(h => h.date >= filters.startDate!);
-    }
-    
-    if (filters.endDate) {
-      filteredHistory = filteredHistory.filter(h => h.date <= filters.endDate!);
-    }
-    
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredHistory = filteredHistory.filter(h => 
-        h.propertyTitle.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    if (filters.operation) {
-      filteredHistory = filteredHistory.filter(h => h.operation === filters.operation);
-    }
-    
-    return filteredHistory;
   }
 
   // Obtener propiedades para el filtro

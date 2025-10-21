@@ -31,81 +31,6 @@ export default function PriceHistoryPage() {
   });
   const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
 
-  // Datos de ejemplo
-  const mockPriceHistory: PriceHistory[] = [
-    {
-      id: "1",
-      propertyId: "1",
-      propertyTitle: "Casa en Villa Morra",
-      date: "2024-01-15",
-      price: 180000000,
-      change: 5000000,
-      changePercent: 2.86,
-      operation: 'SALE',
-      source: "Portal Inmobiliario"
-    },
-    {
-      id: "2",
-      propertyId: "1",
-      propertyTitle: "Casa en Villa Morra",
-      date: "2024-02-15",
-      price: 185000000,
-      change: 5000000,
-      changePercent: 2.78,
-      operation: 'SALE',
-      source: "Portal Inmobiliario"
-    },
-    {
-      id: "3",
-      propertyId: "2",
-      propertyTitle: "Departamento en Centro",
-      date: "2024-01-20",
-      price: 120000000,
-      change: -2000000,
-      changePercent: -1.64,
-      operation: 'SALE',
-      source: "Agencia Local"
-    },
-    {
-      id: "4",
-      propertyId: "3",
-      propertyTitle: "Casa en San Lorenzo",
-      date: "2024-02-01",
-      price: 95000000,
-      change: 3000000,
-      changePercent: 3.26,
-      operation: 'SALE',
-      source: "Portal Inmobiliario"
-    }
-  ];
-
-  const mockProperties: Property[] = [
-    {
-      id: "1",
-      title: "Casa en Villa Morra",
-      type: "Casa",
-      city: "Asunción",
-      currentPrice: 185000000,
-      operation: "VENTA"
-    },
-    {
-      id: "2",
-      title: "Departamento en Centro",
-      type: "Departamento",
-      city: "Asunción",
-      currentPrice: 120000000,
-      operation: "VENTA"
-    },
-    {
-      id: "3",
-      title: "Casa en San Lorenzo",
-      type: "Casa",
-      city: "San Lorenzo",
-      currentPrice: 95000000,
-      operation: "VENTA"
-    }
-  ];
-
   useEffect(() => {
     loadData();
   }, []);
@@ -113,7 +38,7 @@ export default function PriceHistoryPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Cargar propiedades y historial de precios
+      // Cargar propiedades y historial de precios desde el backend
       const [propertiesData, historyData] = await Promise.all([
         priceHistoryService.getProperties(),
         priceHistoryService.getPriceHistory()
@@ -123,11 +48,11 @@ export default function PriceHistoryPage() {
       setPriceHistory(historyData);
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Error al cargar los datos');
+      toast.error('Error al cargar los datos. Por favor, intenta nuevamente.');
       
-      // Fallback a datos mock si hay error
-      setPriceHistory(mockPriceHistory);
-      setProperties(mockProperties);
+      // En producción, no usar fallback a datos mock
+      setPriceHistory([]);
+      setProperties([]);
     } finally {
       setLoading(false);
     }
