@@ -21,12 +21,23 @@ function getFullImageUrl(url: string): string {
   }
   
   // Si es una URL relativa del backend (como /uploads/gallery/...), usar getEndpoint
-  if (url.startsWith('/uploads/') || url.startsWith('/api/')) {
-    return getEndpoint(url);
+  if (url.startsWith('/uploads/')) {
+    const fullUrl = getEndpoint(url);
+    console.log('🔄 Using uploads URL:', url, '->', fullUrl);
+    return fullUrl;
+  }
+  
+  // Si ya es una URL de API, usar getEndpoint
+  if (url.startsWith('/api/')) {
+    const fullUrl = getEndpoint(url);
+    console.log('🔗 API URL:', url, '->', fullUrl);
+    return fullUrl;
   }
   
   // Si es solo un nombre de archivo, asumir que está en la carpeta de archivos
-  return getEndpoint(`/api/files/${url}`);
+  const fullUrl = getEndpoint(`/api/files/${url}`);
+  console.log('📁 Filename URL:', url, '->', fullUrl);
+  return fullUrl;
 }
 
 export async function getGalleryImages(propertyId: number | string): Promise<GalleryImage[]> {
@@ -97,5 +108,19 @@ export async function deleteGalleryImage(imageId: number | string): Promise<void
   if (!res.ok) {
     console.error('GalleryImageService - Delete error:', res.status, res.statusText);
     throw new Error('Error al eliminar imagen de galería');
+  }
+}
+
+export async function setImageAsFeatured(imageId: number | string): Promise<void> {
+  const apiUrl = getApiUrl();
+  const fullUrl = `${apiUrl}/api/gallery-images/${imageId}/set-featured`;
+  console.log('GalleryImageService - Set featured URL:', fullUrl);
+  
+  const res = await fetch(fullUrl, { method: 'PUT' });
+  console.log('GalleryImageService - Set featured response status:', res.status);
+  
+  if (!res.ok) {
+    console.error('GalleryImageService - Set featured error:', res.status, res.statusText);
+    throw new Error('Error al establecer imagen destacada');
   }
 } 

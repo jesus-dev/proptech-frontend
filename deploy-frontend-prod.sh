@@ -214,6 +214,7 @@ sudo cp -r public "$PROD_DIR/"
 sudo cp package.json "$PROD_DIR/"
 sudo cp package-lock.json "$PROD_DIR/"
 sudo cp next.config.js "$PROD_DIR/" 2>/dev/null || sudo cp next.config.ts "$PROD_DIR/" 2>/dev/null || echo "⚠️ No se encontró next.config"
+sudo cp .env.production "$PROD_DIR/" 2>/dev/null || echo "⚠️ .env.production ya configurado"
 
 # Instalar solo dependencias de producción
 cd "$PROD_DIR"

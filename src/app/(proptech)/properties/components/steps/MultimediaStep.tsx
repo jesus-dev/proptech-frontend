@@ -1,11 +1,14 @@
 "use client";
-import Image from 'next/image';
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyForm";
-import { X, Upload, Image as ImageIcon, AlertCircle, CheckCircle, Loader2, Info, Trash2, Eye, Download, Star } from "lucide-react";
-import { getGalleryImages, uploadGalleryImage, deleteGalleryImage, GalleryImage } from '../../services/galleryImageService';
-import ValidatedInput from "@/components/form/input/ValidatedInput";
-import { getEndpoint } from "@/lib/api-config";
+import { X, Upload, Image as ImageIcon, Loader2, Video, Star } from "lucide-react";
+import { 
+  getGalleryImages, 
+  uploadGalleryImage, 
+  deleteGalleryImage,
+  setImageAsFeatured,
+  type GalleryImage 
+} from "../../services/galleryImageService";
 
 interface MultimediaStepProps {
   formData: PropertyFormData;
@@ -15,8 +18,8 @@ interface MultimediaStepProps {
   removeFeaturedImage: () => void;
   errors: PropertyFormErrors;
   propertyId?: string;
-  setFormData?: (data: PropertyFormData) => void;
-  validate?: () => void;
+  setFormData?: (data: Partial<PropertyFormData>) => void;
+  validate?: () => boolean;
 }
 
 export default function MultimediaStep({ 
@@ -25,499 +28,433 @@ export default function MultimediaStep({
   handleFileChange, 
   removeImage, 
   removeFeaturedImage, 
-  errors, 
+  errors,
   propertyId,
   setFormData,
-  validate 
+  validate
 }: MultimediaStepProps) {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [featuredImageId, setFeaturedImageId] = useState<number | null>(null);
+  const [loadingGallery, setLoadingGallery] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [deletingImageId, setDeletingImageId] = useState<number | null>(null);
+  const [settingFeaturedId, setSettingFeaturedId] = useState<number | null>(null);
 
-  // Función para sincronizar imágenes con formData
-  const syncImagesWithFormData = useCallback((images: GalleryImage[]) => {
-    if (setFormData && validate) {
-      const imageUrls = images.map(img => img.url);
-      setFormData({
-        ...formData,
-        images: imageUrls
-      });
-      // Validar después de sincronizar
-      setTimeout(() => validate(), 100);
+  // Cargar imágenes de galería si tenemos propertyId
+  useEffect(() => {
+    if (propertyId) {
+      loadGalleryImages();
     }
-  }, [setFormData, validate, formData]);
+  }, [propertyId]);
 
-  // Cargar imágenes de galería
-  const loadGalleryImages = useCallback(async () => {
-    if (!propertyId) {
-      return;
-    }
+  const loadGalleryImages = async () => {
+    if (!propertyId) return;
     
-    setLoading(true);
-    setError(null);
-    
+    setLoadingGallery(true);
     try {
       const images = await getGalleryImages(propertyId);
-      
+      console.log('🖼️ Loaded gallery images:', images.length, images);
       setGalleryImages(images);
-      
-      // Sincronizar con formData solo si no hay imágenes ya cargadas
-      if (images.length > 0) {
-        syncImagesWithFormData(images);
-      }
-    } catch (err) {
-      setError('Error al cargar imágenes de galería. Asegúrate de que la propiedad esté guardada primero.');
-      setGalleryImages([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [propertyId, syncImagesWithFormData]);
-
-  // Cargar imágenes al montar el componente
-  useEffect(() => {
-    loadGalleryImages();
-  }, [loadGalleryImages]);
-
-  // Sincronizar featuredImageId con formData al cargar imágenes
-  useEffect(() => {
-    if (galleryImages.length > 0) {
-      // Si ya hay una imagen destacada en formData, buscar su id
-      if (formData.featuredImage) {
-        const found = galleryImages.find(img => img.url === formData.featuredImage);
-        if (found) {
-          setFeaturedImageId(found.id);
-        } else {
-          setFeaturedImageId(galleryImages[0].id);
-          if (setFormData && formData.featuredImage !== galleryImages[0].url) {
-            setFormData({ ...formData, featuredImage: galleryImages[0].url });
-          }
-        }
-      } else {
-        setFeaturedImageId(galleryImages[0].id);
-        if (setFormData && formData.featuredImage !== galleryImages[0].url) {
-          setFormData({ ...formData, featuredImage: galleryImages[0].url });
-        }
-      }
-    }
-  }, [galleryImages, formData.featuredImage, setFormData]);
-
-  // Cuando el usuario selecciona una imagen destacada
-  const handleSetFeatured = async (image: GalleryImage) => {
-    
-    try {
-      // Actualizar estado local inmediatamente
-      setFeaturedImageId(image.id);
-      if (setFormData) {
-        setFormData({ ...formData, featuredImage: image.url });
-      }
-      
-      // Guardar en el backend solo si hay propertyId
-      if (propertyId) {
-        
-        const response = await fetch(getEndpoint(`/api/properties/${propertyId}/featured-image`), {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            featuredImageUrl: image.url
-          }),
-        });
-        
-        if (response.ok) {
-        } else {
-          const errorText = await response.text();
-        }
-      }
     } catch (error) {
-      // Revertir estado local en caso de error
-      setFeaturedImageId(null);
-      if (setFormData) {
-        setFormData({ ...formData, featuredImage: "" });
-      }
+      console.error('Error loading gallery images:', error);
+    } finally {
+      setLoadingGallery(false);
     }
   };
 
-  // Subir nueva imagen
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    
-    const file = e.target.files[0];
-    setUploading(true);
-    setError(null);
-    
+  const handleGalleryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!propertyId) {
+      console.warn('Cannot upload gallery image without propertyId');
+      return;
+    }
+
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
     try {
-      if (!propertyId) {
-        // Si no hay propertyId, crear una imagen temporal
-        const tempImage: GalleryImage = {
-          id: Date.now(), // ID temporal
-          propertyId: 0,
-          url: URL.createObjectURL(file),
-          altText: file.name,
-          fileSize: file.size
-        };
-        
-        const updatedImages = [...galleryImages, tempImage];
-        setGalleryImages(updatedImages);
-        syncImagesWithFormData(updatedImages);
-        
-      } else {
-        // Subir al servidor si hay propertyId
-        const newImage = await uploadGalleryImage(propertyId, file);
-        
-        const updatedImages = [...galleryImages, newImage];
-        setGalleryImages(updatedImages);
-        syncImagesWithFormData(updatedImages);
-      }
+      // Subir todas las imágenes seleccionadas
+      const uploadPromises = Array.from(files).map(file => 
+        uploadGalleryImage(propertyId, file)
+      );
       
-      // Limpiar input
+      const uploadedImages = await Promise.all(uploadPromises);
+      console.log('✅ Uploaded gallery images:', uploadedImages);
+      
+      // Recargar la galería
+      await loadGalleryImages();
+      
+      // Limpiar el input
       e.target.value = '';
-    } catch (err) {
-      setError('Error al subir imagen. Asegúrate de que la propiedad esté guardada primero.');
+    } catch (error) {
+      console.error('Error uploading gallery image:', error);
+      alert('Error al subir las imágenes. Por favor, intenta nuevamente.');
     } finally {
-      setUploading(false);
+      setUploadingImage(false);
     }
   };
 
-  // Eliminar imagen de galería
   const handleDeleteGalleryImage = async (imageId: number) => {
-    setLoading(true);
-    setError(null);
-    
+    if (!confirm('¿Estás seguro de que deseas eliminar esta imagen?')) {
+      return;
+    }
+
+    setDeletingImageId(imageId);
     try {
-      // Si es una imagen temporal (ID muy alto), solo eliminarla localmente
-      if (imageId > 1000000) {
-        const updatedImages = galleryImages.filter(img => img.id !== imageId);
-        setGalleryImages(updatedImages);
-        syncImagesWithFormData(updatedImages);
-        return;
-      }
+      await deleteGalleryImage(imageId);
+      console.log('✅ Deleted gallery image:', imageId);
       
-      // Si hay propertyId, eliminar del servidor
-      if (propertyId) {
-        await deleteGalleryImage(imageId);
-      }
-      
-      const updatedImages = galleryImages.filter(img => img.id !== imageId);
-      setGalleryImages(updatedImages);
-      syncImagesWithFormData(updatedImages);
-    } catch (err) {
-      setError('Error al eliminar imagen del servidor');
+      // Actualizar la lista local
+      setGalleryImages(prev => prev.filter(img => img.id !== imageId));
+    } catch (error) {
+      console.error('Error deleting gallery image:', error);
+      alert('Error al eliminar la imagen. Por favor, intenta nuevamente.');
     } finally {
-      setLoading(false);
+      setDeletingImageId(null);
     }
   };
 
-  // Calcular estadísticas
-  const totalImages = galleryImages.length;
-  const totalSize = galleryImages.reduce((acc, img) => acc + (img.fileSize || 0), 0);
-  
-  // Extraer tipos de archivo de manera más inteligente
-  const imageTypes = [...new Set(galleryImages.map(img => {
-    const url = img.url;
-    // Buscar extensión en la URL
-    const extension = url.split('.').pop()?.split('?')[0]?.toUpperCase();
-    if (extension && ['JPG', 'JPEG', 'PNG', 'GIF', 'WEBP', 'AVIF'].includes(extension)) {
-      return extension;
+  const handleSetAsFeatured = async (imageId: number, imageUrl: string) => {
+    setSettingFeaturedId(imageId);
+    try {
+      await setImageAsFeatured(imageId);
+      console.log('✅ Set image as featured:', imageId);
+      
+      // Actualizar la imagen destacada en el formData
+      if (setFormData) {
+        setFormData({ featuredImage: imageUrl });
+      }
+      
+      alert('Imagen establecida como destacada correctamente');
+    } catch (error) {
+      console.error('Error setting featured image:', error);
+      alert('Error al establecer imagen destacada. Por favor, intenta nuevamente.');
+    } finally {
+      setSettingFeaturedId(null);
     }
-    // Si no hay extensión clara, intentar detectar por el tipo MIME
-    if (url.includes('image/')) {
-      const mimeType = url.match(/image\/([^;?]+)/)?.[1]?.toUpperCase();
-      return mimeType || 'IMG';
-    }
-    return 'IMG';
-  }))];
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header con estadísticas */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <ImageIcon className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Multimedia</h3>
-              <p className="text-sm text-gray-600">Gestiona las imágenes de tu propiedad</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            {loading && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
-            {error && <AlertCircle className="w-4 h-4 text-red-500" />}
-            {!loading && !error && galleryImages.length > 0 && (
-              <CheckCircle className="w-4 h-4 text-green-500" />
-            )}
-          </div>
-        </div>
+      {/* Featured Image */}
+      <div>
+        <label
+          htmlFor="featuredImage"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          Imagen Destacada
+        </label>
         
-        {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center space-x-2">
-              <ImageIcon className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-600">Total Imágenes</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{totalImages}</p>
+        {formData.featuredImage ? (
+          <div className="relative group">
+            <img
+              src={formData.featuredImage}
+              alt="Imagen destacada"
+              className="w-full h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+            />
+            <button
+              type="button"
+              onClick={removeFeaturedImage}
+              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center space-x-2">
-              <Download className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-gray-600">Tamaño Total</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">
-              {totalSize > 0 ? (
-                totalSize > 1024 * 1024 ? 
-                  `${(totalSize / 1024 / 1024).toFixed(1)} MB` : 
-                  `${(totalSize / 1024).toFixed(1)} KB`
-              ) : '0 KB'}
+        ) : (
+          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
+            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Haz clic para subir una imagen destacada
             </p>
+            <input
+              type="file"
+              id="featuredImage"
+              name="featuredImage"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <label
+              htmlFor="featuredImage"
+              className="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-500 hover:bg-brand-600 cursor-pointer"
+            >
+              Seleccionar Imagen
+            </label>
           </div>
-          <div className="bg-white rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center space-x-2">
-              <Info className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-600">Tipos</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">
-              {imageTypes.length > 0 ? (
-                imageTypes.length <= 3 ? 
-                  imageTypes.join(', ') : 
-                  `${imageTypes.slice(0, 2).join(', ')} +${imageTypes.length - 2}`
-              ) : 'N/A'}
-            </p>
-          </div>
-        </div>
+        )}
+        
+        {errors.featuredImage && (
+          <p className="mt-1 text-sm text-red-500">{errors.featuredImage}</p>
+        )}
       </div>
 
-      {/* Mensaje de error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="w-5 h-5 text-red-500" />
-            <span className="text-sm font-medium text-red-800">{error}</span>
+      {/* Gallery Images - Para propiedades existentes */}
+      {propertyId && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Galería de Imágenes (Backend)
+          </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Estas imágenes están almacenadas en el servidor y asociadas a esta propiedad
+          </p>
+
+          {/* Loading State */}
+          {loadingGallery && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+              <span className="ml-2 text-gray-600 dark:text-gray-400">
+                Cargando galería...
+              </span>
+            </div>
+          )}
+
+          {/* Gallery Grid */}
+          {!loadingGallery && galleryImages.length > 0 && (
+            <>
+              <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+                Total de imágenes: {galleryImages.length}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                {galleryImages.map((image, index) => {
+                  console.log(`🖼️ Rendering image ${index + 1}/${galleryImages.length}:`, image.url);
+                  const isFeatured = formData.featuredImage === image.url;
+                  return (
+                    <div key={image.id} className={`relative group bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden ${isFeatured ? 'ring-2 ring-yellow-500' : ''}`}>
+                      <div className="relative w-full h-32">
+                        <img
+                          src={image.url}
+                          alt={image.altText || `Imagen ${image.id}`}
+                          className="w-full h-full object-cover"
+                          onLoad={() => {
+                            console.log(`✅ Successfully loaded image ${index + 1}:`, image.url);
+                          }}
+                          onError={(e) => {
+                            console.error(`❌ Failed to load image ${index + 1}:`, image.url);
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                        {/* Placeholder que aparece si la imagen falla */}
+                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500" style={{ zIndex: -1 }}>
+                          <div className="text-center text-xs">
+                            <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                            </svg>
+                            <p>Imagen {index + 1}</p>
+                          </div>
+                        </div>
+                        {/* Badge de destacada */}
+                        {isFeatured && (
+                          <div className="absolute top-1 left-1 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
+                            <Star className="h-3 w-3 fill-current" />
+                            <span>Destacada</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Botones de acción */}
+                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <button
+                          type="button"
+                          onClick={() => handleSetAsFeatured(image.id, image.url)}
+                          disabled={settingFeaturedId === image.id || isFeatured}
+                          className={`${
+                            isFeatured 
+                              ? 'bg-yellow-600' 
+                              : 'bg-yellow-500 hover:bg-yellow-600'
+                          } text-white rounded-full p-1 disabled:opacity-50`}
+                          title={isFeatured ? 'Ya es destacada' : 'Marcar como destacada'}
+                        >
+                          {settingFeaturedId === image.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Star className={`h-3 w-3 ${isFeatured ? 'fill-current' : ''}`} />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteGalleryImage(image.id)}
+                          disabled={deletingImageId === image.id}
+                          className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 disabled:opacity-50"
+                          title="Eliminar imagen"
+                        >
+                          {deletingImageId === image.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <X className="h-3 w-3" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Empty State */}
+          {!loadingGallery && galleryImages.length === 0 && (
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+              <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                No hay imágenes en la galería
+              </p>
+            </div>
+          )}
+
+          {/* Upload Button */}
+          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
+            <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              {uploadingImage ? 'Subiendo imágenes...' : 'Agregar más imágenes a la galería'}
+            </p>
+            <input
+              type="file"
+              id="galleryImages"
+              accept="image/*"
+              multiple
+              onChange={handleGalleryImageUpload}
+              disabled={uploadingImage}
+              className="hidden"
+            />
+            <label
+              htmlFor="galleryImages"
+              className={`mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+                uploadingImage 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-brand-500 hover:bg-brand-600 cursor-pointer'
+              }`}
+            >
+              {uploadingImage ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Subiendo...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Seleccionar Imágenes
+                </>
+              )}
+            </label>
           </div>
         </div>
       )}
 
-      {/* Área de carga */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-        <div className="space-y-4">
-          <div className="flex justify-center">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Upload className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">Subir imágenes</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Arrastra y suelta imágenes aquí, o haz clic para seleccionar
-            </p>
-            {!propertyId && (
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-xs text-yellow-800">
-                  💡 Las imágenes se guardarán temporalmente hasta que guardes la propiedad
-                </p>
-              </div>
-            )}
-          </div>
-          <div className="flex justify-center">
-            <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              {uploading ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Subiendo...</span>
-                </div>
-              ) : (
-                'Seleccionar archivos'
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-            </label>
-          </div>
-          <p className="text-xs text-gray-500">
-            PNG, JPG, JPEG hasta 10MB
+      {/* Gallery Images - Para propiedades nuevas (sin propertyId) */}
+      {!propertyId && formData.images && formData.images.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Galería de Imágenes (Temporal)
+          </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Estas imágenes se subirán cuando guardes la propiedad
           </p>
-        </div>
-      </div>
-
-      {/* Galería de imágenes */}
-      {galleryImages.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-lg font-medium text-gray-900">Imágenes de galería</h4>
-            {featuredImageId && (
-              <div className="flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full">
-                <Star className="w-4 h-4" fill="#facc15" />
-                <span>Imagen destacada seleccionada</span>
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {galleryImages.map((image, index) => (
-              <div key={image.id} className={`relative group bg-white rounded-lg border ${featuredImageId === image.id ? 'border-yellow-400 ring-2 ring-yellow-300' : 'border-gray-200'} overflow-hidden shadow-sm hover:shadow-md transition-shadow`}>
-                <div className="relative">
-                  <img
-                    src={image.url}
-                    alt={image.altText || `Imagen ${index + 1}`}
-                    className="w-full h-48 object-cover"
-                  />
-                  
-                  {/* Botón de estrella simplificado y más grande */}
-                  <button
-                    type="button"
-                    className={`absolute top-3 left-3 p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200 hover:bg-white transition-all duration-200 ${featuredImageId === image.id ? 'text-yellow-500 bg-yellow-50' : 'text-gray-400 hover:text-yellow-500'}`}
-                    title={featuredImageId === image.id ? 'Imagen destacada' : 'Marcar como destacada'}
-                    onClick={() => {
-                      handleSetFeatured(image);
-                    }}
-                  >
-                    <Star className="w-5 h-5" fill={featuredImageId === image.id ? '#facc15' : 'none'} />
-                  </button>
-                  
-                  {/* Botón de eliminar en esquina superior derecha */}
-                  <button
-                    type="button"
-                    className="absolute top-3 right-3 p-2 rounded-full bg-red-500/90 backdrop-blur-sm shadow-lg border border-red-200 hover:bg-red-500 transition-all duration-200 text-white"
-                    title="Eliminar imagen"
-                    onClick={() => handleDeleteGalleryImage(image.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  
-                  {/* Botón de ver en esquina inferior derecha */}
-                  <button
-                    type="button"
-                    className="absolute bottom-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200 hover:bg-white transition-all duration-200 text-gray-700"
-                    title="Ver imagen"
-                    onClick={() => window.open(image.url, '_blank')}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {/* Información de la imagen */}
-                <div className="p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      {image.url.split('/').pop()?.split('.')[0] || 'Imagen'}
-                    </span>
-                    {image.fileSize && (
-                      <span className="text-xs text-gray-500">
-                        {(image.fileSize / 1024 / 1024).toFixed(1)} MB
-                      </span>
-                    )}
-                  </div>
-                  {image.altText && (
-                    <p className="text-xs text-gray-500 mt-1 truncate">
-                      {image.altText}
-                    </p>
-                  )}
-                </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+            {formData.images.map((image, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={image}
+                  alt={`Imagen ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Mensaje cuando no hay imágenes */}
-      {!loading && galleryImages.length === 0 && (
-        <div className="text-center py-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-gray-100 rounded-full">
-              <ImageIcon className="w-8 h-8 text-gray-400" />
-            </div>
+      {/* Upload for new properties */}
+      {!propertyId && (
+        <div>
+          <label htmlFor="images" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Agregar Imágenes
+          </label>
+          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
+            <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Arrastra imágenes aquí o haz clic para seleccionar
+            </p>
+            <input
+              type="file"
+              id="images"
+              name="images"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <label
+              htmlFor="images"
+              className="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-500 hover:bg-brand-600 cursor-pointer"
+            >
+              Seleccionar Imágenes
+            </label>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {!propertyId ? 'Guarda la propiedad primero' : 'No hay imágenes'}
-          </h3>
-          <p className="text-sm text-gray-600">
-            {!propertyId 
-              ? 'Guarda la propiedad para poder subir imágenes a la galería'
-              : 'Sube algunas imágenes para crear una galería atractiva para tu propiedad'
-            }
-          </p>
-          {!propertyId && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                💡 Puedes continuar con los otros pasos y volver aquí después de guardar
-              </p>
-            </div>
+          
+          {errors.images && (
+            <p className="mt-1 text-sm text-red-500">{errors.images}</p>
           )}
         </div>
       )}
 
-      {/* Validación de errores */}
-      {errors.images && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <X className="w-5 h-5 text-red-500" />
-            <span className="text-sm font-medium text-red-800">{errors.images}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Campos adicionales de multimedia */}
-      <div className="space-y-6">
-        <h4 className="text-lg font-medium text-gray-900">Videos y Tours Virtuales</h4>
-        
-        {/* Video URL */}
-        <div>
-          <ValidatedInput
+      {/* Video URL */}
+      <div>
+        <label
+          htmlFor="videoUrl"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          URL del Video
+        </label>
+        <div className="relative">
+          <Video className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
             type="url"
             id="videoUrl"
             name="videoUrl"
-            label="URL del Video"
-            value={formData.videoUrl || ""}
+            value={formData.videoUrl}
             onChange={handleChange}
-            placeholder="https://youtube.com/watch?v=..."
-            error={errors.videoUrl}
+            placeholder="https://www.youtube.com/watch?v=..."
+            className={`w-full pl-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              errors.videoUrl ? "border-red-500" : "border-gray-300"
+            }`}
           />
-          <p className="mt-1 text-sm text-gray-500">
-            Enlace a video de YouTube, Vimeo u otra plataforma
-          </p>
         </div>
+        {errors.videoUrl && (
+          <p className="mt-1 text-sm text-red-500">{errors.videoUrl}</p>
+        )}
+      </div>
 
-        {/* Virtual Tour URL */}
-        <div>
-          <ValidatedInput
-            type="url"
-            id="virtualTourUrl"
-            name="virtualTourUrl"
-            label="URL del Tour Virtual"
-            value={formData.virtualTourUrl || ""}
-            onChange={handleChange}
-            placeholder="https://example.com/tour..."
-            error={errors.virtualTourUrl}
-          />
-          <p className="mt-1 text-sm text-gray-500">
-            Enlace a tour virtual 360° o similar
-          </p>
-        </div>
-
-        {/* Featured Image URL */}
-        <div>
-          <ValidatedInput
-            type="url"
-            id="featuredImage"
-            name="featuredImage"
-            label="URL de Imagen Destacada"
-            value={formData.featuredImage || ""}
-            onChange={handleChange}
-            placeholder="https://example.com/featured-image.jpg"
-            error={errors.featuredImage}
-          />
-          <p className="mt-1 text-sm text-gray-500">
-            URL de la imagen principal de la propiedad
-          </p>
-        </div>
+      {/* Virtual Tour URL */}
+      <div>
+        <label
+          htmlFor="virtualTourUrl"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          URL del Tour Virtual
+        </label>
+        <input
+          type="url"
+          id="virtualTourUrl"
+          name="virtualTourUrl"
+          value={formData.virtualTourUrl}
+          onChange={handleChange}
+          placeholder="https://..."
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+            errors.virtualTourUrl ? "border-red-500" : "border-gray-300"
+          }`}
+        />
+        {errors.virtualTourUrl && (
+          <p className="mt-1 text-sm text-red-500">{errors.virtualTourUrl}</p>
+        )}
       </div>
     </div>
   );
-} 
+}
+

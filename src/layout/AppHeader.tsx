@@ -135,7 +135,7 @@ const AppHeaderCRM: React.FC = () => {
             <NotificationDropdown />
           </div>
           <UserDropdown 
-            name={user?.fullName || 'Usuario'}
+            name={user?.fullName || user?.firstName || user?.lastName || user?.email?.split('@')[0] || 'Usuario'}
             email={user?.email || 'usuario@proptech.com'}
             role={user?.roles?.[0] || 'Administrador'}
             lastLogin={user?.lastLogin}
