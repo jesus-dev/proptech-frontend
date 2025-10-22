@@ -204,6 +204,7 @@ export default function PropertiesPage() {
   const [priceRangeFilter, setPriceRangeFilter] = useState("");
   const [featuredFilter, setFeaturedFilter] = useState(false);
   const [premiumFilter, setPremiumFilter] = useState(false);
+  const [showDraftsOnly, setShowDraftsOnly] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [allProperties, setAllProperties] = useState<Property[]>([]); // Todas las propiedades
@@ -313,9 +314,27 @@ export default function PropertiesPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Calcular stats de borradores
+  const draftCount = useMemo(() => {
+    return allProperties.filter(p => 
+      p.propertyStatusCode === 'DRAFT' || 
+      p.propertyStatus === 'Borrador' ||
+      p.status === 'DRAFT'
+    ).length;
+  }, [allProperties]);
+
   // Filtrar propiedades localmente sin recargar
   const filteredProperties = useMemo(() => {
     let filtered = allProperties;
+    
+    // Filtro de solo borradores
+    if (showDraftsOnly) {
+      filtered = filtered.filter(property => 
+        property.propertyStatusCode === 'DRAFT' || 
+        property.propertyStatus === 'Borrador' ||
+        property.status === 'DRAFT'
+      );
+    }
     
     // Filtros básicos (exactos)
     if (statusFilter.trim()) {
@@ -374,7 +393,7 @@ export default function PropertiesPage() {
     }
     
     return filtered;
-  }, [allProperties, debouncedSearchQuery, statusFilter, typeFilter, cityFilter, priceRangeFilter, featuredFilter, premiumFilter]);
+  }, [allProperties, debouncedSearchQuery, statusFilter, typeFilter, cityFilter, priceRangeFilter, featuredFilter, premiumFilter, showDraftsOnly]);
 
   // Para scroll infinito, mostramos todas las propiedades filtradas
   const paginatedProperties = filteredProperties;
@@ -496,6 +515,19 @@ export default function PropertiesPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => setShowDraftsOnly(!showDraftsOnly)}
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-all duration-200 shadow-sm hover:shadow-md sm:gap-3 sm:px-6 sm:py-3 sm:text-base ${
+                  showDraftsOnly
+                    ? 'text-white bg-orange-600 hover:bg-orange-700'
+                    : 'text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                }`}
+              >
+                <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {showDraftsOnly ? 'Ver Todas' : `Borradores ${draftCount > 0 ? `(${draftCount})` : ''}`}
+              </button>
               <a
                 href="/properties/new"
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-all duration-200 shadow-lg hover:shadow-xl sm:gap-3 sm:px-6 sm:py-3 sm:text-base"

@@ -15,15 +15,24 @@ interface PageProps {
 
 export default function EditContactPage({ params }: PageProps) {
   const router = useRouter();
-  const { id } = React.use(params);
-
+  const [id, setId] = useState<string | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadParams = async () => {
+      const resolvedParams = await params;
+      setId(resolvedParams.id);
+    };
+    loadParams();
+  }, [params]);
+
+  useEffect(() => {
     const loadContact = async () => {
+      if (!id) return;
+      
       try {
         setLoading(true);
         setError(null);
@@ -41,12 +50,12 @@ export default function EditContactPage({ params }: PageProps) {
       }
     };
 
-    if (id) {
-      loadContact();
-    }
+    loadContact();
   }, [id]);
 
   const handleSubmit = async (formData: ContactFormData) => {
+    if (!id) return;
+    
     try {
       setSaving(true);
       setError(null);
@@ -64,6 +73,7 @@ export default function EditContactPage({ params }: PageProps) {
   };
 
   const handleCancel = () => {
+    if (!id) return;
     router.push(`/contacts/${id}`);
   };
 
@@ -174,7 +184,7 @@ export default function EditContactPage({ params }: PageProps) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Link
-                href={`/contacts/${id}`}
+                href={id ? `/contacts/${id}` : '/contacts'}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />

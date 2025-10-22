@@ -264,15 +264,15 @@ export default function ContactForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email *
+              Email
             </label>
             <input
               type="email"
               name="email"
-              required
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="correo@ejemplo.com"
             />
           </div>
           <div>
@@ -312,6 +312,7 @@ export default function ContactForm({
               <option value="client">Cliente</option>
               <option value="buyer">Comprador</option>
               <option value="seller">Vendedor</option>
+              <option value="owner">Titular</option>
             </select>
           </div>
           <div>

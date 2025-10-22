@@ -9,6 +9,7 @@ export interface GalleryImage {
   altText?: string;
   orderIndex?: number;
   fileSize?: number;
+  isFeatured?: boolean;
 }
 
 // Función helper para convertir URLs relativas a completas
@@ -123,4 +124,24 @@ export async function setImageAsFeatured(imageId: number | string): Promise<void
     console.error('GalleryImageService - Set featured error:', res.status, res.statusText);
     throw new Error('Error al establecer imagen destacada');
   }
+}
+
+export async function updateImageOrder(imageId: number | string, orderIndex: number): Promise<GalleryImage> {
+  const apiUrl = getApiUrl();
+  const fullUrl = `${apiUrl}/api/gallery-images/${imageId}/order?orderIndex=${orderIndex}`;
+  console.log('GalleryImageService - Update order URL:', fullUrl);
+  
+  const res = await fetch(fullUrl, { method: 'PUT' });
+  console.log('GalleryImageService - Update order response status:', res.status);
+  
+  if (!res.ok) {
+    console.error('GalleryImageService - Update order error:', res.status, res.statusText);
+    throw new Error('Error al actualizar orden de imagen');
+  }
+  
+  const image = await res.json();
+  return {
+    ...image,
+    url: getFullImageUrl(image.url)
+  };
 } 

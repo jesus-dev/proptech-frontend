@@ -4,120 +4,19 @@ import React, { useState, useEffect } from "react";
 import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyForm";
 import { Contact } from "@/app/(proptech)/contacts/types";
 import { contactService } from "@/app/(proptech)/contacts/services/contactService";
+import SelectOwnerModal from "../SelectOwnerModal";
 import { 
   User, 
   Phone, 
   Mail, 
   MapPin, 
   Building, 
-  Calendar,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
   Plus,
-  Search,
   Trash2,
-  Shield,
-  Cog,
-  BarChart3,
   AlertTriangle,
-  X,
-  Building2,
-  Briefcase,
-  CreditCard,
-  Globe,
-  FileText
+  UserPlus,
+  Users
 } from "lucide-react";
-
-// Componente simple para seleccionar contactos
-interface ContactSelectorProps {
-  selectedContact: Contact | null;
-  onContactSelect: (contact: Contact | null) => void;
-  contacts: Contact[];
-  loading: boolean;
-}
-
-const ContactSelector: React.FC<ContactSelectorProps> = ({
-  selectedContact,
-  onContactSelect,
-  contacts,
-  loading
-}) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
-
-  const filteredContacts = contacts.filter(contact =>
-    contact.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className="relative">
-      <div className="flex gap-2">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder="Buscar contacto..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onFocus={() => setIsOpen(true)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-          />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        </div>
-        <button
-          type="button"
-          onClick={() => onContactSelect(null)}
-          className="px-4 py-3 text-red-600 border border-red-300 rounded-xl hover:bg-red-50"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
-      
-      {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-          {loading ? (
-            <div className="p-4 text-center text-gray-500">Cargando contactos...</div>
-          ) : filteredContacts.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">No se encontraron contactos</div>
-          ) : (
-            filteredContacts.map((contact) => (
-              <div
-                key={contact.id}
-                onClick={() => {
-                  onContactSelect(contact);
-                  setIsOpen(false);
-                  setSearchTerm('');
-                }}
-                className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
-                    <User className="h-4 w-4 text-brand-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">
-                      {contact.firstName} {contact.lastName}
-                    </div>
-                    <div className="text-sm text-gray-500">{contact.email}</div>
-                  </div>
-                  <div className={`px-2 py-1 rounded-full text-xs ${
-                    contact.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {contact.status === 'active' ? 'Activo' : 'Inactivo'}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 interface OwnerInfoStepProps {
   formData: PropertyFormData;
@@ -126,423 +25,264 @@ interface OwnerInfoStepProps {
 }
 
 export default function OwnerInfoStep({ formData, handleChange, errors }: OwnerInfoStepProps) {
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [loadingContact, setLoadingContact] = useState(false);
-  const [showAdvancedInfo, setShowAdvancedInfo] = useState(false);
+  const [owners, setOwners] = useState<Contact[]>([]);
+  const [loadingOwners, setLoadingOwners] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Cargar datos del contacto cuando cambie el propietarioId
+  // Cargar datos de los propietarios cuando cambie propietarioId
   useEffect(() => {
-    const loadContactData = async () => {
+    const loadOwners = async () => {
       if (formData.propietarioId) {
-        setLoadingContact(true);
+        setLoadingOwners(true);
         try {
-          const contact = await contactService.getContactById(formData.propietarioId?.toString() || '');
-          setSelectedContact(contact || null);
+          const contact = await contactService.getContactById(formData.propietarioId.toString());
+          if (contact) {
+            setOwners([contact]);
+          }
         } catch (error) {
-          console.error('Error loading contact:', error);
-          setSelectedContact(null);
+          console.error('Error loading owner:', error);
         } finally {
-          setLoadingContact(false);
+          setLoadingOwners(false);
         }
       } else {
-        setSelectedContact(null);
+        setOwners([]);
       }
     };
 
-    loadContactData();
+    loadOwners();
   }, [formData.propietarioId]);
 
-  const handleContactSelect = (contact: Contact | null) => {
-    setSelectedContact(contact);
-    // Simular el evento de cambio para el propietarioId
-    const event = {
-      target: {
-        name: 'propietarioId',
-        value: contact?.id || ''
-      }
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleChange(event);
-  };
+  const handleAddOwner = (contact: Contact) => {
+    // Verificar si ya existe
+    if (owners.find(o => o.id === contact.id)) {
+      return;
+    }
 
-  const handleRemoveOwner = () => {
-    setSelectedContact(null);
-    const event = {
-      target: {
-        name: 'propietarioId',
-        value: ''
-      }
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleChange(event);
-  };
+    const newOwners = [...owners, contact];
+    setOwners(newOwners);
 
-  const getContactStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'active':
-        return 'bg-emerald-500 text-white';
-      case 'inactive':
-        return 'bg-slate-500 text-white';
-      case 'lead':
-      case 'qualified':
-      case 'converted':
-        return 'bg-blue-500 text-white';
-      default:
-        return 'bg-amber-500 text-white';
+    // Si es el primer propietario, actualizar propietarioId en el formData
+    if (newOwners.length === 1) {
+      const event = {
+        target: {
+          name: 'propietarioId',
+          value: contact.id
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleChange(event);
     }
   };
 
-  const getContactTypeIcon = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case 'client':
-      case 'buyer':
-      case 'seller':
-        return <User className="h-4 w-4" />;
-              case 'prospect':
-          return <User className="h-4 w-4" />;
-      default:
-        return <User className="h-4 w-4" />;
-    }
-  };
+  const handleRemoveOwner = (contactId: string) => {
+    const newOwners = owners.filter(o => o.id !== contactId);
+    setOwners(newOwners);
 
-  const getContactStatusLabel = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'active': return 'Activo';
-      case 'inactive': return 'Inactivo';
-      case 'lead': return 'Lead';
-      case 'qualified': return 'Calificado';
-      case 'converted': return 'Convertido';
-      default: return status;
+    // Si se eliminó el último propietario o el propietario principal, actualizar propietarioId
+    if (newOwners.length === 0) {
+      const event = {
+        target: {
+          name: 'propietarioId',
+          value: ''
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleChange(event);
+    } else if (formData.propietarioId?.toString() === contactId) {
+      // Si se eliminó el propietario principal, asignar el primero de la lista
+      const event = {
+        target: {
+          name: 'propietarioId',
+          value: newOwners[0].id
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleChange(event);
     }
   };
 
   const getContactTypeLabel = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case 'client': return 'Cliente';
-      case 'prospect': return 'Prospecto';
-      case 'buyer': return 'Comprador';
-      case 'seller': return 'Vendedor';
-      default: return type;
-    }
+    const labels: Record<string, string> = {
+      owner: "Titular",
+      client: "Cliente",
+      prospect: "Interesado",
+      buyer: "Comprador",
+      seller: "Vendedor"
+    };
+    return labels[type] || type;
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'No disponible';
-    return new Date(dateString).toLocaleDateString('es-PY', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const getTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+      owner: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+      client: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      prospect: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+      buyer: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      seller: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+    };
+    return colors[type] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
   };
 
   return (
-    <div className="space-y-8">
-      {/* Professional Header Section */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Información del Propietario
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Datos confidenciales - Solo visible en el CRM
-                </p>
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-brand-500 to-brand-600 rounded-xl p-6 text-white">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <Users className="h-6 w-6" />
           </div>
-        </div>
-        
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
-          <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-            <div className="flex items-center space-x-1">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span>Datos Seguros</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Cog className="h-4 w-4 text-blue-500" />
-              <span>Gestión Interna</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <BarChart3 className="h-4 w-4 text-purple-500" />
-              <span>Análisis CRM</span>
-            </div>
+          <div>
+            <h2 className="text-2xl font-bold">Propietarios</h2>
+            <p className="text-brand-100 text-sm">
+              Agrega los propietarios de esta propiedad
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Owner Selection Section */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      {/* Owners List */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-medium text-gray-900 dark:text-white">
-                Selección de Propietario
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Propietarios Registrados
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Identifique al propietario de la propiedad
+                {owners.length === 0 
+                  ? "No hay propietarios registrados" 
+                  : `${owners.length} propietario${owners.length !== 1 ? 's' : ''} registrado${owners.length !== 1 ? 's' : ''}`}
               </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                Opcional
-              </span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar Propietario
+            </button>
           </div>
         </div>
-        
-        <div className="p-6">
-          <ContactSelector
-            selectedContact={selectedContact}
-            onContactSelect={handleContactSelect}
-            contacts={[]} // Placeholder, will be populated with actual contacts
-            loading={loadingContact}
-          />
 
-          {!formData.propietarioId && (
-            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    Propietario no seleccionado
-                  </p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                    Puede continuar sin seleccionar un propietario. Esta información se puede agregar más tarde desde el CRM.
-                  </p>
-                </div>
+        <div className="p-6">
+          {owners.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <UserPlus className="h-8 w-8 text-gray-400" />
               </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Sin propietarios
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                Agrega al menos un propietario para identificar a los titulares de esta propiedad
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+              >
+                <Plus className="h-5 w-5" />
+                Agregar Primer Propietario
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {owners.map((owner, index) => (
+                <div
+                  key={owner.id}
+                  className="relative group bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-all"
+                >
+                  {/* Badge de propietario principal */}
+                  {index === 0 && (
+                    <div className="absolute top-2 right-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-500 text-white text-xs font-medium rounded-full">
+                        Principal
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Botón de eliminar */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveOwner(owner.id)}
+                    className="absolute bottom-2 right-2 p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                    title="Eliminar propietario"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+
+                  <div className="flex items-start gap-3 pr-8">
+                    <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                          {owner.firstName} {owner.lastName}
+                        </h4>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTypeColor(owner.type)}`}>
+                          {getContactTypeLabel(owner.type)}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {owner.email && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Mail className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{owner.email}</span>
+                          </div>
+                        )}
+                        {owner.phone && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span>{owner.phone}</span>
+                          </div>
+                        )}
+                        {owner.company && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Building className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{owner.company}</span>
+                          </div>
+                        )}
+                        {owner.city && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{owner.city}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
-      </div>
 
-      {/* Owner Information Display */}
-      {selectedContact && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
-          {/* Owner Header */}
-          <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-800 dark:to-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-                    <User className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-2.5 w-2.5 text-white" />
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {selectedContact.firstName} {selectedContact.lastName}
-                  </h3>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getContactStatusColor(selectedContact.status)}`}>
-                      {getContactStatusLabel(selectedContact.status)}
-                    </span>
-                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                      {getContactTypeIcon(selectedContact.type)}
-                      <span className="ml-1">
-                        {getContactTypeLabel(selectedContact.type)}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <button
-                onClick={handleRemoveOwner}
-                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                title="Quitar propietario"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Owner Details */}
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Contact Information */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white uppercase tracking-wide">
-                  Información de Contacto
-                </h4>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                      <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {selectedContact.email || 'No especificado'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                      <Phone className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Teléfono</p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {selectedContact.phone || 'No especificado'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedContact.company && (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                        <Building2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Empresa</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {selectedContact.company}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedContact.position && (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="p-2 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg">
-                        <Briefcase className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cargo</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {selectedContact.position}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Additional Details */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white uppercase tracking-wide">
-                  Detalles Adicionales
-                </h4>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                      <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">ID de Contacto</p>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white font-mono">
-                        #{selectedContact.id}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedContact.address && (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="p-2 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg">
-                        <MapPin className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Dirección</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {selectedContact.address}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedContact.createdAt && (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="p-2 bg-pink-100 dark:bg-pink-900/20 rounded-lg">
-                        <Calendar className="h-4 w-4 text-pink-600 dark:text-pink-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Fecha de Registro</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatDate(selectedContact.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedContact.source && (
-                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="p-2 bg-teal-100 dark:bg-teal-900/20 rounded-lg">
-                        <Globe className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Origen</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {selectedContact.source}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Notes Section */}
-            {selectedContact.notes && (
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center space-x-2 mb-3">
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white uppercase tracking-wide">
-                    Notas Adicionales
-                  </h4>
-                </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {selectedContact.notes}
+        {/* Info footer */}
+        {owners.length > 0 && (
+          <div className="px-6 pb-6">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    Propietario Principal
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    El primer propietario de la lista es considerado el contacto principal. Los demás propietarios serán considerados co-propietarios.
                   </p>
                 </div>
               </div>
-            )}
-
-            {/* Loading State */}
-            {loadingContact && (
-              <div className="mt-6 flex items-center justify-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                    Cargando datos del propietario...
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Success Confirmation */}
-      {selectedContact && !loadingContact && (
-        <div className="bg-white dark:bg-gray-900 border border-green-200 dark:border-green-800 rounded-lg shadow-sm">
-          <div className="px-6 py-4 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                  Propietario Confirmado
-                </p>
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  La información del propietario ha sido validada y está lista para continuar
-                </p>
-              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Modal de selección */}
+      <SelectOwnerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleAddOwner}
+        selectedOwnerIds={owners.map(o => o.id)}
+      />
     </div>
   );
-} 
+}

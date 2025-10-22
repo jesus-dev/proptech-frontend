@@ -40,7 +40,9 @@ export const contactService = {
         ...(filters?.assignedTo && { assignedTo: filters.assignedTo }),
       };
 
+      console.log("🌐 Calling API with params:", params);
       const response = await contactApi.getAll(params);
+      console.log("🌐 API response:", response.data);
       const data = response.data;
       
       if (!data) {
@@ -49,7 +51,7 @@ export const contactService = {
       
       return data as PaginatedResponse<Contact>;
     } catch (error) {
-      console.error('Error fetching paginated contacts:', error);
+      console.error('❌ Error fetching paginated contacts:', error);
       throw new Error(`Error al cargar los contactos: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   },
@@ -66,7 +68,15 @@ export const contactService = {
 
   async createContact(contactData: ContactFormData): Promise<Contact> {
     try {
-      const response = await contactApi.create(contactData);
+      // Serializar objetos complejos a JSON strings para el backend
+      const serializedData = {
+        ...contactData,
+        budget: contactData.budget ? JSON.stringify(contactData.budget) : undefined,
+        preferences: contactData.preferences ? JSON.stringify(contactData.preferences) : undefined,
+        tags: contactData.tags ? JSON.stringify(contactData.tags) : undefined,
+      };
+      
+      const response = await contactApi.create(serializedData);
       return response.data;
     } catch (error) {
       console.error('❌ ContactService: Error creating contact:', error);
@@ -76,7 +86,15 @@ export const contactService = {
 
   async updateContact(id: string, contactData: Partial<ContactFormData>): Promise<Contact | undefined> {
     try {
-      const response = await contactApi.update(id, contactData);
+      // Serializar objetos complejos a JSON strings para el backend
+      const serializedData = {
+        ...contactData,
+        budget: contactData.budget ? JSON.stringify(contactData.budget) : undefined,
+        preferences: contactData.preferences ? JSON.stringify(contactData.preferences) : undefined,
+        tags: contactData.tags ? JSON.stringify(contactData.tags) : undefined,
+      };
+      
+      const response = await contactApi.update(id, serializedData);
       return response.data;
     } catch (error) {
       console.error('❌ ContactService: Error updating contact:', error);

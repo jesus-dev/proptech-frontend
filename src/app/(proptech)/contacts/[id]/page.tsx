@@ -14,8 +14,8 @@ interface PageProps {
 }
 
 export default function ContactDetailsPage({ params }: PageProps) {
-  const { id: contactId } = React.use(params);
   const router = useRouter();
+  const [contactId, setContactId] = useState<string | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,10 +23,21 @@ export default function ContactDetailsPage({ params }: PageProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
+    const loadParams = async () => {
+      const resolvedParams = await params;
+      setContactId(resolvedParams.id);
+    };
+    loadParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!contactId) return;
     loadContact();
   }, [contactId]);
 
   const loadContact = async () => {
+    if (!contactId) return;
+    
     try {
       setLoading(true);
       const data = await contactService.getContactById(contactId);
@@ -69,6 +80,7 @@ export default function ContactDetailsPage({ params }: PageProps) {
       prospect: "Interesado",
       buyer: "Comprador",
       seller: "Vendedor",
+      owner: "Titular",
     };
     return labels[type] || type;
   };
@@ -101,6 +113,7 @@ export default function ContactDetailsPage({ params }: PageProps) {
       prospect: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
       buyer: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
       seller: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+      owner: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
     };
     return colors[type] || "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
   };

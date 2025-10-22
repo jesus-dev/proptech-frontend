@@ -1,14 +1,152 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyForm";
-import { X, Upload, Image as ImageIcon, Loader2, Video, Star } from "lucide-react";
+import { X, Upload, Image as ImageIcon, Loader2, Video, Star, GripVertical } from "lucide-react";
 import { 
   getGalleryImages, 
   uploadGalleryImage, 
   deleteGalleryImage,
   setImageAsFeatured,
+  updateImageOrder,
   type GalleryImage 
 } from "../../services/galleryImageService";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+interface SortableImageItemProps {
+  image: GalleryImage;
+  index: number;
+  isFeatured: boolean;
+  onSetFeatured: (imageId: number, imageUrl: string) => void;
+  onDelete: (imageId: number) => void;
+  settingFeaturedId: number | null;
+  deletingImageId: number | null;
+}
+
+function SortableImageItem({ 
+  image, 
+  index, 
+  isFeatured, 
+  onSetFeatured, 
+  onDelete, 
+  settingFeaturedId, 
+  deletingImageId 
+}: SortableImageItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: image.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative group bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden ${
+        isFeatured ? 'ring-2 ring-yellow-500' : ''
+      }`}
+    >
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-1 left-1 bg-gray-700/80 text-white rounded p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        title="Arrastra para reordenar"
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
+
+      <div className="relative w-full h-32">
+        <img
+          src={image.url}
+          alt={image.altText || `Imagen ${image.id}`}
+          className="w-full h-full object-cover"
+          onLoad={() => {
+            console.log(`✅ Successfully loaded image ${index + 1}:`, image.url);
+          }}
+          onError={(e) => {
+            console.error(`❌ Failed to load image ${index + 1}:`, image.url);
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
+        />
+        {/* Placeholder */}
+        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500" style={{ zIndex: -1 }}>
+          <div className="text-center text-xs">
+            <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+            </svg>
+            <p>Imagen {index + 1}</p>
+          </div>
+        </div>
+        {/* Badge de destacada */}
+        {isFeatured && (
+          <div className="absolute top-1 left-12 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
+            <Star className="h-3 w-3 fill-current" />
+            <span>Destacada</span>
+          </div>
+        )}
+      </div>
+      {/* Botones de acción */}
+      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <button
+          type="button"
+          onClick={() => onSetFeatured(image.id, image.url)}
+          disabled={settingFeaturedId === image.id || isFeatured}
+          className={`${
+            isFeatured 
+              ? 'bg-yellow-600' 
+              : 'bg-yellow-500 hover:bg-yellow-600'
+          } text-white rounded-full p-1 disabled:opacity-50`}
+          title={isFeatured ? 'Ya es destacada' : 'Marcar como destacada'}
+        >
+          {settingFeaturedId === image.id ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Star className={`h-3 w-3 ${isFeatured ? 'fill-current' : ''}`} />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(image.id)}
+          disabled={deletingImageId === image.id}
+          className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 disabled:opacity-50"
+          title="Eliminar imagen"
+        >
+          {deletingImageId === image.id ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <X className="h-3 w-3" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 interface MultimediaStepProps {
   formData: PropertyFormData;
@@ -39,6 +177,14 @@ export default function MultimediaStep({
   const [deletingImageId, setDeletingImageId] = useState<number | null>(null);
   const [settingFeaturedId, setSettingFeaturedId] = useState<number | null>(null);
 
+  // Drag & Drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Cargar imágenes de galería si tenemos propertyId
   useEffect(() => {
     if (propertyId) {
@@ -52,10 +198,16 @@ export default function MultimediaStep({
     setLoadingGallery(true);
     try {
       const images = await getGalleryImages(propertyId);
-      console.log('🖼️ Loaded gallery images:', images.length, images);
+      console.log('🖼️ Loaded gallery images:', images.length);
+      console.table(images.map(img => ({ 
+        id: img.id, 
+        orderIndex: img.orderIndex, 
+        isFeatured: img.isFeatured,
+        url: img.url?.substring(0, 50) + '...' 
+      })));
       setGalleryImages(images);
     } catch (error) {
-      console.error('Error loading gallery images:', error);
+      console.error('❌ Error loading gallery images:', error);
     } finally {
       setLoadingGallery(false);
     }
@@ -129,6 +281,9 @@ export default function MultimediaStep({
       
       handleChange(syntheticEvent);
       
+      // Recargar galería para actualizar el flag isFeatured
+      await loadGalleryImages();
+      
       alert('✅ Imagen establecida como destacada correctamente');
     } catch (error) {
       console.error('Error setting featured image:', error);
@@ -138,68 +293,63 @@ export default function MultimediaStep({
     }
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = galleryImages.findIndex((img) => img.id === active.id);
+    const newIndex = galleryImages.findIndex((img) => img.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return;
+    }
+
+    // Guardar el orden anterior por si necesitamos revertir
+    const previousImages = [...galleryImages];
+
+    // Actualizar orden localmente
+    const reorderedImages = arrayMove(galleryImages, oldIndex, newIndex);
+    setGalleryImages(reorderedImages);
+
+    // Actualizar todos los orderIndex en el backend
+    try {
+      console.log('🔄 Updating image order...');
+      
+      // Actualizar cada imagen con su nuevo orderIndex
+      const updatePromises = reorderedImages.map((image, index) => {
+        if (image.orderIndex !== index) {
+          console.log(`Updating image ${image.id} from order ${image.orderIndex} to ${index}`);
+          return updateImageOrder(image.id, index);
+        }
+        return Promise.resolve(image);
+      });
+      
+      await Promise.all(updatePromises);
+      console.log('✅ All images reordered successfully');
+      
+      // Recargar para sincronizar con el backend
+      await loadGalleryImages();
+    } catch (error) {
+      console.error('❌ Error updating image order:', error);
+      // Revertir cambios en caso de error
+      setGalleryImages(previousImages);
+      alert('Error al actualizar el orden. Por favor, intenta nuevamente.');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Featured Image */}
-      <div>
-        <label
-          htmlFor="featuredImage"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-        >
-          Imagen Destacada
-        </label>
-        
-        {formData.featuredImage ? (
-          <div className="relative group">
-            <img
-              src={formData.featuredImage}
-              alt="Imagen destacada"
-              className="w-full h-48 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
-            />
-            <button
-              type="button"
-              onClick={removeFeaturedImage}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
-            <Upload className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Haz clic para subir una imagen destacada
-            </p>
-            <input
-              type="file"
-              id="featuredImage"
-              name="featuredImage"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <label
-              htmlFor="featuredImage"
-              className="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-500 hover:bg-brand-600 cursor-pointer"
-            >
-              Seleccionar Imagen
-            </label>
-          </div>
-        )}
-        
-        {errors.featuredImage && (
-          <p className="mt-1 text-sm text-red-500">{errors.featuredImage}</p>
-        )}
-      </div>
-
       {/* Gallery Images - Para propiedades existentes */}
       {propertyId && (
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Galería de Imágenes (Backend)
+            Galería de Imágenes
           </label>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            Estas imágenes están almacenadas en el servidor y asociadas a esta propiedad
+            Arrastra las imágenes para ordenarlas. Haz clic en la estrella para marcar como destacada.
           </p>
 
           {/* Loading State */}
@@ -215,83 +365,38 @@ export default function MultimediaStep({
           {/* Gallery Grid */}
           {!loadingGallery && galleryImages.length > 0 && (
             <>
-              <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
-                Total de imágenes: {galleryImages.length}
+              <div className="mb-2 text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <span>Total de imágenes: {galleryImages.length}</span>
+                <span className="text-xs text-gray-500">• Arrastra para reordenar</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-                {galleryImages.map((image, index) => {
-                  console.log(`🖼️ Rendering image ${index + 1}/${galleryImages.length}:`, image.url);
-                  const isFeatured = formData.featuredImage === image.url;
-                  return (
-                    <div key={image.id} className={`relative group bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden ${isFeatured ? 'ring-2 ring-yellow-500' : ''}`}>
-                      <div className="relative w-full h-32">
-                        <img
-                          src={image.url}
-                          alt={image.altText || `Imagen ${image.id}`}
-                          className="w-full h-full object-cover"
-                          onLoad={() => {
-                            console.log(`✅ Successfully loaded image ${index + 1}:`, image.url);
-                          }}
-                          onError={(e) => {
-                            console.error(`❌ Failed to load image ${index + 1}:`, image.url);
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={galleryImages.map((img) => img.id)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                    {galleryImages.map((image, index) => {
+                      const isFeatured = image.isFeatured || formData.featuredImage === image.url;
+                      return (
+                        <SortableImageItem
+                          key={image.id}
+                          image={image}
+                          index={index}
+                          isFeatured={isFeatured}
+                          onSetFeatured={handleSetAsFeatured}
+                          onDelete={handleDeleteGalleryImage}
+                          settingFeaturedId={settingFeaturedId}
+                          deletingImageId={deletingImageId}
                         />
-                        {/* Placeholder que aparece si la imagen falla */}
-                        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500" style={{ zIndex: -1 }}>
-                          <div className="text-center text-xs">
-                            <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                            </svg>
-                            <p>Imagen {index + 1}</p>
-                          </div>
-                        </div>
-                        {/* Badge de destacada */}
-                        {isFeatured && (
-                          <div className="absolute top-1 left-1 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
-                            <Star className="h-3 w-3 fill-current" />
-                            <span>Destacada</span>
-                          </div>
-                        )}
-                      </div>
-                      {/* Botones de acción */}
-                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <button
-                          type="button"
-                          onClick={() => handleSetAsFeatured(image.id, image.url)}
-                          disabled={settingFeaturedId === image.id || isFeatured}
-                          className={`${
-                            isFeatured 
-                              ? 'bg-yellow-600' 
-                              : 'bg-yellow-500 hover:bg-yellow-600'
-                          } text-white rounded-full p-1 disabled:opacity-50`}
-                          title={isFeatured ? 'Ya es destacada' : 'Marcar como destacada'}
-                        >
-                          {settingFeaturedId === image.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Star className={`h-3 w-3 ${isFeatured ? 'fill-current' : ''}`} />
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteGalleryImage(image.id)}
-                          disabled={deletingImageId === image.id}
-                          className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 disabled:opacity-50"
-                          title="Eliminar imagen"
-                        >
-                          {deletingImageId === image.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <X className="h-3 w-3" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </>
           )}
 

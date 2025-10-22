@@ -12,6 +12,7 @@ import {
   ArrowUpOnSquareIcon,
   UsersIcon,
   UserGroupIcon,
+  UserIcon,
   EyeIcon,
   ShoppingBagIcon,
   BuildingOfficeIcon
@@ -47,7 +48,8 @@ export default function ContactsPage() {
     clients: 0,
     prospects: 0,
     buyers: 0,
-    sellers: 0
+    sellers: 0,
+    owners: 0
   });
 
   useEffect(() => {
@@ -65,14 +67,17 @@ export default function ContactsPage() {
         ...(statusFilter !== "all" && { status: statusFilter }),
       };
 
-      const response = await contactService.getContactsPaginated(currentPage, pageSize, filters);
+      console.log("📋 Loading contacts with filters:", filters, "page:", currentPage, "size:", pageSize);
+      // Backend usa páginas 0-indexed, frontend usa 1-indexed
+      const response = await contactService.getContactsPaginated(currentPage - 1, pageSize, filters);
+      console.log("📋 Contacts received:", response?.content?.length || 0, "total:", response?.totalElements || 0);
       
       // Ensure we always have a valid array
       setContacts(response?.content || []);
       setTotalElements(response?.totalElements || 0);
       setTotalPages(response?.totalPages || 0);
     } catch (error) {
-      console.error("Error loading contacts:", error);
+      console.error("❌ Error loading contacts:", error);
       // Set default values on error
       setContacts([]);
       setTotalElements(0);
@@ -92,7 +97,8 @@ export default function ContactsPage() {
         clients: contactsArray.filter(c => c.type === "client").length,
         prospects: contactsArray.filter(c => c.type === "prospect").length,
         buyers: contactsArray.filter(c => c.type === "buyer").length,
-        sellers: contactsArray.filter(c => c.type === "seller").length
+        sellers: contactsArray.filter(c => c.type === "seller").length,
+        owners: contactsArray.filter(c => c.type === "owner").length
       });
     } catch (error) {
       console.error("Error loading stats:", error);
@@ -102,7 +108,8 @@ export default function ContactsPage() {
         clients: 0,
         prospects: 0,
         buyers: 0,
-        sellers: 0
+        sellers: 0,
+        owners: 0
       });
     }
   };
@@ -273,6 +280,18 @@ export default function ContactsPage() {
                 </div>
               </div>
             </div>
+
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-lg transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Titulares</p>
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.owners}</p>
+                </div>
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <UserIcon className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -307,6 +326,7 @@ export default function ContactsPage() {
                   <option value="prospect">Interesados</option>
                   <option value="buyer">Compradores</option>
                   <option value="seller">Vendedores</option>
+                  <option value="owner">Titulares</option>
                 </select>
 
                 <select

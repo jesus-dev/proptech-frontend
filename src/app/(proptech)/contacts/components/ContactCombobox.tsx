@@ -74,6 +74,7 @@ export default function ContactCombobox({
       case 'prospect': return 'Prospecto';
       case 'buyer': return 'Comprador';
       case 'seller': return 'Vendedor';
+      case 'owner': return 'Titular';
       default: return type;
     }
   };

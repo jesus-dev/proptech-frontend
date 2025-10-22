@@ -89,9 +89,15 @@ export default function NewContactPage() {
 
     try {
       // Validate required fields
-      if (!formData.firstName || !formData.lastName || !formData.email) {
-        throw new Error("Los campos Nombre, Apellido y Email son obligatorios");
+      if (!formData.firstName || !formData.lastName) {
+        throw new Error("Los campos Nombre y Apellido son obligatorios");
       }
+      
+      if (!formData.phone) {
+        throw new Error("El campo Teléfono es obligatorio");
+      }
+
+      console.log("📤 Enviando datos al backend:", JSON.stringify(formData, null, 2));
 
       // Create contact
       const newContact = await contactService.createContact(formData);
@@ -188,26 +194,27 @@ export default function NewContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email <span className="text-red-500">*</span>
+                    Email
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                    required
+                    placeholder="correo@ejemplo.com"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Teléfono
+                    Teléfono *
                   </label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                    required
                   />
                 </div>
 
@@ -224,6 +231,7 @@ export default function NewContactPage() {
                     <option value="client">Cliente</option>
                     <option value="buyer">Comprador</option>
                     <option value="seller">Vendedor</option>
+                    <option value="owner">Titular</option>
                   </select>
                 </div>
 

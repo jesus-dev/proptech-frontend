@@ -1,5 +1,6 @@
 "use client";
 import { useState, ChangeEvent, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { Property } from "../components/types";
 import { propertyService } from "../services/propertyService";
 import { imageUploadService } from "../services/imageUploadService";
@@ -25,6 +26,7 @@ export type PropertyFormErrors = Partial<Record<keyof PropertyFormData, string>>
 export function usePropertyForm(initialData?: PropertyFormData & { id?: string }) {
   const { toast } = useToast();
   const { user } = useAuthContext();
+  const pathname = usePathname();
   const [formData, setFormData] = useState<PropertyFormData>({
     title: "",
     address: "",
@@ -135,30 +137,51 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     }
   }, [initialData]);
 
-  // Auto-guardado cada 30 segundos si hay cambios sin guardar
+  // Auto-guardado cada 15 segundos si hay cambios sin guardar
+  // SOLO se ejecuta si estamos en una página de propiedades
   useEffect(() => {
+    // Verificar que estamos en una ruta de propiedades
+    const isPropertyPage = pathname?.includes('/properties');
+    
+    if (!isPropertyPage) {
+      console.log('⏸️ Auto-guardado desactivado - no estamos en página de propiedades');
+      return;
+    }
+    
     const autoSaveInterval = setInterval(async () => {
       if (hasUnsavedChanges && !isAutoSaving) {
+        console.log('🔄 Auto-guardando borrador...', {
+          draftPropertyId,
+          title: formData.title || 'sin título'
+        });
+        
         setIsAutoSaving(true);
         
         try {
-          // Preparar datos sin las imágenes
+          // Preparar datos mínimos - SIN validaciones
           const { currency, ...propertyDataWithoutCurrency } = formData;
           const propertyData: any = {
             ...propertyDataWithoutCurrency,
+            // El título puede estar vacío (el backend pone "Borrador sin título")
+            title: formData.title || '',
             images: [],
             featuredImage: "",
-            currencyId: formData.currencyId,
+            // operacion se enviará con valor por defecto en backend si está vacío
+            operacion: formData.operacion || '',
           };
 
           if (draftPropertyId) {
             // Actualizar borrador existente
+            console.log('💾 Actualizando borrador:', draftPropertyId);
             await propertyService.updateProperty(draftPropertyId, propertyData);
-          } else if (formData.agentId && formData.propertyTypeId) {
-            // Crear nuevo borrador solo si hay datos mínimos
+            console.log('✅ Borrador actualizado');
+          } else {
+            // Crear nuevo borrador - siempre se puede crear
+            console.log('💾 Creando nuevo borrador...');
             const newProperty = await propertyService.createProperty(propertyData);
-            if (newProperty) {
+            if (newProperty && newProperty.id) {
               setDraftPropertyId(newProperty.id);
+              console.log('✅ Nuevo borrador creado con ID:', newProperty.id);
             }
           }
           
@@ -170,20 +193,21 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             toast({
               variant: 'default',
               title: '💾 Guardado automático',
-              description: 'Tus cambios se han guardado como borrador.',
+              description: `Borrador ${draftPropertyId ? 'actualizado' : 'creado'}.`,
               duration: 2000,
             });
           }
         } catch (error) {
           console.error('❌ Error en auto-guardado:', error);
+          // No mostrar error al usuario para no interrumpir su trabajo
         } finally {
           setIsAutoSaving(false);
         }
       }
-    }, 30000); // 30 segundos
+    }, 15000); // 15 segundos
 
     return () => clearInterval(autoSaveInterval);
-  }, [hasUnsavedChanges, isAutoSaving, formData, draftPropertyId, toast]);
+  }, [hasUnsavedChanges, isAutoSaving, formData, draftPropertyId, toast, pathname]);
 
   // Obtener automáticamente el agente del usuario logueado
   useEffect(() => {

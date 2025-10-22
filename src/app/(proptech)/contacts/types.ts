@@ -1,4 +1,4 @@
-export type ContactType = "client" | "prospect" | "buyer" | "seller";
+export type ContactType = "client" | "prospect" | "buyer" | "seller" | "owner";
 export type ContactStatus = "active" | "inactive" | "lead" | "qualified" | "converted";
 
 export interface Contact {

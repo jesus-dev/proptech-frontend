@@ -22,6 +22,7 @@ export default function ContactList({ contacts, onUpdate }: ContactListProps) {
       case "prospect": return "Interesado";
       case "buyer": return "Comprador";
       case "seller": return "Vendedor";
+      case "owner": return "Titular";
       default: return type;
     }
   };
