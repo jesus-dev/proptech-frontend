@@ -175,31 +175,28 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         {/* Favicon - Next.js will use app/icon.png automatically */}
-        <link rel="icon" type="image/png" sizes="48x48" href="/images/logo/logo-icon-48.png" />
-        <link rel="icon" type="image/png" sizes="96x96" href="/images/logo/logo-icon-96.png" />
+        <link rel="icon" type="image/png" href="/images/Proptech ICO.png" />
+        <link rel="shortcut icon" href="/images/Proptech ICO.png" />
         
         {/* Apple Touch Icons */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/images/logo/logo-icon-180.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/images/logo/logo-icon-152.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/images/logo/logo-icon-167.png" />
+        <link rel="apple-touch-icon" href="/images/Proptech ICO.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/images/Proptech ICO.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/images/Proptech ICO.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/images/Proptech ICO.png" />
         
         {/* Android Chrome Icons */}
-        <link rel="icon" type="image/png" sizes="192x192" href="/images/logo/logo-icon-192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/images/logo/logo-icon-512.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/images/Proptech ICO.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/images/Proptech ICO.png" />
         
         {/* Manifest & Theme */}
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#1e40af" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#1e3a8a" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#ea580c" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#c2410c" media="(prefers-color-scheme: dark)" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="ON PropTech" />
-        <link rel="apple-touch-icon" href="/images/logo/logo-icon-192.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/images/logo/logo-icon-152.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/images/logo/logo-icon-180.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/images/logo/logo-icon-167.png" />
         {/* Schema.org JSON-LD */}
         <script
           type="application/ld+json"

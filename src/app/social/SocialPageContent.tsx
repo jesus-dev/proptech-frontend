@@ -315,15 +315,15 @@ const extractUrlTitle = async (url: string): Promise<string> => {
   }
 };
 
-export default function SocialPage() {
+export default function SocialPageContent() {
   const [mounted, setMounted] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMorePosts, setHasMorePosts] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [postsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(0); // Panache usa índice 0 para la primera página
+  const [postsPerPage] = useState(10); // Con manejo robusto de errores
   const [newPost, setNewPost] = useState('');
   const [detectedUrls, setDetectedUrls] = useState<string[]>([]);
   const [urlTitles, setUrlTitles] = useState<{ [url: string]: string }>({});
@@ -337,6 +337,8 @@ export default function SocialPage() {
   const [showComments, setShowComments] = useState<{ [key: number]: boolean }>({});
   const [commentCounts, setCommentCounts] = useState<{ [key: number]: number }>({});
   const [showMessages, setShowMessages] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [openShareMenu, setOpenShareMenu] = useState<number | null>(null);
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [imageGallery, setImageGallery] = useState<{ postId: number; images: string[]; startIndex: number } | null>(null);
@@ -455,22 +457,32 @@ export default function SocialPage() {
     const loadInitialPosts = async () => {
       try {
         setLoading(true);
-        const fetchedPosts = await SocialService.getPosts(1, postsPerPage);
-        setPosts(fetchedPosts);
+        setError(null);
+        // Panache usa índice 0 para la primera página
+        const fetchedPosts = await SocialService.getPosts(0, postsPerPage);
         
-        // Verificar si hay más posts
-        setHasMorePosts(fetchedPosts.length === postsPerPage);
-        
-        // Cargar conteo de comentarios para cada post
-        fetchedPosts.forEach(post => {
-          loadCommentCounts(post.id);
-          if (post.linkImage || post.images) {
-            loadPostImages(post);
-          }
-        });
+        if (!fetchedPosts || fetchedPosts.length === 0) {
+          console.log('ℹ️ No se encontraron posts');
+          setPosts([]);
+          setHasMorePosts(false);
+        } else {
+          setPosts(fetchedPosts);
+          
+          // Verificar si hay más posts
+          setHasMorePosts(fetchedPosts.length === postsPerPage);
+          
+          // Cargar conteo de comentarios para cada post
+          fetchedPosts.forEach(post => {
+            loadCommentCounts(post.id);
+            if (post.linkImage || post.images) {
+              loadPostImages(post);
+            }
+          });
+        }
       } catch (err) {
-        setError('Error al cargar los posts');
         console.error('Error loading posts:', err);
+        setError('No se pudieron cargar los posts en este momento');
+        setPosts([]);
       } finally {
         setLoading(false);
       }
@@ -622,22 +634,106 @@ export default function SocialPage() {
     }
   };
 
-  // Función para manejar likes
-  const handleLike = async (postId: number) => {
+  // Función para compartir un post
+  const handleShare = async (postId: number, method: 'copy' | 'facebook' | 'twitter' | 'whatsapp') => {
+    const postUrl = `${window.location.origin}/social/posts/${postId}`;
+    const post = posts.find(p => p.id === postId);
+    const postText = post?.content ? post.content.substring(0, 100) + '...' : 'Mira este post interesante';
+    
+    try {
+      switch (method) {
+        case 'copy':
+          await navigator.clipboard.writeText(postUrl);
+          alert('✅ Enlace copiado al portapapeles');
+          break;
+          
+        case 'facebook':
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank');
+          break;
+          
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(postText)}`, '_blank');
+          break;
+          
+        case 'whatsapp':
+          window.open(`https://wa.me/?text=${encodeURIComponent(postText + ' ' + postUrl)}`, '_blank');
+          break;
+      }
+      
+      setOpenShareMenu(null);
+    } catch (error) {
+      console.error('Error al compartir:', error);
+      alert('Error al compartir. Intenta nuevamente.');
+    }
+  };
+
+  // Función para eliminar un post
+  const handleDeletePost = async (postId: number) => {
     if (!isAuthenticated || !user) {
-      alert('Debes iniciar sesión para dar me gusta');
+      alert('Debes iniciar sesión para eliminar posts');
+      return;
+    }
+
+    // Confirmar eliminación
+    if (!confirm('¿Estás seguro de que deseas eliminar este post? Esta acción no se puede deshacer.')) {
       return;
     }
 
     try {
-      await SocialService.likePost({
-        postId,
-        userId: user.id || 0
+      await SocialService.deletePost(postId, user.id || 0);
+      
+      // Cerrar dropdown
+      setOpenDropdown(null);
+      
+      // Recargar posts desde BD
+      const updatedPosts = await SocialService.getPosts(0, postsPerPage);
+      setPosts(updatedPosts);
+      
+      // Recargar conteos de comentarios
+      updatedPosts.forEach(post => {
+        loadCommentCounts(post.id);
       });
       
-      // Refrescar posts
-      const updatedPosts = await SocialService.getPosts();
+      // Notificación de éxito (opcional, puedes quitar el alert si prefieres)
+      console.log('✅ Post eliminado correctamente');
+    } catch (error: any) {
+      console.error('Error al eliminar post:', error);
+      alert(error.message || 'Error al eliminar el post. Intenta nuevamente.');
+    }
+  };
+
+  // Función para manejar likes (permite usuarios anónimos)
+  const handleLike = async (postId: number) => {
+    try {
+      // Si está autenticado, usar su ID
+      // Si no, usar ID 0 para representar usuario anónimo
+      const userId = isAuthenticated && user ? user.id || 0 : 0;
+      
+      // Si es anónimo, verificar si ya dio like antes (usando localStorage)
+      if (!isAuthenticated) {
+        const anonymousLikes = JSON.parse(localStorage.getItem('anonymousLikes') || '[]');
+        if (anonymousLikes.includes(postId)) {
+          alert('Ya diste me gusta a este post. Inicia sesión para gestionar tus likes.');
+          return;
+        }
+        // Registrar el like anónimo
+        anonymousLikes.push(postId);
+        localStorage.setItem('anonymousLikes', JSON.stringify(anonymousLikes));
+      }
+
+      await SocialService.likePost({
+        postId,
+        userId
+      });
+      
+      // Refrescar posts desde BD con los mismos parámetros (página 0 = primera página)
+      const updatedPosts = await SocialService.getPosts(0, postsPerPage);
       setPosts(updatedPosts);
+      
+      // Recargar conteos de comentarios
+      updatedPosts.forEach(post => {
+        loadCommentCounts(post.id);
+      });
     } catch (error) {
       console.error('Error al dar like:', error);
       alert('Error al dar like. Intenta nuevamente.');
@@ -686,7 +782,9 @@ export default function SocialPage() {
         }
       }
 
-      await SocialService.createPost(postData);
+      const createdPost = await SocialService.createPost(postData);
+      
+      // Limpiar el formulario
       setNewPost('');
       setSelectedPostImages([]);
       setPostImagePreviews([]);
@@ -695,22 +793,22 @@ export default function SocialPage() {
       setUrlTitles({});
       setUrlLoadingStates({});
       
-      // Recargar posts
-      const updatedPosts = await SocialService.getPosts();
+      // Recargar posts frescos de la BD con los mismos parámetros de paginación (página 0 = primera página)
+      console.log('✅ Post creado, recargando lista desde BD...');
+      const updatedPosts = await SocialService.getPosts(0, postsPerPage);
+      
+      // Actualizar estado con posts frescos
       setPosts(updatedPosts);
       
-      // Pequeño delay para asegurar que las imágenes estén disponibles
-      setTimeout(() => {
-        // Recargar imágenes para cada post
-        updatedPosts.forEach(post => {
-          if (post.linkImage || post.images) {
-            loadPostImages(post);
-          }
-        });
-      }, 1000);
+      // Cargar imágenes y comentarios para cada post
+      updatedPosts.forEach(post => {
+        loadCommentCounts(post.id);
+        if (post.linkImage || post.images) {
+          loadPostImages(post);
+        }
+      });
       
-      // Limpiar cache de imágenes para forzar recarga
-      setPostImages(new Map());
+      console.log(`✅ Lista recargada: ${updatedPosts.length} posts desde BD`);
     } catch (error) {
       console.error('Error al crear post:', error);
       alert('Error al crear el post. Intenta nuevamente.');
@@ -766,13 +864,22 @@ export default function SocialPage() {
 
   // Función para dar like a un PropShot
   const handleLikePropShot = async (propShotId: number) => {
-    if (!isAuthenticated) {
-      alert('Debes iniciar sesión para dar like');
+    // Verificar si ya dio like (localStorage para anónimos)
+    const likedPropShots = JSON.parse(localStorage.getItem('likedPropShots') || '[]');
+    if (likedPropShots.includes(propShotId)) {
+      alert('Ya diste like a este PropShot');
       return;
     }
     
     try {
-      await PropShotService.likePropShot(propShotId);
+      const userId = user?.id || 0;
+      await PropShotService.likePropShot(propShotId, userId);
+      
+      // Guardar en localStorage si es anónimo
+      if (!isAuthenticated) {
+        likedPropShots.push(propShotId);
+        localStorage.setItem('likedPropShots', JSON.stringify(likedPropShots));
+      }
       
       // Actualizar el PropShot en la lista
       setPropShots(prev => prev.map(shot =>
@@ -799,6 +906,28 @@ export default function SocialPage() {
     
     } catch (error) {
       console.error('Error incrementing views:', error);
+    }
+  };
+
+  // Función para agregar comentario a un PropShot
+  const handleCommentPropShot = async (propShotId: number, content: string, userId: number, userName: string) => {
+    try {
+      await PropShotService.addComment(propShotId, content, userId, userName);
+      
+      // Actualizar el PropShot en la lista (incrementar contador)
+      setPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
+          ? { ...shot, comments: (shot.comments || 0) + 1 }
+          : shot
+      ));
+      
+      // Si es el PropShot seleccionado, actualizarlo también
+      if (selectedPropShot?.id === propShotId) {
+        setSelectedPropShot(prev => prev ? { ...prev, comments: (prev.comments || 0) + 1 } : null);
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw error;
     }
   };
 
@@ -1309,6 +1438,37 @@ export default function SocialPage() {
               </div>
                 </div>
 
+      {/* Estado vacío cuando no hay posts */}
+      {!loading && !error && posts.length === 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <div className="max-w-md mx-auto">
+            <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">¡Sé el primero en compartir!</h3>
+            <p className="text-gray-600 mb-6">
+              Aún no hay publicaciones en la red social. Crea el primer post y comienza a compartir propiedades con la comunidad.
+            </p>
+            {isAuthenticated && (
+              <button 
+                onClick={() => {
+                  // Scroll hacia el área de crear post
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
+                </svg>
+                Crear primer post
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Posts en dos columnas - Mejorado */}
             {!loading && !error && posts.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -1348,9 +1508,79 @@ export default function SocialPage() {
                       </div>
                     </div>
                   </div>
-                  <button className="p-2 hover:bg-white/80 rounded-lg transition-colors flex-shrink-0">
-                    <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-gray-600" />
-                  </button>
+                  {/* Menú de opciones (tres puntitos) */}
+                  <div className="relative flex-shrink-0">
+                    <button 
+                      onClick={() => setOpenDropdown(openDropdown === post.id ? null : post.id)}
+                      className="p-2 hover:bg-white/80 rounded-lg transition-colors"
+                    >
+                      <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                    </button>
+                    
+                    {/* Dropdown menu */}
+                    {openDropdown === post.id && (
+                      <>
+                        {/* Overlay para cerrar el dropdown al hacer clic fuera */}
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setOpenDropdown(null)}
+                        />
+                        
+                        {/* Menú dropdown */}
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+                          {/* Solo mostrar "Eliminar" si el usuario es el dueño del post */}
+                          {(() => {
+                            const isOwner = isAuthenticated && user && post.user && 
+                                           Number(post.user.id) === Number(user.id);
+                            // Debug activo para verificar la comparación
+                            console.log('🔍 Debug Post', post.id, ':', {
+                              postUserId: post.user?.id,
+                              postUserIdType: typeof post.user?.id,
+                              currentUserId: user?.id,
+                              currentUserIdType: typeof user?.id,
+                              isAuthenticated,
+                              hasUser: !!user,
+                              hasPostUser: !!post.user,
+                              isOwner
+                            });
+                            return isOwner;
+                          })() && (
+                            <button
+                              onClick={() => handleDeletePost(post.id)}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Eliminar post
+                            </button>
+                          )}
+                          
+                          {/* Separador solo si hay opción de eliminar */}
+                          {(() => {
+                            const isOwner = isAuthenticated && user && post.user && 
+                                           Number(post.user.id) === Number(user.id);
+                            return isOwner && <div className="border-t border-gray-200 my-1" />;
+                          })()}
+                          
+                          {/* Otras opciones futuras pueden ir aquí */}
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/social/posts/${post.id}`);
+                              setOpenDropdown(null);
+                              alert('Enlace copiado al portapapeles');
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Copiar enlace
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1534,14 +1764,91 @@ export default function SocialPage() {
                   </button>
                   
                   {/* Share Button */}
-                  <button className="group/share flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-green-50 transition-all duration-300">
-                    <svg className="w-5 h-5 text-gray-600 group-hover/share:text-green-500 group-hover/share:scale-110 transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
-                    </svg>
-                    <span className="text-sm font-medium text-gray-700 group-hover/share:text-green-600 hidden sm:inline">
-                      Compartir
-                    </span>
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setOpenShareMenu(openShareMenu === post.id ? null : post.id)}
+                      className="group/share flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-green-50 transition-all duration-300"
+                    >
+                      <svg className="w-5 h-5 text-gray-600 group-hover/share:text-green-500 group-hover/share:scale-110 transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+                      </svg>
+                      <span className="text-sm font-medium text-gray-700 group-hover/share:text-green-600 hidden sm:inline">
+                        Compartir
+                      </span>
+                    </button>
+                    
+                    {/* Menú de compartir */}
+                    {openShareMenu === post.id && (
+                      <>
+                        {/* Overlay para cerrar */}
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setOpenShareMenu(null)}
+                        />
+                        
+                        {/* Menú desplegable */}
+                        <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20">
+                          <div className="px-4 py-2 border-b border-gray-100">
+                            <p className="text-xs font-medium text-gray-500 uppercase">Compartir en</p>
+                          </div>
+                          
+                          {/* WhatsApp */}
+                          <button
+                            onClick={() => handleShare(post.id, 'whatsapp')}
+                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                          >
+                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                              </svg>
+                            </div>
+                            <span className="text-sm text-gray-700 font-medium">WhatsApp</span>
+                          </button>
+                          
+                          {/* Facebook */}
+                          <button
+                            onClick={() => handleShare(post.id, 'facebook')}
+                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                          >
+                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                              </svg>
+                            </div>
+                            <span className="text-sm text-gray-700 font-medium">Facebook</span>
+                          </button>
+                          
+                          {/* Twitter */}
+                          <button
+                            onClick={() => handleShare(post.id, 'twitter')}
+                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                          >
+                            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                              </svg>
+                            </div>
+                            <span className="text-sm text-gray-700 font-medium">Twitter (X)</span>
+                          </button>
+                          
+                          <div className="border-t border-gray-100 my-1"></div>
+                          
+                          {/* Copiar enlace */}
+                          <button
+                            onClick={() => handleShare(post.id, 'copy')}
+                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                          >
+                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <span className="text-sm text-gray-700 font-medium">Copiar enlace</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1681,6 +1988,7 @@ export default function SocialPage() {
           allPropShots={propShots}
           onLike={handleLikePropShot}
           onView={handleViewPropShot}
+          onComment={handleCommentPropShot}
           getFullUrl={getFullUrl}
           onClose={() => setSelectedPropShot(null)}
         />

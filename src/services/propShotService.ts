@@ -46,6 +46,15 @@ export interface UploadResponse {
   mimeType: string;
 }
 
+export interface PropShotComment {
+  id: number;
+  propShotId: number;
+  userId: number;
+  userName: string;
+  content: string;
+  createdAt: string;
+}
+
 
 
 export class PropShotService {
@@ -250,9 +259,9 @@ export class PropShotService {
   }
 
   // Dar like a un PropShot
-  static async likePropShot(id: number): Promise<void> {
+  static async likePropShot(id: number, userId: number = 0): Promise<void> {
     try {
-      const response = await fetch(`${config.API_BASE_URL}/api/social/propshots/${id}/like`, {
+      const response = await fetch(`${config.API_BASE_URL}/api/social/propshots/${id}/like?userId=${userId}`, {
         method: 'POST'
       });
       
@@ -262,6 +271,47 @@ export class PropShotService {
     } catch (error) {
       console.error('Error liking PropShot:', error);
       throw new Error('Error al dar like al PropShot');
+    }
+  }
+
+  // Agregar comentario a un PropShot
+  static async addComment(id: number, content: string, userId: number = 0, userName: string = 'Usuario Anónimo'): Promise<void> {
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/api/social/propshots/${id}/comment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          userName,
+          content
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw new Error('Error al agregar comentario');
+    }
+  }
+
+  // Obtener comentarios de un PropShot
+  static async getComments(id: number): Promise<PropShotComment[]> {
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/api/social/propshots/${id}/comments`);
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const comments = await response.json();
+      return comments;
+    } catch (error) {
+      console.error('Error getting comments:', error);
+      return [];
     }
   }
 

@@ -93,18 +93,15 @@ export default function AgentForm({
         {/* Teléfono */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Teléfono *
+            Teléfono
           </label>
           <input
             type="tel"
             name="phone"
-            required
             value={formData.phone ?? ''}
             onChange={(e) => handlePhoneChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             placeholder="+595 981 123-456"
-            pattern="^\+595\s?\d{2,3}\s?\d{3}\s?\d{3}$"
-            title="Formato: +595 981 123-456"
           />
           <p className="text-xs text-gray-500 mt-1">Formato paraguayo: +595 981 123-456</p>
         </div>
@@ -112,17 +109,21 @@ export default function AgentForm({
         {/* Usuario */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Usuario *
+            Usuario {!isEditing && '*'}
           </label>
           <input
             type="text"
             name="username"
-            required
+            required={!isEditing}
             value={formData.username ?? ''}
             onChange={(e) => handleInputChange('username', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             placeholder="usuario.agente"
+            disabled={isEditing && !formData.username}
           />
+          {isEditing && !formData.username && (
+            <p className="text-xs text-gray-500 mt-1">Este agente no tiene usuario de sistema</p>
+          )}
         </div>
 
         {/* Contraseña */}

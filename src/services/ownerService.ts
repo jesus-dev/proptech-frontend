@@ -94,7 +94,7 @@ class OwnerService {
   // Obtener todos los propietarios
   async getAllOwners(): Promise<Owner[]> {
     try {
-      const response = await apiClient.get('/api/owners');
+      const response = await apiClient.get('/api/owners-property/owners');
       return response.data;
     } catch (error) {
       console.error('Error fetching owners:', error);
@@ -105,7 +105,7 @@ class OwnerService {
   // Obtener propietario por ID
   async getOwnerById(ownerId: number): Promise<Owner | null> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner:', error);
@@ -116,7 +116,7 @@ class OwnerService {
   // Crear nuevo propietario
   async createOwner(ownerData: CreateOwnerRequest): Promise<Owner | null> {
     try {
-      const response = await apiClient.post('/api/owners', ownerData);
+      const response = await apiClient.post('/api/owners-property/owners', ownerData);
       return response.data;
     } catch (error) {
       console.error('Error creating owner:', error);
@@ -127,7 +127,7 @@ class OwnerService {
   // Actualizar propietario
   async updateOwner(ownerId: number, ownerData: UpdateOwnerRequest): Promise<Owner | null> {
     try {
-      const response = await apiClient.put(`/api/owners/${ownerId}`, ownerData);
+      const response = await apiClient.put(`/api/owners-property/owners/${ownerId}`, ownerData);
       return response.data;
     } catch (error) {
       console.error('Error updating owner:', error);
@@ -138,7 +138,7 @@ class OwnerService {
   // Eliminar propietario (soft delete)
   async deleteOwner(ownerId: number): Promise<boolean> {
     try {
-      await apiClient.delete(`/api/owners/${ownerId}`);
+      await apiClient.delete(`/api/owners-property/owners/${ownerId}`);
       return true;
     } catch (error) {
       console.error('Error deleting owner:', error);
@@ -151,7 +151,7 @@ class OwnerService {
   // Obtener propiedades de un propietario
   async getOwnerProperties(ownerId: number): Promise<PropertyMetrics[]> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/properties`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/properties`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner properties:', error);
@@ -175,7 +175,7 @@ class OwnerService {
   // Obtener reportes de un propietario
   async getOwnerReports(ownerId: number): Promise<OwnerReport[]> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/reports`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/reports`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner reports:', error);
@@ -186,7 +186,7 @@ class OwnerService {
   // Generar reporte para un propietario
   async generateOwnerReport(reportData: GenerateReportRequest): Promise<OwnerReport | null> {
     try {
-      const response = await apiClient.post('/api/owners/reports', reportData);
+      const response = await apiClient.post('/api/owners-property/reports', reportData);
       return response.data;
     } catch (error) {
       console.error('Error generating report:', error);
@@ -197,7 +197,7 @@ class OwnerService {
   // Enviar reporte por email
   async sendReportByEmail(reportId: number): Promise<boolean> {
     try {
-      await apiClient.post(`/api/owners/reports/${reportId}/send`);
+      await apiClient.post(`/api/owners-property/reports/${reportId}/send`);
       return true;
     } catch (error) {
       console.error('Error sending report:', error);
@@ -208,7 +208,7 @@ class OwnerService {
   // Descargar reporte en PDF
   async downloadReportPDF(reportId: number): Promise<Blob | null> {
     try {
-      const response = await apiClient.get(`/api/owners/reports/${reportId}/pdf`, {
+      const response = await apiClient.get(`/api/owners-property/reports/${reportId}/pdf`, {
         responseType: 'blob'
       });
       return response.data;
@@ -223,7 +223,7 @@ class OwnerService {
   // Obtener notificaciones de un propietario
   async getOwnerNotifications(ownerId: number): Promise<OwnerNotification[]> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/notifications`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/notifications`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner notifications:', error);
@@ -234,7 +234,7 @@ class OwnerService {
   // Enviar notificación personalizada
   async sendCustomNotification(ownerId: number, notification: Omit<OwnerNotification, 'id' | 'ownerId' | 'sentAt' | 'status'>): Promise<boolean> {
     try {
-      await apiClient.post(`/api/owners/${ownerId}/notifications`, notification);
+      await apiClient.post(`/api/owners-property/owners/${ownerId}/notifications`, notification);
       return true;
     } catch (error) {
       console.error('Error sending custom notification:', error);
@@ -245,7 +245,7 @@ class OwnerService {
   // Marcar notificación como leída
   async markNotificationAsRead(notificationId: number): Promise<boolean> {
     try {
-      await apiClient.put(`/api/owners/notifications/${notificationId}/read`);
+      await apiClient.put(`/api/owners-property/notifications/${notificationId}/read`);
       return true;
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -265,7 +265,7 @@ class OwnerService {
     averageCommentsPerProperty: number;
   }> {
     try {
-      const response = await apiClient.get('/api/owners/metrics');
+      const response = await apiClient.get('/api/owners-property/metrics');
       return response.data;
     } catch (error) {
       console.error('Error fetching owners metrics:', error);
@@ -291,7 +291,7 @@ class OwnerService {
     performanceScore: number;
   }> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/metrics`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/metrics`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner metrics:', error);
@@ -317,7 +317,7 @@ class OwnerService {
     includeRecommendations: boolean;
   }): Promise<boolean> {
     try {
-      await apiClient.post(`/api/owners/${ownerId}/auto-reports`, config);
+      await apiClient.post(`/api/owners-property/owners/${ownerId}/auto-reports`, config);
       return true;
     } catch (error) {
       console.error('Error configuring auto reports:', error);
@@ -334,7 +334,7 @@ class OwnerService {
     nextReportDate: string;
   } | null> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/auto-reports`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/auto-reports`);
       return response.data;
     } catch (error) {
       console.error('Error fetching auto reports config:', error);
@@ -347,7 +347,7 @@ class OwnerService {
   // Obtener recomendaciones para un propietario
   async getOwnerRecommendations(ownerId: number): Promise<string[]> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/recommendations`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/recommendations`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner recommendations:', error);
@@ -358,7 +358,7 @@ class OwnerService {
   // Generar recomendaciones automáticas
   async generateRecommendations(ownerId: number): Promise<string[]> {
     try {
-      const response = await apiClient.post(`/api/owners/${ownerId}/recommendations`);
+      const response = await apiClient.post(`/api/owners-property/owners/${ownerId}/recommendations`);
       return response.data;
     } catch (error) {
       console.error('Error generating recommendations:', error);

@@ -1,88 +1,66 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Phone, Mail, Star, Users, Award, TrendingUp } from 'lucide-react';
+import { AgentService, Agent } from '@/services/agentService';
 
-// Datos de asesores
-const advisors = [
-  {
-    id: 1,
-    name: 'María González',
-    avatar: 'M',
-    role: 'Asesora Inmobiliaria Senior',
-    phone: '+595 981 123 456',
-    email: 'maria.gonzalez@proptech.com',
-    specialties: ['Residencial', 'Comercial', 'Inversiones'],
-    rating: 4.8,
-    experience: '8 años',
-    available: true
-  },
-  {
-    id: 2,
-    name: 'Carlos Mendoza',
-    avatar: 'C',
-    role: 'Asesor de Créditos Hipotecarios',
-    phone: '+595 981 234 567',
-    email: 'carlos.mendoza@proptech.com',
-    specialties: ['Hipotecas', 'Financiamiento', 'Asesoría Legal'],
-    rating: 4.9,
-    experience: '12 años',
-    available: true
-  },
-  {
-    id: 3,
-    name: 'Ana Rodríguez',
-    avatar: 'A',
-    role: 'Asesora de Propiedades Comerciales',
-    phone: '+595 981 345 678',
-    email: 'ana.rodriguez@proptech.com',
-    specialties: ['Comercial', 'Oficinas', 'Locales'],
-    rating: 4.7,
-    experience: '6 años',
-    available: false
-  },
-  {
-    id: 4,
-    name: 'Luis Fernández',
-    avatar: 'L',
-    role: 'Asesor de Inversiones',
-    phone: '+595 981 456 789',
-    email: 'luis.fernandez@proptech.com',
-    specialties: ['Inversiones', 'Rentabilidad', 'Análisis de Mercado'],
-    rating: 4.6,
-    experience: '10 años',
-    available: true
-  },
-  {
-    id: 5,
-    name: 'Patricia López',
-    avatar: 'P',
-    role: 'Asesora de Propiedades de Lujo',
-    phone: '+595 981 567 890',
-    email: 'patricia.lopez@proptech.com',
-    specialties: ['Lujo', 'Premium', 'Exclusivo'],
-    rating: 4.9,
-    experience: '15 años',
-    available: true
-  },
-  {
-    id: 6,
-    name: 'Roberto Silva',
-    avatar: 'R',
-    role: 'Asesor de Desarrollo Inmobiliario',
-    phone: '+595 981 678 901',
-    email: 'roberto.silva@proptech.com',
-    specialties: ['Desarrollo', 'Construcción', 'Proyectos'],
-    rating: 4.5,
-    experience: '18 años',
-    available: false
-  }
-];
-
+interface AdvisorDisplay {
+  id: string;
+  name: string;
+  avatar: string;
+  role: string;
+  phone: string;
+  email: string;
+  specialties: string[];
+  rating: number;
+  experience: string;
+  available: boolean;
+  photo?: string;
+}
 
 export default function AsesoresPage() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('Todas');
   const [searchTerm, setSearchTerm] = useState('');
+  const [advisors, setAdvisors] = useState<AdvisorDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar agentes desde la BD
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        setLoading(true);
+        console.log('📥 Cargando agentes desde BD...');
+        const agents = await AgentService.getAllAgents();
+        
+        // Convertir agentes de BD al formato de display
+        const displayAdvisors: AdvisorDisplay[] = agents
+          .filter(agent => agent.active || agent.isActive) // Solo agentes activos
+          .map(agent => ({
+            id: agent.id,
+            name: `${agent.firstName} ${agent.lastName}`,
+            avatar: agent.firstName?.charAt(0) || 'A',
+            role: agent.position || 'Agente Inmobiliario',
+            phone: agent.phone || 'No disponible',
+            email: agent.email || 'No disponible',
+            specialties: [agent.role || 'General'],
+            rating: 4.5, // Por ahora estático, se puede agregar rating real después
+            experience: agent.agencyName ? `en ${agent.agencyName}` : 'Independiente',
+            available: agent.active || agent.isActive,
+            photo: agent.photo
+          }));
+
+        setAdvisors(displayAdvisors);
+        console.log(`✅ ${displayAdvisors.length} agentes activos cargados`);
+      } catch (error) {
+        console.error('Error loading agents:', error);
+        setAdvisors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAgents();
+  }, []); // Solo cargar al montar el componente
 
   // Filtrar asesores por especialidad y búsqueda
   const filteredAdvisors = advisors.filter(advisor => {
@@ -161,9 +139,39 @@ export default function AsesoresPage() {
         )}
       </div>
 
+      {/* Estado de carga */}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden animate-pulse">
+              <div className="bg-gradient-to-br from-gray-200 to-gray-300 p-6 pb-20">
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-400"></div>
+                </div>
+              </div>
+              <div className="px-6 -mt-12 relative z-10">
+                <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                  <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                  <div className="flex gap-2 justify-center">
+                    <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+                    <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4 space-y-2">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Lista de Asesores - Mejorada */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredAdvisors.map((advisor) => (
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {filteredAdvisors.map((advisor) => (
           <div key={advisor.id} className="group bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
             {/* Header del card con gradiente */}
             <div className="relative bg-gradient-to-br from-orange-50 to-orange-100 p-6 pb-20">
@@ -181,11 +189,33 @@ export default function AsesoresPage() {
               {/* Avatar centrado */}
               <div className="flex justify-center">
                 <div className="relative">
-                  <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shadow-lg ${
-                    advisor.available ? 'bg-gradient-to-br from-orange-500 to-orange-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'
-                  }`}>
-                    {advisor.avatar}
-                  </div>
+                  {advisor.photo ? (
+                    <img 
+                      src={advisor.photo}
+                      alt={advisor.name}
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-lg ring-4 ring-white"
+                      onError={(e) => {
+                        // Fallback a avatar con iniciales si la imagen falla
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const fallback = document.createElement('div');
+                          fallback.className = `w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shadow-lg ${
+                            advisor.available ? 'bg-gradient-to-br from-orange-500 to-orange-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                          }`;
+                          fallback.textContent = advisor.avatar;
+                          parent.appendChild(fallback);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shadow-lg ${
+                      advisor.available ? 'bg-gradient-to-br from-orange-500 to-orange-600' : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                    }`}>
+                      {advisor.avatar}
+                    </div>
+                  )}
                   {advisor.rating >= 4.8 && (
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full border-3 border-white flex items-center justify-center shadow-md">
                       <Award className="w-4 h-4 text-white" />
@@ -257,11 +287,12 @@ export default function AsesoresPage() {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Mensaje si no hay resultados - Mejorado */}
-      {filteredAdvisors.length === 0 && (
+      {!loading && filteredAdvisors.length === 0 && (
         <div className="text-center py-12 sm:py-16">
           <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
             <Search className="w-10 h-10 sm:w-12 sm:h-12 text-orange-400" />

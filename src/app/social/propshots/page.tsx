@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PropShot, PropShotService, CreatePropShotRequest } from '@/services/propShotService';
 import CreatePropShotModal from '@/components/social/CreatePropShotModal';
 import PropShotGrid from '@/components/social/PropShotGrid';
+import PropShotReelViewer from '@/components/social/PropShotReelViewer';
 import { 
   Camera,
   Search,
@@ -26,6 +27,7 @@ export default function PropShotsPage() {
   const [filterDate, setFilterDate] = useState('all');
   const [filterLikes, setFilterLikes] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedPropShot, setSelectedPropShot] = useState<PropShot | null>(null);
 
   const clearAllFilters = () => {
     setSearchQuery('');
@@ -160,13 +162,22 @@ export default function PropShotsPage() {
 
   // Función para dar like a un PropShot
   const handleLikePropShot = async (propShotId: number) => {
-    if (!isAuthenticated) {
-      alert('Debes iniciar sesión para dar like');
+    // Verificar si ya dio like (localStorage para anónimos)
+    const likedPropShots = JSON.parse(localStorage.getItem('likedPropShots') || '[]');
+    if (likedPropShots.includes(propShotId)) {
+      alert('Ya diste like a este PropShot');
       return;
     }
     
     try {
-      await PropShotService.likePropShot(propShotId);
+      const userId = user?.id || 0;
+      await PropShotService.likePropShot(propShotId, userId);
+      
+      // Guardar en localStorage si es anónimo
+      if (!isAuthenticated) {
+        likedPropShots.push(propShotId);
+        localStorage.setItem('likedPropShots', JSON.stringify(likedPropShots));
+      }
       
       // Actualizar el PropShot en la lista
       setPropShots(prev => prev.map(shot =>
@@ -174,8 +185,16 @@ export default function PropShotsPage() {
           ? { ...shot, likes: shot.likes + 1 }
           : shot
       ));
+      
+      // Actualizar también en filteredPropShots
+      setFilteredPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
+          ? { ...shot, likes: shot.likes + 1 }
+          : shot
+      ));
     } catch (error) {
       console.error('Error liking PropShot:', error);
+      alert('Error al dar like. Intenta nuevamente.');
     }
   };
 
@@ -186,6 +205,57 @@ export default function PropShotsPage() {
     } catch (error) {
       console.error('Error incrementing views:', error);
     }
+  };
+
+  // Función para agregar comentario a un PropShot
+  const handleCommentPropShot = async (propShotId: number, content: string, userId: number, userName: string) => {
+    try {
+      await PropShotService.addComment(propShotId, content, userId, userName);
+      
+      // Actualizar el PropShot en la lista (incrementar contador)
+      setPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
+          ? { ...shot, comments: (shot.comments || 0) + 1 }
+          : shot
+      ));
+      
+      // Actualizar también en filteredPropShots
+      setFilteredPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
+          ? { ...shot, comments: (shot.comments || 0) + 1 }
+          : shot
+      ));
+      
+      // Si es el PropShot seleccionado, actualizarlo también
+      if (selectedPropShot?.id === propShotId) {
+        setSelectedPropShot(prev => prev ? { ...prev, comments: (prev.comments || 0) + 1 } : null);
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw error;
+    }
+  };
+
+  // Handler para abrir el reel viewer
+  const handlePropShotClick = (shot: PropShot) => {
+    setSelectedPropShot(shot);
+    handleViewPropShot(shot.id);
+  };
+
+  // Función para convertir URLs relativas en URLs completas
+  const getFullUrl = (url: string): string => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+
+    // Corrección de rutas PropShots
+    if (url.includes('/api/prop-shots/media/')) {
+      const filename = url.split('/').pop();
+      url = `/uploads/prop-shots/media/${filename}`;
+    }
+
+    // Construir URL completa con el backend
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    return `${apiUrl}${url.startsWith('/') ? url : `/${url}`}`;
   };
 
   // Ya no se requiere autenticación para ver PropShots
@@ -464,6 +534,7 @@ export default function PropShotsPage() {
             loading={false}
             onLike={handleLikePropShot}
             onView={handleViewPropShot}
+            onPropShotClick={handlePropShotClick}
             showEmptyState={false}
             gridCols={{
               default: 2,
@@ -474,6 +545,19 @@ export default function PropShotsPage() {
           />
         )}
       </div>
+
+      {/* Modal PropShot reel viewer */}
+      {selectedPropShot && (
+        <PropShotReelViewer
+          initialPropShot={selectedPropShot}
+          allPropShots={filteredPropShots}
+          onLike={handleLikePropShot}
+          onView={handleViewPropShot}
+          onComment={handleCommentPropShot}
+          getFullUrl={getFullUrl}
+          onClose={() => setSelectedPropShot(null)}
+        />
+      )}
 
       {/* Modal para crear PropShot */}
       <CreatePropShotModal

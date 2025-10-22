@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { PlusIcon, PencilIcon, TrashIcon, BuildingOfficeIcon } from "@heroicons/react/24/outline";
 import { usePropertyTypes } from "./hooks/usePropertyTypes";
 import { PropertyType } from "./services/propertyTypeService";
@@ -119,6 +119,46 @@ export default function PropertyTypesPage() {
     (type.parentName && type.parentName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Ordenamiento y agrupación: padres primero y luego sus hijos, todo por nombre
+  const groupedAndSortedTypes = useMemo(() => {
+    if (searchTerm.trim()) {
+      // En modo búsqueda mantenemos la lista plana filtrada
+      return filteredPropertyTypes
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    const parents = propertyTypes
+      .filter(t => !t.parentId)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const childrenByParent = new Map<number, PropertyType[]>();
+    propertyTypes
+      .filter(t => !!t.parentId)
+      .forEach(t => {
+        const key = t.parentId as number;
+        const arr = childrenByParent.get(key) || [];
+        arr.push(t);
+        childrenByParent.set(key, arr);
+      });
+
+    const result: PropertyType[] = [];
+    parents.forEach(parent => {
+      result.push(parent);
+      const kids = (childrenByParent.get(parent.id) || []).sort((a, b) => a.name.localeCompare(b.name));
+      kids.forEach(k => result.push(k));
+    });
+
+    // Hijos huérfanos (con parentId pero cuyo padre no está en la lista)
+    const orphanChildren = propertyTypes
+      .filter(t => !!t.parentId && !parents.find(p => p.id === (t.parentId as number)))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    orphanChildren.forEach(c => result.push(c));
+
+    return result;
+  }, [propertyTypes, filteredPropertyTypes, searchTerm]);
+
   if (loading) {
     return (
       <div className="p-6">
@@ -209,7 +249,7 @@ export default function PropertyTypesPage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredPropertyTypes.map((type) => (
+                {groupedAndSortedTypes.map((type) => (
                   <tr key={type.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       <div className="flex items-center">

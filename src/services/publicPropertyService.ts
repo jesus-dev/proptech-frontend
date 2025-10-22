@@ -202,6 +202,23 @@ class PublicPropertyService {
     }
   }
 
+  async getPropertyById(id: string): Promise<any> {
+    try {
+      const url = `${this.baseUrl}/api/public/properties/${id}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching property by ID:', error);
+      throw error;
+    }
+  }
+
   async getCategorySummary(): Promise<any[]> {
     try {
       const response = await fetch(`${this.baseUrl}/api/public/properties/category-summary`);

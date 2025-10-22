@@ -616,7 +616,6 @@ export default function PropertyDetailsPage({ params }: PageProps) {
                     { id: 'amenities', label: 'Amenidades', icon: <Star className="h-4 w-4" /> },
                     { id: 'services', label: 'Servicios', icon: <Zap className="h-4 w-4" /> },
                     { id: 'files', label: 'Documentos', icon: <FileText className="h-4 w-4" /> },
-                    { id: 'media', label: 'Multimedia', icon: <Video className="h-4 w-4" /> },
                     { 
                       id: 'comments', 
                       label: 'Comentarios', 
@@ -924,100 +923,6 @@ export default function PropertyDetailsPage({ params }: PageProps) {
                         <p className="text-gray-500 dark:text-gray-400">No hay documentos privados para esta propiedad</p>
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* Media Tab */}
-                {activeTab === 'media' && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Multimedia</h3>
-                    <div className="space-y-4">
-                      {/* Featured Image */}
-                      {property.featuredImage && (
-                        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <div className="flex items-center">
-                            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg overflow-hidden mr-4">
-                              <img
-                                src={property.featuredImage}
-                                alt="Imagen destacada"
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">Imagen Destacada</h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Imagen principal de la propiedad</p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => window.open(property.featuredImage, '_blank')}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-brand-700 bg-brand-100 hover:bg-brand-200 dark:text-brand-300 dark:bg-brand-900 dark:hover:bg-brand-800 transition-colors"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            Ver Imagen
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Video */}
-                      {property.videoUrl && (
-                        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <div className="flex items-center">
-                            <Video className="h-5 w-5 text-gray-500 mr-3" />
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">Video de la Propiedad</h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Video promocional</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                                {property.videoUrl}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={handleViewVideo}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-brand-700 bg-brand-100 hover:bg-brand-200 dark:text-brand-300 dark:bg-brand-900 dark:hover:bg-brand-800 transition-colors"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            Ver Video
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Virtual Tour */}
-                      {property.virtualTourUrl && (
-                        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <div className="flex items-center">
-                            <Globe className="h-5 w-5 text-gray-500 mr-3" />
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">Tour Virtual</h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Recorrido virtual 360°</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                                {property.virtualTourUrl}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={handleVirtualTour}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-brand-700 bg-brand-100 hover:bg-brand-200 dark:text-brand-300 dark:bg-brand-900 dark:hover:bg-brand-800 transition-colors"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            Ver Tour
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* No Content Message */}
-                      {!property.featuredImage && !property.videoUrl && !property.virtualTourUrl && (
-                        <div className="text-center py-8">
-                          <Video className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500 dark:text-gray-400">No hay contenido multimedia disponible</p>
-                          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                            Agrega videos, tours virtuales o imágenes destacadas para mejorar la presentación de la propiedad.
-                          </p>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
 

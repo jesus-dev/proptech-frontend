@@ -160,6 +160,91 @@ export class SocialService {
     }
   }
 
+  // Parsear posts individuales cuando el JSON completo está malformado
+  private static parseIndividualPosts(text: string): Post[] {
+    const validPosts: Post[] = [];
+    
+    // Eliminar corchetes iniciales y finales del array
+    let arrayContent = text.trim();
+    if (arrayContent.startsWith('[')) arrayContent = arrayContent.substring(1);
+    if (arrayContent.endsWith(']')) arrayContent = arrayContent.substring(0, arrayContent.length - 1);
+    
+    // Dividir en objetos individuales usando una estrategia de conteo de llaves
+    const postStrings: string[] = [];
+    let currentPost = '';
+    let braceCount = 0;
+    let inString = false;
+    let escapeNext = false;
+    
+    for (let i = 0; i < arrayContent.length; i++) {
+      const char = arrayContent[i];
+      
+      if (escapeNext) {
+        currentPost += char;
+        escapeNext = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        currentPost += char;
+        escapeNext = true;
+        continue;
+      }
+      
+      if (char === '"' && !escapeNext) {
+        inString = !inString;
+        currentPost += char;
+        continue;
+      }
+      
+      if (!inString) {
+        if (char === '{') {
+          braceCount++;
+          currentPost += char;
+        } else if (char === '}') {
+          braceCount--;
+          currentPost += char;
+          
+          if (braceCount === 0 && currentPost.trim().length > 0) {
+            postStrings.push(currentPost.trim());
+            currentPost = '';
+          }
+        } else if (char !== ',' || braceCount > 0) {
+          currentPost += char;
+        }
+      } else {
+        currentPost += char;
+      }
+    }
+    
+    console.log(`📦 Se encontraron ${postStrings.length} objetos de post para parsear`);
+    
+    // Intentar parsear cada post individual
+    let skippedPosts = 0;
+    postStrings.forEach((postStr, index) => {
+      try {
+        const post = JSON.parse(postStr);
+        validPosts.push(post);
+      } catch (error: any) {
+        skippedPosts++;
+        console.warn(`⚠️ Post ${index + 1} omitido debido a error de parsing:`, error.message);
+        
+        // Intentar extraer el ID del post problemático
+        const idMatch = postStr.match(/"id"\s*:\s*(\d+)/);
+        if (idMatch) {
+          console.warn(`   Post ID: ${idMatch[1]}`);
+        }
+      }
+    });
+    
+    if (skippedPosts > 0) {
+      console.warn(`⚠️ Se omitieron ${skippedPosts} posts con formato incorrecto`);
+      console.warn(`✅ Se recuperaron ${validPosts.length} posts válidos`);
+    }
+    
+    return validPosts;
+  }
+
   // Obtener todas las imágenes de un post con validación
   static async getPostImages(post: Post): Promise<string[]> {
     const images: string[] = [];
@@ -277,14 +362,9 @@ export class SocialService {
     return result;
   }
 
-  // Obtener todos los posts con paginación y cache
+  // Obtener todos los posts con paginación SIN CACHE (siempre desde BD)
   static async getPosts(page: number = 0, size: number = 20): Promise<Post[]> {
-    const cacheKey = `posts:${page}:${size}`;
-    const cached = imageCache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return JSON.parse(cached.url); // Reutilizamos el campo url para los datos
-    }
+    // NO usar cache - siempre obtener datos frescos de la BD
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/social/posts?page=${page}&size=${size}`, {
@@ -295,21 +375,72 @@ export class SocialService {
         throw new Error(`Error al obtener posts: ${response.status}`);
       }
       
-      const posts = await response.json();
+      // Obtener el texto primero para poder manejarlo si falla el parsing
+      const text = await response.text();
       
-
+      let posts: Post[];
+      try {
+        posts = JSON.parse(text);
+      } catch (jsonError: any) {
+        console.error('❌ Error parsing JSON:', jsonError.message);
+        
+        // Extraer información del error
+        const errorMatch = jsonError.message.match(/position (\d+)/);
+        const errorPosition = errorMatch ? parseInt(errorMatch[1]) : 0;
+        
+        // Mostrar contexto alrededor del error
+        const contextStart = Math.max(0, errorPosition - 200);
+        const contextEnd = Math.min(text.length, errorPosition + 200);
+        const context = text.substring(contextStart, contextEnd);
+        
+        console.error('📍 Contexto del error (400 chars):');
+        console.error(context);
+        console.error('👆 El error está aproximadamente en el medio de este texto');
+        
+        // Intentar identificar el post problemático
+        const postsBeforeError = text.substring(0, errorPosition);
+        const postMatches = postsBeforeError.match(/"id":\s*\d+/g);
+        if (postMatches && postMatches.length > 0) {
+          const lastPostId = postMatches[postMatches.length - 1].match(/\d+/);
+          console.error('🔍 El error probablemente está en el post con ID:', lastPostId ? lastPostId[0] : 'desconocido');
+        }
+        
+        // ESTRATEGIA 1: Intentar limpiar el JSON
+        console.log('🔧 Estrategia 1: Limpiando JSON...');
+        try {
+          const cleanedText = text
+            .replace(/\r\n/g, '\\n')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\n')
+            .replace(/\t/g, '\\t');
+          
+          posts = JSON.parse(cleanedText);
+          console.log('✅ JSON limpiado y parseado exitosamente');
+        } catch (secondError) {
+          console.error('❌ Estrategia 1 falló');
+          
+          // ESTRATEGIA 2: Intentar parsear posts individuales
+          console.log('🔧 Estrategia 2: Parseando posts individuales...');
+          try {
+            posts = this.parseIndividualPosts(text);
+            console.log(`✅ Se recuperaron ${posts.length} posts válidos de forma individual`);
+          } catch (thirdError) {
+            console.error('❌ Estrategia 2 falló');
+            console.error('💡 SOLUCIÓN: Ir al backend y revisar el post identificado arriba.');
+            console.error('   El contenido del post probablemente tiene comillas o saltos de línea sin escapar.');
+            // [[memory:10170653]] - Devolver array vacío en lugar de fallar
+            return [];
+          }
+        }
+      }
       
-      // Guardar en cache
-      imageCache.set(cacheKey, { 
-        url: JSON.stringify(posts), 
-        timestamp: Date.now(), 
-        valid: true 
-      });
+      // NO guardar en cache - siempre obtener datos frescos de la BD
       
       return posts;
     } catch (error) {
       console.error('Error fetching posts:', error);
-      throw error;
+      // [[memory:10170653]] - Devolver array vacío en lugar de lanzar error
+      return [];
     }
   }
 
@@ -333,12 +464,33 @@ export class SocialService {
         throw new Error(`Error al crear post: ${response.status}`);
       }
       
-      // Limpiar cache de posts
-      this.clearPostsCache();
+      // Ya no hay cache que limpiar - los datos siempre vienen de la BD
       
       return await response.json();
     } catch (error) {
       console.error('Error creating post:', error);
+      throw error;
+    }
+  }
+
+  // Eliminar un post
+  static async deletePost(postId: number, userId: number): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/social/posts/${postId}?userId=${userId}`, {
+        method: 'DELETE',
+        signal: AbortSignal.timeout(10000)
+      });
+      
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('No tienes permiso para eliminar este post');
+        }
+        throw new Error(`Error al eliminar post: ${response.status}`);
+      }
+      
+      console.log('✅ Post eliminado correctamente');
+    } catch (error) {
+      console.error('Error deleting post:', error);
       throw error;
     }
   }
@@ -363,8 +515,7 @@ export class SocialService {
         throw new Error(`Error al dar like: ${response.status}`);
       }
       
-      // Limpiar cache de posts
-      this.clearPostsCache();
+      // Ya no hay cache que limpiar - los datos siempre vienen de la BD
     } catch (error) {
       console.error('Error liking post:', error);
       throw error;
@@ -450,22 +601,16 @@ export class SocialService {
         throw new Error(`Error al comentar: ${response.status}`);
       }
       
-      // Limpiar cache de posts
-      this.clearPostsCache();
+      // Ya no hay cache que limpiar - los datos siempre vienen de la BD
     } catch (error) {
       console.error('Error commenting post:', error);
       throw error;
     }
   }
 
-  // Limpiar cache de posts
-  private static clearPostsCache(): void {
-    for (const [key] of imageCache) {
-      if (key.startsWith('posts:')) {
-        imageCache.delete(key);
-      }
-    }
-  }
+  // Cache eliminado - los posts siempre se obtienen frescos de la BD
+  // para evitar mezclar datos viejos con nuevos
+  // El cache de imágenes (checkImageExists) se mantiene para optimizar validación
 
   // Limpiar cache expirado
   static cleanupExpiredCache(): void {

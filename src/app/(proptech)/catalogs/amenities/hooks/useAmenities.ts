@@ -60,8 +60,9 @@ export function useAmenities() {
       const updatedData = await getAllAmenities();
       setAmenities(updatedData);
       return true;
-    } catch (e) {
-      setError('Error al eliminar amenidad');
+    } catch (e: any) {
+      const errorMessage = e?.message || 'Error al eliminar amenidad';
+      setError(errorMessage);
       return false;
     }
   }, []);

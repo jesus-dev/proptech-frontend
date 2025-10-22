@@ -18,17 +18,24 @@ export default function EditAgentClient({ agent, agencies, agentId }: EditAgentC
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<AgentFormData>({
+    nombre: '',
+    apellido: '',
     firstName: '',
     lastName: '',
     email: '',
+    telefono: '',
     phone: '',
     dni: '',
     license: '',
+    licenciaInmobiliaria: '',
     position: '',
     bio: '',
     photo: '',
+    fotoPerfilUrl: '',
     agencyId: '',
     agencyName: '',
+    username: '',
+    password: '',
     isActive: true,
     active: true,
     role: 'agente'
@@ -37,19 +44,27 @@ export default function EditAgentClient({ agent, agencies, agentId }: EditAgentC
   useEffect(() => {
     if (agent) {
       setFormData({
-        firstName: agent.firstName || '',
-        lastName: agent.lastName || '',
+        // Usar tanto los campos nuevos como legacy
+        nombre: agent.nombre || agent.firstName || '',
+        apellido: agent.apellido || agent.lastName || '',
+        firstName: agent.firstName || agent.nombre || '',
+        lastName: agent.lastName || agent.apellido || '',
         email: agent.email || '',
-        phone: agent.phone || '',
+        telefono: agent.telefono || agent.phone || '',
+        phone: agent.phone || agent.telefono || '',
         dni: agent.dni || '',
-        license: agent.license || '',
+        license: agent.license || agent.licenciaInmobiliaria || '',
+        licenciaInmobiliaria: agent.licenciaInmobiliaria || agent.license || '',
         position: agent.position || '',
         bio: agent.bio || '',
-        photo: agent.photo || '',
+        photo: agent.photo || agent.fotoPerfilUrl || '',
+        fotoPerfilUrl: agent.fotoPerfilUrl || agent.photo || '',
         agencyId: agent.agencyId || '',
         agencyName: agent.agencyName || '',
-        isActive: agent.isActive || true,
-        active: agent.active || true,
+        username: agent.username || '',
+        password: '', // Siempre vacío en edición
+        isActive: agent.isActive !== undefined ? agent.isActive : true,
+        active: agent.active !== undefined ? agent.active : true,
         role: agent.role || 'agente'
       });
     }

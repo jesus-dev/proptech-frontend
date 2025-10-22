@@ -56,8 +56,9 @@ export const updateAmenity = async (id: number, data: { name: string; descriptio
 export const deleteAmenity = async (id: number) => {
   try {
     await apiClient.delete(`/api/amenities/${id}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting amenity:', error);
-    throw new Error('Error al eliminar amenidad');
+    const message = error?.response?.data?.message || error?.message || 'Error al eliminar amenidad';
+    throw new Error(message);
   }
 }; 

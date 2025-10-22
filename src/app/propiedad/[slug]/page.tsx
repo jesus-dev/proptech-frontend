@@ -10,12 +10,24 @@ import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserI
 const getImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath) return '/images/placeholder.jpg';
   
+  // Si ya es una URL completa, retornarla
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath;
   }
   
+  // Si es una imagen local del frontend (no del backend)
+  if (imagePath.startsWith('/images/')) {
+    return imagePath;
+  }
+  
+  // Construir URL completa del backend
   const baseUrl = getImageBaseUrl();
-  return `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  const fullUrl = `${baseUrl}${cleanPath}`;
+  
+  console.log('🔗 getImageUrl:', { imagePath, baseUrl, cleanPath, fullUrl });
+  
+  return fullUrl;
 };
 
 // Función helper para convertir HTML a texto respetando formato original
@@ -75,10 +87,28 @@ export default function PropertyDetailPage() {
         setLoading(true);
         setError('');
         
-        // Intentar obtener por slug primero, luego por ID si es numérico
-        const propertyData = await publicPropertyService.getPropertyBySlug(slug);
+        let propertyData = null;
+        
+        // Si el slug es un número, intentar obtener por ID primero
+        const isNumeric = /^\d+$/.test(slug);
+        
+        if (isNumeric) {
+          try {
+            propertyData = await publicPropertyService.getPropertyById(slug);
+          } catch (idError) {
+            console.log('ID not found, trying as slug:', idError);
+            // Si falla por ID, intentar por slug
+            propertyData = await publicPropertyService.getPropertyBySlug(slug);
+          }
+        } else {
+          // Si no es numérico, obtener por slug
+          propertyData = await publicPropertyService.getPropertyBySlug(slug);
+        }
         
         if (propertyData) {
+          console.log('📦 Property data received:', propertyData);
+          console.log('🖼️ Gallery images:', propertyData.galleryImages);
+          console.log('🎨 Featured image:', propertyData.featuredImage);
           setProperty(propertyData);
         } else {
           setError('Propiedad no encontrada');
@@ -203,8 +233,11 @@ export default function PropertyDetailPage() {
     }
   }
 
-  const images = property.galleryImages?.map((img: any) => getImageUrl(img.url)) || 
-                (property.featuredImage ? [getImageUrl(property.featuredImage)] : ['/images/placeholder.jpg']);
+  const images = property.galleryImages?.map((img: any) => {
+    const imageUrl = getImageUrl(img.url || img);
+    console.log('🖼️ Image URL constructed:', img.url || img, '->', imageUrl);
+    return imageUrl;
+  }) || (property.featuredImage ? [getImageUrl(property.featuredImage)] : ['/images/placeholder.jpg']);
 
   const formatPrice = (price: number, currency: string) => {
     const formattedPrice = new Intl.NumberFormat('es-PY').format(price);

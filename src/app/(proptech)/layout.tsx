@@ -31,7 +31,7 @@ export default function ProptechLayout({ children }: any) {
             {/* Header */}
             <AppHeaderCRM />
             {/* Page Content */}
-            <div className="pt-0 md:pt-1 -ml-4 pl-4 pr-2 md:pr-4 pb-20 w-full crm-content">
+            <div className="pt-4 md:pt-6 pl-6 md:pl-8 pr-6 md:pr-8 pb-20 w-full crm-content">
               {children}
             </div>
           </div>

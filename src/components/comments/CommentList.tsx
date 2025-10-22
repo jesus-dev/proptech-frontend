@@ -61,11 +61,6 @@ export const CommentList: React.FC<CommentListProps> = ({
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!isAuthenticated || !user) {
-      alert('Debes iniciar sesión para comentar');
-      return;
-    }
 
     if (!newComment.trim()) {
       alert('El comentario no puede estar vacío');
@@ -74,13 +69,17 @@ export const CommentList: React.FC<CommentListProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Permitir comentarios anónimos
+      const userId = isAuthenticated && user ? user.id : 0;
+      const userName = isAuthenticated && user ? user.fullName : 'Usuario Anónimo';
+      
       const createdComment = await commentService.createComment(
         {
           content: newComment.trim(),
           postId
         },
-        user.id,
-        user.fullName
+        userId,
+        userName
       );
 
 
@@ -159,33 +158,41 @@ export const CommentList: React.FC<CommentListProps> = ({
           </span>
         </div>
         
-        {isAuthenticated && (
-          <button
-            onClick={() => setShowCommentForm(!showCommentForm)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              showCommentForm 
-                ? 'bg-gray-100 text-gray-700' 
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-            }`}
-          >
-            {showCommentForm ? 'Cancelar' : 'Comentar'}
-          </button>
-        )}
+        {/* Botón visible para todos - permite comentarios anónimos */}
+        <button
+          onClick={() => setShowCommentForm(!showCommentForm)}
+          className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+            showCommentForm 
+              ? 'bg-gray-100 text-gray-700' 
+              : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+          }`}
+        >
+          {showCommentForm ? 'Cancelar' : 'Comentar'}
+        </button>
       </div>
 
-      {/* Formulario minimalista */}
-      {showCommentForm && isAuthenticated && (
+      {/* Formulario minimalista - Visible para todos (autenticados y anónimos) */}
+      {showCommentForm && (
         <div className="border-t border-gray-100 px-6 py-4">
+          {/* Nota para usuarios anónimos */}
+          {!isAuthenticated && (
+            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                💬 Comentarás como <strong>Usuario Anónimo</strong>. 
+                <a href="/login" className="ml-1 underline hover:text-blue-800">Inicia sesión</a> para comentar con tu nombre.
+              </p>
+            </div>
+          )}
 
-              <form onSubmit={handleSubmitComment} className="space-y-3">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-800 placeholder-gray-400"
-                  rows={3}
-                  placeholder="Escribe un comentario..."
-                  maxLength={1000}
-                />
+          <form onSubmit={handleSubmitComment} className="space-y-3">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-lg resize-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-800 placeholder-gray-400"
+              rows={3}
+              placeholder={isAuthenticated ? "Escribe un comentario..." : "Escribe un comentario anónimo..."}
+              maxLength={1000}
+            />
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-400">
                     {newComment.length}/1000

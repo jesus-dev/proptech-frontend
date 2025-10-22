@@ -4,11 +4,39 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePathname } from 'next/navigation';
 import UserDropdown from '@/components/social/UserDropdown';
 import { Home, PlayCircle, Users, MessageSquare, Key } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessagingService } from '@/services/messagingService';
 
 export default function SocialLayout({ children }: any) {
   const { user, isAuthenticated } = useAuth();
   const pathname = usePathname();
   const isGalleryRoute = pathname?.startsWith('/social/gallery');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Obtener contador de mensajes no leídos desde BD
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      if (!isAuthenticated) {
+        setUnreadCount(0);
+        return;
+      }
+
+      try {
+        const conversations = await MessagingService.getConversations();
+        const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+        setUnreadCount(totalUnread);
+      } catch (error) {
+        console.error('Error loading unread count:', error);
+        setUnreadCount(0);
+      }
+    };
+
+    loadUnreadCount();
+    
+    // Refrescar cada 30 segundos
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, pathname]); // Recargar cuando cambia la ruta
 
   // En rutas de galería mostramos el contenido en fullscreen sin header/sidebar
   if (isGalleryRoute) {
@@ -128,10 +156,12 @@ export default function SocialLayout({ children }: any) {
                     <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
                   )}
                 </div>
-                {/* Indicador de consultas no leídas - Mejorado */}
-                <span className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-[11px] sm:text-xs rounded-full flex items-center justify-center font-bold shadow-lg animate-pulse">
-                  3
-                </span>
+                {/* Indicador de consultas no leídas - Dinámico desde BD */}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-[11px] sm:text-xs rounded-full flex items-center justify-center font-bold shadow-lg animate-pulse">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </button>
 
               {isAuthenticated ? (

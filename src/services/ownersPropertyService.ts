@@ -483,7 +483,7 @@ export class OwnersPropertyService {
   // Obtener propietarios
   static async getOwners(): Promise<Owner[]> {
     try {
-      const response = await apiClient.get('/api/owners');
+      const response = await apiClient.get('/api/owners-property/owners');
       return response.data;
     } catch (error) {
       console.error('Error fetching owners:', error);
@@ -494,7 +494,7 @@ export class OwnersPropertyService {
   // Obtener propiedades de un propietario
   static async getOwnerProperties(ownerId: number): Promise<OwnerProperty[]> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/properties`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/properties`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner properties:', error);
@@ -509,7 +509,7 @@ export class OwnersPropertyService {
     ownershipPercentage: number;
   }): Promise<OwnerProperty> {
     try {
-      const response = await apiClient.post(`/api/owners/${ownerId}/properties`, propertyData);
+      const response = await apiClient.post(`/api/owners-property/owners/${ownerId}/properties`, propertyData);
       return response.data;
     } catch (error) {
       console.error('Error adding property to owner:', error);
@@ -520,7 +520,7 @@ export class OwnersPropertyService {
   // Remover propiedad de un propietario
   static async removePropertyFromOwner(ownerId: number, propertyId: number): Promise<boolean> {
     try {
-      const response = await apiClient.delete(`/api/owners/${ownerId}/properties/${propertyId}`);
+      const response = await apiClient.delete(`/api/owners-property/owners/${ownerId}/properties/${propertyId}`);
       return response.data.success;
     } catch (error) {
       console.error('Error removing property from owner:', error);
@@ -571,7 +571,7 @@ export class OwnersPropertyService {
       };
 
       // Guardar reporte
-      const response = await apiClient.post('/api/owner-reports', report);
+      const response = await apiClient.post('/api/owners-property/reports', report);
       return response.data;
     } catch (error) {
       console.error('Error generating intelligent report:', error);
@@ -582,7 +582,7 @@ export class OwnersPropertyService {
   // Enviar reporte por email
   static async sendReportByEmail(reportId: number, emailTemplate: string): Promise<boolean> {
     try {
-      const response = await apiClient.post(`/api/owner-reports/${reportId}/send-email`, {
+      const response = await apiClient.post(`/api/owners-property/reports/${reportId}/send-email`, {
         emailTemplate
       });
       return response.data.success;
@@ -595,7 +595,7 @@ export class OwnersPropertyService {
   // Obtener reportes de un propietario
   static async getOwnerReports(ownerId: number): Promise<OwnerReport[]> {
     try {
-      const response = await apiClient.get(`/api/owners/${ownerId}/reports`);
+      const response = await apiClient.get(`/api/owners-property/owners/${ownerId}/reports`);
       return response.data;
     } catch (error) {
       console.error('Error fetching owner reports:', error);
