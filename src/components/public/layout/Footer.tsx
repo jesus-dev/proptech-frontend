@@ -48,7 +48,7 @@ const Footer = () => {
             {/* Logo 76px en mobile - Actualizado */}
             <Link href="/" className="flex justify-center mb-2 group">
               <img
-                src="/proptech.png"
+                src="/images/logo/proptech.png"
                 alt="PropTech"
                 className="transition-transform duration-300 group-hover:scale-105"
                 style={{
@@ -149,7 +149,7 @@ const Footer = () => {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center mb-6 group">
               <img
-                src="/proptech.png"
+                src="/images/logo/proptech.png"
                 alt="PropTech"
                 className="h-8 sm:h-10 w-auto transition-transform duration-300 group-hover:scale-105"
                 style={{

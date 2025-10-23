@@ -93,17 +93,17 @@ const Header = () => {
           <div className="flex items-center justify-between h-14 sm:h-16 py-1">
             <Link href="/" className="flex items-center justify-start" aria-label="Inicio PropTech">
               <img
-                src="/proptech.png"
+                src="/images/logo/proptech.png"
                 alt="PropTech"
-                className="w-auto transition-transform duration-300 hover:scale-205"
+                className="w-auto transition-transform duration-300 hover:scale-105"
                 style={!isScrolled ? {
                   filter: 'brightness(0) invert(1)',
                   WebkitFilter: 'brightness(0) invert(1)',
-                  height: '45px',
-                  maxHeight: '45px'
+                  height: '50px',
+                  maxHeight: '50px'
                 } : {
-                  height: '45px',
-                  maxHeight: '45px'
+                  height: '50px',
+                  maxHeight: '50px'
                 }}
               />
             </Link>

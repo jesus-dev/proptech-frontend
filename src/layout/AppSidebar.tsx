@@ -615,7 +615,7 @@ const AppSidebar: React.FC = () => {
         onMouseLeave={() => !isMobile && setIsHovered(false)}
       >
         <div
-          className={`py-6 px-4 flex ${
+          className={`py-3 px-4 flex ${
             isMobile 
               ? "justify-start" 
               : !isExpanded && !isHovered 
@@ -628,8 +628,8 @@ const AppSidebar: React.FC = () => {
               <Image
                 src="/images/logo/proptech.png"
                 alt="PropTech"
-                width={150}
-                height={40}
+                width={180}
+                height={50}
                 style={{ width: 'auto', height: 'auto' }}
                 className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
               />
@@ -637,8 +637,8 @@ const AppSidebar: React.FC = () => {
               <Image
                 src="/images/logo/proptech.png"
                 alt="PropTech"
-                width={32}
-                height={32}
+                width={40}
+                height={40}
                 style={{ width: 'auto', height: 'auto' }}
                 className="object-contain hover:opacity-80 transition-opacity cursor-pointer"
               />

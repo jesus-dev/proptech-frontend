@@ -634,7 +634,7 @@ const MobileSidebar: React.FC = () => {
         }`}
       >
         {/* Header mejorado */}
-        <div className="flex-shrink-0 py-6 px-4 flex items-center justify-between">
+        <div className="flex-shrink-0 py-3 px-4 flex items-center justify-between">
           <Link href="/dash" onClick={toggleMobileSidebar}>
             <Image
               src="/images/logo/proptech.png"

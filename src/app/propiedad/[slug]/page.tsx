@@ -25,8 +25,6 @@ const getImageUrl = (imagePath: string | null | undefined): string => {
   const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
   const fullUrl = `${baseUrl}${cleanPath}`;
   
-  console.log('🔗 getImageUrl:', { imagePath, baseUrl, cleanPath, fullUrl });
-  
   return fullUrl;
 };
 
@@ -65,13 +63,12 @@ const stripHtml = (html: string | null | undefined): string => {
 export default function PropertyDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  
   
   // Estados para secciones expandibles
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -80,6 +77,77 @@ export default function PropertyDetailPage() {
     location: false,
     additional: false
   });
+
+  // Botón WhatsApp flotante con DOM puro - se crea inmediatamente
+  useEffect(() => {
+    // Pequeño delay para asegurar que el DOM esté listo
+    const timer = setTimeout(() => {
+      // Eliminar botón anterior si existe
+      const existing = document.getElementById('wa-float-btn');
+      if (existing) {
+        existing.remove();
+      }
+      
+      // Crear botón
+      const btn = document.createElement('a');
+      btn.id = 'wa-float-btn';
+      btn.href = `https://wa.me/595981000000?text=${encodeURIComponent('Hola, me interesa una propiedad')}`;
+      btn.target = '_blank';
+      btn.rel = 'noopener noreferrer';
+      btn.innerHTML = `
+        <svg viewBox="0 0 32 32" style="width: 32px; height: 32px;">
+          <path fill="white" d="M16.002 0C7.164 0 0 7.164 0 16c0 2.825.734 5.48 2.02 7.78L.697 31.302l7.687-2.015A15.93 15.93 0 0 0 16.002 32C24.838 32 32 24.836 32 16S24.838 0 16.002 0zm9.38 22.73c-.39 1.1-2.3 2.02-3.17 2.15-.87.13-1.74.39-5.87-1.26-5.26-2.1-8.64-7.46-8.9-7.8-.26-.35-2.13-2.84-2.13-5.42s1.35-3.84 1.83-4.37c.48-.53 1.05-.66 1.4-.66s.7.01.99.02c.32.01.74-.12 1.16.88.42 1 1.44 3.51 1.57 3.77s.22.57.04.92c-.17.35-.26.57-.52.88-.26.31-.55.69-.78.93-.26.26-.53.54-.23 1.07.3.53 1.34 2.21 2.88 3.58 1.98 1.76 3.65 2.31 4.17 2.57.52.26.83.22 1.13-.13.3-.35 1.29-1.5 1.63-2.02.35-.52.7-.44 1.18-.26.48.17 3.06 1.44 3.58 1.7.52.26.87.39 1 .61.13.22.13 1.27-.26 2.37z"/>
+        </svg>
+      `;
+      
+      // Aplicar estilos directamente como string
+      const styles = [
+        'position: fixed',
+        'bottom: 20px',
+        'right: 20px',
+        'width: 60px',
+        'height: 60px',
+        'background-color: #25D366',
+        'border-radius: 50%',
+        'color: white',
+        'font-size: 30px',
+        'text-decoration: none',
+        'box-shadow: 0 4px 12px rgba(0,0,0,0.3)',
+        'z-index: 2147483647',
+        'cursor: pointer',
+        'display: flex',
+        'align-items: center',
+        'justify-content: center',
+        'text-align: center',
+        'line-height: 60px'
+      ].map(s => s + ' !important').join('; ');
+      
+      btn.setAttribute('style', styles);
+      
+      // Forzar inserción en body
+      if (document.body) {
+        // IMPORTANTE: Eliminar transform del html y body que rompen position:fixed
+        const htmlEl = document.documentElement;
+        const bodyEl = document.body;
+        
+        // Forzar transform: none para que position:fixed funcione
+        htmlEl.style.setProperty('transform', 'none', 'important');
+        bodyEl.style.setProperty('transform', 'none', 'important');
+        
+        // Agregar directamente al body
+        document.body.insertBefore(btn, document.body.firstChild);
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      const el = document.getElementById('wa-float-btn');
+      if (el) {
+        el.remove();
+      }
+    };
+  }, []);
+
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -106,9 +174,6 @@ export default function PropertyDetailPage() {
         }
         
         if (propertyData) {
-          console.log('📦 Property data received:', propertyData);
-          console.log('🖼️ Gallery images:', propertyData.galleryImages);
-          console.log('🎨 Featured image:', propertyData.featuredImage);
           setProperty(propertyData);
         } else {
           setError('Propiedad no encontrada');
@@ -234,9 +299,7 @@ export default function PropertyDetailPage() {
   }
 
   const images = property.galleryImages?.map((img: any) => {
-    const imageUrl = getImageUrl(img.url || img);
-    console.log('🖼️ Image URL constructed:', img.url || img, '->', imageUrl);
-    return imageUrl;
+    return getImageUrl(img.url || img);
   }) || (property.featuredImage ? [getImageUrl(property.featuredImage)] : ['/images/placeholder.jpg']);
 
   const formatPrice = (price: number, currency: string) => {
@@ -965,16 +1028,6 @@ export default function PropertyDetailPage() {
         <span className="hidden sm:inline">Volver</span>
       </button>
 
-      {/* Botón de contacto flotante - WhatsApp */}
-      <a 
-        href={property.agent?.phone || property.agent?.mobile ? `https://wa.me/${(property.agent.phone || property.agent.mobile).replace(/[^\d]/g, '')}` : '#'} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className="group fixed bottom-3 sm:bottom-32 right-6 z-50 flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-2xl hover:shadow-green-500/50 hover:scale-110 active:scale-95 transition-all duration-300"
-      >
-        <ChatBubbleLeftRightIcon className="w-5 h-5 group-hover:animate-pulse" />
-        <span className="text-sm font-bold">WhatsApp</span>
-      </a>
     </main>
   );
 }
