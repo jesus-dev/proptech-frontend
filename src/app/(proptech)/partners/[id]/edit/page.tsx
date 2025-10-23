@@ -11,7 +11,7 @@ export default function EditPartnerPage() {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const partnerId = Number(params.id);
+  const partnerId = Number(params?.id);
 
   useEffect(() => {
     if (partnerId) {

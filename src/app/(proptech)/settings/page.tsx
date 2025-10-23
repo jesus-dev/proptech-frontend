@@ -21,7 +21,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Handle URL parameters for tab navigation
-    const tabParam = searchParams.get('tab');
+    const tabParam = searchParams?.get('tab');
     if (tabParam && ['company', 'contacts', 'locations', 'property-types', 'services', 'amenities', 'properties'].includes(tabParam)) {
       setActiveTab(tabParam as Tab);
     }

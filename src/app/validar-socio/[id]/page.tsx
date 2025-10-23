@@ -28,7 +28,7 @@ export default function ValidarSocioPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const partnerId = Number(params.id);
+  const partnerId = Number(params?.id);
 
   useEffect(() => {
     if (partnerId) {

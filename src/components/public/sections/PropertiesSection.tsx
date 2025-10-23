@@ -242,8 +242,8 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
   useEffect(() => {
     loadInitialProperties();
 
-    const tipo = searchParams.get('tipo');
-    const categoria = searchParams.get('categoria');
+    const tipo = searchParams?.get('tipo');
+    const categoria = searchParams?.get('categoria');
     
     if (tipo) {
       setSelectedType(tipo);

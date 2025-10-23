@@ -24,7 +24,7 @@ export default function CurrencyDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const currencyId = Number(params.id);
+  const currencyId = Number(params?.id);
 
   useEffect(() => {
     if (currencyId) {

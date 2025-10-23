@@ -24,20 +24,6 @@ class PublicPropertyService {
     }
   }
 
-  async getPropertyById(id: string): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/public/properties/${id}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching property by ID:', error);
-      throw error;
-    }
-  }
-
   async incrementViews(propertyId: string): Promise<void> {
     try {
       await fetch(`${this.baseUrl}/properties/${propertyId}/increment-views`, {

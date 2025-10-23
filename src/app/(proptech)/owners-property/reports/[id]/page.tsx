@@ -35,7 +35,7 @@ export default function ReportDetailPage() {
     const loadReport = async () => {
       try {
         setLoading(true);
-        const reportId = parseInt(params.id as string);
+        const reportId = parseInt(params?.id as string);
         
         // Cargar el reporte desde el backend
         const reportData = await OwnersPropertyService.getOwnerReportById(reportId);
@@ -54,7 +54,7 @@ export default function ReportDetailPage() {
     };
 
     loadReport();
-  }, [params.id]);
+  }, [params?.id]);
 
   const handleDownload = () => {
     // Simular descarga

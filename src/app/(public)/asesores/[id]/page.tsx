@@ -39,7 +39,7 @@ export default function AsesorDetailPage({ params }: { params: { id: string } })
 
   // Mock data - en producción vendría de una API
   const asesor = {
-    id: parseInt(params.id),
+    id: parseInt(params?.id as string),
     name: 'María González',
     company: 'Inmobiliaria del Sol',
     city: 'Asunción',

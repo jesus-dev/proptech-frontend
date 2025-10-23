@@ -32,7 +32,7 @@ export default function TemplateEditPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const templateId = params.id as string;
+  const templateId = params?.id as string;
 
   useEffect(() => {
     fetchTemplate();

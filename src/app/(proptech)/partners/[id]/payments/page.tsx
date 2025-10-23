@@ -40,7 +40,7 @@ export default function PartnerPaymentsPage() {
     amountMax: ""
   });
 
-  const partnerId = Number(params.id);
+  const partnerId = Number(params?.id);
 
   useEffect(() => {
     if (partnerId) {

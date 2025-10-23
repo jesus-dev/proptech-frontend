@@ -28,7 +28,8 @@ interface Post {
 }
 
 export default function GalleryPage() {
-  const { postId } = useParams();
+  const params = useParams();
+  const postId = params?.postId;
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -45,7 +46,7 @@ export default function GalleryPage() {
   useEffect(() => {
     if (postId) {
       loadPostData();
-      const index = searchParams.get('index');
+      const index = searchParams?.get('index');
       if (index) {
         setCurrentIndex(parseInt(index));
       }

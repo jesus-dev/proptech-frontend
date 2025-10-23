@@ -25,7 +25,7 @@ import { DevelopmentReservation, ReservationStatus } from "../../components/type
 export default function DevelopmentReservationsPage() {
   const params = useParams();
   const router = useRouter();
-  const developmentId = params.id as string;
+  const developmentId = params?.id as string;
   
   const [loading, setLoading] = useState(true);
   const [reservations, setReservations] = useState<DevelopmentReservation[]>([]);

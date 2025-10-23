@@ -22,7 +22,7 @@ import { DevelopmentReservation, ReservationStatus } from "../../../components/t
 export default function NewReservationPage() {
   const params = useParams();
   const router = useRouter();
-  const developmentId = params.id as string;
+  const developmentId = params?.id as string;
   
   const [loading, setLoading] = useState(false);
   const [development, setDevelopment] = useState<any>(null);

@@ -30,7 +30,7 @@ import Link from "next/link";
 
 export default function PropertyStatisticsPage() {
   const params = useParams();
-  const propertyId = params.id as string;
+  const propertyId = params?.id as string;
   
   const [stats, setStats] = useState<any>(null);
   const [property, setProperty] = useState<any>(null);

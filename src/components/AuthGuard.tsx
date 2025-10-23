@@ -22,7 +22,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
 
   // Rutas públicas que no requieren autenticación
   const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const isPublicRoute = pathname ? publicRoutes.includes(pathname) : false;
 
   useEffect(() => {
     const checkAuth = async () => {

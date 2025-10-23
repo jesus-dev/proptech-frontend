@@ -40,7 +40,7 @@ export default function PartnerDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showCard, setShowCard] = useState(false);
 
-  const partnerId = Number(params.id);
+  const partnerId = Number(params?.id);
 
   useEffect(() => {
     if (partnerId) {

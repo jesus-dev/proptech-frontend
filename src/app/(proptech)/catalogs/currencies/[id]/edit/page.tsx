@@ -16,7 +16,7 @@ export default function EditCurrencyPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const currencyId = Number(params.id);
+  const currencyId = Number(params?.id);
 
   useEffect(() => {
     if (currencyId) {

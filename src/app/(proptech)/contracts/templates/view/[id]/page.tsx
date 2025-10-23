@@ -16,7 +16,7 @@ export default function TemplateViewPage() {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [previewContent, setPreviewContent] = useState<string>("");
 
-  const templateId = params.id as string;
+  const templateId = params?.id as string;
 
   useEffect(() => {
     fetchTemplate();

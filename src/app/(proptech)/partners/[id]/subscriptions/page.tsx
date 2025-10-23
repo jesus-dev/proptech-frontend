@@ -20,7 +20,7 @@ export default function PartnerSubscriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
 
-  const partnerId = Number(params.id);
+  const partnerId = Number(params?.id);
 
   useEffect(() => {
     if (partnerId) {

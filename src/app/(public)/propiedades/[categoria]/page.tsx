@@ -48,7 +48,7 @@ const CATEGORIAS_VALIDAS = {
 export default function PropiedadesPorCategoria() {
   const params = useParams();
   const router = useRouter();
-  const categoria = params.categoria as string;
+  const categoria = params?.categoria as string;
 
   // Validar categoría
   useEffect(() => {

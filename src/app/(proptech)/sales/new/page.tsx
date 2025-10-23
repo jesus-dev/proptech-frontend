@@ -12,10 +12,10 @@ import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CurrencyDollarIcon 
 export default function NewPropertySalePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const prefillPropertyId = searchParams.get("propertyId");
-  const prefillContactEmail = searchParams.get("contactEmail");
-  const prefillContactPhone = searchParams.get("contactPhone");
-  const prefillNegocioId = searchParams.get("negocioId");
+  const prefillPropertyId = searchParams?.get("propertyId");
+  const prefillContactEmail = searchParams?.get("contactEmail");
+  const prefillContactPhone = searchParams?.get("contactPhone");
+  const prefillNegocioId = searchParams?.get("negocioId");
   const [properties, setProperties] = useState<Property[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
