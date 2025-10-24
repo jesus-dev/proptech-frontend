@@ -27,9 +27,22 @@ export interface Agent {
 class AgentService {
   private baseUrl = getEndpoint('/api/agents');
 
+  private getHeaders(): Record<string, string> {
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   async getAllAgents(): Promise<Agent[]> {
     try {
-      const response = await fetch(this.baseUrl);
+      const response = await fetch(this.baseUrl, {
+        headers: this.getHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -42,7 +55,9 @@ class AgentService {
 
   async getAgentById(id: number): Promise<Agent> {
     try {
-      const response = await fetch(`${this.baseUrl}/${id}`);
+      const response = await fetch(`${this.baseUrl}/${id}`, {
+        headers: this.getHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -55,7 +70,9 @@ class AgentService {
 
   async getAgentsByAgency(agencyId: number): Promise<Agent[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/agency/${agencyId}`);
+      const response = await fetch(`${this.baseUrl}/agency/${agencyId}`, {
+        headers: this.getHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -68,7 +85,9 @@ class AgentService {
 
   async getIndependentAgents(): Promise<Agent[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/independent`);
+      const response = await fetch(`${this.baseUrl}/independent`, {
+        headers: this.getHeaders(),
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -81,7 +100,10 @@ class AgentService {
 
   async getAgentByEmail(email: string): Promise<Agent | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/by-email/${encodeURIComponent(email)}`);
+      const response = await fetch(`${this.baseUrl}/by-email/${encodeURIComponent(email)}`, {
+        headers: this.getHeaders(),
+      });
+      
       if (!response.ok) {
         if (response.status === 404) {
           return null;
@@ -97,7 +119,9 @@ class AgentService {
 
   async getAgentByUserId(userId: number): Promise<Agent | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/by-user-id/${userId}`);
+      const response = await fetch(`${this.baseUrl}/by-user-id/${userId}`, {
+        headers: this.getHeaders(),
+      });
       if (!response.ok) {
         if (response.status === 404) {
           return null;
