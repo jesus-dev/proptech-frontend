@@ -157,30 +157,52 @@ export default function PropertyDetailPage() {
         
         let propertyData = null;
         
-        // Si el slug es un número, intentar obtener por ID primero
+        // Detectar si el slug es un número
         const isNumeric = /^\d+$/.test(slug);
+        
+        console.log('🔍 Buscando propiedad:', { slug, isNumeric });
         
         if (isNumeric) {
           try {
+            console.log('📍 Intentando obtener por ID:', slug);
             propertyData = await publicPropertyService.getPropertyById(slug);
-          } catch (idError) {
-            console.log('ID not found, trying as slug:', idError);
+            console.log('✅ Propiedad encontrada por ID:', propertyData?.id);
+          } catch (idError: any) {
+            console.log('❌ ID no encontrado, intentando por slug:', idError.message);
             // Si falla por ID, intentar por slug
-            propertyData = await publicPropertyService.getPropertyBySlug(slug);
+            try {
+              propertyData = await publicPropertyService.getPropertyBySlug(slug);
+              console.log('✅ Propiedad encontrada por slug (numérico):', propertyData?.id);
+            } catch (slugError: any) {
+              console.error('❌ Tampoco encontrada por slug:', slugError.message);
+              throw new Error(`Propiedad con identificador '${slug}' no encontrada`);
+            }
           }
         } else {
           // Si no es numérico, obtener por slug
+          console.log('📍 Intentando obtener por slug:', slug);
           propertyData = await publicPropertyService.getPropertyBySlug(slug);
+          console.log('✅ Propiedad encontrada por slug:', propertyData?.id);
         }
         
         if (propertyData) {
           setProperty(propertyData);
         } else {
-          setError('Propiedad no encontrada');
+          setError(`Propiedad no encontrada: ${slug}`);
         }
-      } catch (err) {
-        console.error('Error al cargar propiedad:', err);
-        setError('No se pudo cargar la propiedad. Verifica tu conexión al backend.');
+      } catch (err: any) {
+        console.error('❌ Error al cargar propiedad:', err);
+        
+        // Mensajes de error más específicos
+        if (err.message?.includes('404')) {
+          setError(`La propiedad con identificador '${slug}' no existe o ya no está disponible.`);
+        } else if (err.message?.includes('500')) {
+          setError('Error del servidor. Por favor, intenta nuevamente en unos momentos.');
+        } else if (err.message?.includes('Failed to fetch') || err.message?.includes('Network')) {
+          setError('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+        } else {
+          setError(err.message || 'No se pudo cargar la propiedad. Verifica tu conexión al backend.');
+        }
       } finally {
         setLoading(false);
       }

@@ -28,26 +28,29 @@ export class AgentService {
         'Content-Type': 'application/json',
       };
 
+      // Usar endpoint público si no hay token, privado si hay token
+      const endpoint = token ? `${API_BASE_URL}/api/agents` : `${API_BASE_URL}/api/public/agents`;
+
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/agents`, {
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers,
         signal: AbortSignal.timeout(10000) // 10 segundos timeout
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          console.warn('⚠️ No autenticado, devolviendo lista vacía');
+        if (response.status === 401 || response.status === 500) {
+          console.warn('⚠️ Error obteniendo agentes, devolviendo lista vacía');
           return [];
         }
         throw new Error(`Error al obtener agentes: ${response.status}`);
       }
 
       const agents = await response.json();
-      console.log(`✅ Obtenidos ${agents.length} agentes desde BD`);
+      console.log(`✅ Obtenidos ${agents.length} agentes desde ${token ? 'endpoint privado' : 'endpoint público'}`);
       
       return agents;
     } catch (error) {
@@ -65,18 +68,21 @@ export class AgentService {
         'Content-Type': 'application/json',
       };
 
+      // Usar endpoint público si no hay token, privado si hay token
+      const endpoint = token ? `${API_BASE_URL}/api/agents/${id}` : `${API_BASE_URL}/api/public/agents/${id}`;
+
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/agents/${id}`, {
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers,
         signal: AbortSignal.timeout(10000)
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
+        if (response.status === 404 || response.status === 500) {
           return null;
         }
         throw new Error(`Error al obtener agente: ${response.status}`);
