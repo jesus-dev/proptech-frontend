@@ -19,12 +19,26 @@ const nextConfig = {
   //   return []
   // },
   
-  // 🔒 HEADERS DE SEGURIDAD
+  // 🔒 HEADERS DE SEGURIDAD + NO CACHE
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
+          // NO CACHE - DESACTIVAR CACHÉ AGRESIVO
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+          // Seguridad
           {
             key: 'X-Frame-Options',
             value: 'DENY',
@@ -48,6 +62,16 @@ const nextConfig = {
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains; preload',
+          },
+        ],
+      },
+      // Cache solo para archivos estáticos
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, immutable',
           },
         ],
       },
