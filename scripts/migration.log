@@ -1,0 +1,885 @@
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE"
+   property_type_name: "NO EXISTE"
+   property_type array: [47]
+   Buscando nombre de taxonomía para ID: 47
+   Taxonomía retornó: "Residencial"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Residencial"
+[MAPEO EXACTO] "Residencial" → "Residencial"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Ciudad del Este, propertyTypeName: Residencial
+
+🌍 [UBICACIÓN] Buscando catálogos para: "CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Ciudad del Este"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 7
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Ciudad del Este" → ID: 4
+   🏠 Tipo: "Residencial" → ID: 7
+✅ Moneda USD encontrada, usando ID: 1
+
+🔍 DEBUG PRECIO para CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "145000"
+     - fave_property_price_postfix: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+  - fave_currency: USD
+  - Código de moneda detectado: USD
+  - Precio RAW de Houzez: "145000"
+  - Precio parseado: 145000
+  - Precio final a guardar: 145000 USD (Currency ID: 1)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 7
+
+📤 Creando propiedad: CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE
+   🏷️  Houzez ID: 22441
+   💰 Precio: 145000 (Currency ID: 1)
+🔍 JSON completo a enviar: {
+  "houzezId": "22441",
+  "title": "CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE",
+  "description": "<p>🏡 Casa en venta en Barrio San José – Ciudad del Este</p>\n<p><strong>Descubrí esta hermosa casa en venta en el Barrio San José</strong>, a solo 5 cuadras de la Av. San José, en una excelente ubicación residencial.<br />\nSe encuentra en esquina, sobre un terreno de 360 m², con<strong> título de propiedad e impuestos al día,</strong> lista para transferir.</p>\n<p>✅ <strong>Características principales</strong></p>\n<ul>\n<li>Superficie construida: 110 m²</li>\n<li>Primera fase del proyecto totalmente concluida</li>\n<li>Amplia sala, comedor y cocina integrados</li>\n<li>Corredor con acceso directo al patio</li>\n<li>Piscina con cascada y amplio jardín</li>\n<li>1 baño completo</li>\n<li>Muro perimetral total</li>\n<li>Planta baja totalmente terminada y lista para habitar</li>\n</ul>\n<p><strong>🏗️ Proyecto de segunda planta</strong></p>\n<ul>\n<li>El proyecto de ampliación ya está diseñado e incluido en la compra.<br />\nContempla:</li>\n<li>3 habitaciones, una de ellas en suite con vestidor</li>\n<li>2 baños adicionales</li>\n<li>Balcón con vista al jardín</li>\n<li>Posibilidad de personalizar los detalles finales a gusto del nuevo propietario</li>\n</ul>\n<p>💰<strong> Precio de venta: USD 145.000</strong></p>\n<p>Una opción ideal para quienes buscan una casa moderna, con proyección de crecimiento y ubicada en una zona residencial de alta valorización en Ciudad del Este.</p>\n<p>📞 Agendá tu visita con ON Bienes Raíces:<strong> 0981 001 411</strong></p>\n<p>🌐 Visitá www.onbienesraices.com<br />\ny descubrí más propiedades exclusivas.</p>\n",
+  "slug": "casa-en-venta-en-el-barrio-san-jose-cde",
+  "status": "ACTIVE",
+  "createdAt": "2025-10-23T11:49:01",
+  "updatedAt": "2025-10-23T12:22:00",
+  "address": "Las Almendras, San José, Ciudad del Este, Alto Paraná, Región Oriental, 100125, Paraguay",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 7,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 145000,
+  "currencyId": 1,
+  "bedrooms": 1,
+  "bathrooms": 1,
+  "area": 360,
+  "garage": 2,
+  "operacion": "SALE"
+}
+Propiedad creada con ID real: 1 (Houzez ID: 22441)
+Subiendo imagen 0 a galería para propiedad 1...
+✅ Imagen 0 subida a galería: /uploads/gallery/1/0756d8de-a39a-45c8-a884-f144ab5c8120.avif
+Subiendo imagen 1 a galería para propiedad 1...
+✅ Imagen 1 subida a galería: /uploads/gallery/1/4d8b03c0-33f4-4bae-9716-b77fd0624cd7.avif
+Subiendo imagen 2 a galería para propiedad 1...
+✅ Imagen 2 subida a galería: /uploads/gallery/1/caa0cc90-e7a2-4983-a2e7-0b9a8ed1ee6e.avif
+Subiendo imagen 3 a galería para propiedad 1...
+✅ Imagen 3 subida a galería: /uploads/gallery/1/4f11bbdb-1b42-439d-a1f2-2eb8e67bb7dd.avif
+Subiendo imagen 4 a galería para propiedad 1...
+✅ Imagen 4 subida a galería: /uploads/gallery/1/7adac5c2-4372-4517-baa7-f74616fe37d0.avif
+Subiendo imagen 5 a galería para propiedad 1...
+✅ Imagen 5 subida a galería: /uploads/gallery/1/0fffa3f7-e6af-408b-832a-a933759c8500.avif
+Subiendo imagen 6 a galería para propiedad 1...
+✅ Imagen 6 subida a galería: /uploads/gallery/1/80577fcb-7e4d-4ab4-83e2-dc4883f7c2d0.avif
+Subiendo imagen 7 a galería para propiedad 1...
+✅ Imagen 7 subida a galería: /uploads/gallery/1/210f4cf3-236e-4686-92cc-8b0d43a161da.avif
+Subiendo imagen 8 a galería para propiedad 1...
+✅ Imagen 8 subida a galería: /uploads/gallery/1/1560ead2-0d9e-4a76-a0c7-cb24728edf23.avif
+Subiendo imagen 9 a galería para propiedad 1...
+✅ Imagen 9 subida a galería: /uploads/gallery/1/4e940af3-09f3-4c61-891d-106c2f9379c3.avif
+Subiendo imagen 10 a galería para propiedad 1...
+✅ Imagen 10 subida a galería: /uploads/gallery/1/7cc5c423-a462-4d71-a733-278d96036bab.avif
+Subiendo imagen 11 a galería para propiedad 1...
+✅ Imagen 11 subida a galería: /uploads/gallery/1/c06848cb-2b33-475a-a39d-8515bb8af00c.avif
+Subiendo imagen 12 a galería para propiedad 1...
+✅ Imagen 12 subida a galería: /uploads/gallery/1/a387f012-f9fc-4b24-ad1f-b6e0843594ed.avif
+Subiendo imagen destacada a galería para propiedad 1...
+✅ Imagen destacada subida a galería: /uploads/gallery/1/8fdfd5be-b131-47cf-846f-78e21708b966.avif
+Propiedad: CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE
+IDs de amenities: [
+  50, 61, 52, 94,
+  26, 95, 54
+]
+Amenity Houzez ID 50 => Aire Acondicionado
+Amenity Houzez ID 61 => Avda. Asfaltada
+Amenity Houzez ID 52 => Calle Empedrada
+Amenity Houzez ID 94 => Circuito Cerrado
+Amenity Houzez ID 26 => Ducha Exterior
+Amenity Houzez ID 95 => Lavanderia
+Amenity Houzez ID 54 => Piscina
+Nombres de amenities únicos: [
+  'Aire Acondicionado',
+  'Avda. Asfaltada',
+  'Calle Empedrada',
+  'Circuito Cerrado',
+  'Ducha Exterior',
+  'Lavanderia',
+  'Piscina'
+]
+🔍 Procesando 7 amenities para propiedad: CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE
+[ERROR] Amenity no encontrado en catálogos: Ducha Exterior
+Amenities enviados: [ 18, 3, 12, 4, 24, 9 ] para propiedad CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE
+Servicio Houzez ID 63 => Agendá una Visita
+🔍 Procesando 1 servicios para propiedad: CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE
+🏗️  Procesando Floor Plans para propiedad: CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE
+   Títulos: 0, Beds: 0, Precios: 0
+
+📤 Actualizando propiedad ID 1: CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE
+   🏷️  Houzez ID: 22441
+   💰 Precio: 145000 (Currency ID: 1)
+   🖼️  Imágenes: 13 en galería + 1 destacada
+   🏷️  Amenities: 6, Servicios: 1
+   🏗️  Floor Plans: 0
+✅ Migrada propiedad: CASA EN VENTA EN EL BARRIO SAN JOSÉ CDE (ID: 1)
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "CASA MODERNA EN VENTA EN EL KM 5,5 CDE"
+   property_type_name: "NO EXISTE"
+   property_type array: [263]
+   Buscando nombre de taxonomía para ID: 263
+   Taxonomía retornó: "Casa a Estrenar"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Casa a Estrenar"
+[MAPEO PARCIAL] "Casa a Estrenar" → "Residencial"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Ciudad del Este, propertyTypeName: Residencial
+
+🌍 [UBICACIÓN] Buscando catálogos para: "CASA MODERNA EN VENTA EN EL KM 5,5 CDE"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Ciudad del Este"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 7
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Ciudad del Este" → ID: 4
+   🏠 Tipo: "Residencial" → ID: 7
+✅ Moneda USD encontrada, usando ID: 1
+
+🔍 DEBUG PRECIO para CASA MODERNA EN VENTA EN EL KM 5,5 CDE:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "150000"
+     - fave_property_price_postfix: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+  - fave_currency: USD
+  - Código de moneda detectado: USD
+  - Precio RAW de Houzez: "150000"
+  - Precio parseado: 150000
+  - Precio final a guardar: 150000 USD (Currency ID: 1)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 7
+
+📤 Creando propiedad: CASA MODERNA EN VENTA EN EL KM 5,5 CDE
+   🏷️  Houzez ID: 22437
+   💰 Precio: 150000 (Currency ID: 1)
+🔍 JSON completo a enviar: {
+  "houzezId": "22437",
+  "title": "CASA MODERNA EN VENTA EN EL KM 5,5 CDE",
+  "description": "<p>🏡 Casa moderna en venta en Ciudad del Este – Km 5,5 casi Fortín Toledo</p>\n<p>Tu nuevo hogar te espera en una de las zonas más convenientes de Ciudad del Este, a pocos metros de la Ruta Internacional PY02.<br />\nEsta casa de estilo moderno, totalmente equipada y lista para mudarte, combina confort, seguridad y elegancia en cada detalle.</p>\n<p><strong>Características principales</strong></p>\n<p>🚗 Doble cochera para vehículos grandes</p>\n<p>💼 Oficina privada al ingresar</p>\n<p>🍽️ Amplia sala y comedor integrados con una cocina moderna con churrasquera</p>\n<p>🛏️ Tres habitaciones, incluyendo una suite con vestidor</p>\n<p>🚿 Cuatro baños completos distribuidos de forma funcional</p>\n<p>🧺 Área de lavandería conectada al patio posterior con quincho, perfecta para reuniones y momentos en familia</p>\n<p><strong>Detalles que marcan la diferencia</strong></p>\n<p>💧 Pozo artesiano propio<br />\n🔒 Muro perimetral, cerca eléctrica, cámaras y sistema de alarma con sensores de movimiento, garantizando seguridad y tranquilidad.</p>\n<p>Cada espacio fue diseñado para ofrecer bienestar, privacidad y estilo de vida en un entorno residencial privilegiado.</p>\n<p><strong>Valor:</strong> 150.000 USD</p>\n<p>📲 Agendá tu visita con tu agente de confianza de ON BIENES RAÍCES<br />\n📞 0981 001 411<br />\n🌐 www.onbienesraices.com.py</p>\n",
+  "slug": "casa-moderna-en-venta-en-el-km-55-cde",
+  "status": "ACTIVE",
+  "createdAt": "2025-10-21T22:56:35",
+  "updatedAt": "2025-10-21T22:56:35",
+  "address": "Fortín Toledo, CAROLINA, Don Bosco, Ciudad del Este, Alto Paraná, Región Oriental, 100123, Paraguay",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 7,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 150000,
+  "currencyId": 1,
+  "bedrooms": 2,
+  "bathrooms": 4,
+  "area": 360,
+  "garage": 2,
+  "operacion": "SALE"
+}
+Propiedad creada con ID real: 2 (Houzez ID: 22437)
+Subiendo imagen 0 a galería para propiedad 2...
+✅ Imagen 0 subida a galería: /uploads/gallery/2/5b0521ba-4f2f-4901-8e57-90bbe2203612.avif
+Subiendo imagen 1 a galería para propiedad 2...
+✅ Imagen 1 subida a galería: /uploads/gallery/2/2c5eaa75-4c52-4556-88a9-921ef153624c.avif
+Subiendo imagen 2 a galería para propiedad 2...
+✅ Imagen 2 subida a galería: /uploads/gallery/2/30f1f643-9bb0-474b-8a56-54e9c29ea7e3.avif
+Subiendo imagen 3 a galería para propiedad 2...
+✅ Imagen 3 subida a galería: /uploads/gallery/2/ec4686b1-7211-48b6-a843-a52d894d816d.avif
+Subiendo imagen 4 a galería para propiedad 2...
+✅ Imagen 4 subida a galería: /uploads/gallery/2/e4520adf-7c6c-4fda-a8b9-2613802d454a.avif
+Subiendo imagen 5 a galería para propiedad 2...
+✅ Imagen 5 subida a galería: /uploads/gallery/2/9b1d6904-a32a-442a-89e1-c8cf4852ba84.avif
+Subiendo imagen 6 a galería para propiedad 2...
+✅ Imagen 6 subida a galería: /uploads/gallery/2/0d020548-f285-4879-a831-8424a3b320b1.avif
+Subiendo imagen 7 a galería para propiedad 2...
+✅ Imagen 7 subida a galería: /uploads/gallery/2/745a0b79-261a-4da8-97f7-6d716817f698.avif
+Subiendo imagen 8 a galería para propiedad 2...
+✅ Imagen 8 subida a galería: /uploads/gallery/2/02633c78-4648-43b4-9bbb-d36854a220aa.avif
+Subiendo imagen 9 a galería para propiedad 2...
+✅ Imagen 9 subida a galería: /uploads/gallery/2/586042e0-e557-4c67-928c-8300074a7858.avif
+Subiendo imagen 10 a galería para propiedad 2...
+✅ Imagen 10 subida a galería: /uploads/gallery/2/1b5a7e42-da4e-4d9c-839b-86f1343dbd2b.avif
+Subiendo imagen 11 a galería para propiedad 2...
+✅ Imagen 11 subida a galería: /uploads/gallery/2/527174ae-7d83-4786-9229-a3ba23ebfc1c.avif
+Subiendo imagen 12 a galería para propiedad 2...
+✅ Imagen 12 subida a galería: /uploads/gallery/2/19a3129a-7bd4-4f93-92f7-def5d4e05cac.avif
+Subiendo imagen 13 a galería para propiedad 2...
+✅ Imagen 13 subida a galería: /uploads/gallery/2/b2b342f1-2b05-4146-9f0d-bf752e948eb8.avif
+Subiendo imagen 14 a galería para propiedad 2...
+✅ Imagen 14 subida a galería: /uploads/gallery/2/6239d177-c178-427d-bbcb-c0fd5b3a2a8b.avif
+Subiendo imagen 15 a galería para propiedad 2...
+✅ Imagen 15 subida a galería: /uploads/gallery/2/fedbc92b-79cd-4533-81e2-1352ed63f2ef.avif
+Subiendo imagen 16 a galería para propiedad 2...
+✅ Imagen 16 subida a galería: /uploads/gallery/2/d4eddffa-1ec2-4467-a3cb-bc261bf70bee.avif
+Subiendo imagen destacada a galería para propiedad 2...
+✅ Imagen destacada subida a galería: /uploads/gallery/2/5b7176d1-ecf7-4d66-ae76-298c386ce35c.avif
+Propiedad: CASA MODERNA EN VENTA EN EL KM 5,5 CDE
+IDs de amenities: [
+  50, 61,  52, 94,  95,
+  23, 53, 127, 28, 117
+]
+Amenity Houzez ID 50 => Aire Acondicionado
+Amenity Houzez ID 61 => Avda. Asfaltada
+Amenity Houzez ID 52 => Calle Empedrada
+Amenity Houzez ID 94 => Circuito Cerrado
+Amenity Houzez ID 95 => Lavanderia
+Amenity Houzez ID 23 => Microondas
+Amenity Houzez ID 53 => Parrilla
+Amenity Houzez ID 127 => Pozo Artesiano
+Amenity Houzez ID 28 => Refrigerator
+Amenity Houzez ID 117 => Vigilancia 24 h
+Nombres de amenities únicos: [
+  'Aire Acondicionado',
+  'Avda. Asfaltada',
+  'Calle Empedrada',
+  'Circuito Cerrado',
+  'Lavanderia',
+  'Microondas',
+  'Parrilla',
+  'Pozo Artesiano',
+  'Refrigerator',
+  'Vigilancia 24 h'
+]
+🔍 Procesando 10 amenities para propiedad: CASA MODERNA EN VENTA EN EL KM 5,5 CDE
+[ERROR] Amenity no encontrado en catálogos: Vigilancia 24 h
+Amenities enviados: [
+  18, 3, 12,  4, 24,
+  29, 8, 10, 31
+] para propiedad CASA MODERNA EN VENTA EN EL KM 5,5 CDE
+Servicio Houzez ID 63 => Agendá una Visita
+Servicio Houzez ID 142 => Premium
+🔍 Procesando 2 servicios para propiedad: CASA MODERNA EN VENTA EN EL KM 5,5 CDE
+🏗️  Procesando Floor Plans para propiedad: CASA MODERNA EN VENTA EN EL KM 5,5 CDE
+   Títulos: 0, Beds: 0, Precios: 0
+
+📤 Actualizando propiedad ID 2: CASA MODERNA EN VENTA EN EL KM 5,5 CDE
+   🏷️  Houzez ID: 22437
+   💰 Precio: 150000 (Currency ID: 1)
+   🖼️  Imágenes: 17 en galería + 1 destacada
+   🏷️  Amenities: 9, Servicios: 1
+   🏗️  Floor Plans: 0
+✅ Migrada propiedad: CASA MODERNA EN VENTA EN EL KM 5,5 CDE (ID: 2)
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA"
+   property_type_name: "NO EXISTE"
+   property_type array: [105,48]
+   Buscando nombre de taxonomía para ID: 105
+   Taxonomía retornó: "Depósito o Galpón"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Depósito o Galpón"
+[MAPEO EXACTO] "Depósito o Galpón" → "Depósito o Galpón"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Ciudad del Este, propertyTypeName: Depósito o Galpón
+
+🌍 [UBICACIÓN] Buscando catálogos para: "DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Ciudad del Este"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 9
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Ciudad del Este" → ID: 4
+   🏠 Tipo: "Depósito o Galpón" → ID: 9
+✅ Moneda USD encontrada, usando ID: 1
+
+🔍 DEBUG PRECIO para DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "200000"
+     - fave_property_price_postfix: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+  - fave_currency: USD
+  - Código de moneda detectado: USD
+  - Precio RAW de Houzez: "200000"
+  - Precio parseado: 200000
+  - Precio final a guardar: 200000 USD (Currency ID: 1)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 9
+
+📤 Creando propiedad: DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA
+   🏷️  Houzez ID: 22418
+   💰 Precio: 200000 (Currency ID: 1)
+🔍 JSON completo a enviar: {
+  "houzezId": "22418",
+  "title": "DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA",
+  "description": "<p><strong>Inmueble con Dúplex y Tinglado en Venta</strong> – Km 7 Ciudad Nueva, Ciudad del Este</p>\n<p>Gran oportunidad de inversión en Ciudad del Este, ideal para quienes buscan un inmueble rentable y multifuncional.<br />\nUbicado en el Km 7 – Barrio Ciudad Nueva, a 1.500 metros de la Ruta Internacional PY02 y 2 cuadras de la Av. Julio César Riquelme, este inmueble combina zona residencial y comercial con excelente proyección.</p>\n<p><strong>El predio cuenta con:</strong><br />\n🏠 Dúplex frontal, actualmente alquilado, generando ingreso fijo mensual.<br />\n🏗️ Tinglado posterior, disponible para alquilar o uso propio, ideal para actividades industriales, comerciales o logísticas.</p>\n<p>📐 <strong>Características del Tinglado:</strong></p>\n<ul>\n<li>Superficie: 16 x 21 m (336 m²)</li>\n<li>1 oficina frontal</li>\n<li>2 baños</li>\n<li>Altura: 7 metros</li>\n<li>Piso resistente para contenedores</li>\n<li>Energía trifásica</li>\n<li>Agua de pozo artesiano comunitario</li>\n<li>Una propiedad versátil, en zona de alta demanda y con potencial de renta inmediata.</li>\n</ul>\n<p>📞 Consultá más detalles o agendá una visita al: 0981 001 411</p>\n<p><strong>📍 Referencias cercanas:</strong></p>\n<ul>\n<li>Supermercado Stock</li>\n<li>Punto Farma</li>\n<li>Supermercado La Moderna</li>\n</ul>\n",
+  "slug": "venta-de-inmueble-con-duplex-y-tinglado",
+  "status": "ACTIVE",
+  "createdAt": "2025-10-21T22:30:08",
+  "updatedAt": "2025-10-22T17:19:27",
+  "address": "Km 7 Ciudad Nueva",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 9,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 200000,
+  "currencyId": 1,
+  "bedrooms": 0,
+  "bathrooms": 3,
+  "area": 512,
+  "garage": 0,
+  "operacion": "SALE"
+}
+Propiedad creada con ID real: 3 (Houzez ID: 22418)
+Subiendo imagen 0 a galería para propiedad 3...
+✅ Imagen 0 subida a galería: /uploads/gallery/3/3ff0106b-ca08-4749-b92b-a25bc6a94eed.avif
+Subiendo imagen 1 a galería para propiedad 3...
+✅ Imagen 1 subida a galería: /uploads/gallery/3/8ded0897-7b43-4fc5-806c-aef8df08ccd3.avif
+Subiendo imagen 2 a galería para propiedad 3...
+✅ Imagen 2 subida a galería: /uploads/gallery/3/125ca954-ec52-41ef-9126-01298a0e6f61.avif
+Subiendo imagen 3 a galería para propiedad 3...
+✅ Imagen 3 subida a galería: /uploads/gallery/3/6c664460-a326-43f7-b291-a5271c864ed2.avif
+Subiendo imagen 4 a galería para propiedad 3...
+✅ Imagen 4 subida a galería: /uploads/gallery/3/67dede4b-3182-4281-99af-f3cc447269bd.avif
+Subiendo imagen 5 a galería para propiedad 3...
+✅ Imagen 5 subida a galería: /uploads/gallery/3/d8a454ff-ad27-4c33-9fef-fecd0fc4ee65.avif
+Subiendo imagen 6 a galería para propiedad 3...
+✅ Imagen 6 subida a galería: /uploads/gallery/3/b2ad49a6-6919-466b-a32f-909bdb666cb7.avif
+Subiendo imagen destacada a galería para propiedad 3...
+✅ Imagen destacada subida a galería: /uploads/gallery/3/1d1b3889-f542-451e-87fb-6a381d0edf6e.avif
+Propiedad: DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA
+IDs de amenities: [ 61, 52 ]
+Amenity Houzez ID 61 => Avda. Asfaltada
+Amenity Houzez ID 52 => Calle Empedrada
+Nombres de amenities únicos: [ 'Avda. Asfaltada', 'Calle Empedrada' ]
+🔍 Procesando 2 amenities para propiedad: DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA
+Amenities enviados: [ 3, 12 ] para propiedad DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA
+Servicio Houzez ID 63 => Agendá una Visita
+🔍 Procesando 1 servicios para propiedad: DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA
+🏗️  Procesando Floor Plans para propiedad: DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA
+   Títulos: 0, Beds: 0, Precios: 0
+
+📤 Actualizando propiedad ID 3: DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA
+   🏷️  Houzez ID: 22418
+   💰 Precio: 200000 (Currency ID: 1)
+   🖼️  Imágenes: 7 en galería + 1 destacada
+   🏷️  Amenities: 2, Servicios: 1
+   🏗️  Floor Plans: 0
+✅ Migrada propiedad: DÚPLEX Y TINGLADO EN VENTA EN EL KM 7 CIUDAD NUEVA (ID: 3)
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA"
+   property_type_name: "NO EXISTE"
+   property_type array: [105]
+   Buscando nombre de taxonomía para ID: 105
+   Taxonomía retornó: "Depósito o Galpón"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Depósito o Galpón"
+[MAPEO EXACTO] "Depósito o Galpón" → "Depósito o Galpón"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Ciudad del Este, propertyTypeName: Depósito o Galpón
+
+🌍 [UBICACIÓN] Buscando catálogos para: "TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Ciudad del Este"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 9
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Ciudad del Este" → ID: 4
+   🏠 Tipo: "Depósito o Galpón" → ID: 9
+✅ Moneda PYG encontrada, usando ID: 2
+
+🔍 DEBUG PRECIO para TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "4000000"
+     - fave_property_price_postfix: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+  - fave_currency: PYG
+  - Código de moneda detectado: PYG
+  - Precio RAW de Houzez: "4000000"
+  - Precio parseado: 4000000
+  - Precio final a guardar: 4000000 PYG (Currency ID: 2)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 9
+
+📤 Creando propiedad: TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA
+   🏷️  Houzez ID: 22400
+   💰 Precio: 4000000 (Currency ID: 2)
+🔍 JSON completo a enviar: {
+  "houzezId": "22400",
+  "title": "TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA",
+  "description": "<p>Excelente oportunidad para tu empresa o emprendimiento.<br />\n<strong>Este tinglado en alquiler</strong> en Ciudad del Este, ubicado en el Km 7 – Barrio Ciudad Nueva, se encuentra a solo 1.500 metros de la Ruta Internacional PY02 y a 1 cuadra de la Av. Julio César Riquelme, una zona estratégica con fácil acceso para carga y transporte.</p>\n<p><strong>📐 Características del Tinglado:</strong></p>\n<ul>\n<li>Superficie total: 16 x 21 m (336 m²)</li>\n<li>1 oficina frontal</li>\n<li>2 baños</li>\n<li>Altura: 7 metros</li>\n<li>Piso reforzado (apto para soportar contenedores)</li>\n<li>Conexión eléctrica trifásica</li>\n<li>Agua de pozo artesiano comunitario</li>\n</ul>\n<p><strong>💰 Valor mensual de alquiler: Gs. 4.000.000</strong></p>\n<p>Ideal para depósitos, empresas logísticas, talleres o comercios que requieren amplitud, seguridad y ubicación estratégica.</p>\n<p>📞 Agendá tu visita al: 0981 001 411</p>\n<p><strong>📍 Referencias cercanas:</strong></p>\n<ul>\n<li>Supermercado Stock</li>\n<li>Punto Farma</li>\n<li>Supermercado La Moderna</li>\n</ul>\n",
+  "slug": "tinglado-en-alquiler-en-el-km-7-ciudad-nueva",
+  "status": "ACTIVE",
+  "createdAt": "2025-10-21T22:12:12",
+  "updatedAt": "2025-10-22T16:57:25",
+  "address": "Diputado Julio César Riquelme, Ciudad Nueva, Ciudad del Este, Alto Paraná, Región Oriental, 123100, Paraguay",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 9,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 4000000,
+  "currencyId": 2,
+  "bedrooms": 0,
+  "bathrooms": 1,
+  "area": 521,
+  "garage": 0,
+  "operacion": "RENT"
+}
+Propiedad creada con ID real: 4 (Houzez ID: 22400)
+Subiendo imagen 0 a galería para propiedad 4...
+✅ Imagen 0 subida a galería: /uploads/gallery/4/cdee033b-e03e-418e-9ff8-fd0af67116ae.avif
+Subiendo imagen 1 a galería para propiedad 4...
+✅ Imagen 1 subida a galería: /uploads/gallery/4/73dc748d-b5ab-407a-a9f9-9a2a2a7b82a2.avif
+Subiendo imagen 2 a galería para propiedad 4...
+✅ Imagen 2 subida a galería: /uploads/gallery/4/a3e3afd2-d2f9-4a03-8b37-07487a26a77b.avif
+Subiendo imagen 3 a galería para propiedad 4...
+✅ Imagen 3 subida a galería: /uploads/gallery/4/5eaaf0a6-7525-46e8-a2ff-93a0b728404a.avif
+Subiendo imagen 4 a galería para propiedad 4...
+✅ Imagen 4 subida a galería: /uploads/gallery/4/94157b55-4b7b-4a82-9930-b77da9e30b26.avif
+Subiendo imagen 5 a galería para propiedad 4...
+✅ Imagen 5 subida a galería: /uploads/gallery/4/85dc62e0-052c-477b-8f7a-194a779e4558.avif
+Subiendo imagen destacada a galería para propiedad 4...
+✅ Imagen destacada subida a galería: /uploads/gallery/4/ec6cb26b-8aaf-459c-843e-0e49c27fb839.avif
+Propiedad: TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA
+IDs de amenities: [ 61, 52 ]
+Amenity Houzez ID 61 => Avda. Asfaltada
+Amenity Houzez ID 52 => Calle Empedrada
+Nombres de amenities únicos: [ 'Avda. Asfaltada', 'Calle Empedrada' ]
+🔍 Procesando 2 amenities para propiedad: TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA
+Amenities enviados: [ 3, 12 ] para propiedad TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA
+Servicio Houzez ID 56 => Alquilado
+Servicio Houzez ID 55 => Concretado
+🔍 Procesando 2 servicios para propiedad: TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA
+🏗️  Procesando Floor Plans para propiedad: TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA
+   Títulos: 0, Beds: 0, Precios: 0
+
+📤 Actualizando propiedad ID 4: TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA
+   🏷️  Houzez ID: 22400
+   💰 Precio: 4000000 (Currency ID: 2)
+   🖼️  Imágenes: 6 en galería + 1 destacada
+   🏷️  Amenities: 2, Servicios: 1
+   🏗️  Floor Plans: 0
+✅ Migrada propiedad: TINGLADO EN ALQUILER EN EL KM 7 CIUDAD NUEVA (ID: 4)
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY"
+   property_type_name: "NO EXISTE"
+   property_type array: [105]
+   Buscando nombre de taxonomía para ID: 105
+   Taxonomía retornó: "Depósito o Galpón"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Depósito o Galpón"
+[MAPEO EXACTO] "Depósito o Galpón" → "Depósito o Galpón"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Ciudad del Este, propertyTypeName: Depósito o Galpón
+
+🌍 [UBICACIÓN] Buscando catálogos para: "ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Ciudad del Este"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 9
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Ciudad del Este" → ID: 4
+   🏠 Tipo: "Depósito o Galpón" → ID: 9
+✅ Moneda USD encontrada, usando ID: 1
+
+🔍 DEBUG PRECIO para ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "1800"
+     - fave_property_price_postfix: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+  - fave_currency: USD
+  - Código de moneda detectado: USD
+  - Precio RAW de Houzez: "1800"
+  - Precio parseado: 1800
+  - Precio final a guardar: 1800 USD (Currency ID: 1)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 9
+
+📤 Creando propiedad: ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY
+   🏷️  Houzez ID: 22389
+   💰 Precio: 1800 (Currency ID: 1)
+🔍 JSON completo a enviar: {
+  "houzezId": "22389",
+  "title": "ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY",
+  "description": "<p><strong>Si buscás galpones industriales en alquiler en Ciudad del Este</strong>, esta es tu oportunidad. Disponibles en un condominio logístico exclusivo, los depósitos estarán listos para estrenar en un plazo de 60 días posteriores a la seña de alquiler.</p>\n<p><strong>Ubicación estratégica:</strong><br />\nEn el Km 9 Monday de Ciudad del Este, con acceso directo sobre la Av. San Blas y Ruta Internacional PY02, una zona clave para la industria, logística y distribución en el Alto Paraná.</p>\n<p><strong>Características de los Galpones</strong></p>\n<ul>\n<li>Superficie cubierta: 600 m²</li>\n<li>Altura industrial (apta para todo tipo de operaciones)</li>\n<li>Piso de hormigón reforzado</li>\n<li>Techo de zinc de alta resistencia</li>\n<li>Listos para adaptarse a industria, depósitos, centros logísticos o distribución comercial</li>\n</ul>\n<p><strong>Beneficios del Condominio</strong></p>\n<p>Pozo artesiano propio (agua asegurada)<br />\nSeguridad nocturna con guardia (18:00 a 06:00)<br />\nEntorno empresarial ideal para operaciones industriales y comerciales</p>\n<p><strong>Valores de Alquiler</strong><br />\nMensual: USD 1.800<br />\nCondominio: USD 50<br />\nGarantía única: USD 2.700 (se paga al inicio)</p>\n<p><strong>Servicios adicionales (por cuenta del inquilino):</strong></p>\n<p>ANDE, alarma, internet, entre otros.</p>\n<p><strong>Condiciones de Contrato</strong></p>\n<p>Mínimo 1 año de alquiler<br />\nEl inquilino abona la garantía como seña, y la tasa inmobiliaria.<br />\nEl primer alquiler se abona al momento de entrega de la posesión (cuando concluye la obra)</p>\n<p>Contacto ON Bienes Raíces</p>\n<p>Agendá una visita presencial o pedí una reunión virtual con un agente especializado:<br />\n(0981) 001 411 | (0981) 001 441</p>\n<p>Espacios diseñados para potenciar tu industria y logística en Ciudad del Este.</p>\n",
+  "slug": "alquilo-galpones-industriales-en-el-km-9-monday",
+  "status": "ACTIVE",
+  "createdAt": "2025-10-03T14:57:47",
+  "updatedAt": "2025-10-03T15:03:12",
+  "address": "Monseñor Rodríguez, Km 9 Monday",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 9,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 1800,
+  "currencyId": 1,
+  "bedrooms": 0,
+  "bathrooms": 2,
+  "area": 600,
+  "garage": 0,
+  "operacion": "RENT"
+}
+Propiedad creada con ID real: 5 (Houzez ID: 22389)
+Subiendo imagen 0 a galería para propiedad 5...
+✅ Imagen 0 subida a galería: /uploads/gallery/5/a96026da-0636-4ac1-ae25-a095541845b5.avif
+Subiendo imagen 1 a galería para propiedad 5...
+✅ Imagen 1 subida a galería: /uploads/gallery/5/e153874b-6d89-427b-ab5b-0fd4ef80bb56.avif
+Subiendo imagen destacada a galería para propiedad 5...
+✅ Imagen destacada subida a galería: /uploads/gallery/5/956f797e-59fd-43ad-8e38-03daf89d655b.avif
+Propiedad: ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY
+IDs de amenities: [ 61, 52 ]
+Amenity Houzez ID 61 => Avda. Asfaltada
+Amenity Houzez ID 52 => Calle Empedrada
+Nombres de amenities únicos: [ 'Avda. Asfaltada', 'Calle Empedrada' ]
+🔍 Procesando 2 amenities para propiedad: ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY
+Amenities enviados: [ 3, 12 ] para propiedad ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY
+Servicio Houzez ID 63 => Agendá una Visita
+🔍 Procesando 1 servicios para propiedad: ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY
+🏗️  Procesando Floor Plans para propiedad: ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY
+   Títulos: 0, Beds: 0, Precios: 0
+
+📤 Actualizando propiedad ID 5: ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY
+   🏷️  Houzez ID: 22389
+   💰 Precio: 1800 (Currency ID: 1)
+   🖼️  Imágenes: 2 en galería + 1 destacada
+   🏷️  Amenities: 2, Servicios: 1
+   🏗️  Floor Plans: 0
+✅ Migrada propiedad: ALQUILO GALPONES INDUSTRIALES EN EL KM 9 MONDAY (ID: 5)
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS"
+   property_type_name: "NO EXISTE"
+   property_type array: [86]
+   Buscando nombre de taxonomía para ID: 86
+   Taxonomía retornó: "Terreno Urbano"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Terreno Urbano"
+[MAPEO EXACTO] "Terreno Urbano" → "Terreno Urbano"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Hernandarias, propertyTypeName: Terreno Urbano
+
+🌍 [UBICACIÓN] Buscando catálogos para: "TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Hernandarias"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 4
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Hernandarias" → ID: 4
+   🏠 Tipo: "Terreno Urbano" → ID: 4
+✅ Moneda USD encontrada, usando ID: 1
+
+🔍 DEBUG PRECIO para TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "100000"
+     - fave_property_price_postfix: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+  - fave_currency: USD
+  - Código de moneda detectado: USD
+  - Precio RAW de Houzez: "100000"
+  - Precio parseado: 100000
+  - Precio final a guardar: 100000 USD (Currency ID: 1)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 4
+
+📤 Creando propiedad: TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS
+   🏷️  Houzez ID: 22365
+   💰 Precio: 100000 (Currency ID: 1)
+🔍 JSON completo a enviar: {
+  "houzezId": "22365",
+  "title": "TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS",
+  "description": "<p>🏡 <strong>Terreno en Venta en Hernandarias</strong> – Excelente Ubicación sobre Doble Avenida Las Acacias</p>\n<p>ON Bienes Raíces presenta una nueva captación exclusiva en el corazón de la preciosa ciudad de Hernandarias, una zona con alto potencial de desarrollo y una creciente demanda inmobiliaria.</p>\n<p>📍 Ubicación estratégica: a solo 600 metros de la Supercarretera, sobre la Doble Avenida Las Acacias y Petereby, este terreno de esquina representa una excelente oportunidad de inversión para proyectos residenciales, comerciales o corporativos.</p>\n<p>✅ <strong>Características del Inmueble</strong></p>\n<ul>\n<li>Superficie total: 612 m²</li>\n<li>Dimensiones: 15,30 m de frente x 40 m de fondo</li>\n<li>Muro perimetral completo</li>\n<li>Zona urbana consolidada</li>\n<li>Documentaciones al día y título listo para transferir</li>\n</ul>\n<p>📍<strong> Referencias de Ubicación</strong></p>\n<p>Este terreno se encuentra en una zona privilegiada, a pocos minutos de la Costanera de Hernandarias y la Playa Tacurú Pucú, dos de los puntos más atractivos de la ciudad. Su entorno de centro urbano combina movimiento comercial, accesos asfaltados, servicios públicos y cercanía a áreas recreativas, convirtiéndolo en una ubicación perfecta para vivir, invertir o desarrollar proyectos de alto rendimiento inmobiliario.</p>\n<p>🚀 <strong>Ideal para:</strong></p>\n<ul>\n<li>Construcción de edificios residenciales modernos</li>\n<li>Locales comerciales o sedes empresariales</li>\n<li>Proyectos logísticos o de servicios</li>\n</ul>\n<p>💰 Valor de venta: USD 100.000<br />\n📲 Agendá tu visita hoy mismo: 0981 001 411</p>\n<p>🧭 ON Bienes Raíces – Donde la ubicación, la rentabilidad y la confianza se encuentran.</p>\n",
+  "slug": "en-venta-terreno-en-esquina-centro-urbano-de-hernandarias",
+  "status": "ACTIVE",
+  "createdAt": "2025-10-03T11:18:39",
+  "updatedAt": "2025-10-15T09:49:59",
+  "address": "Av. Las Acacias, esq. Petereby",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 4,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 100000,
+  "currencyId": 1,
+  "bedrooms": 0,
+  "bathrooms": 0,
+  "area": 612,
+  "garage": 0,
+  "operacion": "SALE"
+}
+Propiedad creada con ID real: 6 (Houzez ID: 22365)
+Subiendo imagen 0 a galería para propiedad 6...
+✅ Imagen 0 subida a galería: /uploads/gallery/6/5fc36e8a-b6ff-478e-9fe4-68a54389c060.avif
+Subiendo imagen 1 a galería para propiedad 6...
+✅ Imagen 1 subida a galería: /uploads/gallery/6/46483cea-f65d-420d-82ba-66e50d958a63.avif
+Subiendo imagen 2 a galería para propiedad 6...
+✅ Imagen 2 subida a galería: /uploads/gallery/6/403f6b1e-6a48-490c-bb61-95c4c4ac599d.avif
+Subiendo imagen 3 a galería para propiedad 6...
+✅ Imagen 3 subida a galería: /uploads/gallery/6/b9be149d-2845-4b36-a44f-7354136a4278.avif
+Subiendo imagen 4 a galería para propiedad 6...
+✅ Imagen 4 subida a galería: /uploads/gallery/6/5e245ee4-70ac-4fee-978c-5013367d68c9.avif
+Subiendo imagen 5 a galería para propiedad 6...
+✅ Imagen 5 subida a galería: /uploads/gallery/6/a5128b8c-f248-46aa-86e0-c0aab1c3b827.avif
+Subiendo imagen destacada a galería para propiedad 6...
+✅ Imagen destacada subida a galería: /uploads/gallery/6/020c9fad-ec69-41f6-a533-ce77192518ac.avif
+Propiedad: TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS
+IDs de amenities: [ 61, 52 ]
+Amenity Houzez ID 61 => Avda. Asfaltada
+Amenity Houzez ID 52 => Calle Empedrada
+Nombres de amenities únicos: [ 'Avda. Asfaltada', 'Calle Empedrada' ]
+🔍 Procesando 2 amenities para propiedad: TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS
+Amenities enviados: [ 3, 12 ] para propiedad TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS
+Servicio Houzez ID 63 => Agendá una Visita
+Servicio Houzez ID 142 => Premium
+🔍 Procesando 2 servicios para propiedad: TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS
+🏗️  Procesando Floor Plans para propiedad: TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS
+   Títulos: 0, Beds: 0, Precios: 0
+
+📤 Actualizando propiedad ID 6: TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS
+   🏷️  Houzez ID: 22365
+   💰 Precio: 100000 (Currency ID: 1)
+   🖼️  Imágenes: 6 en galería + 1 destacada
+   🏷️  Amenities: 2, Servicios: 1
+   🏗️  Floor Plans: 0
+✅ Migrada propiedad: TERRENO EN VENTA EN HERNANDARIAS, SOBRE LA AV. LAS ACACIAS (ID: 6)
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este"
+   property_type_name: "NO EXISTE"
+   property_type array: [105]
+   Buscando nombre de taxonomía para ID: 105
+   Taxonomía retornó: "Depósito o Galpón"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Depósito o Galpón"
+[MAPEO EXACTO] "Depósito o Galpón" → "Depósito o Galpón"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Ciudad del Este, propertyTypeName: Depósito o Galpón
+
+🌍 [UBICACIÓN] Buscando catálogos para: "Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Ciudad del Este"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 9
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Ciudad del Este" → ID: 4
+   🏠 Tipo: "Depósito o Galpón" → ID: 9
+✅ Moneda USD encontrada, usando ID: 1
+
+🔍 DEBUG PRECIO para Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "3000"
+     - fave_property_price_postfix: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+  - fave_currency: USD
+  - Código de moneda detectado: USD
+  - Precio RAW de Houzez: "3000"
+  - Precio parseado: 3000
+  - Precio final a guardar: 3000 USD (Currency ID: 1)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 9
+
+📤 Creando propiedad: Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este
+   🏷️  Houzez ID: 22363
+   💰 Precio: 3000 (Currency ID: 1)
+🔍 JSON completo a enviar: {
+  "houzezId": "22363",
+  "title": "Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este",
+  "description": "<p data-start=\"274\" data-end=\"479\">En el <strong data-start=\"280\" data-end=\"315\">Km 10 Acaray de Ciudad del Este</strong>, a tan solo <strong data-start=\"328\" data-end=\"374\">3.700 metros de la Ruta Internacional PY02</strong>, se encuentra disponible para alquiler un inmueble único, diseñado para proyectos de gran envergadura.</p>\n<p data-start=\"481\" data-end=\"651\">📍 Ubicado sobre la <strong data-start=\"501\" data-end=\"531\">Avenida Don Carlos Barreto</strong>, esta propiedad ofrece una posición estratégica para inversionistas y empresas que buscan un espacio de primer nivel.</p>\n<h3 data-start=\"653\" data-end=\"689\">✅ Características principales:</h3>\n<ul data-start=\"690\" data-end=\"1054\">\n<li data-start=\"690\" data-end=\"726\">\n<p data-start=\"692\" data-end=\"726\"><strong data-start=\"692\" data-end=\"713\">Superficie total:</strong> 1 hectárea</p>\n</li>\n<li data-start=\"727\" data-end=\"778\">\n<p data-start=\"729\" data-end=\"778\"><strong data-start=\"729\" data-end=\"753\">Tinglado industrial:</strong> 1.000 m² (40 m x 25 m)</p>\n</li>\n<li data-start=\"779\" data-end=\"886\">\n<p data-start=\"781\" data-end=\"813\"><strong data-start=\"781\" data-end=\"811\">Infraestructura adicional:</strong></p>\n<ul data-start=\"816\" data-end=\"886\">\n<li data-start=\"816\" data-end=\"833\">\n<p data-start=\"818\" data-end=\"833\">Baños sexados</p>\n</li>\n<li data-start=\"836\" data-end=\"862\">\n<p data-start=\"838\" data-end=\"862\">Oficina administrativa</p>\n</li>\n<li data-start=\"865\" data-end=\"886\">\n<p data-start=\"867\" data-end=\"886\">Depósito auxiliar</p>\n</li>\n</ul>\n</li>\n<li data-start=\"887\" data-end=\"934\">\n<p data-start=\"889\" data-end=\"934\"><strong data-start=\"889\" data-end=\"915\">Construcciones anexas:</strong> 2 pequeñas casas</p>\n</li>\n<li data-start=\"935\" data-end=\"994\">\n<p data-start=\"937\" data-end=\"994\"><strong data-start=\"937\" data-end=\"961\">Amplio espacio verde</strong> disponible para múltiples usos</p>\n</li>\n<li data-start=\"995\" data-end=\"1054\">\n<p data-start=\"997\" data-end=\"1054\"><strong data-start=\"997\" data-end=\"1015\">Accesibilidad:</strong> ambos costados con calles empedradas</p>\n</li>\n</ul>\n<h3 data-start=\"1056\" data-end=\"1076\">🚀 Ideal para:</h3>\n<ul data-start=\"1077\" data-end=\"1187\">\n<li data-start=\"1077\" data-end=\"1117\">\n<p data-start=\"1079\" data-end=\"1117\">Centros logísticos y de distribución</p>\n</li>\n<li data-start=\"1118\" data-end=\"1144\">\n<p data-start=\"1120\" data-end=\"1144\">Depósitos industriales</p>\n</li>\n<li data-start=\"1145\" data-end=\"1187\">\n<p data-start=\"1147\" data-end=\"1187\">Proyectos empresariales de gran escala</p>\n</li>\n</ul>\n<p data-start=\"1189\" data-end=\"1354\">Su amplitud, ubicación estratégica y facilidades lo convierten en una <strong data-start=\"1259\" data-end=\"1293\">oportunidad única de inversión</strong> en el corazón del desarrollo logístico de Ciudad del Este.</p>\n<p data-start=\"1356\" data-end=\"1482\">📞 <strong data-start=\"1359\" data-end=\"1405\">Contactá con tu agente de ON Bienes Raíces</strong> para recibir todos los detalles y asegurar este inmueble para tu proyecto.</p>\n",
+  "slug": "inmueble-estrategico-en-alquiler-km-10-acaray-ciudad-del-este",
+  "status": "ACTIVE",
+  "createdAt": "2025-09-30T18:42:33",
+  "updatedAt": "2025-10-01T21:14:59",
+  "address": "Calle 10 Acaray Don Carlos Barreto",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 9,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 3000,
+  "currencyId": 1,
+  "bedrooms": 0,
+  "bathrooms": 4,
+  "area": 10000,
+  "garage": 0,
+  "operacion": "RENT"
+}
+Propiedad creada con ID real: 7 (Houzez ID: 22363)
+Subiendo imagen 0 a galería para propiedad 7...
+✅ Imagen 0 subida a galería: /uploads/gallery/7/cbd9434d-88b6-4128-9d8c-3a6e13b25c69.avif
+Subiendo imagen 1 a galería para propiedad 7...
+✅ Imagen 1 subida a galería: /uploads/gallery/7/0f14386c-0e4d-4917-a5cd-e6502353e99e.avif
+Subiendo imagen 2 a galería para propiedad 7...
+✅ Imagen 2 subida a galería: /uploads/gallery/7/5e50a7d9-6afd-4a9f-8f61-4ad5e2e37aed.avif
+Subiendo imagen 3 a galería para propiedad 7...
+✅ Imagen 3 subida a galería: /uploads/gallery/7/738a4ad4-95d7-4f7f-a77f-4f8fa2c53fd2.avif
+Subiendo imagen 4 a galería para propiedad 7...
+✅ Imagen 4 subida a galería: /uploads/gallery/7/6593d325-b6d0-4ef9-931c-e13559328531.avif
+Subiendo imagen 5 a galería para propiedad 7...
+✅ Imagen 5 subida a galería: /uploads/gallery/7/283cb24e-ff41-4213-8083-52f220e703b2.avif
+Subiendo imagen destacada a galería para propiedad 7...
+✅ Imagen destacada subida a galería: /uploads/gallery/7/6b8daf8a-eef5-41d3-9b76-fd5bff58deb3.avif
+Propiedad: Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este
+IDs de amenities: [ 61, 52 ]
+Amenity Houzez ID 61 => Avda. Asfaltada
+Amenity Houzez ID 52 => Calle Empedrada
+Nombres de amenities únicos: [ 'Avda. Asfaltada', 'Calle Empedrada' ]
+🔍 Procesando 2 amenities para propiedad: Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este
+Amenities enviados: [ 3, 12 ] para propiedad Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este
+Servicio Houzez ID 63 => Agendá una Visita
+🔍 Procesando 1 servicios para propiedad: Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este
+🏗️  Procesando Floor Plans para propiedad: Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este
+   Títulos: 0, Beds: 0, Precios: 0
+
+📤 Actualizando propiedad ID 7: Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este
+   🏷️  Houzez ID: 22363
+   💰 Precio: 3000 (Currency ID: 1)
+   🖼️  Imágenes: 6 en galería + 1 destacada
+   🏷️  Amenities: 2, Servicios: 1
+   🏗️  Floor Plans: 0
+✅ Migrada propiedad: Inmueble Estratégico en Alquiler – Km 10 Acaray, Ciudad del Este (ID: 7)
+
+🔍 [TIPO DE HOUZEZ] Para propiedad "LOTES MECANIZADOS EN VENTA KM 24 ACARAY"
+   property_type_name: "NO EXISTE"
+   property_type array: [71]
+   Buscando nombre de taxonomía para ID: 71
+   Taxonomía retornó: "Terreno Rural"
+   ✅ propertyTypeName RAW FINAL de Houzez: "Terreno Rural"
+[MAPEO EXACTO] "Terreno Rural" → "Terreno Rural"
+[DEBUG] countryName: Paraguay, stateName: Alto Paraná, cityName: Minga Guazú, propertyTypeName: Terreno Rural
+
+🌍 [UBICACIÓN] Buscando catálogos para: "LOTES MECANIZADOS EN VENTA KM 24 ACARAY"
+   📍 País: "Paraguay"
+   📍 Departamento: "Alto Paraná"
+   📍 Ciudad: "Minga Guazú"
+   ✅ countryId encontrado: 1
+   ✅ departmentId encontrado: 1
+   ✅ cityId encontrado: 4
+   ✅ propertyTypeId encontrado: 1
+
+📊 [RESUMEN UBICACIÓN]
+   🌍 País: "Paraguay" → ID: 1
+   🏛️  Departamento: "Alto Paraná" → ID: 1
+   🏙️  Ciudad: "Minga Guazú" → ID: 4
+   🏠 Tipo: "Terreno Rural" → ID: 1
+✅ Moneda USD encontrada, usando ID: 1
+
+🔍 DEBUG PRECIO para LOTES MECANIZADOS EN VENTA KM 24 ACARAY:
+  📋 TODOS los campos de precio en meta:
+     - fave_property_price: "50000"
+     - fave_property_price_postfix: ""
+     - fave_show_price_placeholder: "0"
+     - fave_property_price_placeholder: ""
+     - fave_property_price_prefix: ""
+     - fave_property_sec_price: ""
+  - fave_currency: USD
+  - Código de moneda detectado: USD
+  - Precio RAW de Houzez: "50000"
+  - Precio parseado: 50000
+  - Precio final a guardar: 50000 USD (Currency ID: 1)
+
+[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)
+[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)
+[PAYLOAD DEBUG] status: ACTIVE, cityId: 4, propertyTypeId: 1
+
+📤 Creando propiedad: LOTES MECANIZADOS EN VENTA KM 24 ACARAY
+   🏷️  Houzez ID: 22320
+   💰 Precio: 50000 (Currency ID: 1)
+🔍 JSON completo a enviar: {
+  "houzezId": "22320",
+  "title": "LOTES MECANIZADOS EN VENTA KM 24 ACARAY",
+  "description": "<p><strong>🌿 Lotes Mecanizados en Venta – Km 24 Acaray, Laguna Chata</strong></p>\n<p>Viví la naturaleza, proyectá tu inversión y asegura tu patrimonio en una de las zonas con mayor proyección de crecimiento del Alto Paraná.</p>\n<p>En ON Bienes Raíces te presentamos cuatro lotes mecanizados, todos con títulos al día, ubicados en un entorno natural único, sobre la hermosa Laguna Chata, a tan solo 10 km de la Ruta Internacional PY02 y a minutos del Aeropuerto Internacional Guaraní.</p>\n<p><strong>📏 Superficie Total y Detalle de Cada Lote</strong></p>\n<p>Ponemos a tu disposición 4 propiedades independientes, ideales para proyectos individuales o para integrarlas en un desarrollo de mayor envergadura:</p>\n<ul>\n<li>Lote F: 1 ha 1.572 m²</li>\n<li>Lote G: 1 ha 1.082 m²</li>\n<li>Lote H: 1 ha 547 m²</li>\n<li>Lote I: 1 ha 711 m²</li>\n</ul>\n<p>🔢<strong> Superficie total sumada: 4 hectáreas 3.912 m²</strong></p>\n<p>Podés adquirir un solo lote o los cuatro en conjunto, según las necesidades de tu proyecto.</p>\n<p><em><strong>Valor: 50.000 dólares cada lote</strong></em></p>\n<p>🌎 <strong>Entorno Estratégico</strong></p>\n<ul>\n<li>Conectividad directa a la Ruta PY02, una vía clave para el desarrollo logístico y comercial.</li>\n<li>A minutos del Aeropuerto Internacional Guaraní, facilitando proyectos de logística, distribución o turismo.</li>\n<li>Rodeado de naturaleza y tranquilidad, ideal para casas quintas, complejos turísticos, chacras recreativas o espacios de eventos privados.</li>\n<li>Cercanía a empresas agroindustriales, generando oportunidades de uso comercial o agroproductivo.</li>\n</ul>\n<p>💡 <strong>Oportunidad de Inversión</strong></p>\n<ul>\n<li>Documentación en regla, listos para transferencia y aptos para créditos bancarios.</li>\n<li>Potencial de alta revalorización en el corto y mediano plazo.</li>\n<li>Flexibilidad: comprá un lote, varios o los cuatro juntos para maximizar tu proyecto.</li>\n</ul>\n<p>📞 Contactanos hoy mismo y descubrí cómo estos lotes pueden convertirse en el punto de partida de tu próximo gran proyecto.<br />\n📲 (0981) 001 411</p>\n<p>ON Bienes Raíces – Invertí en tierra, invertí en futuro.</p>\n",
+  "slug": "lotes-mecanizados-en-venta-km-24-acaray",
+  "status": "ACTIVE",
+  "createdAt": "2025-09-20T11:18:49",
+  "updatedAt": "2025-09-20T11:18:49",
+  "address": "Calle 24 Acaray, Minga Guazú, Alto Paraná, Región Oriental, Paraguay",
+  "cityId": 4,
+  "countryId": 1,
+  "propertyTypeId": 1,
+  "propertyStatusId": 1,
+  "agencyId": 1,
+  "agentId": 1,
+  "price": 50000,
+  "currencyId": 1,
+  "bedrooms": 0,
+  "bathrooms": 0,
+  "area": 43.912,
+  "garage": 0,
+  "operacion": "SALE"
+}
+Propiedad creada con ID real: 8 (Houzez ID: 22320)
+Subiendo imagen 0 a galería para propiedad 8...
+❌ Error procesando imagen 0: Request failed with status code 500, continuando...
+Subiendo imagen 1 a galería para propiedad 8...
+❌ Error procesando imagen 1: Request failed with status code 500, continuando...
+Subiendo imagen 2 a galería para propiedad 8...
+❌ Error procesando imagen 2: Request failed with status code 500, continuando...
+Subiendo imagen 3 a galería para propiedad 8...
+❌ Error procesando imagen 3: Request failed with status code 500, continuando...
+Subiendo imagen 4 a galería para propiedad 8...
+❌ Error procesando imagen 4: Request failed with status code 500, continuando...

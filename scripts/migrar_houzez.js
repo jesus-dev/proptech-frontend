@@ -9,6 +9,20 @@ const WP_MEDIA = 'https://onbienesraices.com.py/wp-json/wp/v2/media/';
 const WP_TAX = 'https://onbienesraices.com.py/wp-json/wp/v2/';
 const BACKEND_API = 'http://localhost:8080/api/properties'; // Cambia esto a tu endpoint real
 
+// 🔐 JWT TOKEN - Obtén el token desde el frontend después de hacer login
+// Instrucciones:
+// 1. Abre http://localhost:3000 en tu navegador
+// 2. Haz login como admin
+// 3. Abre DevTools (F12) → Application → LocalStorage → http://localhost:3000
+// 4. Copia el valor de 'token' y pégalo aquí abajo
+const JWT_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwZXJtaXNzaW9ucyI6WyJDT05UUkFDVFNfQ1JFQVRFIiwiUEVSTUlTU0lPTlNfUkVBRCIsIlNBTEVTX1VQREFURSIsIlNVQlNDUklQVElPTlNfQ1JFQVRFIiwiT1dORVJTX1BST1BFUlRZX1VQREFURSIsIlBFUk1JU1NJT05TX1VQREFURSIsIkRFVkVMT1BNRU5UX0NSRUFURSIsIkRFVkVMT1BNRU5UU19SRUFEIiwiUEVSTUlTU0lPTl9VUERBVEUiLCJDT05UQUNUU19VUERBVEUiLCJST0xFX0FTU0lHTl9QRVJNSVNTSU9OUyIsIlBFUk1JU1NJT05fQ1JFQVRFIiwiUFJPUEVSVFlfUkVBRCIsIlVTRVJTX0RFQUNUSVZBVEUiLCJTWVNURU1fQkFDS1VQIiwiUk9MRV9VUERBVEUiLCJVU0VSX0FDVElWQVRFIiwiQ09OVEFDVFNfREVMRVRFIiwiT1dORVJTX1BST1BFUlRZX0NSRUFURSIsIkRFVkVMT1BNRU5UX1JFQUQiLCJDT05UUkFDVFNfVVBEQVRFIiwiUEVSTUlTU0lPTl9ERUxFVEUiLCJDQUxFTkRBUl9ERUxFVEUiLCJQUk9QRVJUSUVTX1JFQUQiLCJQRVJNSVNTSU9OX1JFQUQiLCJQUk9QRVJUWV9DUkVBVEUiLCJDQUxFTkRBUl9SRUFEIiwiVVNFUl9VUERBVEUiLCJSRVBPUlRfUkVBRCIsIkRFVkVMT1BNRU5UX0RFTEVURSIsIlNBTEVTX0RFTEVURSIsIkNBTEVOREFSX1VQREFURSIsIlZJU0lUU19ERUxFVEUiLCJTWVNURU1fUkVTVE9SRSIsIlVTRVJTX0NSRUFURSIsIlJPTEVTX0FTU0lHTl9QRVJNSVNTSU9OUyIsIlNBTEVTX1JFQUQiLCJQQVJUTkVSU19SRUFEIiwiQUdFTkRBX1JFQUQiLCJVU0VSX0NSRUFURSIsIklOQk9YX1VQREFURSIsIlNVQlNDUklQVElPTlNfREVMRVRFIiwiT1dORVJTX1BST1BFUlRZX0RFTEVURSIsIkRBU0hCT0FSRF9SRUFEIiwiVVNFUl9ERUxFVEUiLCJQUk9QRVJUWV9ERUxFVEUiLCJTWVNURU1fQ09ORklHIiwiVVNFUl9ERUFDVElWQVRFIiwiUkVQT1JUX0VYUE9SVCIsIkFHRU5EQV9DUkVBVEUiLCJVU0VSU19SRUFEIiwiUk9MRVNfQ1JFQVRFIiwiUFJPUEVSVElFU19VUERBVEUiLCJST0xFU19SRUFEIiwiUk9MRV9SRUFEIiwiVklTSVRTX1JFQUQiLCJDQUxFTkRBUl9DUkVBVEUiLCJQRVJNSVNTSU9OU19DUkVBVEUiLCJERVZFTE9QTUVOVFNfVVBEQVRFIiwiUk9MRVNfREVMRVRFIiwiU1VCU0NSSVBUSU9OU19SRUFEIiwiU1VCU0NSSVBUSU9OU19VUERBVEUiLCJWSVNJVFNfQ1JFQVRFIiwiUEFSVE5FUlNfQ1JFQVRFIiwiREVWRUxPUE1FTlRTX0RFTEVURSIsIlNBTEVTX0NSRUFURSIsIlBBUlRORVJTX0RFTEVURSIsIlBST1BFUlRZX1VQREFURSIsIlZJU0lUU19VUERBVEUiLCJST0xFX0NSRUFURSIsIkNPTlRBQ1RTX0NSRUFURSIsIlJFUE9SVF9DUkVBVEUiLCJVU0VSU19VUERBVEUiLCJERVZFTE9QTUVOVFNfQ1JFQVRFIiwiQ09OVFJBQ1RTX0RFTEVURSIsIlBST1BFUlRJRVNfQ1JFQVRFIiwiUFJPUEVSVElFU19ERUxFVEUiLCJST0xFX0RFTEVURSIsIlVTRVJTX0RFTEVURSIsIkRFVkVMT1BNRU5UX1VQREFURSIsIk9XTkVSU19QUk9QRVJUWV9SRUFEIiwiQ09OVEFDVFNfUkVBRCIsIlVTRVJfUkVBRCIsIlJPTEVTX1VQREFURSIsIlVTRVJTX0FDVElWQVRFIiwiUEFSVE5FUlNfVVBEQVRFIiwiSU5CT1hfUkVBRCIsIkNPTlRSQUNUU19SRUFEIiwiUEVSTUlTU0lPTlNfREVMRVRFIl0sInJvbGVzIjpbIlNVUEVSX0FETUlOIl0sImZ1bGxOYW1lIjoiWW9hbmEgIEJlbnRvcyAiLCJ1c2VyVHlwZSI6IlNVUEVSX0FETUlOIiwidXNlcklkIjoxLCJlbWFpbCI6ImRldkBwcm9wdGVjaC5jb20iLCJzdWIiOiJkZXZAcHJvcHRlY2guY29tIiwiaWF0IjoxNzYxNTk4MDkxLCJleHAiOjE3NjE2MDE2OTF9.VCgprC9iPn88rCXbj5zcddTHcc-kmqMlOacEbntiExg';
+
+// Headers de autenticación
+const AUTH_HEADERS = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${JWT_TOKEN}`
+};
+
 // Funciones para consultar o crear catálogos en el backend
 async function getOrCreateCatalog(endpoint, name) {
   // Buscar por nombre
@@ -36,12 +50,32 @@ async function getOrCreateCatalog(endpoint, name) {
   return null; // Devuelve null para que la migración siga
 }
 
-async function getMediaUrl(id) {
+async function getMediaUrl(id, retries = 3) {
   if (!id) return '';
-  const res = await fetch(WP_MEDIA + id);
-  if (!res.ok) return '';
-  const data = await res.json();
-  return data.source_url || '';
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(WP_MEDIA + id, { 
+        timeout: 10000,
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!res.ok) {
+        console.warn(`⚠️  Media ${id} no disponible (HTTP ${res.status})`);
+        return '';
+      }
+      const data = await res.json();
+      return data.source_url || '';
+    } catch (error) {
+      console.warn(`⚠️  Intento ${attempt}/${retries} falló para media ${id}: ${error.message}`);
+      if (attempt === retries) {
+        console.error(`❌ No se pudo obtener media ${id} después de ${retries} intentos, continuando...`);
+        return '';
+      }
+      // Esperar antes de reintentar
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  return '';
 }
 
 async function getTaxonomyName(tax, id) {
@@ -385,7 +419,13 @@ async function migrateProperties() {
       }
 
       // Obtener IDs de catálogos usando los endpoints estándar
+      console.log(`\n🌍 [UBICACIÓN] Buscando catálogos para: "${prop.title?.rendered}"`);
+      console.log(`   📍 País: "${countryName}"`);
+      console.log(`   📍 Departamento: "${stateName}"`);
+      console.log(`   📍 Ciudad: "${cityName}"`);
+      
       let countryId = await getCatalogIdOnly('http://localhost:8080/api/countries', countryName);
+      console.log(`   ✅ countryId encontrado: ${countryId || 'null'}`);
       if (!countryId) {
         console.warn(`[MIGRACIÓN] No se encontró el país "${countryName}", intentando crear...`);
         countryId = await getOrCreateCatalog('http://localhost:8080/api/countries', countryName);
@@ -402,12 +442,14 @@ async function migrateProperties() {
       }
       
       let departmentId = stateName && stateName.trim() ? await getCatalogIdOnly('http://localhost:8080/api/departments', stateName, { countryId }) : null;
+      console.log(`   ✅ departmentId encontrado: ${departmentId || 'null'}`);
       if (stateName && stateName.trim() && !departmentId) {
         console.warn(`[MIGRACIÓN] No se encontró el departamento "${stateName}", intentando crear...`);
         departmentId = await getOrCreateCatalog('http://localhost:8080/api/departments', stateName);
       }
       
       let cityId = cityName ? await getCatalogIdOnly('http://localhost:8080/api/cities', cityName, { departmentId }) : null;
+      console.log(`   ✅ cityId encontrado: ${cityId || 'null'}`);
       if (!cityId) {
         console.warn(`[MIGRACIÓN] No se encontró la ciudad "${cityName}", intentando crear...`);
         cityId = await getOrCreateCatalog('http://localhost:8080/api/cities', cityName);
@@ -423,9 +465,8 @@ async function migrateProperties() {
         }
       }
       
-      console.log(`\n🏠 [TIPO DE PROPIEDAD] Buscando tipo: "${propertyTypeName}"`);
       let propertyTypeId = propertyTypeName && propertyTypeName.trim() ? await getCatalogIdOnly('http://localhost:8080/api/property-types', propertyTypeName) : null;
-      console.log(`   propertyTypeId encontrado: ${propertyTypeId || 'null'}`);
+      console.log(`   ✅ propertyTypeId encontrado: ${propertyTypeId || 'null'}`);
       if (!propertyTypeId) {
         console.warn(`[MIGRACIÓN] No se encontró el tipo "${propertyTypeName}", intentando crear...`);
         propertyTypeId = await getOrCreateCatalog('http://localhost:8080/api/property-types', propertyTypeName);
@@ -440,6 +481,12 @@ async function migrateProperties() {
           }
         }
       }
+      
+      console.log(`\n📊 [RESUMEN UBICACIÓN]`);
+      console.log(`   🌍 País: "${countryName}" → ID: ${countryId}`);
+      console.log(`   🏛️  Departamento: "${stateName}" → ID: ${departmentId || 'null'}`);
+      console.log(`   🏙️  Ciudad: "${cityName}" → ID: ${cityId}`);
+      console.log(`   🏠 Tipo: "${propertyTypeName}" → ID: ${propertyTypeId}`);
 
       // Detectar tipo de operación (venta/alquiler)
       let operationType = '';
@@ -455,6 +502,28 @@ async function migrateProperties() {
       // Crear la propiedad básica
       const currencyCode = (meta.fave_currency?.[0] || 'USD').toUpperCase().trim();
       const currencyId = await getOrCreateCurrencyId(currencyCode);
+      
+      // Debug: mostrar TODOS los campos relacionados con ubicación en meta
+      console.log(`\n🔍 DEBUG CAMPOS DE UBICACIÓN en meta para ${prop.title?.rendered}:`);
+      Object.keys(meta).filter(key => 
+        key.toLowerCase().includes('lat') || 
+        key.toLowerCase().includes('lng') || 
+        key.toLowerCase().includes('long') ||
+        key.toLowerCase().includes('geo') ||
+        key.toLowerCase().includes('map') ||
+        key.toLowerCase().includes('location')
+      ).forEach(key => {
+        console.log(`     - ${key}: "${meta[key]?.[0] || meta[key]}"`);
+      });
+      
+      // Obtener coordenadas de ubicación desde Houzez
+      const latitude = meta.houzez_geolocation_lat?.[0] || meta.fave_property_lat?.[0] || meta.fave_property_map?.[0] || null;
+      const longitude = meta.houzez_geolocation_long?.[0] || meta.fave_property_lng?.[0] || meta.fave_property_map?.[1] || null;
+      
+      console.log(`\n📍 UBICACIÓN FINAL para ${prop.title?.rendered}:`);
+      console.log(`  - Dirección: ${meta.fave_property_address?.[0] || 'No disponible'}`);
+      console.log(`  - Latitud: ${latitude || 'No disponible'}`);
+      console.log(`  - Longitud: ${longitude || 'No disponible'}`);
       
       // Validar campos obligatorios antes de enviar
       // Log para debug de precio - mostrar TODOS los campos relacionados con precio
@@ -495,15 +564,20 @@ async function migrateProperties() {
       }
 
       // Obtener nombres de agente y agencia desde el meta o usar valores por defecto
-      const agentName = meta.fave_property_agent?.[0] || 'Agente Migración';
-      const agencyName = meta.fave_property_agency?.[0] || 'Agencia Desconocida';
-      const agentId = agentName ? await getCatalogIdOnly('http://localhost:8080/api/agents', agentName) : null;
-      if (!agentId && agentName) {
-        console.error(`[ERROR] Agente no encontrado en catálogos: ${agentName}`);
+      const agentName = meta.fave_property_agent?.[0] || null;
+      const agencyName = meta.fave_property_agency?.[0] || null;
+      let agentId = agentName ? await getCatalogIdOnly('http://localhost:8080/api/agents', agentName) : null;
+      if (!agentId) {
+        // Si no se encuentra agente, usar el agente ID 1 (Yoana Bentos - dev@proptech.com)
+        // Esto es necesario porque el @PrePersist de Property requiere un agent para auto-asignar tenant
+        console.warn(`[MIGRACIÓN] Agente no encontrado, usando agente por defecto (ID: 1)`);
+        agentId = 1;
       }
-      const agencyId = agencyName ? await getCatalogIdOnly('http://localhost:8080/api/agencies', agencyName) : null;
-      if (!agencyId && agencyName) {
-        console.error(`[ERROR] Agencia no encontrada en catálogos: ${agencyName}`);
+      let agencyId = agencyName ? await getCatalogIdOnly('http://localhost:8080/api/agencies', agencyName) : null;
+      if (!agencyId) {
+        // Si no se encuentra agencia, usar la agencia ID 1 (ON Bienes Raíces)
+        console.warn(`[MIGRACIÓN] Agencia no encontrada, usando agencia por defecto (ID: 1)`);
+        agencyId = 1;
       }
 
       // VERIFICACIÓN DESACTIVADA TEMPORALMENTE - El backend aún no soporta filtro por houzezId
@@ -534,7 +608,10 @@ async function migrateProperties() {
         createdAt: prop.date,
         updatedAt: prop.modified,
         address: requiredFields.address,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
         cityId: cityId,         // Debe ser un número válido
+        departmentId: departmentId, // ID del departamento/estado
         countryId: countryId,
         propertyTypeId: propertyTypeId, // Debe ser un número válido
         propertyStatusId: 1, // Forzar siempre 1
@@ -557,7 +634,7 @@ async function migrateProperties() {
       
       const backendRes = await fetch(BACKEND_API, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: AUTH_HEADERS,
         body: JSON.stringify(basicProperty),
       });
       
@@ -591,9 +668,6 @@ async function migrateProperties() {
       const realPropertyId = createdProperty.id;
       
       console.log(`Propiedad creada con ID real: ${realPropertyId} (Houzez ID: ${houzezId})`);
-      
-      // Ahora usar el ID real para las rutas de archivos
-      const uploadDir = path.join(process.cwd(), 'uploads', 'properties', String(realPropertyId));
 
       // Subir imágenes adicionales a la galería
       let images = [];
@@ -619,7 +693,10 @@ async function migrateProperties() {
               formData.append('fileName', filename);
               // Subir a la galería
               console.log(`Subiendo imagen ${idx} a galería para propiedad ${realPropertyId}...`);
-              const headers = formData.getHeaders();
+              const headers = {
+                ...formData.getHeaders(),
+                'Authorization': `Bearer ${JWT_TOKEN}`
+              };
               const galleryRes = await axios.post(
                 `http://localhost:8080/api/gallery-images/property/${realPropertyId}`,
                 formData,
@@ -630,19 +707,11 @@ async function migrateProperties() {
                 images.push(galleryData.url);
                 console.log(`✅ Imagen ${idx} subida a galería: ${galleryData.url}`);
               } else {
-                let errorText = '';
-                try { errorText = JSON.stringify(galleryRes.data); } catch {}
-                console.error(`❌ Error subiendo imagen ${idx} a galería`);
-                console.error(`[STATUS] ${galleryRes.status}`);
-                console.error(`[BODY] ${errorText}`);
-                console.error(`[PROPERTY ID] ${realPropertyId}`);
-                console.error(`[HOUZEZ ID] ${houzezId}`);
-                console.error(`[PROPERTY TITLE] ${basicProperty.title}`);
-                throw new Error(`Error subiendo imagen ${idx} a galería: ${galleryRes.status} - ${errorText}`);
+                console.error(`❌ Error subiendo imagen ${idx}, continuando...`);
               }
             } catch (error) {
-              console.error(`❌ Error procesando imagen ${idx}:`, error.message);
-              throw error; // Re-lanzar el error para detener el proceso
+              console.error(`❌ Error procesando imagen ${idx}: ${error.message}, continuando...`);
+              // NO throw - continuar con la siguiente imagen
             }
           }
         }
@@ -671,7 +740,10 @@ async function migrateProperties() {
             formData.append('fileName', filename);
             // Subir a la galería
             console.log(`Subiendo imagen destacada a galería para propiedad ${realPropertyId}...`);
-            const headers = formData.getHeaders();
+            const headers = {
+              ...formData.getHeaders(),
+              'Authorization': `Bearer ${JWT_TOKEN}`
+            };
             const galleryRes = await axios.post(
               `http://localhost:8080/api/gallery-images/property/${realPropertyId}`,
               formData,
@@ -682,19 +754,11 @@ async function migrateProperties() {
               featuredImage = galleryData.url;
               console.log(`✅ Imagen destacada subida a galería: ${galleryData.url}`);
             } else {
-              let errorText = '';
-              try { errorText = JSON.stringify(galleryRes.data); } catch {}
-              console.error(`❌ Error subiendo imagen destacada a galería`);
-              console.error(`[STATUS] ${galleryRes.status}`);
-              console.error(`[BODY] ${errorText}`);
-              console.error(`[PROPERTY ID] ${realPropertyId}`);
-              console.error(`[HOUZEZ ID] ${houzezId}`);
-              console.error(`[PROPERTY TITLE] ${basicProperty.title}`);
-              throw new Error(`Error subiendo imagen destacada a galería: ${galleryRes.status} - ${errorText}`);
+              console.error(`❌ Error subiendo imagen destacada, continuando...`);
             }
           } catch (error) {
-            console.error(`❌ Error procesando imagen destacada:`, error.message);
-            throw error; // Re-lanzar el error para detener el proceso
+            console.error(`❌ Error procesando imagen destacada: ${error.message}, continuando...`);
+            // NO throw - continuar sin imagen destacada
           }
         }
       }
@@ -724,11 +788,11 @@ async function migrateProperties() {
       console.log(`🔍 Procesando ${uniqueFeatureNames.length} amenities para propiedad: ${basicProperty.title}`);
       for (const fname of uniqueFeatureNames) {
         if (fname) {
-          const id = await getCatalogIdOnly('http://localhost:8080/api/amenities', fname);
+          const id = await getOrCreateAmenityByName(fname);
           if (id) {
             amenityIds.push(id);
           } else {
-            console.error(`[ERROR] Amenity no encontrado en catálogos: ${fname}`);
+            console.error(`[ERROR] Amenity no pudo ser creado/encontrado: ${fname}`);
           }
         }
       }
@@ -752,11 +816,11 @@ async function migrateProperties() {
       console.log(`🔍 Procesando ${uniqueLabelNames.length} servicios para propiedad: ${basicProperty.title}`);
       for (const lname of uniqueLabelNames) {
         if (lname) {
-          const id = await getCatalogIdOnly('http://localhost:8080/api/services', lname);
+          const id = await getOrCreateServiceByName(lname);
           if (id) {
             serviceIds.push(id);
           } else {
-            console.error(`[ERROR] Servicio no encontrado en catálogos: ${lname}`);
+            console.error(`[ERROR] Servicio no pudo ser creado/encontrado: ${lname}`);
           }
         }
       }
@@ -819,7 +883,10 @@ async function migrateProperties() {
         description: prop.content?.rendered || '',
         slug: finalSlug,
         address: meta.fave_property_address?.[0] || 'Sin dirección',
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
         cityId: cityId,         // Debe ser un número válido
+        departmentId: departmentId, // ID del departamento/estado
         countryId: countryId,
         propertyTypeId: propertyTypeId, // Debe ser un número válido
         price: parsedPrice, // Usar el precio ya limpiado y parseado
@@ -838,10 +905,10 @@ async function migrateProperties() {
       console.log(`   🏷️  Amenities: ${uniqueAmenityIds.length}, Servicios: ${uniqueServiceIds.length}`);
       console.log(`   🏗️  Floor Plans: ${floorPlans.length}`);
 
-      // Actualizar la propiedad con las imágenes
+      // Actualizar la propiedad con amenities, servicios y floor plans
       const updateRes = await fetch(`${BACKEND_API}/${realPropertyId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: AUTH_HEADERS,
         body: JSON.stringify(updateData),
       });
       
@@ -858,13 +925,14 @@ async function migrateProperties() {
         console.error(`[DATA SENT]`, JSON.stringify(updateData, null, 2));
       }
     } catch (error) {
-      console.error(`🚨 ERROR CRÍTICO procesando propiedad ${prop.id}:`);
+      console.error(`🚨 ERROR procesando propiedad ${prop.id}:`);
       console.error(`[HOUZEZ ID] ${prop.id}`);
       console.error(`[TITLE] ${prop.title?.rendered}`);
       console.error(`[ERROR] ${error.message}`);
       console.error(`[STACK] ${error.stack}`);
-      console.error(`\n🛑 MIGRACIÓN DETENIDA. Corrige el error antes de continuar.\n`);
-      throw error; // Detener completamente el proceso
+      console.error(`\n⚠️  Saltando esta propiedad y continuando con la siguiente...\n`);
+      skipped++;
+      continue; // Continuar con la siguiente propiedad en lugar de detener todo
     }
   }
   page++;
