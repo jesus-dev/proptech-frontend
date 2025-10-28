@@ -171,6 +171,71 @@ class PublicPropertyService {
     }
   }
 
+  /**
+   * Obtiene SOLO el resumen de la propiedad (ligero, ~800 bytes)
+   * Para carga inicial rápida
+   */
+  async getPropertySummaryBySlug(slug: string): Promise<any> {
+    try {
+      const url = `${this.baseUrl}/api/public/properties/slug/${slug}/summary`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching property summary:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene la galería de imágenes por separado
+   */
+  async getPropertyGallery(slug: string): Promise<any> {
+    try {
+      const url = `${this.baseUrl}/api/public/properties/slug/${slug}/gallery`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        return { galleryImages: [] }; // Si falla, retornar vacío
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.warn('Error fetching gallery:', error);
+      return { galleryImages: [] };
+    }
+  }
+
+  /**
+   * Obtiene amenities por separado
+   */
+  async getPropertyAmenities(slug: string): Promise<any> {
+    try {
+      const url = `${this.baseUrl}/api/public/properties/slug/${slug}/amenities`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        return { amenityIds: [], amenities: [] };
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.warn('Error fetching amenities:', error);
+      return { amenityIds: [], amenities: [] };
+    }
+  }
+
+  /**
+   * Obtiene propiedad completa (pesada, para compatibilidad)
+   * DEPRECATED: Usar getPropertySummaryBySlug + progressive loading
+   */
   async getPropertyBySlug(slug: string): Promise<any> {
     try {
       const url = `${this.baseUrl}/api/public/properties/slug/${slug}`;
@@ -184,6 +249,35 @@ class PublicPropertyService {
       return data;
     } catch (error) {
       console.error('Error fetching property by slug:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Progressive Loading: Obtiene propiedad en partes
+   * 1. Summary rápido primero
+   * 2. Gallery y amenities en background
+   */
+  async getPropertyBySlugProgressive(slug: string): Promise<any> {
+    try {
+      // 1. Cargar summary primero (RÁPIDO)
+      const summary = await this.getPropertySummaryBySlug(slug);
+      
+      // 2. Cargar detalles en paralelo (en background)
+      const [gallery, amenities] = await Promise.allSettled([
+        this.getPropertyGallery(slug),
+        this.getPropertyAmenities(slug)
+      ]);
+      
+      // 3. Combinar resultados
+      return {
+        ...summary,
+        galleryImages: gallery.status === 'fulfilled' ? gallery.value.galleryImages : [],
+        amenityIds: amenities.status === 'fulfilled' ? amenities.value.amenityIds : [],
+        amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value.amenities : []
+      };
+    } catch (error) {
+      console.error('Error in progressive loading:', error);
       throw error;
     }
   }
