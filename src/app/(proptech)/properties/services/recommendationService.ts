@@ -2,7 +2,7 @@ import { Property } from "../components/types";
 
 // Helper function to clean up malformed API URLs
 function resolveApiUrl(): string {
-  let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  let apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
   
   // Clean up malformed URLs that might have double concatenation
   if (apiUrl.includes('https://proptech.com.py/https/api.proptech.com.py')) {

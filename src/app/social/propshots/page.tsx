@@ -254,7 +254,7 @@ export default function PropShotsPage() {
     }
 
     // Construir URL completa con el backend
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
     return `${apiUrl}${url.startsWith('/') ? url : `/${url}`}`;
   };
 

@@ -142,7 +142,7 @@ const getImageUrl = (imageUrl: string | null | undefined): string | null => {
   if (!imageUrl) return null;
   if (imageUrl.startsWith('http')) return imageUrl;
   
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
   // Ensure we don't double-concatenate URLs
   if (imageUrl.startsWith('/') && apiBaseUrl.endsWith('/')) {
     return `${apiBaseUrl.slice(0, -1)}${imageUrl}`;

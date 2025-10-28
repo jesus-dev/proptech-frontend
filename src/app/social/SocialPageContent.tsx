@@ -947,7 +947,7 @@ export default function SocialPageContent() {
       process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
       process.env.NEXT_PUBLIC_API_BASE_URL || 
       process.env.NEXT_PUBLIC_API_URL || 
-      'http://localhost:8080';
+      (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
     
     const base = uploadsBase.replace(/\/$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;

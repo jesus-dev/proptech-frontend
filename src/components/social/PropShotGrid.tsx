@@ -66,8 +66,9 @@ export default function PropShotGrid({
       url = `/uploads/prop-shots/media/${filename}`;
     }
     
-    // Construir URL completa para el backend
-    const fullUrl = `http://localhost:8080${url.startsWith('/') ? url : `/${url}`}`;
+    // Construir URL completa para el backend usando la configuración correcta
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
+    const fullUrl = `${apiBaseUrl}${url.startsWith('/') ? url : `/${url}`}`;
     return fullUrl;
   };
 

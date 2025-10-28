@@ -150,7 +150,12 @@ export default function PropertyDetailPage() {
 
 
   useEffect(() => {
+    // Evitar llamadas duplicadas
+    let isCancelled = false;
+    
     const fetchProperty = async () => {
+      if (!slug || isCancelled) return;
+      
       try {
         setLoading(true);
         setError('');
@@ -160,38 +165,38 @@ export default function PropertyDetailPage() {
         // Detectar si el slug es un número
         const isNumeric = /^\d+$/.test(slug);
         
-        console.log('🔍 Buscando propiedad:', { slug, isNumeric });
+        // OPTIMIZACIÓN: Cargar en dos fases
+        // Fase 1: Cargar summary RÁPIDO y mostrar inmediatamente
+        const summary = await publicPropertyService.getPropertySummaryBySlug(slug);
         
-        if (isNumeric) {
-          try {
-            console.log('📍 Intentando obtener por ID:', slug);
-            propertyData = await publicPropertyService.getPropertyById(slug);
-            console.log('✅ Propiedad encontrada por ID:', propertyData?.id);
-          } catch (idError: any) {
-            console.log('❌ ID no encontrado, intentando por slug:', idError.message);
-            // Si falla por ID, intentar por slug
-            try {
-              propertyData = await publicPropertyService.getPropertyBySlug(slug);
-              console.log('✅ Propiedad encontrada por slug (numérico):', propertyData?.id);
-            } catch (slugError: any) {
-              console.error('❌ Tampoco encontrada por slug:', slugError.message);
-              throw new Error(`Propiedad con identificador '${slug}' no encontrada`);
-            }
-          }
-        } else {
-          // Si no es numérico, obtener por slug
-          console.log('📍 Intentando obtener por slug:', slug);
-          propertyData = await publicPropertyService.getPropertyBySlug(slug);
-          console.log('✅ Propiedad encontrada por slug:', propertyData?.id);
-        }
+        if (isCancelled) return;
         
-        if (propertyData) {
-          setProperty(propertyData);
-        } else {
+        if (!summary) {
           setError(`Propiedad no encontrada: ${slug}`);
+          return;
         }
+        
+        // Mostrar summary inmediatamente (carga rápida ~35ms)
+        setProperty(summary);
+        setLoading(false); // ⚡ MOSTRAR CONTENIDO INMEDIATAMENTE
+        
+        // Fase 2: Cargar detalles en background (gallery y amenities)
+        Promise.allSettled([
+          publicPropertyService.getPropertyGallery(slug),
+          publicPropertyService.getPropertyAmenities(slug)
+        ]).then(([gallery, amenities]) => {
+          if (isCancelled) return;
+          
+          // Actualizar con detalles adicionales
+          setProperty((prev: any) => ({
+            ...prev,
+            galleryImages: gallery.status === 'fulfilled' ? gallery.value.galleryImages : [],
+            amenityIds: amenities.status === 'fulfilled' ? amenities.value.amenityIds : [],
+            amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value.amenities : []
+          }));
+        });
       } catch (err: any) {
-        console.error('❌ Error al cargar propiedad:', err);
+        if (isCancelled) return;
         
         // Mensajes de error más específicos
         if (err.message?.includes('404')) {
@@ -204,13 +209,18 @@ export default function PropertyDetailPage() {
           setError(err.message || 'No se pudo cargar la propiedad. Verifica tu conexión al backend.');
         }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
-    if (slug) {
-      fetchProperty();
-    }
+    fetchProperty();
+    
+    // Cleanup function para evitar memory leaks
+    return () => {
+      isCancelled = true;
+    };
   }, [slug]);
 
 

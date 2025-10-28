@@ -127,7 +127,8 @@ export const agendaService = {
           images: prop.galleryImages?.map((img: any) => {
             // Corregir las URLs de las imágenes para que apunten al backend
             if (img.url && img.url.startsWith('/api/files/')) {
-              return `http://localhost:8080${img.url}`;
+              const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
+              return `${apiBaseUrl}${img.url}`;
             }
             return img.url;
           }) || [],

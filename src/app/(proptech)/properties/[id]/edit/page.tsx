@@ -131,7 +131,7 @@ export default function EditPropertyPage({ params }: PageProps) {
           const processFeaturedImageUrl = (imageUrl: string | null | undefined): string => {
             if (!imageUrl || imageUrl.trim() === '') return '';
             if (imageUrl.startsWith('http')) return imageUrl;
-            const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
             if (imageUrl.startsWith('/') && apiBaseUrl.endsWith('/')) {
               return `${apiBaseUrl.slice(0, -1)}${imageUrl}`;
             }

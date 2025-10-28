@@ -55,11 +55,27 @@ function cleanPrice(value: string) {
 function usePropertyOperations() {
   const [operations, setOperations] = useState<{ value: string; label: string }[]>([]);
   useEffect(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    // Evitar memory leaks
+    let isCancelled = false;
+    
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
     fetch(`${apiBase}/api/properties/operations`)
       .then((res) => res.json())
-      .then(setOperations)
-      .catch(() => setOperations([]));
+      .then((data) => {
+        if (!isCancelled) {
+          setOperations(data);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setOperations([]);
+        }
+      });
+    
+    // Cleanup function
+    return () => {
+      isCancelled = true;
+    };
   }, []);
   return operations;
 }

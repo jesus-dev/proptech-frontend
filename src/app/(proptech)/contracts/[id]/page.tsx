@@ -49,7 +49,8 @@ export default function ContractDetailPage({ params }: PageProps) {
         }
         
         // Test directo de la API
-        const response = await fetch(`http://localhost:8080/api/contracts/${id}`);
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
+        const response = await fetch(`${apiBaseUrl}/api/contracts/${id}`);
         const rawData = await response.json();
         
       } catch (err) {

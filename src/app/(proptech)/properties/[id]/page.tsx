@@ -109,7 +109,7 @@ export default function PropertyDetailsPage({ params }: PageProps) {
   const getImageUrl = (imageUrl: string | null | undefined): string | null => {
     if (!imageUrl || imageUrl.trim() === '') return null;
     if (imageUrl.startsWith('http')) return imageUrl;
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
     // Ensure we don't double-concatenate URLs
     if (imageUrl.startsWith('/') && apiBaseUrl.endsWith('/')) {
       return `${apiBaseUrl.slice(0, -1)}${imageUrl}`;
@@ -156,9 +156,14 @@ export default function PropertyDetailsPage({ params }: PageProps) {
   useEffect(() => {
     if (!propertyId) return;
     
+    // Evitar memory leaks
+    let isCancelled = false;
+    
     const fetchProperty = async () => {
       try {
         const propertyData = await propertyService.getPropertyById(propertyId);
+        
+        if (isCancelled) return;
         
         if (propertyData) {
           // Transformar galleryImages a images array
@@ -176,22 +181,37 @@ export default function PropertyDetailsPage({ params }: PageProps) {
           // Incrementar vistas después de cargar la propiedad
           try {
             await propertyService.incrementViews(propertyId);
-            console.log('✅ Vista registrada para propiedad:', propertyId);
+            if (!isCancelled) {
+              console.log('✅ Vista registrada para propiedad:', propertyId);
+            }
           } catch (error) {
-            console.error('Error incrementing views:', error);
+            if (!isCancelled) {
+              console.error('Error incrementing views:', error);
+            }
           }
         } else {
-          setError("La propiedad no fue encontrada.");
+          if (!isCancelled) {
+            setError("La propiedad no fue encontrada.");
+          }
         }
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       } catch (error) {
-        console.error("Error fetching property:", error);
-        setError("Error al cargar la propiedad.");
-        setLoading(false);
+        if (!isCancelled) {
+          console.error("Error fetching property:", error);
+          setError("Error al cargar la propiedad.");
+          setLoading(false);
+        }
       }
     };
 
     fetchProperty();
+    
+    // Cleanup function
+    return () => {
+      isCancelled = true;
+    };
   }, [propertyId]);
 
   useEffect(() => {

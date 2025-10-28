@@ -7,7 +7,7 @@
  * Clean up malformed API URLs that might have double concatenation
  */
 export function resolveApiUrl(envVar?: string): string {
-  let apiUrl = envVar || process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://181.1.154.85:9091' : 'http://localhost:8080');
+  let apiUrl = envVar || process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
   
   // Clean up malformed URLs that might have double concatenation
   if (apiUrl.includes('https://proptech.com.py/https/api.proptech.com.py')) {

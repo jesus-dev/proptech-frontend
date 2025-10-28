@@ -304,24 +304,14 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
     return [];
   }
 
-  if (properties && properties.length > 0) {
-    const prop1 = properties.find(p => String(p.id) === '1');
-    if (prop1) {
-       
-      console.log('Propiedad 1:', prop1);
-       
-      console.log('AmenitiesDetails de propiedad 1:', prop1.amenitiesDetails);
-    }
-    
-    // Debug: verificar monedas en las primeras 3 propiedades - comentado para reducir ruido
-    //   id: p.id,
-    //   title: p.title,
-    //   price: p.price,
-    //   currency: p.currency,
-    //   currencyType: typeof p.currency,
-    //   formatted: formatCurrency(p.price, p.currency, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-    // })));
-  }
+  // Debug desactivado - no es necesario en producción
+  // if (properties && properties.length > 0) {
+  //   const prop1 = properties.find(p => String(p.id) === '1');
+  //   if (prop1) {
+  //     console.log('Propiedad 1:', prop1);
+  //     console.log('AmenitiesDetails de propiedad 1:', prop1.amenitiesDetails);
+  //   }
+  // }
 
   if (view === "grid") {
     return (
