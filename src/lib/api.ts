@@ -37,12 +37,31 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Interceptor para manejar respuestas y errores
+// Interceptor para manejar respuestas y errores CON RETRY AUTOMÁTICO
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
+    const config = error.config;
+    
+    // Configuración de retry automático para errores 500 (Cloudflare Tunnel intermitente)
+    if (!config || !config.retry) {
+      config.retry = { count: 0, maxRetries: 3, delay: 300 };
+    }
+    
+    // Si es error 500 y no hemos agotado los reintentos, reintentar
+    if (error.response?.status === 500 && config.retry.count < config.retry.maxRetries) {
+      config.retry.count += 1;
+      console.warn(`⚠️ Error 500, reintentando (${config.retry.count}/${config.retry.maxRetries})...`);
+      
+      // Esperar antes de reintentar (con backoff exponencial)
+      await new Promise(resolve => setTimeout(resolve, config.retry.delay * config.retry.count));
+      
+      // Reintentar el request
+      return apiClient(config);
+    }
+    
     // Si no hay respuesta del servidor (pérdida de conexión)
     if (!error.response) {
       // Verificar si hay token válido
