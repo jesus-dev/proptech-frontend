@@ -130,6 +130,8 @@ function transformPropertyResponse(backendProperty: any): Property {
     yearBuilt: Number(backendProperty.yearBuilt) || 0,
     // Mapear campos del backend a campos del frontend
     city: backendProperty.city || backendProperty.cityName || "",
+    cityId: backendProperty.cityId || undefined,
+    neighborhood: backendProperty.neighborhood || "",
     zip: backendProperty.zip || backendProperty.postalCode || "",
     // Asegurar que el tipo sea string
     type: backendProperty.type || backendProperty.propertyTypeName || "",

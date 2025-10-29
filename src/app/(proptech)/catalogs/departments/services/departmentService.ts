@@ -1,46 +1,58 @@
 import { Department, DepartmentFormData, DepartmentStats } from '../types';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 // Get all departments
 export const getAllDepartments = async (): Promise<Department[]> => {
-  const res = await fetch(getEndpoint('/api/departments'));
-  if (!res.ok) throw new Error('Error al obtener departamentos');
-  return res.json();
+  try {
+    const res = await apiClient.get('/api/departments');
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+    throw new Error('Error al obtener departamentos');
+  }
 };
 
 // Get department by ID
 export const getDepartmentById = async (id: number): Promise<Department | null> => {
-  const res = await fetch(getEndpoint(`/api/departments/${id}`));
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await apiClient.get(`/api/departments/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching department:', error);
+    return null;
+  }
 };
 
 // Create new department
 export const createDepartment = async (data: DepartmentFormData): Promise<Department> => {
-  const res = await fetch(getEndpoint('/api/departments'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Error al crear departamento');
-  return res.json();
+  try {
+    const res = await apiClient.post('/api/departments', data);
+    return res.data;
+  } catch (error) {
+    console.error('Error creating department:', error);
+    throw new Error('Error al crear departamento');
+  }
 };
 
 // Update department
 export const updateDepartment = async (id: number, data: Partial<DepartmentFormData>): Promise<Department> => {
-  const res = await fetch(getEndpoint(`/api/departments/${id}`), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Error al actualizar departamento');
-  return res.json();
+  try {
+    const res = await apiClient.put(`/api/departments/${id}`, data);
+    return res.data;
+  } catch (error) {
+    console.error('Error updating department:', error);
+    throw new Error('Error al actualizar departamento');
+  }
 };
 
 // Delete department
 export const deleteDepartment = async (id: number): Promise<void> => {
-  const res = await fetch(getEndpoint(`/api/departments/${id}`), { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar departamento');
+  try {
+    await apiClient.delete(`/api/departments/${id}`);
+  } catch (error) {
+    console.error('Error deleting department:', error);
+    throw new Error('Error al eliminar departamento');
+  }
 };
 
 // Get active departments only

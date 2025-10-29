@@ -25,6 +25,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   const isPublicRoute = pathname ? publicRoutes.includes(pathname) : false;
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const checkAuth = async () => {
       // Si es una ruta pública, no verificar autenticación
       if (isPublicRoute) {
@@ -37,7 +39,6 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
         setIsChecking(false);
         return;
       }
-
 
       // Verificar si hay token en localStorage
       const token = localStorage.getItem('token');
@@ -65,8 +66,21 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
       setIsChecking(false);
     };
 
+    // Timeout de seguridad: si después de 3 segundos seguimos esperando, redirigir
+    timeoutId = setTimeout(() => {
+      if (isChecking && requireAuth) {
+        console.warn('⚠️ Auth check timeout - redirecting to login');
+        localStorage.clear();
+        router.push(redirectTo);
+      }
+    }, 3000);
+
     checkAuth();
-  }, [isAuthenticated, user, isLoading, isPublicRoute, requireAuth, redirectTo, router, pathname]);
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isAuthenticated, user, isLoading, isPublicRoute, requireAuth, redirectTo, router, pathname, isChecking]);
 
   // Mostrar loading mientras se verifica la autenticación
   if (isChecking || (requireAuth && isLoading)) {

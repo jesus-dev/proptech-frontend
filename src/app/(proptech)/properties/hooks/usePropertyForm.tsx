@@ -31,6 +31,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     title: "",
     address: "",
     city: "Ciudad del Este",
+    cityId: undefined, // ID de la ciudad seleccionada
     state: "Alto Paraná",
     zip: "",
     price: 0,

@@ -56,6 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Inicializar desde localStorage - solo una vez
   useEffect(() => {
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
     
     const initializeAuth = async () => {
       try {
@@ -117,10 +118,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
+    // Timeout de seguridad: forzar que isLoading sea false después de 2 segundos
+    timeoutId = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.warn('⚠️ Auth initialization timeout - forcing completion');
+        setIsLoading(false);
+      }
+    }, 2000);
+
     initializeAuth();
     
     return () => {
       isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 

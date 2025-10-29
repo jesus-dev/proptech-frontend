@@ -1,4 +1,4 @@
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface Neighborhood {
   id: number;
@@ -9,53 +9,66 @@ export interface Neighborhood {
 
 // Get all neighborhoods
 export const getAllNeighborhoods = async (): Promise<Neighborhood[]> => {
-  const res = await fetch(getEndpoint('/api/neighborhoods'));
-  if (!res.ok) throw new Error('Error al obtener barrios');
-  return res.json();
+  try {
+    const res = await apiClient.get('/api/neighborhoods');
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching neighborhoods:', error);
+    throw new Error('Error al obtener barrios');
+  }
 };
 
 // Get neighborhood by ID
 export const getNeighborhoodById = async (id: number): Promise<Neighborhood | null> => {
-  const res = await fetch(getEndpoint(`/api/neighborhoods/${id}`));
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await apiClient.get(`/api/neighborhoods/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching neighborhood:', error);
+    return null;
+  }
 };
 
 // Get neighborhoods by city
 export const getNeighborhoodsByCity = async (cityId: number): Promise<Neighborhood[]> => {
-  const res = await fetch(getEndpoint(`/api/neighborhoods/city/${cityId}`));
-  if (!res.ok) throw new Error('Error al obtener barrios de la ciudad');
-  return res.json();
+  try {
+    const res = await apiClient.get(`/api/neighborhoods/city/${cityId}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching neighborhoods by city:', error);
+    throw new Error('Error al obtener barrios de la ciudad');
+  }
 };
 
 // Create new neighborhood
 export const createNeighborhood = async (data: { name: string; cityId: number }) => {
-  const res = await fetch(getEndpoint('/api/neighborhoods'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) {
-    const errorText = await res.text();
-    console.error('Error creating neighborhood:', { status: res.status, error: errorText });
-    throw new Error(`Error al crear barrio: ${errorText || res.statusText}`);
+  try {
+    const res = await apiClient.post('/api/neighborhoods', data);
+    return res.data;
+  } catch (error: any) {
+    console.error('Error creating neighborhood:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Error desconocido';
+    throw new Error(`Error al crear barrio: ${errorMessage}`);
   }
-  return res.json();
 };
 
 // Update neighborhood
 export const updateNeighborhood = async (id: number, data: { name: string; cityId: number }) => {
-  const res = await fetch(getEndpoint(`/api/neighborhoods/${id}`), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Error al actualizar barrio');
-  return res.json();
+  try {
+    const res = await apiClient.put(`/api/neighborhoods/${id}`, data);
+    return res.data;
+  } catch (error) {
+    console.error('Error updating neighborhood:', error);
+    throw new Error('Error al actualizar barrio');
+  }
 };
 
 // Delete neighborhood
 export const deleteNeighborhood = async (id: number) => {
-  const res = await fetch(getEndpoint(`/api/neighborhoods/${id}`), { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar barrio');
+  try {
+    await apiClient.delete(`/api/neighborhoods/${id}`);
+  } catch (error) {
+    console.error('Error deleting neighborhood:', error);
+    throw new Error('Error al eliminar barrio');
+  }
 }; 

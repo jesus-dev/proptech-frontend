@@ -1,0 +1,60 @@
+# Robots.txt for Proptech Paraguay
+# Sistema Inmobiliario #1 de Paraguay
+
+# Allow all bots to crawl public pages
+User-agent: *
+Allow: /
+Allow: /propiedades
+Allow: /propiedad/
+Allow: /agentes
+Allow: /agente/
+Allow: /quienes-somos
+Allow: /contacto
+Allow: /hazte-socio
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /dash
+Disallow: /dash/
+Disallow: /login
+Disallow: /admin
+Disallow: /admin/
+Disallow: /_next/
+
+# Disallow search result pages with query parameters
+Disallow: /propiedades?*
+Disallow: /*?q=*
+Disallow: /*&*
+
+# Crawl-delay for nice behavior (optional)
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://proptech.com.py/sitemap.xml
+
+# Specific bot configurations
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+

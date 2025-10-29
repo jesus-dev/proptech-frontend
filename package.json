@@ -113,6 +113,7 @@
     "tailwindcss": "^3.3.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.7.9",
+    "web-vitals": "^5.1.0",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
