@@ -57,7 +57,7 @@ fi
 echo "✅ Espacio disponible: ${AVAILABLE_SPACE}MB"
 
 # ========================
-# Detener servicio existente
+# Detener servicio COMPLETAMENTE
 # ========================
 echo "🛑 Deteniendo servicio existente..."
 if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
@@ -74,24 +74,31 @@ if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
         sleep 1
     done
     
-    # Si aún está activo, forzar detención
+    # Si aún está activo, forzar detención BRUTAL
     if systemctl is-active --quiet "$SERVICE_NAME"; then
-        echo "⚠️ Servicio no se detuvo, forzando..."
-        sudo systemctl kill "$SERVICE_NAME"
-        sleep 2
+        echo "⚠️ Servicio no se detuvo, forzando con kill..."
+        sudo systemctl kill -s SIGKILL "$SERVICE_NAME"
+        sleep 3
     fi
 else
     echo "ℹ️ Servicio no estaba ejecutándose"
 fi
 
-# Verificar y liberar puerto si es necesario
-echo "🔍 Verificando puerto 3007..."
+# Verificar y MATAR todos los procesos en el puerto (asegurar limpieza total)
+echo "🔍 Verificando y limpiando puerto 3007..."
 if lsof -ti:3007 >/dev/null 2>&1; then
-    echo "⚠️ Puerto 3007 en uso, liberando..."
+    echo "⚠️ Puerto 3007 en uso, MATANDO todos los procesos..."
     sudo kill -9 $(lsof -ti:3007) 2>/dev/null || true
-    sleep 1
+    sleep 2
     echo "✅ Puerto 3007 liberado"
+else
+    echo "✅ Puerto 3007 ya está libre"
 fi
+
+# Matar cualquier proceso de node/npm que pueda quedar zombie
+echo "🧹 Limpiando procesos node/npm zombies..."
+pkill -9 -f "npm.*start" 2>/dev/null || true
+sleep 1
 
 # ========================
 # Limpiar instalación anterior
@@ -119,10 +126,17 @@ echo "📋 Commit actual: $CURRENT_COMMIT"
 echo "📋 Rama: $(git branch --show-current)"
 
 # ========================
-# Instalar dependencias
+# Limpiar cache y dependencias
 # ========================
-echo "📦 Instalando dependencias..."
-npm ci --production=false
+echo "🧹 Limpiando cache de npm y Next.js..."
+rm -rf node_modules .next package-lock.json 2>/dev/null || true
+npm cache clean --force 2>/dev/null || true
+
+# ========================
+# Instalar dependencias LIMPIAS
+# ========================
+echo "📦 Instalando dependencias limpias..."
+npm install
 
 # ========================
 # Actualizar información de versión (opcional)
@@ -204,9 +218,13 @@ if [ -d "$PROD_DIR/.next" ]; then
     sudo ls -t "$BACKUP_DIR"/next-build-*.tar.gz 2>/dev/null | tail -n +4 | xargs -r sudo rm -f
 fi
 
-# Limpiar directorio de producción (excepto backups)
+# Limpiar directorio de producción COMPLETAMENTE (excepto backups)
+echo "🧹 Limpiando TODO el directorio de producción..."
 sudo find "$PROD_DIR" -mindepth 1 -maxdepth 1 ! -name 'backups' -exec rm -rf {} + 2>/dev/null || true
 sudo mkdir -p "$PROD_DIR"
+
+# Asegurar que no queden archivos ocultos o cache
+sudo rm -rf "$PROD_DIR"/.next "$PROD_DIR"/node_modules "$PROD_DIR"/.npm 2>/dev/null || true
 
 # Copiar archivos necesarios
 sudo cp -r .next "$PROD_DIR/"
@@ -331,4 +349,11 @@ echo "  1. sudo systemctl stop $SERVICE_NAME"
 echo "  2. cd $PROD_DIR"
 echo "  3. sudo tar -xzf backups/\$(ls -t backups/*.tar.gz | head -1)"
 echo "  4. sudo systemctl start $SERVICE_NAME"
+echo ""
+echo "⚠️  IMPORTANTE - HARD REFRESH EN EL NAVEGADOR:"
+echo "   Chrome/Edge: Ctrl+Shift+R (Windows) o Cmd+Shift+R (Mac)"
+echo "   Firefox: Ctrl+Shift+Delete para limpiar cache"
+echo "   O: DevTools (F12) > Click derecho en Recargar > Vaciar caché"
+echo ""
+echo "🚨 Sin hard refresh verás código VIEJO cacheado en el navegador!"
 echo "======================================="
