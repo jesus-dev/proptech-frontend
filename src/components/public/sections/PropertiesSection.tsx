@@ -220,7 +220,14 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
       setError('');
       setCurrentPage(1);
       
-      const data = await publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
+      // Timeout de 10 segundos - si tarda más, mostrar error
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: La carga de propiedades está tardando demasiado')), 10000)
+      );
+      
+      const dataPromise = publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
+      
+      const data = await Promise.race([dataPromise, timeoutPromise]) as any;
       
       if (data && data.properties) {
         setProperties(Array.isArray(data.properties) ? data.properties : []);
@@ -231,7 +238,10 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
       }
     } catch (e: any) {
       console.error('Error al cargar propiedades:', e);
-      setError('No se pudieron cargar propiedades. Por favor, verifica que el backend esté funcionando.');
+      const isTimeout = e.message?.includes('Timeout');
+      setError(isTimeout 
+        ? 'La conexión está tardando mucho. Por favor, recarga la página.' 
+        : 'No se pudieron cargar propiedades. Intenta recargar la página.');
       setProperties([]);
     } finally {
       setLoading(false);
@@ -260,7 +270,14 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     try {
       setLoadingMore(true);
       const nextPage = currentPage + 1;
-      const data = await publicPropertyService.getPropertiesPaginated({ page: nextPage, limit: 6 });
+      
+      // Timeout de 8 segundos para "cargar más"
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout cargando más propiedades')), 8000)
+      );
+      
+      const dataPromise = publicPropertyService.getPropertiesPaginated({ page: nextPage, limit: 6 });
+      const data = await Promise.race([dataPromise, timeoutPromise]) as any;
       
       if (data.properties && data.properties.length > 0) {
         setProperties(prev => [...prev, ...data.properties]);
@@ -929,16 +946,6 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                       </span>
                     </div>
                   )}
-                  
-                  <div className="flex items-center space-x-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-4 py-3 rounded-xl border border-cyan-400/30">
-                    <div className="w-3 h-3 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-pulse shadow-lg shadow-cyan-500/50"></div>
-                    <span className="text-white font-bold text-lg">
-                      {filteredProperties.length}
-                    </span>
-                    <span className="text-cyan-200 font-semibold">
-                      {filteredProperties.length === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}
-            </span>
-                  </div>
                 </div>
                 {hasActiveFilters && (
                   <button

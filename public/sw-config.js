@@ -41,11 +41,11 @@ const CACHE_CONFIG = {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
     maxEntries: 50
   },
-  // APIs
+  // APIs - SIN CACHÉ para evitar datos viejos
   '/api/': {
-    strategy: CACHE_STRATEGIES.DYNAMIC,
-    maxAge: 5 * 60 * 1000, // 5 minutos
-    maxEntries: 20
+    strategy: 'network-only', // Siempre desde red, nunca caché
+    maxAge: 0,
+    maxEntries: 0
   },
   // Páginas
   '.html': {
