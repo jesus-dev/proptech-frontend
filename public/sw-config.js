@@ -1,7 +1,8 @@
 // Configuración optimizada para Service Worker
-const CACHE_NAME = 'proptech-v1';
-const STATIC_CACHE = 'static-v1';
-const DYNAMIC_CACHE = 'dynamic-v1';
+// INCREMENTAR LA VERSIÓN EN CADA DEPLOY para forzar invalidación de cache
+const CACHE_NAME = 'proptech-v2';
+const STATIC_CACHE = 'static-v2';
+const DYNAMIC_CACHE = 'dynamic-v2';
 
 // Archivos estáticos para cachear
 const STATIC_FILES = [
@@ -30,16 +31,22 @@ const CACHE_CONFIG = {
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días
     maxEntries: 100
   },
-  // CSS y JS
+  // CSS y JS - Network First para evitar chunks viejos
   'text/css': {
-    strategy: CACHE_STRATEGIES.STATIC,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-    maxEntries: 50
+    strategy: CACHE_STRATEGIES.DYNAMIC, // Network First
+    maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
+    maxEntries: 30
   },
   'application/javascript': {
-    strategy: CACHE_STRATEGIES.STATIC,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-    maxEntries: 50
+    strategy: CACHE_STRATEGIES.DYNAMIC, // Network First para evitar chunks viejos con 404
+    maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
+    maxEntries: 30
+  },
+  // Next.js chunks - NUNCA cachear (cambian en cada build)
+  '/_next/static/chunks/': {
+    strategy: 'network-only',
+    maxAge: 0,
+    maxEntries: 0
   },
   // APIs - SIN CACHÉ para evitar datos viejos
   '/api/': {

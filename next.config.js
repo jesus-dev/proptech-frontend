@@ -25,14 +25,10 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          // NO CACHE - DESACTIVAR CACHÉ AGRESIVO
+          // NO CACHE - DESACTIVAR CACHÉ AGRESIVO (sin Pragma para evitar CORS)
           {
             key: 'Cache-Control',
             value: 'no-store, no-cache, must-revalidate, max-age=0',
-          },
-          {
-            key: 'Pragma',
-            value: 'no-cache',
           },
           {
             key: 'Expires',
@@ -65,7 +61,17 @@ const nextConfig = {
           },
         ],
       },
-      // Cache solo para archivos estáticos
+      // Cache CORTO para chunks de Next.js (cambian en cada build)
+      {
+        source: '/_next/static/chunks/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, stale-while-revalidate=120', // Solo 1 minuto
+          },
+        ],
+      },
+      // Cache para otros archivos estáticos (CSS, fonts, etc)
       {
         source: '/_next/static/:path*',
         headers: [

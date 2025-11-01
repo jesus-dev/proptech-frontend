@@ -1,4 +1,4 @@
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import { Property, PropertyFilters, PropertyFormData } from '@/types/property';
 
 export interface PropertyResponse {
@@ -20,19 +20,6 @@ export interface PropertyService {
 }
 
 class PropertyServiceImpl implements PropertyService {
-  private getAuthHeaders() {
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
-  }
-
   private buildQueryString(filters?: PropertyFilters): string {
     if (!filters) return '';
 
@@ -53,106 +40,75 @@ class PropertyServiceImpl implements PropertyService {
   }
 
   async getProperties(filters?: PropertyFilters): Promise<PropertyResponse> {
-    const queryString = this.buildQueryString(filters);
-    const response = await fetch(
-      `${getEndpoint('/api/properties')}${queryString}`,
-      {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error fetching properties: ${response.status}`);
+    try {
+      const queryString = this.buildQueryString(filters);
+      const response = await apiClient.get(`/api/properties${queryString}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async getPropertyById(id: string): Promise<Property> {
-    const response = await fetch(`${getEndpoint('/api/properties')}/${id}`, {
-      method: 'GET',
-      headers: this.getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error fetching property: ${response.status}`);
+    try {
+      const response = await apiClient.get(`/api/properties/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching property:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async createProperty(property: PropertyFormData): Promise<Property> {
-    const response = await fetch(getEndpoint('/api/properties'), {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(property),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error creating property: ${response.status}`);
+    try {
+      const response = await apiClient.post('/api/properties', property);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating property:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async updateProperty(id: string, property: PropertyFormData): Promise<Property> {
-    const response = await fetch(`${getEndpoint('/api/properties')}/${id}`, {
-      method: 'PUT',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(property),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error updating property: ${response.status}`);
+    try {
+      const response = await apiClient.put(`/api/properties/${id}`, property);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating property:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async deleteProperty(id: string): Promise<void> {
-    const response = await fetch(`${getEndpoint('/api/properties')}/${id}`, {
-      method: 'DELETE',
-      headers: this.getAuthHeaders(),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error deleting property: ${response.status}`);
+    try {
+      await apiClient.delete(`/api/properties/${id}`);
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      throw error;
     }
   }
 
   async getPropertiesByAgent(agentId: string, filters?: PropertyFilters): Promise<PropertyResponse> {
-    const queryString = this.buildQueryString(filters);
-    const response = await fetch(
-      `${getEndpoint('/api/properties')}/agent/${agentId}${queryString}`,
-      {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error fetching properties by agent: ${response.status}`);
+    try {
+      const queryString = this.buildQueryString(filters);
+      const response = await apiClient.get(`/api/properties/agent/${agentId}${queryString}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching properties by agent:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   async getPropertiesByAgency(agencyId: string, filters?: PropertyFilters): Promise<PropertyResponse> {
-    const queryString = this.buildQueryString(filters);
-    const response = await fetch(
-      `${getEndpoint('/api/properties')}/agency/${agencyId}${queryString}`,
-      {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Error fetching properties by agency: ${response.status}`);
+    try {
+      const queryString = this.buildQueryString(filters);
+      const response = await apiClient.get(`/api/properties/agency/${agencyId}${queryString}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching properties by agency:', error);
+      throw error;
     }
-
-    return response.json();
   }
 }
 
