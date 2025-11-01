@@ -222,8 +222,20 @@ export default function PropertiesPage() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Cargar propiedades con scroll infinito
+  // Cargar propiedades con scroll infinito + timeout de seguridad
   const loadProperties = async (page: number = 1, append: boolean = false) => {
+    // Timeout de seguridad: si tarda más de 15 segundos, forzar que termine
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Timeout cargando propiedades - forzando fin');
+      if (page === 1) {
+        setLoading(false);
+        setIsInitialized(true);
+      } else {
+        setIsLoadingMore(false);
+      }
+      setError("La carga tomó demasiado tiempo. Por favor, intenta nuevamente.");
+    }, 15000);
+
     try {
       if (page === 1) {
         setLoading(true);
@@ -236,6 +248,9 @@ export default function PropertiesPage() {
         page, 
         limit: 16 // Cargar 16 propiedades por página
       });
+
+      // Limpiar timeout si la respuesta llegó a tiempo
+      clearTimeout(timeoutId);
 
       const properties: Property[] = (response.properties || []).map((p: any) => {
         // Transformar galleryImages a images array
@@ -267,6 +282,7 @@ export default function PropertiesPage() {
       setHasMore(page < totalPages);
       setCurrentPage(page);
     } catch (err) {
+      clearTimeout(timeoutId); // Limpiar timeout también en error
       console.error("Error loading properties:", err);
       setError("Error al cargar las propiedades.");
     } finally {
@@ -279,9 +295,19 @@ export default function PropertiesPage() {
     }
   };
 
-  // Cargar primera página al inicio
+  // Cargar primera página al inicio y prefetch de catálogos
   useEffect(() => {
     loadProperties(1, false);
+    
+    // Prefetch de datos comunes en segundo plano (lazy)
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(() => {
+        // Precargar tipos de propiedad y ciudades si aún no están cargados
+        if (propertyTypes.length === 0 || cities.length === 0) {
+          console.debug('⚡ Prefetching catalogs en segundo plano...');
+        }
+      }, { timeout: 2000 });
+    }
   }, []);
 
   // Función para cargar más propiedades
@@ -456,9 +482,27 @@ export default function PropertiesPage() {
 
   if (loading && !isInitialized) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center flex flex-col items-center">
-          <LoadingSpinner size="lg" message="Cargando propiedades del sistema" />
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header Skeleton */}
+          <div className="mb-8 animate-pulse">
+            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-48 mb-4"></div>
+            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg w-96"></div>
+          </div>
+          
+          {/* Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden animate-pulse">
+                <div className="h-48 bg-gray-200 dark:bg-gray-700"></div>
+                <div className="p-4 space-y-3">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -477,12 +521,26 @@ export default function PropertiesPage() {
             Error al cargar propiedades
           </h2>
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
-          >
-            Reintentar
-          </button>
+          <div className="flex gap-3 justify-center">
+            <button 
+              onClick={() => {
+                setError(null);
+                loadProperties(1, false);
+              }} 
+              className="px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reintentar
+            </button>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+            >
+              Recargar página
+            </button>
+          </div>
         </div>
       </div>
     );

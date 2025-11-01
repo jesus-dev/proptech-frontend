@@ -59,6 +59,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             <img
               src={fullImageUrl}
               alt={property.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';

@@ -1,4 +1,4 @@
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface PropertyType {
   id: number;
@@ -7,9 +7,14 @@ export interface PropertyType {
   active?: boolean;
 }
 
-// Get property types from backend (sin mapeo manual)
-export async function getActivePropertyTypes() {
-  const res = await fetch(getEndpoint('/api/property-types'));
-  if (!res.ok) throw new Error('No se pudieron obtener los tipos de propiedad');
-  return await res.json(); // [{ id, name, ... }]
+// Get property types from backend usando apiClient (con CORS fix)
+export async function getActivePropertyTypes(): Promise<PropertyType[]> {
+  try {
+    const res = await apiClient.get('/api/property-types');
+    return res.data || [];
+  } catch (error) {
+    console.error('Error fetching property types:', error);
+    // Retornar array vacío en caso de error (sin fallback a datos ficticios)
+    return [];
+  }
 } 

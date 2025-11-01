@@ -152,6 +152,13 @@ const usePropertySearch = () => {
     setLoading(true);
     setError(null);
     
+    // Timeout de seguridad: forzar fin después de 12 segundos
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Timeout en búsqueda de propiedades');
+      setLoading(false);
+      setError('La búsqueda tomó demasiado tiempo. Intenta con otros filtros.');
+    }, 12000);
+    
     try {
       const filtersToSend = { 
         ...(customFilters || filters), 
@@ -159,8 +166,10 @@ const usePropertySearch = () => {
       };
       
       const response = await propertyService.advancedSearch(filtersToSend);
+      clearTimeout(timeoutId);
       setResults(response || []);
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('❌ Error fetching properties:', err);
       setError('Error al buscar propiedades. Por favor, intente nuevamente.');
       setResults([]);

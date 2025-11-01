@@ -197,7 +197,8 @@ function getAmenityIcon(name: string) {
   return <HelpCircle className="w-4 h-4" />;
 }
 
-export default function PropertyList({ properties, view, onPropertyDeleted, onPropertyRemovedFromFavorites, isFavoritesPage }: PropertyListProps) {
+// Memoizar componente para evitar re-renders innecesarios cuando las props no cambian
+const PropertyList = React.memo(function PropertyList({ properties, view, onPropertyDeleted, onPropertyRemovedFromFavorites, isFavoritesPage }: PropertyListProps) {
   const imageService = new ImageService();
   
   // Función para convertir URLs relativas a URLs completas
@@ -332,6 +333,8 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
                     <img
                       src={fullImageUrl}
                       alt={property.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                       onError={(e) => {
                         // Silently hide the image if it fails to load
@@ -737,4 +740,8 @@ export default function PropertyList({ properties, view, onPropertyDeleted, onPr
       )}
     </>
   );
-} 
+});
+
+PropertyList.displayName = 'PropertyList';
+
+export default PropertyList; 

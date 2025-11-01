@@ -118,13 +118,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    // Timeout de seguridad: forzar que isLoading sea false después de 2 segundos
+    // Timeout de seguridad: forzar que isLoading sea false después de 3 segundos
+    // Tiempo suficiente para que los reintentos automáticos funcionen
     timeoutId = setTimeout(() => {
       if (isMounted && isLoading) {
         console.warn('⚠️ Auth initialization timeout - forcing completion');
         setIsLoading(false);
       }
-    }, 2000);
+    }, 3000);
 
     initializeAuth();
     

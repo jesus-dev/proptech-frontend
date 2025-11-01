@@ -8,6 +8,7 @@ import CurrencySelector from "@/components/ui/CurrencySelector";
 import { getAllPropertyStatuses, PropertyStatus } from "@/app/(proptech)/catalogs/property-status/services/propertyStatusService";
 import ValidatedInput from "@/components/form/input/ValidatedInput";
 import ValidatedTextArea from "@/components/form/input/ValidatedTextArea";
+import { apiClient } from "@/lib/api";
 import { 
   HomeIcon, 
   BuildingOfficeIcon, 
@@ -51,32 +52,34 @@ function cleanPrice(value: string) {
   return value.replace(/\D/g, '');
 }
 
-// Hook para obtener operaciones
+// Hook para obtener operaciones usando apiClient
 function usePropertyOperations() {
   const [operations, setOperations] = useState<{ value: string; label: string }[]>([]);
+  
   useEffect(() => {
-    // Evitar memory leaks
     let isCancelled = false;
     
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
-    fetch(`${apiBase}/api/properties/operations`)
-      .then((res) => res.json())
-      .then((data) => {
+    const loadOperations = async () => {
+      try {
+        const res = await apiClient.get('/api/properties/operations');
         if (!isCancelled) {
-          setOperations(data);
+          setOperations(res.data || []);
         }
-      })
-      .catch(() => {
+      } catch (error) {
+        console.error('Error loading operations:', error);
         if (!isCancelled) {
           setOperations([]);
         }
-      });
+      }
+    };
     
-    // Cleanup function
+    loadOperations();
+    
     return () => {
       isCancelled = true;
     };
   }, []);
+  
   return operations;
 }
 

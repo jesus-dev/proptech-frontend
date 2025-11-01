@@ -17,7 +17,7 @@ function resolveApiUrl(): string {
 // Configuración base del cliente API
 const apiClient = axios.create({
   baseURL: resolveApiUrl(),
-  timeout: 10000, // Reducido de 30s a 10s - timeout más agresivo
+  timeout: 8000, // 8 segundos - balance entre velocidad y permitir que el servidor responda
   headers: {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -38,7 +38,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Interceptor para manejar respuestas y errores CON RETRY AUTOMÁTICO
+// Interceptor para manejar respuestas y errores CON RECUPERACIÓN AUTOMÁTICA
 apiClient.interceptors.response.use(
   (response) => {
     return response;
@@ -46,48 +46,69 @@ apiClient.interceptors.response.use(
   async (error) => {
     const config = error.config;
     
-    // Configuración de retry automático para errores 500 (Cloudflare Tunnel intermitente)
-    if (!config || !config.retry) {
-      config.retry = { count: 0, maxRetries: 3, delay: 300 };
+    // 🚨 PRIORIDAD 1: Errores de autenticación - IR DIRECTO AL LOGIN
+    if (error.response?.status === 401) {
+      console.warn('🔒 Sesión expirada - redirigiendo al login');
+      localStorage.clear();
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
-    
-    // Si es error 500 y no hemos agotado los reintentos, reintentar
-    if (error.response?.status === 500 && config.retry.count < config.retry.maxRetries) {
-      config.retry.count += 1;
-      console.warn(`⚠️ Error 500, reintentando (${config.retry.count}/${config.retry.maxRetries})...`);
-      
-      // Esperar antes de reintentar (con backoff exponencial)
-      await new Promise(resolve => setTimeout(resolve, config.retry.delay * config.retry.count));
-      
-      // Reintentar el request
-      return apiClient(config);
-    }
-    
-    // Si no hay respuesta del servidor (pérdida de conexión)
+
+    // 🚨 PRIORIDAD 2: Sin token válido - IR AL LOGIN
     if (!error.response) {
-      // Verificar si hay token válido
       const token = localStorage.getItem('token');
       if (!token || token === 'undefined' || token === 'null') {
-        // No hay token válido, redirigir al login
+        console.warn('🔒 Sin token - redirigiendo al login');
         localStorage.clear();
         window.location.href = '/login';
         return Promise.reject(error);
       }
-      // Hay token pero no hay conexión, no redirigir automáticamente
-      return Promise.reject(error);
     }
 
-    // Manejar errores de autenticación
-    if (error.response?.status === 401) {
-      // Token expirado o inválido
-      localStorage.clear();
-      window.location.href = '/login';
+    // ♻️ RECUPERACIÓN AUTOMÁTICA SILENCIOSA para errores temporales
+    // Inicializar configuración de retry si no existe
+    if (!config.retry) {
+      config.retry = { count: 0, maxRetries: 3, delay: 400 };
     }
 
-    // Manejar errores de autorización
+    // Determinar si debe reintentar
+    const shouldRetry = 
+      error.response?.status === 500 || // Error del servidor
+      error.response?.status === 502 || // Bad Gateway
+      error.response?.status === 503 || // Service Unavailable
+      error.response?.status === 504 || // Gateway Timeout
+      error.code === 'ECONNABORTED' || // Timeout
+      !error.response; // Error de red
+
+    // Solo NO reintentar para 403 (sin permisos) y 404 (no encontrado)
+    const shouldNotRetry = 
+      error.response?.status === 403 || 
+      error.response?.status === 404;
+
+    if (!shouldNotRetry && shouldRetry && config.retry.count < config.retry.maxRetries) {
+      config.retry.count += 1;
+      
+      // Log silencioso en consola (solo para debug, no molesta al usuario)
+      if (config.retry.count === 1) {
+        console.debug(`♻️ Recuperando automáticamente... (intento ${config.retry.count}/${config.retry.maxRetries})`);
+      }
+      
+      // Espera progresiva: 400ms, 800ms, 1200ms
+      const delay = config.retry.delay * config.retry.count;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Reintentar el request silenciosamente
+      return apiClient(config);
+    }
+
+    // Si agotó todos los reintentos, entonces sí mostrar el error
+    if (config.retry.count >= config.retry.maxRetries) {
+      console.error(`❌ Error después de ${config.retry.maxRetries} intentos:`, error.message);
+    }
+
+    // Para 403, mostrar mensaje pero no es crítico
     if (error.response?.status === 403) {
-      // Usuario no tiene permisos, pero mantener la sesión
-      console.warn('Acceso denegado: permisos insuficientes');
+      console.warn('⚠️ Acceso denegado: permisos insuficientes');
     }
 
     return Promise.reject(error);

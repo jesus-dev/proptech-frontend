@@ -23,21 +23,37 @@ export const PropertySelect: React.FC<PropertySelectProps> = ({
 
   const selectedProperty = properties.find((p) => p.id === selectedPropertyId);
 
-  // Load properties on mount
+  // Load properties on mount con timeout de seguridad
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const fetchProperties = async () => {
+      // Timeout de seguridad: forzar fin después de 12 segundos
+      timeoutId = setTimeout(() => {
+        console.warn('⚠️ Timeout cargando propiedades para selector');
+        setLoading(false);
+        setError("Error al cargar propiedades. Intenta recargar la página.");
+      }, 12000);
+
       try {
         setLoading(true);
         const response = await propertyService.getAllProperties();
+        clearTimeout(timeoutId);
         setProperties(response.data);
       } catch (err) {
+        clearTimeout(timeoutId);
         setError("Error al cargar las propiedades.");
         console.error("Error fetching properties:", err);
       } finally {
         setLoading(false);
       }
     };
+    
     fetchProperties();
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   // Handle clicks outside to close dropdown
@@ -63,6 +79,20 @@ export const PropertySelect: React.FC<PropertySelectProps> = ({
   const filteredProperties = properties.filter((property) =>
     property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     property.address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const renderLoadingSkeleton = () => (
+    <div className="p-4 space-y-2">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="animate-pulse flex gap-3">
+          <div className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 
   const handleSelect = useCallback((propertyId: string | undefined) => {

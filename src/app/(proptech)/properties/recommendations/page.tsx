@@ -94,17 +94,27 @@ export default function PropertyRecommendationsPage() {
   const [activeTab, setActiveTab] = useState<'smart' | 'custom' | 'trending' | 'ai'>('smart');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Cargar propiedades
+  // Cargar propiedades con timeout de seguridad
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const loadProperties = async () => {
+      // Timeout de seguridad: forzar fin después de 12 segundos
+      timeoutId = setTimeout(() => {
+        console.warn('⚠️ Timeout cargando propiedades para recomendaciones');
+        setLoading(false);
+      }, 12000);
+
       try {
         setLoading(true);
         const response = await propertyService.getAllProperties();
+        clearTimeout(timeoutId);
         setAllProperties(Array.isArray(response) ? response : response.data || []);
         
         // Simular comportamiento del usuario (en producción vendría de analytics)
         simulateUserBehavior();
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error('Error loading properties:', error);
       } finally {
         setLoading(false);
@@ -112,6 +122,10 @@ export default function PropertyRecommendationsPage() {
     };
 
     loadProperties();
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   // Simular comportamiento del usuario
