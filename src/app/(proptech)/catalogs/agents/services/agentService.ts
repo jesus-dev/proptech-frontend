@@ -6,10 +6,11 @@ import { getEndpoint } from '@/lib/api-config';
 export const getAllAgents = async (): Promise<Agent[]> => {
   try {
     const response = await apiClient.get('/api/agents');
-    return response.data;
+    return response.data || [];
   } catch (error) {
     console.error('Error fetching agents:', error);
-    throw new Error('Error al obtener agentes');
+    // Retornar array vacío en lugar de lanzar error para evitar que la app se rompa
+    return [];
   }
 };
 

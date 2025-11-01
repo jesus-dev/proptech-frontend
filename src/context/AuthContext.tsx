@@ -55,10 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Inicializar desde localStorage - solo una vez
   useEffect(() => {
-    let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
-    
-    const initializeAuth = async () => {
+    const initializeAuth = () => {
       try {
         // Verificar si estamos en el cliente
         if (typeof window === 'undefined') {
@@ -72,19 +69,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Verificar si hay token válido
         if (!token || token === 'undefined' || token === 'null') {
           // No hay token válido, limpiar todo
-          if (isMounted) {
-            localStorage.clear();
-            setIsLoading(false);
-          }
+          localStorage.clear();
+          setIsLoading(false);
           return;
         }
 
         // Si hay token pero no hay datos de usuario, limpiar
         if (!userData) {
-          if (isMounted) {
-            localStorage.clear();
-            setIsLoading(false);
-          }
+          localStorage.clear();
+          setIsLoading(false);
           return;
         }
 
@@ -96,43 +89,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             throw new Error('Datos de usuario inválidos');
           }
 
-          if (isMounted) {
-            setUser(user);
-            setIsAuthenticated(true);
-            setIsLoading(false);
-          }
+          setUser(user);
+          setIsAuthenticated(true);
+          setIsLoading(false);
         } catch (parseError) {
           // Datos corruptos, limpiar
-          if (isMounted) {
-            localStorage.clear();
-            setIsLoading(false);
-            console.error('Error parsing user data:', parseError);
-          }
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('Error initializing auth:', error);
           localStorage.clear();
           setIsLoading(false);
+          console.error('Error parsing user data:', parseError);
         }
-      }
-    };
-
-    // Timeout de seguridad: forzar que isLoading sea false después de 3 segundos
-    // Tiempo suficiente para que los reintentos automáticos funcionen
-    timeoutId = setTimeout(() => {
-      if (isMounted && isLoading) {
-        console.warn('⚠️ Auth initialization timeout - forcing completion');
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        localStorage.clear();
         setIsLoading(false);
       }
-    }, 3000);
-
-    initializeAuth();
-    
-    return () => {
-      isMounted = false;
-      if (timeoutId) clearTimeout(timeoutId);
     };
+
+    // Ejecutar inmediatamente de forma síncrona
+    initializeAuth();
   }, []);
 
   // Login

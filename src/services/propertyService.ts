@@ -46,7 +46,13 @@ class PropertyServiceImpl implements PropertyService {
       return response.data;
     } catch (error) {
       console.error('Error fetching properties:', error);
-      throw error;
+      return {
+        properties: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0
+      };
     }
   }
 
@@ -96,7 +102,13 @@ class PropertyServiceImpl implements PropertyService {
       return response.data;
     } catch (error) {
       console.error('Error fetching properties by agent:', error);
-      throw error;
+      return {
+        properties: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0
+      };
     }
   }
 
@@ -107,7 +119,13 @@ class PropertyServiceImpl implements PropertyService {
       return response.data;
     } catch (error) {
       console.error('Error fetching properties by agency:', error);
-      throw error;
+      return {
+        properties: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0
+      };
     }
   }
 }

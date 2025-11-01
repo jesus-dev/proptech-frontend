@@ -54,7 +54,25 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 🚨 PRIORIDAD 2: Sin token válido - IR AL LOGIN
+    // 🚨 PRIORIDAD 2: Error 500 con token (posible token inválido)
+    // Si es el primer intento Y hay token, verificar si es problema de autenticación
+    if (error.response?.status === 500 && localStorage.getItem('token')) {
+      const errorMessage = error.response?.data?.error || '';
+      const isAuthError = 
+        errorMessage.includes('Usuario no encontrado') ||
+        errorMessage.includes('Usuario sin tenant') ||
+        errorMessage.includes('Autenticación requerida') ||
+        errorMessage.includes('Tenant ID no establecido');
+      
+      if (isAuthError) {
+        console.warn('🔒 Token inválido detectado - limpiando sesión y redirigiendo');
+        localStorage.clear();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+    }
+
+    // 🚨 PRIORIDAD 3: Sin token válido - IR AL LOGIN
     if (!error.response) {
       const token = localStorage.getItem('token');
       if (!token || token === 'undefined' || token === 'null') {
@@ -101,9 +119,13 @@ apiClient.interceptors.response.use(
       return apiClient(config);
     }
 
-    // Si agotó todos los reintentos, entonces sí mostrar el error
-    if (config.retry.count >= config.retry.maxRetries) {
-      console.error(`❌ Error después de ${config.retry.maxRetries} intentos:`, error.message);
+    // Si agotó todos los reintentos Y sigue siendo 500, verificar si es auth error
+    if (config.retry.count >= config.retry.maxRetries && error.response?.status === 500) {
+      console.error(`❌ Error persistente después de ${config.retry.maxRetries} intentos - limpiando sesión`);
+      // Si después de 3 intentos sigue fallando con 500, probablemente es el token
+      localStorage.clear();
+      window.location.href = '/login';
+      return Promise.reject(error);
     }
 
     // Para 403, mostrar mensaje pero no es crítico

@@ -44,12 +44,14 @@ class AgentService {
         headers: this.getHeaders(),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`⚠️ Error al obtener agentes: ${response.status}`);
+        return [];
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching agents:', error);
-      throw error;
+      // Retornar array vacío para evitar que la app se rompa
+      return [];
     }
   }
 
@@ -74,12 +76,13 @@ class AgentService {
         headers: this.getHeaders(),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`⚠️ Error al obtener agentes por agencia: ${response.status}`);
+        return [];
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching agents by agency:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -89,12 +92,13 @@ class AgentService {
         headers: this.getHeaders(),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.warn(`⚠️ Error al obtener agentes independientes: ${response.status}`);
+        return [];
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching independent agents:', error);
-      throw error;
+      return [];
     }
   }
 
