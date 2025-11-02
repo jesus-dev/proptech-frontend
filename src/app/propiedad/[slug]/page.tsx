@@ -152,6 +152,7 @@ export default function PropertyDetailPage() {
   useEffect(() => {
     // Evitar llamadas duplicadas
     let isCancelled = false;
+    let timeoutId: NodeJS.Timeout;
     
     const fetchProperty = async () => {
       if (!slug || isCancelled) return;
@@ -160,10 +161,14 @@ export default function PropertyDetailPage() {
         setLoading(true);
         setError('');
         
-        let propertyData = null;
-        
-        // Detectar si el slug es un número
-        const isNumeric = /^\d+$/.test(slug);
+        // TIMEOUT DE SEGURIDAD: Si después de 12 segundos no cargó, mostrar error
+        timeoutId = setTimeout(() => {
+          if (!isCancelled && loading) {
+            console.error('⏱️ Timeout cargando propiedad');
+            setError('La propiedad está tardando mucho en cargar. Por favor, intenta recargar la página.');
+            setLoading(false);
+          }
+        }, 12000);
         
         // OPTIMIZACIÓN: Cargar en dos fases
         // Fase 1: Cargar summary RÁPIDO y mostrar inmediatamente
@@ -171,16 +176,18 @@ export default function PropertyDetailPage() {
         
         if (isCancelled) return;
         
+        clearTimeout(timeoutId); // Cancelar timeout si cargó bien
+        
         if (!summary) {
           setError(`Propiedad no encontrada: ${slug}`);
           return;
         }
         
-        // Mostrar summary inmediatamente (carga rápida ~35ms)
+        // Mostrar summary inmediatamente (carga rápida)
         setProperty(summary);
         setLoading(false); // ⚡ MOSTRAR CONTENIDO INMEDIATAMENTE
         
-        // Fase 2: Cargar detalles en background (gallery y amenities)
+        // Fase 2: Cargar detalles en background (no bloquea la UI)
         Promise.allSettled([
           publicPropertyService.getPropertyGallery(slug),
           publicPropertyService.getPropertyAmenities(slug)
@@ -190,23 +197,27 @@ export default function PropertyDetailPage() {
           // Actualizar con detalles adicionales
           setProperty((prev: any) => ({
             ...prev,
-            galleryImages: gallery.status === 'fulfilled' ? gallery.value.galleryImages : [],
-            amenityIds: amenities.status === 'fulfilled' ? amenities.value.amenityIds : [],
-            amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value.amenities : []
+            galleryImages: gallery.status === 'fulfilled' ? gallery.value?.galleryImages : [],
+            amenityIds: amenities.status === 'fulfilled' ? amenities.value?.amenityIds : [],
+            amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value?.amenities : []
           }));
         });
       } catch (err: any) {
         if (isCancelled) return;
         
-        // Mensajes de error más específicos
-        if (err.message?.includes('404')) {
-          setError(`La propiedad con identificador '${slug}' no existe o ya no está disponible.`);
-        } else if (err.message?.includes('500')) {
-          setError('Error del servidor. Por favor, intenta nuevamente en unos momentos.');
-        } else if (err.message?.includes('Failed to fetch') || err.message?.includes('Network')) {
-          setError('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+        clearTimeout(timeoutId);
+        
+        // Mensajes de error amigables
+        if (err.message?.includes('no está disponible')) {
+          setError('Esta propiedad no está disponible en este momento.');
+        } else if (err.message?.includes('PROPERTY_NOT_FOUND') || err.message?.includes('404')) {
+          setError('Esta propiedad no existe o ya fue eliminada.');
+        } else if (err.message?.includes('Timeout') || err.message?.includes('tardando')) {
+          setError('La carga está tomando más tiempo del esperado. Intenta recargar la página.');
+        } else if (err.message?.includes('conexión') || err.message?.includes('Network')) {
+          setError('Parece que no hay conexión a internet. Verifica tu conexión.');
         } else {
-          setError(err.message || 'No se pudo cargar la propiedad. Verifica tu conexión al backend.');
+          setError('No pudimos cargar esta propiedad. Intenta recargar la página.');
         }
       } finally {
         if (!isCancelled) {
@@ -220,6 +231,7 @@ export default function PropertyDetailPage() {
     // Cleanup function para evitar memory leaks
     return () => {
       isCancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [slug]);
 

@@ -134,59 +134,121 @@ export interface PerformanceMetrics {
 }
 
 export const systemService = {
-  // System Statistics
+  // System Statistics - Con fallback vacío
   getSystemStats: async (): Promise<SystemStats> => {
-    const response = await apiClient.get<SystemStats>('/api/dashboard/stats');
-    return response.data!;
+    try {
+      const response = await apiClient.get<SystemStats>('/api/dashboard/stats');
+      return response.data!;
+    } catch (error) {
+      console.error('Error getting system stats:', error);
+      return {
+        totalProperties: 0,
+        activeProperties: 0,
+        totalUsers: 0,
+        activeUsers: 0,
+        totalViews: 0,
+        totalFavorites: 0,
+        monthlyRevenue: 0,
+        pendingTasks: 0,
+        totalAgents: 0,
+        totalCustomers: 0,
+        totalDevelopments: 0,
+        totalContracts: 0,
+        systemUptime: 0,
+        averageResponseTime: 0
+      };
+    }
   },
 
   // System Activities
   getSystemActivities: async (): Promise<SystemActivity[]> => {
-    const response = await apiClient.get<SystemActivity[]>('/api/dashboard/activities');
-    return response.data!;
+    try {
+      const response = await apiClient.get<SystemActivity[]>('/api/dashboard/activities');
+      return response.data || [];
+    } catch (error) {
+      return [];
+    }
   },
 
   // Recent Properties
   getRecentProperties: async (): Promise<SystemProperty[]> => {
-    const response = await apiClient.get<SystemProperty[]>('/api/dashboard/recent-properties');
-    return response.data!;
+    try {
+      const response = await apiClient.get<SystemProperty[]>('/api/dashboard/recent-properties');
+      return response.data || [];
+    } catch (error) {
+      return [];
+    }
   },
 
   // Property Type Distribution
   getPropertyTypeDistribution: async (): Promise<PropertyTypeData[]> => {
-    const response = await apiClient.get<PropertyTypeData[]>('/api/dashboard/property-types');
-    return response.data!;
+    try {
+      const response = await apiClient.get<PropertyTypeData[]>('/api/dashboard/property-types');
+      return response.data || [];
+    } catch (error) {
+      return [];
+    }
   },
 
   // Revenue Trend
   getRevenueTrend: async (): Promise<RevenueTrendData[]> => {
-    const response = await apiClient.get<RevenueTrendData[]>('/api/dashboard/revenue-trend');
-    return response.data!;
+    try {
+      const response = await apiClient.get<RevenueTrendData[]>('/api/dashboard/revenue-trend');
+      return response.data || [];
+    } catch (error) {
+      return [];
+    }
   },
 
   // Performance Metrics
   getPerformanceMetrics: async (): Promise<PerformanceMetrics> => {
-    const response = await apiClient.get<PerformanceMetrics>('/api/dashboard/performance-metrics');
-    return response.data!;
+    try {
+      const response = await apiClient.get<PerformanceMetrics>('/api/dashboard/performance-metrics');
+      return response.data!;
+    } catch (error) {
+      return {
+        uptime: 0,
+        responseTime: 0,
+        activeConnections: 0,
+        serverLoad: 0,
+        databaseConnections: 0,
+        cacheHitRate: 0,
+        propertiesPerAgent: 0,
+        viewsPerProperty: 0,
+        conversionRate: 0
+      };
+    }
   },
 
   // System Performance (legacy)
   getSystemPerformance: async () => {
-    const response = await apiClient.get('/api/system/performance');
-    return response.data!;
+    try {
+      const response = await apiClient.get('/api/system/performance');
+      return response.data || {};
+    } catch (error) {
+      return {};
+    }
   },
 
   // Refresh System Data
   refreshSystemData: async (): Promise<void> => {
-    await apiClient.get('/api/dashboard/stats');
+    try {
+      await apiClient.get('/api/dashboard/stats');
+    } catch (error) {
+      // Silencioso - no crítico
+    }
   },
 
   // Export Dashboard Data
   exportDashboardData: async (format: 'csv' | 'xlsx' | 'pdf' = 'csv'): Promise<Blob> => {
-    const response = await apiClient.get(`/api/dashboard/export?format=${format}`, {
-      responseType: 'blob'
-    });
-    return response.data;
+    try {
+      const response = await apiClient.get(`/api/dashboard/export?format=${format}`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error('No se pudo exportar los datos');
+    }
   },
 
   // User Dashboard APIs

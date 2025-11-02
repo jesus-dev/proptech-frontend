@@ -1,12 +1,67 @@
-import { apiClient } from '@/lib/api';
+/**
+ * Servicio Premium para Propiedades Públicas
+ * - Reintentos automáticos inteligentes
+ * - Timeouts configurables
+ * - Fallbacks a múltiples endpoints
+ * - NUNCA se queda colgado
+ * - NUNCA rompe la aplicación
+ */
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.proptech.com.py';
+const DEFAULT_TIMEOUT = 8000; // 8 segundos
+const MAX_RETRIES = 2;
+
+/**
+ * Fetch con timeout y reintentos automáticos
+ */
+async function fetchWithRetry(
+  url: string, 
+  options: RequestInit = {}, 
+  retries = MAX_RETRIES,
+  timeout = DEFAULT_TIMEOUT
+): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error: any) {
+      // Última oportunidad - lanzar error
+      if (attempt === retries) {
+        if (error.name === 'AbortError') {
+          throw new Error('TIMEOUT');
+        }
+        throw error;
+      }
+
+      // Esperar antes del siguiente intento (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 200 * Math.pow(2, attempt)));
+    }
+  }
+
+  throw new Error('Max retries reached');
+}
 
 class PublicPropertyService {
+  /**
+   * Obtener propiedades paginadas
+   */
   async getPropertiesPaginated({ page = 1, limit = 12 }: { page: number; limit: number }) {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/paginated?page=${page}&limit=${limit}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetchWithRetry(
+        `${API_URL}/api/public/properties/paginated?page=${page}&limit=${limit}`
+      );
       
       if (response.ok) {
         return await response.json();
@@ -19,56 +74,75 @@ class PublicPropertyService {
     }
   }
 
+  /**
+   * Incrementar vistas (no crítico, no bloquea)
+   */
   async incrementViews(propertyId: string): Promise<void> {
     try {
-      await apiClient.patch(`/properties/${propertyId}/increment-views`);
+      await fetchWithRetry(
+        `${API_URL}/properties/${propertyId}/increment-views`,
+        { method: 'PATCH' },
+        0, // Sin reintentos
+        3000 // Solo 3 segundos
+      );
     } catch (error) {
-      console.error('Error incrementing views:', error);
-      // No lanzar error - incrementar vistas no es crítico
+      // Silencioso - no es crítico
     }
   }
 
+  /**
+   * Toggle favorito (requiere auth)
+   */
   async toggleFavorite(propertyId: string): Promise<boolean> {
     try {
-      // Obtener información del usuario actual
-      const userResponse = await apiClient.get('/api/auth/me');
-      const user = userResponse.data;
+      const token = localStorage.getItem('token');
+      if (!token) return false;
+
+      const userResponse = await fetchWithRetry(
+        `${API_URL}/api/auth/me`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
       
-      if (!user || !user.id) {
-        console.warn('No se pudo obtener ID del usuario');
-        return false;
-      }
+      if (!userResponse.ok) return false;
+      
+      const user = await userResponse.json();
+      if (!user?.id) return false;
 
-      // Verificar si ya está en favoritos
+      // Verificar favoritos
+      const favoritesResponse = await fetchWithRetry(
+        `${API_URL}/api/properties/favorites/${user.id}`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+
       let isFavorite = false;
-      try {
-        const favoritesResponse = await apiClient.get(`/api/properties/favorites/${user.id}`);
-        const favorites = favoritesResponse.data;
+      if (favoritesResponse.ok) {
+        const favorites = await favoritesResponse.json();
         isFavorite = favorites.some((fav: any) => fav.id === parseInt(propertyId));
-      } catch (error) {
-        console.warn('Error checking favorites:', error);
       }
 
-      // Toggle del estado de favorito
-      if (isFavorite) {
-        await apiClient.delete(`/api/properties/${propertyId}/favorites/${user.id}`);
-        return false;
-      } else {
-        await apiClient.post(`/api/properties/${propertyId}/favorites/${user.id}`);
-        return true;
-      }
+      // Toggle
+      const method = isFavorite ? 'DELETE' : 'POST';
+      const toggleResponse = await fetchWithRetry(
+        `${API_URL}/api/properties/${propertyId}/favorites/${user.id}`,
+        { 
+          method,
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      return toggleResponse.ok && !isFavorite;
     } catch (error) {
       console.warn('Error toggling favorite:', error);
       return false;
     }
   }
 
+  /**
+   * Obtener todas las propiedades
+   */
   async getAllProperties(): Promise<any[]> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetchWithRetry(`${API_URL}/api/public/properties`);
       
       if (response.ok) {
         return await response.json();
@@ -81,30 +155,30 @@ class PublicPropertyService {
     }
   }
 
-  async getPropertyTypesSummary(): Promise<Array<{ type: string; count: number; example?: {
-    id: number;
-    title: string;
-    price: number;
-    currency: string;
-    city?: string;
-    slug: string;
-    image?: string;
-  } }>> {
+  /**
+   * Obtener resumen por tipos
+   */
+  async getPropertyTypesSummary(): Promise<Array<{ type: string; count: number; example?: any }>> {
     try {
-      const response = await apiClient.get('/api/properties/type-summary');
-      return response.data || [];
+      const response = await fetchWithRetry(`${API_URL}/api/properties/type-summary`, {}, 1, 5000);
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching property types summary:', error);
       return [];
     }
   }
 
+  /**
+   * Obtener propiedades destacadas
+   */
   async getFeaturedProperties(): Promise<any[]> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/featured`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetchWithRetry(`${API_URL}/api/public/properties/featured`);
       
       if (response.ok) {
         return await response.json();
@@ -117,56 +191,70 @@ class PublicPropertyService {
     }
   }
 
+  /**
+   * Obtener propiedad por slug - CON FALLBACK AUTOMÁTICO
+   * 1. Intenta /summary (rápido)
+   * 2. Si falla, intenta /slug/{slug} (completo)
+   * 3. Solo lanza error si AMBOS fallan
+   */
   async getPropertySummaryBySlug(slug: string): Promise<any> {
-    const maxRetries = 3;
-    let lastError;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // ESTRATEGIA 1: Endpoint optimizado /summary
       try {
-        // Usar fetch directo para endpoints públicos (evitar interceptores de auth)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/summary`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
+        const response = await fetchWithRetry(
+          `${API_URL}/api/public/properties/slug/${slug}/summary`,
+          {},
+          1, // Solo 1 reintento
+          6000 // 6 segundos
+        );
+        
         if (response.ok) {
           return await response.json();
         }
-
-        // Si es 404 real, no reintentar
-        if (response.status === 404) {
-          throw new Error('Property not found');
-        }
-
-        lastError = new Error(`HTTP ${response.status}`);
-      } catch (error: any) {
-        lastError = error;
-        
-        // Si es 404 o error de red sin esperanza, no reintentar
-        if (error.message === 'Property not found') {
-          throw error;
-        }
-
-        // Esperar antes de reintentar (100ms, 300ms, 900ms)
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(3, attempt - 1)));
-          console.log(`🔄 Reintentando obtener propiedad (${attempt + 1}/${maxRetries})...`);
-        }
+      } catch (error) {
+        console.log('📍 /summary no disponible, probando endpoint completo...');
       }
-    }
 
-    console.error('Error fetching property summary after retries:', lastError);
-    throw lastError;
+      // ESTRATEGIA 2: Endpoint completo (más pesado pero más compatible)
+      const response = await fetchWithRetry(
+        `${API_URL}/api/public/properties/slug/${slug}`,
+        {},
+        2, // 2 reintentos
+        10000 // 10 segundos
+      );
+
+      if (response.ok) {
+        return await response.json();
+      }
+
+      if (response.status === 404) {
+        throw new Error('PROPERTY_NOT_FOUND');
+      }
+
+      throw new Error(`HTTP_ERROR_${response.status}`);
+    } catch (error: any) {
+      if (error.message === 'TIMEOUT') {
+        throw new Error('La propiedad está tardando en cargar. Intenta nuevamente.');
+      }
+      if (error.message === 'PROPERTY_NOT_FOUND') {
+        throw new Error('Esta propiedad no está disponible');
+      }
+      console.error('Error fetching property:', error);
+      throw new Error('No pudimos cargar la propiedad. Verifica tu conexión.');
+    }
   }
 
+  /**
+   * Obtener galería (no crítico - retorna vacío si falla)
+   */
   async getPropertyGallery(slug: string): Promise<any> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/gallery`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetchWithRetry(
+        `${API_URL}/api/public/properties/slug/${slug}/gallery`,
+        {},
+        1,
+        5000
+      );
       
       if (response.ok) {
         return await response.json();
@@ -174,17 +262,21 @@ class PublicPropertyService {
       
       return { galleryImages: [] };
     } catch (error) {
-      console.warn('Error fetching gallery:', error);
       return { galleryImages: [] };
     }
   }
 
+  /**
+   * Obtener amenidades (no crítico - retorna vacío si falla)
+   */
   async getPropertyAmenities(slug: string): Promise<any> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/amenities`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetchWithRetry(
+        `${API_URL}/api/public/properties/slug/${slug}/amenities`,
+        {},
+        1,
+        5000
+      );
       
       if (response.ok) {
         return await response.json();
@@ -192,51 +284,51 @@ class PublicPropertyService {
       
       return { amenityIds: [], amenities: [] };
     } catch (error) {
-      console.warn('Error fetching amenities:', error);
       return { amenityIds: [], amenities: [] };
     }
   }
 
+  /**
+   * Obtener propiedad por slug (método directo)
+   */
   async getPropertyBySlug(slug: string): Promise<any> {
-    const maxRetries = 3;
-    let lastError;
+    try {
+      const response = await fetchWithRetry(
+        `${API_URL}/api/public/properties/slug/${slug}`,
+        {},
+        2,
+        10000
+      );
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (response.ok) {
-          return await response.json();
-        }
-
-        if (response.status === 404) {
-          throw new Error('Property not found');
-        }
-
-        lastError = new Error(`HTTP ${response.status}`);
-      } catch (error: any) {
-        lastError = error;
-        
-        if (error.message === 'Property not found') {
-          throw error;
-        }
-
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(3, attempt - 1)));
-        }
+      if (response.ok) {
+        return await response.json();
       }
-    }
 
-    console.error('Error fetching property by slug:', lastError);
-    throw lastError;
+      if (response.status === 404) {
+        throw new Error('PROPERTY_NOT_FOUND');
+      }
+
+      throw new Error(`HTTP_ERROR_${response.status}`);
+    } catch (error: any) {
+      if (error.message === 'TIMEOUT') {
+        throw new Error('La propiedad está tardando en cargar. Intenta nuevamente.');
+      }
+      if (error.message === 'PROPERTY_NOT_FOUND') {
+        throw new Error('Esta propiedad no está disponible');
+      }
+      throw new Error('No pudimos cargar la propiedad. Verifica tu conexión.');
+    }
   }
   
+  /**
+   * Carga progresiva (mejor UX - muestra datos mientras carga el resto)
+   */
   async getPropertyBySlugProgressive(slug: string): Promise<any> {
     try {
+      // Cargar datos básicos primero
       const summary = await this.getPropertySummaryBySlug(slug);
+      
+      // Cargar detalles adicionales en paralelo (no bloquean)
       const [gallery, amenities] = await Promise.allSettled([
         this.getPropertyGallery(slug),
         this.getPropertyAmenities(slug)
@@ -254,49 +346,49 @@ class PublicPropertyService {
     }
   }
 
+  /**
+   * Obtener propiedad por ID
+   */
   async getPropertyById(id: string): Promise<any> {
-    const maxRetries = 3;
-    let lastError;
+    try {
+      const response = await fetchWithRetry(
+        `${API_URL}/api/public/properties/${id}`,
+        {},
+        2,
+        10000
+      );
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/${id}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (response.ok) {
-          return await response.json();
-        }
-
-        if (response.status === 404) {
-          throw new Error('Property not found');
-        }
-
-        lastError = new Error(`HTTP ${response.status}`);
-      } catch (error: any) {
-        lastError = error;
-        
-        if (error.message === 'Property not found') {
-          throw error;
-        }
-
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(3, attempt - 1)));
-        }
+      if (response.ok) {
+        return await response.json();
       }
-    }
 
-    console.error('Error fetching property by ID:', lastError);
-    throw lastError;
+      if (response.status === 404) {
+        throw new Error('PROPERTY_NOT_FOUND');
+      }
+
+      throw new Error(`HTTP_ERROR_${response.status}`);
+    } catch (error: any) {
+      if (error.message === 'TIMEOUT') {
+        throw new Error('La propiedad está tardando en cargar. Intenta nuevamente.');
+      }
+      if (error.message === 'PROPERTY_NOT_FOUND') {
+        throw new Error('Esta propiedad no está disponible');
+      }
+      throw new Error('No pudimos cargar la propiedad.');
+    }
   }
 
+  /**
+   * Obtener resumen de categorías
+   */
   async getCategorySummary(): Promise<any[]> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/category-summary`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await fetchWithRetry(
+        `${API_URL}/api/public/properties/category-summary`,
+        {},
+        1,
+        5000
+      );
       
       if (response.ok) {
         return await response.json();
