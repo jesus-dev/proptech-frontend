@@ -3,8 +3,17 @@ import { apiClient } from '@/lib/api';
 class PublicPropertyService {
   async getPropertiesPaginated({ page = 1, limit = 12 }: { page: number; limit: number }) {
     try {
-      const response = await apiClient.get(`/api/public/properties/paginated?page=${page}&limit=${limit}`);
-      return response.data;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/paginated?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      return { properties: [], total: 0, page: 1, size: limit };
     } catch (error) {
       console.error('Error fetching properties:', error);
       return { properties: [], total: 0, page: 1, size: limit };
@@ -57,8 +66,17 @@ class PublicPropertyService {
 
   async getAllProperties(): Promise<any[]> {
     try {
-      const response = await apiClient.get('/api/public/properties');
-      return response.data || [];
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching all properties:', error);
       return [];
@@ -85,8 +103,17 @@ class PublicPropertyService {
 
   async getFeaturedProperties(): Promise<any[]> {
     try {
-      const response = await apiClient.get('/api/public/properties/featured');
-      return response.data || [];
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/featured`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching featured properties:', error);
       return [];
@@ -94,19 +121,63 @@ class PublicPropertyService {
   }
 
   async getPropertySummaryBySlug(slug: string): Promise<any> {
-    try {
-      const response = await apiClient.get(`/api/public/properties/slug/${slug}/summary`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching property summary:', error);
-      throw error;
+    const maxRetries = 3;
+    let lastError;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Usar fetch directo para endpoints públicos (evitar interceptores de auth)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/summary`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-cache',
+        });
+
+        if (response.ok) {
+          return await response.json();
+        }
+
+        // Si es 404 real, no reintentar
+        if (response.status === 404) {
+          throw new Error('Property not found');
+        }
+
+        lastError = new Error(`HTTP ${response.status}`);
+      } catch (error: any) {
+        lastError = error;
+        
+        // Si es 404 o error de red sin esperanza, no reintentar
+        if (error.message === 'Property not found') {
+          throw error;
+        }
+
+        // Esperar antes de reintentar (100ms, 300ms, 900ms)
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(3, attempt - 1)));
+          console.log(`🔄 Reintentando obtener propiedad (${attempt + 1}/${maxRetries})...`);
+        }
+      }
     }
+
+    console.error('Error fetching property summary after retries:', lastError);
+    throw lastError;
   }
 
   async getPropertyGallery(slug: string): Promise<any> {
     try {
-      const response = await apiClient.get(`/api/public/properties/slug/${slug}/gallery`);
-      return response.data;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/gallery`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      return { galleryImages: [] };
     } catch (error) {
       console.warn('Error fetching gallery:', error);
       return { galleryImages: [] };
@@ -115,8 +186,17 @@ class PublicPropertyService {
 
   async getPropertyAmenities(slug: string): Promise<any> {
     try {
-      const response = await apiClient.get(`/api/public/properties/slug/${slug}/amenities`);
-      return response.data;
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/amenities`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      return { amenityIds: [], amenities: [] };
     } catch (error) {
       console.warn('Error fetching amenities:', error);
       return { amenityIds: [], amenities: [] };
@@ -124,13 +204,41 @@ class PublicPropertyService {
   }
 
   async getPropertyBySlug(slug: string): Promise<any> {
-    try {
-      const response = await apiClient.get(`/api/public/properties/slug/${slug}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching property by slug:', error);
-      throw error;
+    const maxRetries = 3;
+    let lastError;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-cache',
+        });
+
+        if (response.ok) {
+          return await response.json();
+        }
+
+        if (response.status === 404) {
+          throw new Error('Property not found');
+        }
+
+        lastError = new Error(`HTTP ${response.status}`);
+      } catch (error: any) {
+        lastError = error;
+        
+        if (error.message === 'Property not found') {
+          throw error;
+        }
+
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(3, attempt - 1)));
+        }
+      }
     }
+
+    console.error('Error fetching property by slug:', lastError);
+    throw lastError;
   }
   
   async getPropertyBySlugProgressive(slug: string): Promise<any> {
@@ -154,19 +262,56 @@ class PublicPropertyService {
   }
 
   async getPropertyById(id: string): Promise<any> {
-    try {
-      const response = await apiClient.get(`/api/public/properties/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching property by ID:', error);
-      throw error;
+    const maxRetries = 3;
+    let lastError;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/${id}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-cache',
+        });
+
+        if (response.ok) {
+          return await response.json();
+        }
+
+        if (response.status === 404) {
+          throw new Error('Property not found');
+        }
+
+        lastError = new Error(`HTTP ${response.status}`);
+      } catch (error: any) {
+        lastError = error;
+        
+        if (error.message === 'Property not found') {
+          throw error;
+        }
+
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(3, attempt - 1)));
+        }
+      }
     }
+
+    console.error('Error fetching property by ID:', lastError);
+    throw lastError;
   }
 
   async getCategorySummary(): Promise<any[]> {
     try {
-      const response = await apiClient.get('/api/public/properties/category-summary');
-      return response.data || [];
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/category-summary`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
+      });
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching category summary:', error);
       return [];
