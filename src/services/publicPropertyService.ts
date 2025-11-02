@@ -6,7 +6,6 @@ class PublicPropertyService {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/paginated?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        cache: 'no-cache',
       });
       
       if (response.ok) {
@@ -69,7 +68,6 @@ class PublicPropertyService {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        cache: 'no-cache',
       });
       
       if (response.ok) {
@@ -106,7 +104,6 @@ class PublicPropertyService {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/featured`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        cache: 'no-cache',
       });
       
       if (response.ok) {
@@ -132,7 +129,6 @@ class PublicPropertyService {
           headers: {
             'Content-Type': 'application/json',
           },
-          cache: 'no-cache',
         });
 
         if (response.ok) {
@@ -170,7 +166,6 @@ class PublicPropertyService {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/gallery`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        cache: 'no-cache',
       });
       
       if (response.ok) {
@@ -189,7 +184,6 @@ class PublicPropertyService {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}/amenities`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        cache: 'no-cache',
       });
       
       if (response.ok) {
@@ -212,7 +206,6 @@ class PublicPropertyService {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/slug/${slug}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          cache: 'no-cache',
         });
 
         if (response.ok) {
@@ -270,7 +263,6 @@ class PublicPropertyService {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/${id}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
-          cache: 'no-cache',
         });
 
         if (response.ok) {
@@ -304,7 +296,6 @@ class PublicPropertyService {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/properties/category-summary`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        cache: 'no-cache',
       });
       
       if (response.ok) {
