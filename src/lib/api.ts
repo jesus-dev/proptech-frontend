@@ -49,8 +49,10 @@ apiClient.interceptors.response.use(
     // 🚨 PRIORIDAD 1: Errores de autenticación - IR DIRECTO AL LOGIN
     if (error.response?.status === 401) {
       console.warn('🔒 Sesión expirada - redirigiendo al login');
-      localStorage.clear();
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
       return Promise.reject(error);
     }
 
@@ -66,14 +68,16 @@ apiClient.interceptors.response.use(
       
       if (isAuthError) {
         console.warn('🔒 Token inválido detectado - limpiando sesión y redirigiendo');
-        localStorage.clear();
-        window.location.href = '/login';
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
     }
 
     // 🚨 PRIORIDAD 3: Sin token válido - IR AL LOGIN
-    if (!error.response) {
+    if (!error.response && typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
       if (!token || token === 'undefined' || token === 'null') {
         console.warn('🔒 Sin token - redirigiendo al login');
@@ -123,8 +127,10 @@ apiClient.interceptors.response.use(
     if (config.retry.count >= config.retry.maxRetries && error.response?.status === 500) {
       console.error(`❌ Error persistente después de ${config.retry.maxRetries} intentos - limpiando sesión`);
       // Si después de 3 intentos sigue fallando con 500, probablemente es el token
-      localStorage.clear();
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        window.location.href = '/login';
+      }
       return Promise.reject(error);
     }
 
