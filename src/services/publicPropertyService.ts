@@ -199,17 +199,19 @@ class PublicPropertyService {
    */
   async getPropertySummaryBySlug(slug: string): Promise<any> {
     try {
-      // ESTRATEGIA 1: Endpoint optimizado /summary
+      // ESTRATEGIA 1: Endpoint optimizado /summary (⚡ ULTRA RÁPIDO)
       try {
         const response = await fetchWithRetry(
           `${API_URL}/api/public/properties/slug/${slug}/summary`,
           {},
-          1, // Solo 1 reintento
-          6000 // 6 segundos
+          2, // 2 reintentos
+          10000 // ⭐ 10 segundos (más tiempo)
         );
         
         if (response.ok) {
-          return await response.json();
+          const data = await response.json();
+          console.log('✅ Summary cargado exitosamente');
+          return data;
         }
       } catch (error) {
         console.log('📍 /summary no disponible, probando endpoint completo...');
