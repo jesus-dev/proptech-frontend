@@ -250,7 +250,9 @@ export default function PropertyCard({ property }: PropertyCardProps) {
                   alt={property.agent.name || 'Agente'} 
                   width={32} 
                   height={32} 
-                  className="rounded-full border-2 border-white dark:border-gray-600 shadow-md" 
+                  className="rounded-full border-2 border-white dark:border-gray-600 shadow-md"
+                  loading="lazy"      // ⭐ Lazy loading
+                  decoding="async"    // ⭐ Async decoding
                 />
               )}
               <div className="flex-1">

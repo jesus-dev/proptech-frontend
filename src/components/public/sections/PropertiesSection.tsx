@@ -72,6 +72,8 @@ const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
       src={hasError ? '/images/placeholder.jpg' : getImageUrl(src)}
       alt={alt}
       className={className}
+      loading="lazy"        // ⭐ Lazy loading
+      decoding="async"      // ⭐ Async decoding
       onLoad={onLoad}
       onError={handleError}
     />
@@ -1353,6 +1355,8 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                                 src={getImageUrl(property.agent.avatar || property.agent.photo)} 
                                 alt={property.agent?.name || property.agentName}
                                 className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                                loading="lazy"      // ⭐ Lazy loading
+                                decoding="async"    // ⭐ Async decoding
                               />
                             ) : (
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">

@@ -57,7 +57,7 @@ class PublicPropertyService {
   /**
    * Obtener propiedades paginadas
    */
-  async getPropertiesPaginated({ page = 1, limit = 12 }: { page: number; limit: number }) {
+  async getPropertiesPaginated({ page = 1, limit = 6 }: { page: number; limit: number }) { // ⭐ Reducido de 12 a 6
     try {
       const response = await fetchWithRetry(
         `${API_URL}/api/public/properties/paginated?page=${page}&limit=${limit}`
