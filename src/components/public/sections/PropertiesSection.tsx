@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
 import { apiClient } from '@/lib/api';
+import ImageWithRetry from '@/components/common/ImageWithRetry';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -215,21 +216,14 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     loadCategories();
   }, []);
 
-  // Función para cargar propiedades iniciales
-  const loadInitialProperties = async () => {
+  // Función para cargar propiedades iniciales con AUTO-RETRY TRANSPARENTE
+  const loadInitialProperties = async (attempt = 1) => {
     try {
       setLoading(true);
       setError('');
       setCurrentPage(1);
       
-      // Timeout de 10 segundos - si tarda más, mostrar error
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La carga de propiedades está tardando demasiado')), 10000)
-      );
-      
-      const dataPromise = publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
-      
-      const data = await Promise.race([dataPromise, timeoutPromise]) as any;
+      const data = await publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
       
       if (data && data.properties) {
         setProperties(Array.isArray(data.properties) ? data.properties : []);
@@ -239,12 +233,18 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
         setHasMore(false);
       }
     } catch (e: any) {
-      console.error('Error al cargar propiedades:', e);
-      const isTimeout = e.message?.includes('Timeout');
-      setError(isTimeout 
-        ? 'La conexión está tardando mucho. Por favor, recarga la página.' 
-        : 'No se pudieron cargar propiedades. Intenta recargar la página.');
-      setProperties([]);
+      console.warn(`⚠️ Error cargando propiedades (intento ${attempt}/3)`);
+      
+      // ⭐ AUTO-RETRY TRANSPARENTE: Reintentar hasta 3 veces
+      if (attempt < 3) {
+        console.log(`🔄 Reintentando en ${attempt * 2} segundos...`);
+        setTimeout(() => loadInitialProperties(attempt + 1), attempt * 2000);
+      } else {
+        // Después de 3 intentos, mostrar vacío pero NO error visible
+        console.warn('❌ No se pudieron cargar propiedades después de 3 intentos');
+        setProperties([]);
+        setHasMore(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -1257,10 +1257,12 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 {/* Efecto de brillo sutil */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-20"></div>
                 
-                <OptimizedImage
-                  src={property.featuredImage || (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : null)}
+                <ImageWithRetry
+                  src={getImageUrl(property.featuredImage || (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : null))}
                   alt={property.title || 'Propiedad'}
                   className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 group-hover:brightness-110"
+                  maxRetries={3}
+                  retryDelay={2000}
                 />
                 
                 {/* Badge tipo premium con efectos mágicos ✨ */}

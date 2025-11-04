@@ -57,20 +57,30 @@ class PublicPropertyService {
   /**
    * Obtener propiedades paginadas
    */
-  async getPropertiesPaginated({ page = 1, limit = 6 }: { page: number; limit: number }) { // ⭐ Reducido de 12 a 6
+  async getPropertiesPaginated({ page = 1, limit = 6 }: { page: number; limit: number }) {
     try {
       const response = await fetchWithRetry(
-        `${API_URL}/api/public/properties/paginated?page=${page}&limit=${limit}`
+        `${API_URL}/api/public/properties/paginated?page=${page}&limit=${limit}`,
+        {},
+        3, // 3 reintentos
+        12000 // 12 segundos
       );
       
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        // ⭐ Asegurar estructura correcta
+        return {
+          properties: data.properties || [],
+          pagination: data.pagination || { currentPage: page, totalPages: 0, totalProperties: 0, propertiesPerPage: limit }
+        };
       }
       
-      return { properties: [], total: 0, page: 1, size: limit };
+      // ⭐ Fallback transparente
+      return { properties: [], pagination: { currentPage: page, totalPages: 0, totalProperties: 0, propertiesPerPage: limit } };
     } catch (error) {
-      console.error('Error fetching properties:', error);
-      return { properties: [], total: 0, page: 1, size: limit };
+      // ⭐ SILENCIOSO: Solo log, NO error visible
+      console.warn('⚠️ Error cargando propiedades, mostrando vacío');
+      return { properties: [], pagination: { currentPage: page, totalPages: 0, totalProperties: 0, propertiesPerPage: limit } };
     }
   }
 

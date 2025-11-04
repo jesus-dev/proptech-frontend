@@ -188,37 +188,63 @@ export default function PropertyDetailPage() {
         setLoading(false); // ⚡ MOSTRAR CONTENIDO INMEDIATAMENTE
         
         // Fase 2: Cargar detalles en background (no bloquea la UI)
-        Promise.allSettled([
-          publicPropertyService.getPropertyGallery(slug),
-          publicPropertyService.getPropertyAmenities(slug)
-        ]).then(([gallery, amenities]) => {
+        // ⭐ AUTO-RETRY: Si falla, reintenta automáticamente
+        const loadAdditionalData = async (attempt = 1) => {
+          const [gallery, amenities] = await Promise.allSettled([
+            publicPropertyService.getPropertyGallery(slug),
+            publicPropertyService.getPropertyAmenities(slug)
+          ]);
+          
           if (isCancelled) return;
           
-          // Actualizar con detalles adicionales
+          // Verificar si alguno falló
+          const galleryFailed = gallery.status === 'rejected';
+          const amenitiesFailed = amenities.status === 'rejected';
+          
+          // Actualizar con los datos que SÍ funcionaron
           setProperty((prev: any) => ({
             ...prev,
-            galleryImages: gallery.status === 'fulfilled' ? gallery.value?.galleryImages : [],
-            amenityIds: amenities.status === 'fulfilled' ? amenities.value?.amenityIds : [],
-            amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value?.amenities : []
+            galleryImages: gallery.status === 'fulfilled' ? gallery.value?.galleryImages : (prev?.galleryImages || []),
+            amenityIds: amenities.status === 'fulfilled' ? amenities.value?.amenityIds : (prev?.amenityIds || []),
+            amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value?.amenities : (prev?.amenitiesDetails || [])
           }));
-        });
+          
+          // ⭐ RETRY TRANSPARENTE: Si falló y es intento 1-2, reintentar en 3 segundos
+          if ((galleryFailed || amenitiesFailed) && attempt <= 2 && !isCancelled) {
+            console.log(`🔄 Reintentando carga de datos adicionales (intento ${attempt + 1})...`);
+            setTimeout(() => loadAdditionalData(attempt + 1), 3000);
+          }
+        };
+        
+        loadAdditionalData();
       } catch (err: any) {
         if (isCancelled) return;
         
         clearTimeout(timeoutId);
         
-        // Mensajes de error amigables
-        if (err.message?.includes('no está disponible')) {
-          setError('Esta propiedad no está disponible en este momento.');
-        } else if (err.message?.includes('PROPERTY_NOT_FOUND') || err.message?.includes('404')) {
-          setError('Esta propiedad no existe o ya fue eliminada.');
-        } else if (err.message?.includes('Timeout') || err.message?.includes('tardando')) {
-          setError('La carga está tomando más tiempo del esperado. Intenta recargar la página.');
-        } else if (err.message?.includes('conexión') || err.message?.includes('Network')) {
-          setError('Parece que no hay conexión a internet. Verifica tu conexión.');
-        } else {
-          setError('No pudimos cargar esta propiedad. Intenta recargar la página.');
+        // ⭐ EXPERIENCIA TRANSPARENTE: Redirigir silenciosamente al home si no existe
+        if (err.message?.includes('PROPERTY_NOT_FOUND') || err.message?.includes('404')) {
+          console.log('📍 Propiedad no encontrada, redirigiendo...');
+          router.push('/');
+          return;
         }
+        
+        // ⭐ Para otros errores: Mostrar mensaje MUY sutil (no bloquea UI)
+        if (err.message?.includes('Timeout') || err.message?.includes('tardando')) {
+          // NO mostrar error, solo log
+          console.warn('⏱️ Timeout cargando propiedad');
+        } else if (err.message?.includes('conexión') || err.message?.includes('Network')) {
+          console.warn('🌐 Problema de conexión');
+        }
+        
+        // Intentar mostrar contenido aunque sea con datos mínimos
+        setProperty({
+          title: 'Propiedad',
+          description: '',
+          price: 0,
+          bedrooms: 0,
+          bathrooms: 0
+        });
       } finally {
         if (!isCancelled) {
           setLoading(false);
