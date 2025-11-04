@@ -17,10 +17,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
     '/forgot-password',
     '/reset-password',
     '/social',
-    '/propshots'
+    '/propshots',
+    '/propiedad', // ⭐ Páginas de propiedades públicas
+    '/propiedades' // ⭐ Listado público
   ];
   
-  const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
+  // ⭐ Ruta raíz "/" también es pública (exacta)
+  const isPublicRoute = pathname === '/' || publicRoutes.some(route => pathname?.startsWith(route));
   
   return (
     <ThemeProvider>
