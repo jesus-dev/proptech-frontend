@@ -14,16 +14,26 @@ type PublicProperty = any;
 
 // Función helper para construir URLs completas de imágenes
 const getImageUrl = (imagePath: string | null | undefined): string => {
-  if (!imagePath) return '/images/placeholder.jpg';
+  if (!imagePath) {
+    console.log('⚠️ getImageUrl: imagePath vacío, usando placeholder');
+    return '/images/placeholder.jpg';
+  }
   
   // Si ya es una URL completa, devolverla tal como está
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    console.log('✅ getImageUrl: URL completa:', imagePath);
     return imagePath;
   }
   
   // Si es una ruta relativa, construir la URL completa usando la configuración
   const baseUrl = getImageBaseUrl();
-  return `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  const fullUrl = `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  console.log('🔧 getImageUrl construida:', {
+    original: imagePath,
+    baseUrl: baseUrl,
+    final: fullUrl
+  });
+  return fullUrl;
 };
 
 // Función helper para limpiar HTML y extraer texto plano
