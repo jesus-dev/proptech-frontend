@@ -12,7 +12,7 @@ import { propertyService } from "../services/propertyService";
 import { GlassWater, ParkingSquare, Wifi, Dumbbell, HelpCircle, MoveUpRight, Home, Shield, Leaf, Snowflake, Flame, PawPrint, Car, Star, Heart, MapPin, Building, Sun, Moon, Cloud, Droplets, Utensils, Phone, Mail, Globe, Download, Eye as EyeIcon, Clock, Award, Zap, Wrench, Bell, Pencil, Trash2 } from "lucide-react";
 import { formatPrice, formatCurrency } from "@/lib/utils";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
-import { ImageService } from '../services/imageService';
+import { getImageBaseUrl } from '@/config/environment';
 
 function getCurrencySymbolAndCode(currency: string) {
   switch ((currency || '').toUpperCase()) {
@@ -199,12 +199,12 @@ function getAmenityIcon(name: string) {
 
 // Memoizar componente para evitar re-renders innecesarios cuando las props no cambian
 const PropertyList = React.memo(function PropertyList({ properties, view, onPropertyDeleted, onPropertyRemovedFromFavorites, isFavoritesPage }: PropertyListProps) {
-  const imageService = new ImageService();
-  
   // Función para convertir URLs relativas a URLs completas
-  const getImageUrl = (imageUrl: string | null | undefined, propertyId?: string): string | null => {
+  const getImageUrl = (imageUrl: string | null | undefined): string | null => {
     if (!imageUrl || imageUrl.trim() === '') return null;
-    return imageService.getFullImageUrl(imageUrl, propertyId);
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
+    const baseUrl = getImageBaseUrl();
+    return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
   };
   const router = useRouter();
   const [deleteDialog, setDeleteDialog] = useState<{
