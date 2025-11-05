@@ -328,7 +328,7 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
               <div className="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                 {(() => {
                   const mainImage = property.featuredImage || (property.images && property.images[0]);
-                  const fullImageUrl = getImageUrl(mainImage, property.id);
+                  const fullImageUrl = getImageUrl(mainImage);
                   return fullImageUrl ? (
                     <img
                       src={fullImageUrl}
@@ -559,7 +559,7 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                       <div className="flex-shrink-0 h-12 w-12">
                         {(() => {
                           const mainImage = property.featuredImage || (property.images && property.images[0]);
-                          const fullImageUrl = getImageUrl(mainImage, property.id);
+                          const fullImageUrl = getImageUrl(mainImage);
                           return fullImageUrl ? (
                             <img
                               className="h-12 w-12 rounded-lg object-cover"
