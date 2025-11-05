@@ -17,7 +17,7 @@ function resolveApiUrl(): string {
 // Configuración base del cliente API
 const apiClient = axios.create({
   baseURL: resolveApiUrl(),
-  timeout: 8000, // 8 segundos - balance entre velocidad y permitir que el servidor responda
+  timeout: 15000, // 15 segundos - suficiente para manejar intermitencias del túnel
   headers: {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -90,7 +90,7 @@ apiClient.interceptors.response.use(
     // ♻️ RECUPERACIÓN AUTOMÁTICA SILENCIOSA para errores temporales
     // Inicializar configuración de retry si no existe
     if (!config.retry) {
-      config.retry = { count: 0, maxRetries: 3, delay: 400 };
+      config.retry = { count: 0, maxRetries: 5, delay: 300 }; // 5 reintentos más rápidos
     }
 
     // Determinar si debe reintentar
@@ -110,12 +110,12 @@ apiClient.interceptors.response.use(
     if (!shouldNotRetry && shouldRetry && config.retry.count < config.retry.maxRetries) {
       config.retry.count += 1;
       
-      // Log silencioso en consola (solo para debug, no molesta al usuario)
-      if (config.retry.count === 1) {
+      // Log silencioso SOLO en dev (NO en producción)
+      if (config.retry.count === 1 && process.env.NODE_ENV === 'development') {
         console.debug(`♻️ Recuperando automáticamente... (intento ${config.retry.count}/${config.retry.maxRetries})`);
       }
       
-      // Espera progresiva: 400ms, 800ms, 1200ms
+      // Espera progresiva más rápida: 300ms, 600ms, 900ms, 1200ms, 1500ms
       const delay = config.retry.delay * config.retry.count;
       await new Promise(resolve => setTimeout(resolve, delay));
       

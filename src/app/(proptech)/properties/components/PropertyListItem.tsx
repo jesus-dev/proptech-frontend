@@ -4,14 +4,20 @@ import Link from "next/link";
 import { Property } from "./types";
 import { formatPrice } from "@/lib/utils";
 import { BedIcon, BathIcon, AreaIcon } from "@/icons";
-import { ImageService } from '../services/imageService';
+import { getImageBaseUrl } from '@/config/environment';
 
 interface PropertyListItemProps {
   property: Property;
 }
 
 export default function PropertyListItem({ property }: PropertyListItemProps) {
-  const imageService = new ImageService();
+  // Helper para construir URL de imagen
+  const getImageUrl = (imagePath: string | null | undefined): string => {
+    if (!imagePath) return '/images/placeholder.jpg';
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
+    const baseUrl = getImageBaseUrl();
+    return `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+  };
   
   const formatPropertyPrice = (price: number) => {
     return formatPrice(price, property.currency, {
@@ -27,7 +33,7 @@ export default function PropertyListItem({ property }: PropertyListItemProps) {
           // Usar la primera imagen de la galería si no hay featuredImage
           const mainImage = property.featuredImage || 
             (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : '');
-          const fullImageUrl = imageService.getFullImageUrl(mainImage, property.id);
+          const fullImageUrl = getImageUrl(mainImage);
           
           return fullImageUrl ? (
             <img

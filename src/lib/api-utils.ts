@@ -10,7 +10,7 @@ interface FetchOptions extends RequestInit {
  * Función mejorada para hacer peticiones HTTP con retry automático
  */
 export async function fetchWithRetry(url: string, options: FetchOptions = {}): Promise<Response> {
-  const { retries = 3, retryDelay = 1000, ...fetchOptions } = options;
+  const { retries = 5, retryDelay = 500, ...fetchOptions } = options; // 5 retries, más rápido
   
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {

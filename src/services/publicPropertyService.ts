@@ -8,8 +8,8 @@
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.proptech.com.py';
-const DEFAULT_TIMEOUT = 8000; // 8 segundos
-const MAX_RETRIES = 2;
+const DEFAULT_TIMEOUT = 12000; // 12 segundos (más tiempo)
+const MAX_RETRIES = 5; // 5 reintentos (era 2) - maneja 17% de fallos del túnel
 
 /**
  * Fetch con timeout y reintentos automáticos

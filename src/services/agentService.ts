@@ -7,7 +7,8 @@
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.proptech.com.py';
-const TIMEOUT = 8000;
+const TIMEOUT = 15000; // 15 segundos
+const MAX_RETRIES = 5; // 5 reintentos para manejar intermitencias del túnel
 
 export interface Agent {
   id: string;
@@ -26,24 +27,42 @@ export interface Agent {
   role?: string;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = TIMEOUT): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = TIMEOUT, retries = MAX_RETRIES): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error('TIMEOUT');
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      
+      // Si es 500/502/503, reintentar
+      if ((response.status === 500 || response.status === 502 || response.status === 503) && attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        continue;
+      }
+      
+      return response;
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      
+      // Última oportunidad - lanzar error
+      if (attempt === retries) {
+        if (error.name === 'AbortError') {
+          throw new Error('TIMEOUT');
+        }
+        throw error;
+      }
+      
+      // Esperar antes del siguiente intento
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
     }
-    throw error;
   }
+  
+  throw new Error('Max retries reached');
 }
 
 export class AgentService {
