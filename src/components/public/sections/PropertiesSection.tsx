@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation';
 import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
 import { apiClient } from '@/lib/api';
-import ImageWithRetry from '@/components/common/ImageWithRetry';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -1267,13 +1266,10 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 {/* Efecto de brillo sutil */}
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-20"></div>
                 
-                <ImageWithRetry
-                  src={getImageUrl(property.featuredImage || (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : null))}
+                <OptimizedImage
+                  src={property.featuredImage || (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : null)}
                   alt={property.title || 'Propiedad'}
                   className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 group-hover:brightness-110"
-                  priority={index < 3}  // ⭐ Primeras 3 imágenes con prioridad ALTA
-                  maxRetries={3}
-                  retryDelay={2000}
                 />
                 
                 {/* Badge tipo premium con efectos mágicos ✨ */}
