@@ -8,6 +8,7 @@ interface ImageWithRetryProps {
   className?: string;
   maxRetries?: number;
   retryDelay?: number;
+  priority?: boolean;  // ⭐ Para primeras imágenes visibles
   onLoad?: () => void;
   onError?: () => void;
 }
@@ -22,6 +23,7 @@ export default function ImageWithRetry({
   className = '',
   maxRetries = 3,
   retryDelay = 2000,
+  priority = false,
   onLoad,
   onError,
 }: ImageWithRetryProps) {
@@ -97,8 +99,9 @@ export default function ImageWithRetry({
         src={currentSrc}
         alt={alt}
         className={className}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}  // ⭐ Prioridad alta = cargar YA
         decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}  // ⭐ Alta prioridad en red
         onLoad={handleLoad}
         onError={handleError}
         style={{ display: isLoading ? 'none' : 'block' }}

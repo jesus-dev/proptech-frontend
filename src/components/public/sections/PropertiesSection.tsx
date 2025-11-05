@@ -1227,7 +1227,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
           ) : error ? (
             <div className="col-span-full text-center py-16 text-red-600 font-medium">{error}</div>
           ) : filteredProperties.length > 0 ? (
-            filteredProperties.map(property => {
+            filteredProperties.map((property, index) => {
               // Procesar datos del agente para el frontend
               if (property.agent) {
                 const firstName = property.agent.firstName || '';
@@ -1261,6 +1261,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                   src={getImageUrl(property.featuredImage || (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : null))}
                   alt={property.title || 'Propiedad'}
                   className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 group-hover:brightness-110"
+                  priority={index < 3}  // ⭐ Primeras 3 imágenes con prioridad ALTA
                   maxRetries={3}
                   retryDelay={2000}
                 />
