@@ -47,7 +47,7 @@ const stripHtml = (html: string | null | undefined): string => {
   return tempDiv.textContent || tempDiv.innerText || '';
 };
 
-// Componente de imagen optimizada con lazy loading
+// Componente de imagen optimizada SIMPLE y RÁPIDO
 const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
   src: string | null;
   alt: string;
@@ -56,37 +56,73 @@ const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
   onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
 }) => {
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const imgRef = useRef<HTMLImageElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsLoading(false);
+    setHasError(false);
+    onLoad?.(e);
+  }, [onLoad]);
 
   const handleError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    console.warn('❌ Imagen falló:', src);
     setHasError(true);
+    setIsLoading(false);
     onError?.(e);
-  }, [onError]);
+  }, [onError, src]);
 
-  // Si no hay src, mostrar placeholder directamente
-  if (!src) {
+  // Timeout para celular lento (10s max)
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+    
+    timeoutRef.current = setTimeout(() => {
+      if (isLoading) {
+        console.warn('⏱️ Imagen tardó >10s (celular lento?):', src);
+        setHasError(true);
+        setIsLoading(false);
+      }
+    }, 10000);
+    
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [src]);
+
+  // Si no hay src o error, mostrar placeholder bonito
+  if (!src || hasError) {
     return (
-      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-        <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
+      <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <svg className="w-12 h-12 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
       </div>
     );
   }
 
   return (
-    <img
-      ref={imgRef}
-      src={hasError ? '/images/placeholder.jpg' : getImageUrl(src)}
-      alt={alt}
-      className={className}
-      loading="lazy"        // ⭐ Lazy loading
-      decoding="async"      // ⭐ Async decoding
-      onLoad={onLoad}
-      onError={handleError}
-    />
+    <div className="relative w-full h-full">
+      {/* Skeleton mientras carga */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 animate-pulse z-10" />
+      )}
+      
+      {/* Imagen */}
+      <img
+        ref={imgRef}
+        src={getImageUrl(src)}
+        alt={alt}
+        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500`}
+        loading="lazy"
+        decoding="async"
+        onLoad={handleLoad}
+        onError={handleError}
+      />
+    </div>
   );
 };
 

@@ -187,6 +187,13 @@ export default function PropertyDetailPage() {
         setProperty(summary);
         setLoading(false); // ⚡ MOSTRAR CONTENIDO INMEDIATAMENTE
         
+        // ⭐ INCREMENTAR VISTAS (en background, no bloquea)
+        if (summary.id) {
+          publicPropertyService.incrementViews(summary.id.toString()).catch(() => {
+            // Silencioso, no es crítico
+          });
+        }
+        
         // Fase 2: Cargar detalles en background (no bloquea la UI)
         // ⭐ AUTO-RETRY: Si falla, reintenta automáticamente
         const loadAdditionalData = async (attempt = 1) => {
