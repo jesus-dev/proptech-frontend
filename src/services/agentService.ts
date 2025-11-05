@@ -1,14 +1,9 @@
 /**
- * Servicio Premium para Agentes
- * - Maneja tokens expirados automáticamente
- * - Fallback entre endpoints públicos y privados
- * - Timeouts y reintentos
- * - NUNCA rompe la app
+ * Servicio para Agentes
+ * Usa apiClient que YA TIENE reintentos automáticos
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.proptech.com.py';
-const TIMEOUT = 15000; // 15 segundos
-const MAX_RETRIES = 5; // 5 reintentos para manejar intermitencias del túnel
+import { apiClient } from '@/lib/api';
 
 export interface Agent {
   id: string;
@@ -27,47 +22,9 @@ export interface Agent {
   role?: string;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = TIMEOUT, retries = MAX_RETRIES): Promise<Response> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      
-      // Si es 500/502/503, reintentar
-      if ((response.status === 500 || response.status === 502 || response.status === 503) && attempt < retries) {
-        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-        continue;
-      }
-      
-      return response;
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      
-      // Última oportunidad - lanzar error
-      if (attempt === retries) {
-        if (error.name === 'AbortError') {
-          throw new Error('TIMEOUT');
-        }
-        throw error;
-      }
-      
-      // Esperar antes del siguiente intento
-      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-    }
-  }
-  
-  throw new Error('Max retries reached');
-}
-
 export class AgentService {
   /**
-   * Obtener todos los agentes - Inteligente: usa endpoint público o privado según token
+   * Obtener todos los agentes - usa endpoint público o privado según token
    */
   static async getAllAgents(): Promise<Agent[]> {
     try {
@@ -76,49 +33,13 @@ export class AgentService {
 
       // Decidir endpoint según token
       const endpoint = isValidToken 
-        ? `${API_URL}/api/agents`
-        : `${API_URL}/api/public/agents`;
+        ? `/api/agents`
+        : `/api/public/agents`;
 
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (isValidToken) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetchWithTimeout(endpoint, { 
-        method: 'GET',
-        headers 
-      });
-
-      if (response.ok) {
-        const agents = await response.json();
-        console.log(`✅ ${agents.length} agentes desde ${isValidToken ? 'privado' : 'público'}`);
-        return agents;
-      }
-
-      // Si endpoint privado falla, intentar público como fallback
-      if (isValidToken && (response.status === 401 || response.status === 500)) {
-        console.log('⚠️ Token inválido, intentando endpoint público...');
-        
-        // Limpiar token inválido
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        
-        const publicResponse = await fetchWithTimeout(`${API_URL}/api/public/agents`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (publicResponse.ok) {
-          return await publicResponse.json();
-        }
-      }
-
-      return [];
+      const response = await apiClient.get(endpoint);
+      return response.data || [];
     } catch (error) {
-      console.error('Error fetching agents:', error);
+      console.warn('Error cargando agentes, mostrando vacío');
       return [];
     }
   }
@@ -132,43 +53,75 @@ export class AgentService {
       const isValidToken = token && token !== 'undefined' && token !== 'null';
 
       const endpoint = isValidToken
-        ? `${API_URL}/api/agents/${id}`
-        : `${API_URL}/api/public/agents/${id}`;
+        ? `/api/agents/${id}`
+        : `/api/public/agents/${id}`;
 
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (isValidToken) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetchWithTimeout(endpoint, { 
-        method: 'GET',
-        headers 
-      });
-
-      if (response.ok) {
-        return await response.json();
-      }
-
-      // Fallback a público si privado falla
-      if (isValidToken && response.status === 401) {
-        const publicResponse = await fetchWithTimeout(`${API_URL}/api/public/agents/${id}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (publicResponse.ok) {
-          return await publicResponse.json();
-        }
-      }
-
-      return null;
+      const response = await apiClient.get(endpoint);
+      return response.data;
     } catch (error) {
-      console.error(`Error fetching agent ${id}:`, error);
+      console.error('Error fetching agent:', error);
       return null;
+    }
+  }
+
+  /**
+   * Crear agente
+   */
+  static async createAgent(agent: Partial<Agent>): Promise<Agent | null> {
+    try {
+      const response = await apiClient.post('/api/agents', agent);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating agent:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Actualizar agente
+   */
+  static async updateAgent(id: string, agent: Partial<Agent>): Promise<Agent | null> {
+    try {
+      const response = await apiClient.put(`/api/agents/${id}`, agent);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating agent:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Eliminar agente
+   */
+  static async deleteAgent(id: string): Promise<boolean> {
+    try {
+      await apiClient.delete(`/api/agents/${id}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting agent:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Buscar agentes por término
+   */
+  static async searchAgents(term: string): Promise<Agent[]> {
+    try {
+      const token = localStorage.getItem('token');
+      const isValidToken = token && token !== 'undefined' && token !== 'null';
+
+      const endpoint = isValidToken
+        ? `/api/agents/search?term=${encodeURIComponent(term)}`
+        : `/api/public/agents/search?term=${encodeURIComponent(term)}`;
+
+      const response = await apiClient.get(endpoint);
+      return response.data || [];
+    } catch (error) {
+      console.error('Error searching agents:', error);
+      return [];
     }
   }
 }
 
+export const agentService = new AgentService();

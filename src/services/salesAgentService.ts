@@ -1,4 +1,9 @@
-import { apiConfig } from '@/lib/api-config';
+/**
+ * Servicio de Agentes de Ventas
+ * Usa apiClient que YA TIENE reintentos automáticos
+ */
+
+import { apiClient } from '@/lib/api';
 
 export interface SalesAgent {
   id: number;
@@ -30,28 +35,10 @@ export interface UpdateSalesAgentRequest extends Partial<CreateSalesAgentRequest
 }
 
 class SalesAgentService {
-  private baseUrl = `${apiConfig.getApiUrl()}/api/sales-agents`;
-
   async getAllAgents(): Promise<SalesAgent[]> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(this.baseUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/api/sales-agents');
+      return response.data;
     } catch (error) {
       console.error('Error fetching sales agents:', error);
       throw error;
@@ -60,24 +47,8 @@ class SalesAgentService {
 
   async getAgentById(id: number): Promise<SalesAgent> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get(`/api/sales-agents/${id}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching sales agent:', error);
       throw error;
@@ -86,25 +57,8 @@ class SalesAgentService {
 
   async createAgent(agentData: CreateSalesAgentRequest): Promise<SalesAgent> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(agentData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.post('/api/sales-agents', agentData);
+      return response.data;
     } catch (error) {
       console.error('Error creating sales agent:', error);
       throw error;
@@ -113,25 +67,8 @@ class SalesAgentService {
 
   async updateAgent(id: number, agentData: Partial<CreateSalesAgentRequest>): Promise<SalesAgent> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(agentData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.put(`/api/sales-agents/${id}`, agentData);
+      return response.data;
     } catch (error) {
       console.error('Error updating sales agent:', error);
       throw error;
@@ -140,22 +77,7 @@ class SalesAgentService {
 
   async deleteAgent(id: number): Promise<void> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      await apiClient.delete(`/api/sales-agents/${id}`);
     } catch (error) {
       console.error('Error deleting sales agent:', error);
       throw error;
@@ -170,24 +92,8 @@ class SalesAgentService {
     pendingCommissions: number;
   }> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${this.baseUrl}/stats`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/api/sales-agents/stats');
+      return response.data;
     } catch (error) {
       console.error('Error fetching agent stats:', error);
       throw error;
@@ -200,24 +106,8 @@ class SalesAgentService {
     topProperties: Array<{ propertyId: number; propertyName: string; saleAmount: number }>;
   }> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${this.baseUrl}/${id}/performance`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get(`/api/sales-agents/${id}/performance`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching agent performance:', error);
       throw error;

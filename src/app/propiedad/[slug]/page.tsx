@@ -150,53 +150,34 @@ export default function PropertyDetailPage() {
 
 
   useEffect(() => {
-    // Evitar llamadas duplicadas
     let isCancelled = false;
-    let timeoutId: NodeJS.Timeout;
+    let retryTimeout: NodeJS.Timeout;
     
-    const fetchProperty = async () => {
+    const fetchProperty = async (attempt = 1) => {
       if (!slug || isCancelled) return;
       
       try {
         setLoading(true);
-        setError('');
         
-        // TIMEOUT DE SEGURIDAD: Si después de 12 segundos no cargó, mostrar error
-        timeoutId = setTimeout(() => {
-          if (!isCancelled && loading) {
-            console.error('⏱️ Timeout cargando propiedad');
-            setError('La propiedad está tardando mucho en cargar. Por favor, intenta recargar la página.');
-            setLoading(false);
-          }
-        }, 12000);
-        
-        // OPTIMIZACIÓN: Cargar en dos fases
-        // Fase 1: Cargar summary RÁPIDO y mostrar inmediatamente
         const summary = await publicPropertyService.getPropertySummaryBySlug(slug);
         
         if (isCancelled) return;
         
-        clearTimeout(timeoutId); // Cancelar timeout si cargó bien
-        
         if (!summary) {
-          setError(`Propiedad no encontrada: ${slug}`);
+          router.push('/');
           return;
         }
         
-        // Mostrar summary inmediatamente (carga rápida)
         setProperty(summary);
-        setLoading(false); // ⚡ MOSTRAR CONTENIDO INMEDIATAMENTE
+        setLoading(false);
         
-        // ⭐ INCREMENTAR VISTAS (en background, no bloquea)
+        // Incrementar vistas (silencioso)
         if (summary.id) {
-          publicPropertyService.incrementViews(summary.id.toString()).catch(() => {
-            // Silencioso, no es crítico
-          });
+          publicPropertyService.incrementViews(summary.id.toString()).catch(() => {});
         }
         
-        // Fase 2: Cargar detalles en background (no bloquea la UI)
-        // ⭐ AUTO-RETRY: Si falla, reintenta automáticamente
-        const loadAdditionalData = async (attempt = 1) => {
+        // Cargar datos adicionales en background
+        const loadAdditionalData = async () => {
           const [gallery, amenities] = await Promise.allSettled([
             publicPropertyService.getPropertyGallery(slug),
             publicPropertyService.getPropertyAmenities(slug)
@@ -204,47 +185,31 @@ export default function PropertyDetailPage() {
           
           if (isCancelled) return;
           
-          // Verificar si alguno falló
-          const galleryFailed = gallery.status === 'rejected';
-          const amenitiesFailed = amenities.status === 'rejected';
-          
-          // Actualizar con los datos que SÍ funcionaron
           setProperty((prev: any) => ({
             ...prev,
-            galleryImages: gallery.status === 'fulfilled' ? gallery.value?.galleryImages : (prev?.galleryImages || []),
-            amenityIds: amenities.status === 'fulfilled' ? amenities.value?.amenityIds : (prev?.amenityIds || []),
-            amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value?.amenities : (prev?.amenitiesDetails || [])
+            galleryImages: gallery.status === 'fulfilled' ? gallery.value?.galleryImages : [],
+            amenityIds: amenities.status === 'fulfilled' ? amenities.value?.amenityIds : [],
+            amenitiesDetails: amenities.status === 'fulfilled' ? amenities.value?.amenities : []
           }));
-          
-          // ⭐ RETRY TRANSPARENTE: Si falló y es intento 1-2, reintentar en 3 segundos
-          if ((galleryFailed || amenitiesFailed) && attempt <= 2 && !isCancelled) {
-            console.log(`🔄 Reintentando carga de datos adicionales (intento ${attempt + 1})...`);
-            setTimeout(() => loadAdditionalData(attempt + 1), 3000);
-          }
         };
         
         loadAdditionalData();
       } catch (err: any) {
         if (isCancelled) return;
         
-        clearTimeout(timeoutId);
-        
-        // ⭐ EXPERIENCIA TRANSPARENTE: Redirigir silenciosamente al home si no existe
-        if (err.message?.includes('PROPERTY_NOT_FOUND') || err.message?.includes('404')) {
-          console.log('📍 Propiedad no encontrada, redirigiendo...');
+        // Si no existe, redirigir
+        if (err.message?.includes('PROPERTY_NOT_FOUND')) {
           router.push('/');
           return;
         }
         
-        // ⭐ Para otros errores: Mostrar mensaje MUY sutil (no bloquea UI)
-        if (err.message?.includes('Timeout') || err.message?.includes('tardando')) {
-          // NO mostrar error, solo log
-          console.warn('⏱️ Timeout cargando propiedad');
-        } else if (err.message?.includes('conexión') || err.message?.includes('Network')) {
-          console.warn('🌐 Problema de conexión');
+        // ⭐ REINTENTO AUTOMÁTICO TRANSPARENTE - como si el usuario recargara
+        if (attempt < 3) {
+          retryTimeout = setTimeout(() => fetchProperty(attempt + 1), 2000);
+          return;
         }
         
-        // Intentar mostrar contenido aunque sea con datos mínimos
+        // Después de 3 intentos completos, mostrar contenido vacío
         setProperty({
           title: 'Propiedad',
           description: '',
@@ -252,19 +217,15 @@ export default function PropertyDetailPage() {
           bedrooms: 0,
           bathrooms: 0
         });
-      } finally {
-        if (!isCancelled) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchProperty();
     
-    // Cleanup function para evitar memory leaks
     return () => {
       isCancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
+      if (retryTimeout) clearTimeout(retryTimeout);
     };
   }, [slug]);
 

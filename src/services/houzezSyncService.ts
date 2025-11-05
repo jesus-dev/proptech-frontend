@@ -1,5 +1,10 @@
+/**
+ * Servicio de Sincronización Houzez
+ * Usa apiClient que YA TIENE reintentos automáticos
+ */
+
 import { Property } from '@/types/property';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface SyncResult {
   success: boolean;
@@ -9,28 +14,11 @@ export interface SyncResult {
 }
 
 export class HouzezSyncService {
-  /**
-   * Sincroniza una propiedad con Houzez
-   */
   async syncPropertyToHouzez(propertyId: string): Promise<SyncResult> {
     try {
-      const response = await fetch(getEndpoint(`/api/properties/${propertyId}/sync`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          success: false,
-          message: 'Error al sincronizar',
-          error: errorText,
-        };
-      }
-
-      const result = await response.json();
+      const response = await apiClient.post(`/api/properties/${propertyId}/sync`);
+      const result = response.data;
+      
       return {
         success: true,
         message: result.message || 'Propiedad sincronizada exitosamente',
@@ -39,66 +27,30 @@ export class HouzezSyncService {
     } catch (error) {
       return {
         success: false,
-        message: 'Error de conexión',
+        message: 'Error al sincronizar',
         error: error instanceof Error ? error.message : 'Error desconocido',
       };
     }
   }
 
-  /**
-   * Sincroniza todas las propiedades pendientes
-   */
   async syncAllPendingProperties(): Promise<SyncResult[]> {
     try {
-      const response = await fetch(getEndpoint('/api/properties/sync/all'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return [{
-          success: false,
-          message: 'Error al sincronizar todas las propiedades',
-          error: errorText,
-        }];
-      }
-
-      const results = await response.json();
-      return results;
+      const response = await apiClient.post('/api/properties/sync/all');
+      return response.data;
     } catch (error) {
       return [{
         success: false,
-        message: 'Error de conexión',
+        message: 'Error al sincronizar todas las propiedades',
         error: error instanceof Error ? error.message : 'Error desconocido',
       }];
     }
   }
 
-  /**
-   * Elimina una propiedad de Houzez
-   */
   async deletePropertyFromHouzez(propertyId: string): Promise<SyncResult> {
     try {
-      const response = await fetch(getEndpoint(`/api/properties/${propertyId}/sync`), {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          success: false,
-          message: 'Error al eliminar de Houzez',
-          error: errorText,
-        };
-      }
-
-      const result = await response.json();
+      const response = await apiClient.delete(`/api/properties/${propertyId}/sync`);
+      const result = response.data;
+      
       return {
         success: true,
         message: result.message || 'Propiedad eliminada de Houzez exitosamente',
@@ -106,15 +58,12 @@ export class HouzezSyncService {
     } catch (error) {
       return {
         success: false,
-        message: 'Error de conexión',
+        message: 'Error al eliminar de Houzez',
         error: error instanceof Error ? error.message : 'Error desconocido',
       };
     }
   }
 
-  /**
-   * Obtiene el estado de sincronización de una propiedad
-   */
   getSyncStatus(property: Property): {
     status: 'SUCCESS' | 'PENDING' | 'FAILED' | 'MANUAL' | 'DELETED' | 'DELETE_FAILED';
     hasWordPressId: boolean;
@@ -127,9 +76,6 @@ export class HouzezSyncService {
     };
   }
 
-  /**
-   * Obtiene el texto descriptivo del estado de sincronización
-   */
   getSyncStatusText(property: Property): string {
     const status = this.getSyncStatus(property);
     
@@ -151,9 +97,6 @@ export class HouzezSyncService {
     }
   }
 
-  /**
-   * Obtiene el color del estado de sincronización
-   */
   getSyncStatusColor(property: Property): string {
     const status = this.getSyncStatus(property);
     
@@ -175,4 +118,4 @@ export class HouzezSyncService {
   }
 }
 
-export const houzezSyncService = new HouzezSyncService(); 
+export const houzezSyncService = new HouzezSyncService();
