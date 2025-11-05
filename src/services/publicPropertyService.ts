@@ -29,7 +29,7 @@ class PublicPropertyService {
    */
   async incrementViews(propertyId: string): Promise<void> {
     try {
-      await apiClient.patch(`/api/public/properties/${propertyId}/increment-views`);
+      await apiClient.post(`/properties/${propertyId}/views`);
     } catch (error) {
       // Silencioso
     }
