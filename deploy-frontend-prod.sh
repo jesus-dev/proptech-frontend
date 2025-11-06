@@ -184,10 +184,12 @@ GIT_COMMIT=$CURRENT_COMMIT
 EOF
 
 # ========================
-# Compilar aplicación
+# Compilar aplicación con BUILD_ID único
 # ========================
+BUILD_ID="build-$(date +%Y%m%d-%H%M%S)"
 echo "🔨 Compilando aplicación para producción..."
-npm run build
+echo "📦 Build ID: $BUILD_ID"
+BUILD_ID=$BUILD_ID npm run build
 
 # ========================
 # Verificar que el build fue exitoso
@@ -197,7 +199,12 @@ if [ ! -d ".next" ]; then
     exit 1
 fi
 
-echo "✅ Build completado exitosamente"
+if [ ! -d ".next/standalone" ]; then
+    echo "❌ Error: Output standalone no generado"
+    exit 1
+fi
+
+echo "✅ Build completado exitosamente con ID: $BUILD_ID"
 
 # ========================
 # Configurar directorio de producción
@@ -226,17 +233,18 @@ sudo mkdir -p "$PROD_DIR"
 # Asegurar que no queden archivos ocultos o cache
 sudo rm -rf "$PROD_DIR"/.next "$PROD_DIR"/node_modules "$PROD_DIR"/.npm 2>/dev/null || true
 
-# Copiar archivos necesarios
-sudo cp -r .next "$PROD_DIR/"
+# 🔥 COPIAR BUILD STANDALONE (más eficiente y correcto)
+echo "📦 Copiando build standalone..."
+sudo cp -r .next/standalone/. "$PROD_DIR/"
+sudo cp -r .next/static "$PROD_DIR/.next/"
 sudo cp -r public "$PROD_DIR/"
-sudo cp package.json "$PROD_DIR/"
-sudo cp package-lock.json "$PROD_DIR/"
+
+# Copiar configuración
 sudo cp next.config.js "$PROD_DIR/" 2>/dev/null || sudo cp next.config.ts "$PROD_DIR/" 2>/dev/null || echo "⚠️ No se encontró next.config"
 sudo cp .env.production "$PROD_DIR/" 2>/dev/null || echo "⚠️ .env.production ya configurado"
 
-# Instalar solo dependencias de producción
+# Con standalone NO se necesita npm install (todo viene incluido)
 cd "$PROD_DIR"
-sudo npm ci --production=true
 
 # Configurar permisos
 sudo chown -R dan:dan "$PROD_DIR"
@@ -257,9 +265,11 @@ After=network.target
 Type=simple
 User=dan
 WorkingDirectory=$PROD_DIR
-ExecStart=/usr/bin/npm run start -- -p 3007
+ExecStart=/usr/bin/node server.js
 Restart=always
 Environment=NODE_ENV=production
+Environment=PORT=3007
+Environment=HOSTNAME=0.0.0.0
 
 [Install]
 WantedBy=multi-user.target
@@ -325,6 +335,38 @@ if [ $WAIT_COUNT -ge $MAX_WAIT ]; then
 fi
 
 # ========================
+# 🔥 LIMPIAR CACHE DE CLOUDFLARE (CRÍTICO)
+# ========================
+echo ""
+echo "======================================="
+echo "🔥 PASO CRÍTICO: LIMPIAR CACHE"
+echo "======================================="
+
+# Intentar ejecutar script de purge automático
+if [ -f "$FRONTEND_DIR/scripts/purge-cloudflare.sh" ]; then
+    echo "🚀 Ejecutando limpieza automática de Cloudflare..."
+    bash "$FRONTEND_DIR/scripts/purge-cloudflare.sh" || {
+        echo ""
+        echo "⚠️  Limpieza automática no disponible"
+        echo "📖 Ver: $FRONTEND_DIR/CACHE_CLOUDFLARE.md para configurar API"
+    }
+else
+    echo "⚠️ Script de purge no encontrado"
+fi
+
+echo ""
+echo "🔴 IMPORTANTE - LIMPIAR CACHE MANUALMENTE:"
+echo "   1. Ir a: https://dash.cloudflare.com"
+echo "   2. Seleccionar: proptech.com.py"
+echo "   3. Caching > Configuration > Purge Everything"
+echo "   4. Confirmar la limpieza"
+echo ""
+echo "⚠️  SIN ESTE PASO, los usuarios verán errores 404 de chunks viejos"
+echo "======================================="
+echo ""
+sleep 3
+
+# ========================
 # Resumen final
 # ========================
 echo "======================================="
@@ -350,10 +392,22 @@ echo "  2. cd $PROD_DIR"
 echo "  3. sudo tar -xzf backups/\$(ls -t backups/*.tar.gz | head -1)"
 echo "  4. sudo systemctl start $SERVICE_NAME"
 echo ""
-echo "⚠️  IMPORTANTE - HARD REFRESH EN EL NAVEGADOR:"
-echo "   Chrome/Edge: Ctrl+Shift+R (Windows) o Cmd+Shift+R (Mac)"
-echo "   Firefox: Ctrl+Shift+Delete para limpiar cache"
-echo "   O: DevTools (F12) > Click derecho en Recargar > Vaciar caché"
 echo ""
-echo "🚨 Sin hard refresh verás código VIEJO cacheado en el navegador!"
+echo "🔥🔥🔥 PASOS CRÍTICOS POST-DEPLOY 🔥🔥🔥"
+echo ""
+echo "1️⃣  LIMPIAR CACHE DE CLOUDFLARE (OBLIGATORIO)"
+echo "   → https://dash.cloudflare.com"
+echo "   → proptech.com.py > Caching > Purge Everything"
+echo "   ⚠️  SIN ESTO = CHUNKS 404 PARA TODOS LOS USUARIOS"
+echo ""
+echo "2️⃣  HARD REFRESH EN EL NAVEGADOR"
+echo "   → Chrome/Edge: Ctrl+Shift+R (Win) o Cmd+Shift+R (Mac)"
+echo "   → Firefox: Ctrl+Shift+Delete"
+echo "   → O: DevTools (F12) > Click derecho en Recargar > Vaciar caché"
+echo ""
+echo "📖 Documentación completa:"
+echo "   $FRONTEND_DIR/CACHE_CLOUDFLARE.md"
+echo ""
+echo "🤖 Para automatizar limpieza de Cloudflare:"
+echo "   Ver instrucciones en CACHE_CLOUDFLARE.md sección 'API'"
 echo "======================================="
