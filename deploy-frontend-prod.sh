@@ -154,8 +154,11 @@ fi
 echo "⚙️ Configurando variables de entorno..."
 cat > .env.production << EOF
 # Configuración de producción para PropTech Frontend
-# URL del backend a través de Cloudflare Tunnel
-# API Configuration
+
+# 🚀 API INTERNA (Server-Side): localhost:9091 directo (SIN tunnel = RÁPIDO)
+API_URL_INTERNAL=http://localhost:9091
+
+# 🌐 API PÚBLICA (Client-Side/Navegador): Cloudflare Tunnel
 NEXT_PUBLIC_API_URL=https://api.proptech.com.py
 NEXT_PUBLIC_UPLOADS_URL=https://api.proptech.com.py/uploads
 NEXT_PUBLIC_IMAGE_BASE_URL=https://api.proptech.com.py

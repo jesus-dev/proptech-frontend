@@ -1,10 +1,16 @@
 import axios from 'axios';
 
-// Helper function to clean up malformed API URLs
+// Helper function to resolve API URL - usa localhost en server, URL pública en browser
 function resolveApiUrl(): string {
-  let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  // En el servidor Next.js (SSR/SSG), usar localhost directo (sin tunnel)
+  if (typeof window === 'undefined') {
+    return process.env.API_URL_INTERNAL || 'http://localhost:9091';
+  }
   
-  // Clean up malformed URLs that might have double concatenation
+  // En el navegador, usar URL pública a través de Cloudflare
+  let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9091';
+  
+  // Clean up malformed URLs
   if (apiUrl.includes('https://proptech.com.py/https/api.proptech.com.py')) {
     apiUrl = 'https://api.proptech.com.py';
   } else if (apiUrl.includes('http://proptech.com.py/http/api.proptech.com.py')) {
@@ -17,7 +23,7 @@ function resolveApiUrl(): string {
 // Configuración base del cliente API
 const apiClient = axios.create({
   baseURL: resolveApiUrl(),
-  timeout: 30000, // 30s para manejar intermitencias del backend
+  timeout: 30000, // 30s para manejar intermitencias
   headers: {
     'Content-Type': 'application/json',
   },
