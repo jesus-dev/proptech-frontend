@@ -22,13 +22,19 @@ const getDefaultSettings = async (): Promise<AppSettings> => {
     isLoadingDefaults = true;
     defaultSettingsPromise = (async () => {
         try {
+            // Verificar autenticación antes de llamar APIs privadas
+            const hasAuth = typeof window !== 'undefined' && localStorage.getItem('token');
+            
             // Obtener datos dinámicos desde el backend
             const [cities, cityZones, amenities, propertyTypes, agencies] = await Promise.all([
                 apiClient.get('/api/cities').catch(() => ({ data: [] })),
                 apiClient.get('/api/city-zones').catch(() => ({ data: [] })),
                 apiClient.get('/api/amenities').catch(() => ({ data: [] })),
                 apiClient.get('/api/property-types').catch(() => ({ data: [] })),
-                apiClient.get('/api/agencies').catch(() => ({ data: [] }))
+                // Solo llamar a /api/agencies si está autenticado
+                hasAuth 
+                    ? apiClient.get('/api/agencies').catch(() => ({ data: [] }))
+                    : Promise.resolve({ data: [] })
             ]);
 
         // Extraer solo los nombres de las ciudades activas

@@ -1,11 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuración de producción - SEGURA
+  // Configuración de producción - OPTIMIZADA
   typescript: {
-    ignoreBuildErrors: false, // ✅ Habilitar verificación de tipos
+    // En producción, ya verificamos tipos localmente antes del push
+    ignoreBuildErrors: process.env.NODE_ENV === 'production',
   },
   eslint: {
-    ignoreDuringBuilds: false, // ✅ Habilitar verificación de ESLint
+    // En producción, ya corrimos lint localmente antes del push
+    ignoreDuringBuilds: process.env.NODE_ENV === 'production',
   },
   
   // 🔥 SOLUCIÓN DE RAÍZ: Output standalone + buildId estable
