@@ -89,51 +89,86 @@ class PublicPropertyService {
   }
 
   /**
-   * Obtener propiedad por slug
+   * Obtener propiedad por slug con retry para intermitencias
    */
-  async getPropertySummaryBySlug(slug: string): Promise<any> {
-    try {
-      // Intentar endpoint /summary primero
+  async getPropertySummaryBySlug(slug: string, retries = 3): Promise<any> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const response = await apiClient.get(`/api/public/properties/slug/${slug}/summary`);
+        // Intentar endpoint /summary primero (más rápido)
+        try {
+          const response = await apiClient.get(`/api/public/properties/slug/${slug}/summary`);
+          return response.data;
+        } catch (error: any) {
+          // Si es 404, no reintentar
+          if (error.response?.status === 404) {
+            throw new Error('PROPERTY_NOT_FOUND');
+          }
+          // Si es 500 y no es último intento, continuar al endpoint completo
+          if (error.response?.status === 500 && attempt < retries) {
+            console.warn(`⚠️ Intento ${attempt}/${retries} falló en /summary, intentando endpoint completo...`);
+          }
+        }
+
+        // Fallback: Endpoint completo
+        const response = await apiClient.get(`/api/public/properties/slug/${slug}`);
+        return response.data;
+      } catch (error: any) {
+        // Si es 404, lanzar inmediatamente
+        if (error.response?.status === 404) {
+          throw new Error('PROPERTY_NOT_FOUND');
+        }
+        
+        // Si es el último intento, lanzar error
+        if (attempt === retries) {
+          console.error(`❌ Todos los intentos fallaron para slug: ${slug}`);
+          throw error;
+        }
+        
+        // Esperar antes de reintentar (backoff exponencial)
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        console.warn(`🔄 Reintentando ${attempt + 1}/${retries}...`);
+      }
+    }
+    
+    throw new Error('PROPERTY_NOT_FOUND');
+  }
+
+  /**
+   * Obtener galería con retry
+   */
+  async getPropertyGallery(slug: string, retries = 2): Promise<any> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const response = await apiClient.get(`/api/public/properties/slug/${slug}/gallery`);
         return response.data;
       } catch (error) {
-        // Si falla, probar endpoint completo
+        if (attempt === retries) {
+          console.warn(`⚠️ Error cargando galería para ${slug}, usando fallback vacío`);
+          return { galleryImages: [] };
+        }
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
       }
-
-      // Endpoint completo
-      const response = await apiClient.get(`/api/public/properties/slug/${slug}`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        throw new Error('PROPERTY_NOT_FOUND');
-      }
-      throw error;
     }
+    return { galleryImages: [] };
   }
 
   /**
-   * Obtener galería
+   * Obtener amenidades con retry
    */
-  async getPropertyGallery(slug: string): Promise<any> {
-    try {
-      const response = await apiClient.get(`/api/public/properties/slug/${slug}/gallery`);
-      return response.data;
-    } catch (error) {
-      return { galleryImages: [] };
+  async getPropertyAmenities(slug: string, retries = 2): Promise<any> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const response = await apiClient.get(`/api/public/properties/slug/${slug}/amenities`);
+        return response.data;
+      } catch (error) {
+        if (attempt === retries) {
+          console.warn(`⚠️ Error cargando amenidades para ${slug}, usando fallback vacío`);
+          return { amenityIds: [], amenities: [] };
+        }
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+      }
     }
-  }
-
-  /**
-   * Obtener amenidades
-   */
-  async getPropertyAmenities(slug: string): Promise<any> {
-    try {
-      const response = await apiClient.get(`/api/public/properties/slug/${slug}/amenities`);
-      return response.data;
-    } catch (error) {
-      return { amenityIds: [], amenities: [] };
-    }
+    return { amenityIds: [], amenities: [] };
   }
 
   /**

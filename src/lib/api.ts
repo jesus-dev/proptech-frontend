@@ -17,7 +17,7 @@ function resolveApiUrl(): string {
 // Configuración base del cliente API
 const apiClient = axios.create({
   baseURL: resolveApiUrl(),
-  timeout: 15000,
+  timeout: 30000, // 30s para manejar intermitencias del backend
   headers: {
     'Content-Type': 'application/json',
   },

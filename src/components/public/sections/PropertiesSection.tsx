@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
@@ -14,25 +15,17 @@ type PublicProperty = any;
 // Función helper para construir URLs completas de imágenes
 const getImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath) {
-    console.log('⚠️ getImageUrl: imagePath vacío, usando placeholder');
     return '/images/placeholder.jpg';
   }
   
   // Si ya es una URL completa, devolverla tal como está
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    console.log('✅ getImageUrl: URL completa:', imagePath);
     return imagePath;
   }
   
-  // Si es una ruta relativa, construir la URL completa usando la configuración
+  // Si es una ruta relativa, construir la URL completa
   const baseUrl = getImageBaseUrl();
-  const fullUrl = `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
-  console.log('🔧 getImageUrl construida:', {
-    original: imagePath,
-    baseUrl: baseUrl,
-    final: fullUrl
-  });
-  return fullUrl;
+  return `${baseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
 };
 
 // Función helper para limpiar HTML y extraer texto plano
@@ -47,51 +40,15 @@ const stripHtml = (html: string | null | undefined): string => {
   return tempDiv.textContent || tempDiv.innerText || '';
 };
 
-// Componente de imagen optimizada SIMPLE y RÁPIDO
-const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
+// Componente de imagen optimizada con Next.js Image
+const OptimizedImage = ({ src, alt, className }: {
   src: string | null;
   alt: string;
   className: string;
-  onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
-  onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  onLoad?: () => void;
+  onError?: () => void;
 }) => {
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-
-  const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setIsLoading(false);
-    setHasError(false);
-    onLoad?.(e);
-  }, [onLoad]);
-
-  const handleError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    console.warn('❌ Imagen falló:', src);
-    setHasError(true);
-    setIsLoading(false);
-    onError?.(e);
-  }, [onError, src]);
-
-  // Timeout para celular lento (10s max)
-  useEffect(() => {
-    setIsLoading(true);
-    setHasError(false);
-    
-    timeoutRef.current = setTimeout(() => {
-      if (isLoading) {
-        console.warn('⏱️ Imagen tardó >10s (celular lento?):', src);
-        setHasError(true);
-        setIsLoading(false);
-      }
-    }, 10000);
-    
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [src]);
 
   // Si no hay src o error, mostrar placeholder bonito
   if (!src || hasError) {
@@ -104,23 +61,21 @@ const OptimizedImage = ({ src, alt, className, onLoad, onError }: {
     );
   }
 
+  const imageUrl = getImageUrl(src);
+
   return (
-    <div className="relative w-full h-full">
-      {/* Skeleton mientras carga */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 animate-pulse z-10" />
-      )}
-      
-      {/* Imagen */}
-      <img
-        ref={imgRef}
-        src={getImageUrl(src)}
+    <div className="relative w-full h-full overflow-hidden">
+      <Image
+        src={imageUrl}
         alt={alt}
-        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500`}
+        fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        className={className}
+        quality={75}
         loading="lazy"
-        decoding="async"
-        onLoad={handleLoad}
-        onError={handleError}
+        placeholder="blur"
+        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+        onError={() => setHasError(true)}
       />
     </div>
   );
