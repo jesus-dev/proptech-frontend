@@ -457,8 +457,8 @@ class PropertyService {
     try {
       await apiClient.post(`/api/properties/${propertyId}/views`);
     } catch (error) {
-      console.error('Error incrementing views:', error);
-      throw new Error('Error al incrementar vistas');
+      // Silencioso - el endpoint puede no estar disponible temporalmente
+      console.debug('Error incrementing views (silencioso):', error);
     }
   }
 

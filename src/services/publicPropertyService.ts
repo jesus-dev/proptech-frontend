@@ -31,7 +31,7 @@ class PublicPropertyService {
     try {
       await apiClient.post(`/api/properties/${propertyId}/views`);
     } catch (error) {
-      // Silencioso
+      // Silencioso - no mostrar error si falla
     }
   }
 
