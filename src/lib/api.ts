@@ -17,10 +17,9 @@ function resolveApiUrl(): string {
 // Configuración base del cliente API
 const apiClient = axios.create({
   baseURL: resolveApiUrl(),
-  timeout: 15000, // 15 segundos - suficiente para manejar intermitencias del túnel
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
   },
 });
 

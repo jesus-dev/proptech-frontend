@@ -29,7 +29,7 @@ class PublicPropertyService {
    */
   async incrementViews(propertyId: string): Promise<void> {
     try {
-      await apiClient.post(`/properties/${propertyId}/views`);
+      await apiClient.post(`/api/properties/${propertyId}/views`);
     } catch (error) {
       // Silencioso
     }
@@ -40,7 +40,7 @@ class PublicPropertyService {
    */
   async toggleFavorite(propertyId: string): Promise<boolean> {
     try {
-      await apiClient.post(`/properties/${propertyId}/favorites/toggle`);
+      await apiClient.post(`/api/properties/${propertyId}/favorites/toggle`);
       return true;
     } catch (error) {
       console.error('Error toggling favorite:', error);
