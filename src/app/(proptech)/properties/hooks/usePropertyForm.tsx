@@ -131,6 +131,35 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     [key: number]: File | null;
   }>({});
 
+  const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080')).replace(/\/$/, '');
+
+  const normalizeImagePathForBackend = (value?: string | null): string | undefined => {
+    if (!value) return undefined;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+      return undefined;
+    }
+    if (trimmed.startsWith(API_BASE_URL)) {
+      const relative = trimmed.slice(API_BASE_URL.length);
+      return relative.startsWith('/') ? relative : `/${relative}`;
+    }
+    return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  };
+
+  const selectFallbackFeaturedImage = (): string | undefined => {
+    const current = normalizeImagePathForBackend(formData.featuredImage);
+    if (current) return current;
+    if (Array.isArray(formData.images)) {
+      for (const img of formData.images) {
+        const normalized = normalizeImagePathForBackend(img);
+        if (normalized) {
+          return normalized;
+        }
+      }
+    }
+    return undefined;
+  };
+
   // Actualizar el formulario cuando cambie initialData
   useEffect(() => {
     if (initialData) {
@@ -160,11 +189,17 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             // El título puede estar vacío (el backend pone "Borrador sin título")
             title: formData.title || '',
             images: [],
-            featuredImage: "",
             // operacion se enviará con valor por defecto en backend si está vacío
             operacion: formData.operacion || '',
             // NO enviar propertyStatusId para que el backend use DRAFT por defecto
           };
+
+          const fallbackFeatured = selectFallbackFeaturedImage();
+          if (fallbackFeatured) {
+            propertyData.featuredImage = fallbackFeatured;
+          } else {
+            delete propertyData.featuredImage;
+          }
 
           if (draftPropertyId) {
             // Actualizar borrador existente
@@ -505,10 +540,16 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         const propertyData: any = {
           ...propertyDataWithoutCurrency,
           images: [], // Las imágenes se manejarán por separado
-          featuredImage: "", // La imagen destacada se manejará por separado
           // Enviar currencyId en lugar del código de moneda
           currencyId: formData.currencyId,
         };
+
+        const fallbackFeatured = selectFallbackFeaturedImage();
+        if (fallbackFeatured) {
+          propertyData.featuredImage = fallbackFeatured;
+        } else {
+          delete propertyData.featuredImage;
+        }
 
         let propertyId: string;
 
@@ -594,10 +635,23 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
               propertyId
             );
 
-            
             // Guardar referencias en la base de datos
-            const imageUrls = imageResults.galleryImageUrls;
-            const featuredImageUrl = imageResults.featuredImageUrl || formData.featuredImage;
+            const normalizedGalleryUrls = (imageResults.galleryImageUrls || [])
+              .map((url) => normalizeImagePathForBackend(url))
+              .filter((url): url is string => Boolean(url));
+
+            const normalizedFeaturedUrl =
+              normalizeImagePathForBackend(imageResults.featuredImageUrl) ||
+              normalizeImagePathForBackend(formData.featuredImage) ||
+              normalizedGalleryUrls[0];
+
+            const payload: Record<string, unknown> = {
+              imageUrls: normalizedGalleryUrls
+            };
+
+            if (normalizedFeaturedUrl) {
+              payload.featuredImageUrl = normalizedFeaturedUrl;
+            }
 
             // Llamar al endpoint para actualizar las imágenes en la base de datos
             const response = await fetch(getEndpoint(`/api/properties/${propertyId}/images`), {
@@ -605,10 +659,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                imageUrls: imageUrls,
-                featuredImageUrl: featuredImageUrl
-              })
+              body: JSON.stringify(payload)
             });
 
             if (!response.ok) {

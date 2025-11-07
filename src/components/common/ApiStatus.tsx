@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api';
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { createTimeoutSignal } from '@/utils/createTimeoutSignal';
 interface ApiStatusProps {
   className?: string;
 }
@@ -14,19 +15,20 @@ export default function ApiStatus({ className = '' }: ApiStatusProps) {
   const checkApiStatus = async () => {
     try {
       setStatus('checking');
-      const response = await fetch(`${apiClient.defaults.baseURL}/api/health`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(5000),
+      const signal = createTimeoutSignal(5000);
+      const response = await apiClient.get('/api/health', {
+        ...(signal ? { signal } : {}),
       });
       
-      if (response.ok) {
-        setStatus('online');
-      } else {
-        setStatus('offline');
-      }
+      setStatus('online');
     } catch (error) {
       console.error('API health check failed:', error);
-      setStatus('error');
+      const axiosError = error as any;
+      if (axiosError?.response) {
+        setStatus('offline');
+      } else {
+        setStatus('error');
+      }
     } finally {
       setLastCheck(new Date());
     }

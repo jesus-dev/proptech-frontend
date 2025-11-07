@@ -5,13 +5,43 @@
 
 import { apiClient } from '@/lib/api';
 
+export interface PublicPropertyFilters {
+  search?: string;
+  type?: string;
+  city?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  minArea?: number;
+  maxArea?: number;
+  operacion?: 'SALE' | 'RENT' | 'BOTH';
+}
+
 class PublicPropertyService {
   /**
    * Obtener propiedades paginadas
    */
-  async getPropertiesPaginated({ page = 1, limit = 6 }: { page: number; limit: number }) {
+  async getPropertiesPaginated({ page = 1, limit = 6, filters }: { page?: number; limit?: number; filters?: PublicPropertyFilters }) {
     try {
-      const response = await apiClient.get(`/api/public/properties/paginated?page=${page}&limit=${limit}`);
+      const searchParams = new URLSearchParams();
+      searchParams.append('page', page.toString());
+      searchParams.append('limit', limit.toString());
+
+      if (filters) {
+        if (filters.search) searchParams.append('search', filters.search);
+        if (filters.type) searchParams.append('type', filters.type);
+        if (filters.city) searchParams.append('city', filters.city);
+        if (typeof filters.minPrice === 'number') searchParams.append('minPrice', filters.minPrice.toString());
+        if (typeof filters.maxPrice === 'number') searchParams.append('maxPrice', filters.maxPrice.toString());
+        if (typeof filters.bedrooms === 'number') searchParams.append('bedrooms', filters.bedrooms.toString());
+        if (typeof filters.bathrooms === 'number') searchParams.append('bathrooms', filters.bathrooms.toString());
+        if (typeof filters.minArea === 'number') searchParams.append('minArea', filters.minArea.toString());
+        if (typeof filters.maxArea === 'number') searchParams.append('maxArea', filters.maxArea.toString());
+        if (filters.operacion) searchParams.append('operacion', filters.operacion);
+      }
+
+      const response = await apiClient.get(`/api/public/properties/paginated?${searchParams.toString()}`);
       const data = response.data;
       
       return {
@@ -226,6 +256,16 @@ class PublicPropertyService {
     } catch (error) {
       console.error('Error fetching category summary:', error);
       return [];
+    }
+  }
+
+  async getFilterOptions(): Promise<{ cities: Array<{ id: number | null; name: string; count: number }>; propertyTypes: Array<{ id: number | null; name: string; count: number }>; operations: Array<{ value: string; label: string }> }> {
+    try {
+      const response = await apiClient.get('/api/public/properties/filters');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching public filter options:', error);
+      return { cities: [], propertyTypes: [], operations: [] };
     }
   }
 }

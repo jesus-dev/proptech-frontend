@@ -255,6 +255,52 @@ export default function PropertiesPage() {
         filters.propertyStatus = 'DRAFT';
       }
 
+      if (debouncedSearchQuery.trim()) {
+        filters.search = debouncedSearchQuery.trim();
+      }
+
+      if (typeFilter.trim()) {
+        filters.propertyType = typeFilter.trim();
+      }
+
+      if (cityFilter.trim()) {
+        filters.city = cityFilter.trim();
+      }
+
+      if (priceRangeFilter) {
+        const [min, max] = priceRangeFilter.split('-');
+        if (min) {
+          const minValue = Number(min.replace(/[^0-9]/g, ''));
+          if (!Number.isNaN(minValue)) {
+            filters.minPrice = minValue;
+          }
+        }
+        if (max && max !== '+') {
+          const maxValue = Number(max.replace(/[^0-9]/g, ''));
+          if (!Number.isNaN(maxValue)) {
+            filters.maxPrice = maxValue;
+          }
+        }
+        if (priceRangeFilter.endsWith('+') && !filters.minPrice) {
+          const minValue = Number(priceRangeFilter.replace(/[^0-9]/g, ''));
+          if (!Number.isNaN(minValue)) {
+            filters.minPrice = minValue;
+          }
+        }
+      }
+
+      if (statusFilter.trim()) {
+        filters.propertyStatus = statusFilter.trim();
+      }
+
+      if (featuredFilter) {
+        filters.featured = true;
+      }
+
+      if (premiumFilter) {
+        filters.premium = true;
+      }
+ 
       const response = await propertyService.getPropertiesPaginated(filters);
 
       // Limpiar timeout si la respuesta llegó a tiempo

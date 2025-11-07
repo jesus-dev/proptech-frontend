@@ -122,9 +122,9 @@ const DemoSection = () => {
             viewport={{ once: true }}
             className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto leading-relaxed"
           >
-            Descubre cómo funciona nuestro CRM con una{' '}
+            Conoce las funcionalidades clave de nuestro CRM a través de una{' '}
             <span className="text-blue-300 font-bold">demostración interactiva</span>{' '}
-            y ve por qué más de 500 agentes confían en nosotros.
+            y descubre cómo puede impulsar tu equipo inmobiliario.
           </motion.p>
         </motion.div>
 

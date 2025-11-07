@@ -16,6 +16,7 @@ import {
   SparklesIcon,
   RocketLaunchIcon
 } from '@heroicons/react/24/outline';
+import { PROPTECH_STATS, PROPTECH_STATS_COPY } from './constants/proptechStats';
 
 const FeaturesSection = () => {
   const features = [
@@ -246,24 +247,20 @@ const FeaturesSection = () => {
                 ¿Listo para revolucionar tu negocio?
               </h3>
               <p className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-                Únete a más de 500 agentes inmobiliarios que ya están aumentando 
+                Únete a {PROPTECH_STATS_COPY.agents.headline} que ya están aumentando
                 sus ventas con Proptech CRM. Comienza tu prueba gratuita hoy mismo.
               </p>
               
               {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-                <div className="text-center group/stat">
-                  <div className="text-4xl font-bold text-white mb-2 group-hover/stat:scale-110 transition-transform duration-300">500+</div>
-                  <div className="text-blue-200 text-sm font-medium">Agentes activos</div>
-                </div>
-                <div className="text-center group/stat">
-                  <div className="text-4xl font-bold text-white mb-2 group-hover/stat:scale-110 transition-transform duration-300">10K+</div>
-                  <div className="text-blue-200 text-sm font-medium">Propiedades gestionadas</div>
-                </div>
-                <div className="text-center group/stat">
-                  <div className="text-4xl font-bold text-white mb-2 group-hover/stat:scale-110 transition-transform duration-300">98%</div>
-                  <div className="text-blue-200 text-sm font-medium">Satisfacción del cliente</div>
-                </div>
+                {PROPTECH_STATS.map((stat) => (
+                  <div key={stat.key} className="text-center group/stat">
+                    <div className="text-4xl font-bold text-white mb-2 group-hover/stat:scale-110 transition-transform duration-300">
+                      {stat.value}
+                    </div>
+                    <div className="text-blue-200 text-sm font-medium">{stat.label}</div>
+                  </div>
+                ))}
               </div>
               
               <div className="flex flex-col sm:flex-row gap-6 justify-center">

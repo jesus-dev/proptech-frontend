@@ -22,6 +22,14 @@ const ContactSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  const scrollToElement = (elementId: string) => {
+    if (typeof window === 'undefined') return;
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -250,6 +258,8 @@ const ContactSection = () => {
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               className="group relative inline-flex items-center justify-center px-16 py-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-600 text-white rounded-3xl font-black text-2xl shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 border-2 border-white/20 overflow-hidden"
+              type="button"
+              onClick={() => scrollToElement('contact-form')}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <span className="relative z-10">Solicitar Demo Gratis</span>
@@ -267,6 +277,8 @@ const ContactSection = () => {
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               className="group relative inline-flex items-center justify-center px-16 py-8 bg-white/10 backdrop-blur-sm text-white rounded-3xl font-black text-2xl border-2 border-white/40 hover:bg-white/20 transition-all duration-300 shadow-2xl hover:shadow-white/30"
+              type="button"
+              onClick={() => scrollToElement('pricing')}
             >
               <svg className="w-7 h-7 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
@@ -305,6 +317,7 @@ const ContactSection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <motion.div
+            id="contact-form"
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}

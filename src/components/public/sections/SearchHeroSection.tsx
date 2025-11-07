@@ -23,15 +23,28 @@ const SearchHeroSection = () => {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeQuickFilter, setActiveQuickFilter] = useState('');
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showPriceDropdown, setShowPriceDropdown] = useState(false);
   
-  // Estados para datos din\u00e1micos
+  // Estados para datos dinámicos
   const [propertyTypes, setPropertyTypes] = useState([{ value: '', label: 'Tipo de Propiedad' }]);
   const [locations, setLocations] = useState([{ value: '', label: 'Ubicación' }]);
+
+  const normalizeTypeName = (value?: string | null) => {
+    if (!value) return '';
+    return value
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
 
   // Cargar datos dinámicamente del backend
   useEffect(() => {
@@ -44,13 +57,20 @@ const SearchHeroSection = () => {
 
         // Procesar tipos de propiedades
         if (typesRes.data && Array.isArray(typesRes.data)) {
-          const types = typesRes.data
-            .filter((type: any) => type.active !== false)
-            .map((type: any) => ({
-              value: type.name.toLowerCase().replace(/ /g, '-'),
-              label: type.name
-            }));
-          setPropertyTypes([{ value: '', label: 'Tipo de Propiedad' }, ...types]);
+          const uniqueTypes = new Map<string, { value: string; label: string }>();
+          typesRes.data
+            .filter((type: any) => type && type.name && type.active !== false)
+            .forEach((type: any) => {
+              const normalized = normalizeTypeName(type.name);
+              if (!normalized) return;
+              if (!uniqueTypes.has(normalized)) {
+                uniqueTypes.set(normalized, {
+                  value: normalized,
+                  label: type.name
+                });
+              }
+            });
+          setPropertyTypes([{ value: '', label: 'Tipo de Propiedad' }, ...Array.from(uniqueTypes.values())]);
         }
 
         // Procesar ciudades
@@ -160,20 +180,22 @@ const SearchHeroSection = () => {
                   onChange={(e) => setPropertyType(e.target.value)}
                   className="px-2 py-2.5 border border-gray-200 rounded-lg appearance-none text-sm bg-white"
                 >
-                  <option value="">Tipo</option>
-                  <option value="casa">Casa</option>
-                  <option value="departamento">Departamento</option>
-                  <option value="terreno">Terreno</option>
+                  {propertyTypes.map((type) => (
+                    <option key={type.value || 'tipo'} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
                 </select>
                 <select 
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="px-2 py-2.5 border border-gray-200 rounded-lg appearance-none text-sm bg-white"
                 >
-                  <option value="">Ubicación</option>
-                  <option value="asuncion">Asunción</option>
-                  <option value="ciudad-del-este">Ciudad del Este</option>
-                  <option value="san-lorenzo">San Lorenzo</option>
+                  {locations.map((loc) => (
+                    <option key={loc.value || 'ubicacion'} value={loc.value}>
+                      {loc.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <button className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-2.5 px-4 rounded-lg font-semibold text-sm">

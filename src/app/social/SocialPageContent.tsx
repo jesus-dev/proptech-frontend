@@ -27,6 +27,7 @@ import {
   Building2
 } from 'lucide-react';
 import PropShotReelViewer from '@/components/social/PropShotReelViewer';
+import { createTimeoutSignal } from '@/utils/createTimeoutSignal';
 
 // Función para convertir URLs en texto a enlaces clickeables
 const convertUrlsToLinks = (text: string): string => {
@@ -53,8 +54,9 @@ const detectUrls = (text: string): string[] => {
 // Función para detectar el país por IP (solo para determinar si es Paraguay)
 const detectCountryByIP = async (): Promise<string> => {
   try {
-    const response = await fetch('https://ipapi.co/json/', { 
-      signal: AbortSignal.timeout(3000) 
+    const signal = createTimeoutSignal(3000);
+    const response = await fetch('https://ipapi.co/json/', {
+      ...(signal ? { signal } : {})
     });
     const data = await response.json();
     return data.country_name || data.country || 'Unknown';
@@ -111,8 +113,9 @@ const getLocationByIP = async (): Promise<string> => {
     
     for (const service of services) {
       try {
-        const response = await fetch(service.url, { 
-          signal: AbortSignal.timeout(4000)
+        const signal = createTimeoutSignal(4000);
+        const response = await fetch(service.url, {
+          ...(signal ? { signal } : {})
         });
         
         if (response.ok) {
@@ -161,8 +164,12 @@ const getLocationByGPS = (): Promise<{ location: string; accuracy: number; metho
           
           // Servicio 1: BigDataCloud (muy preciso, gratuito)
           try {
+            const bigDataSignal = createTimeoutSignal(4000);
             const bigDataResponse = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=es`
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=es`,
+              {
+                ...(bigDataSignal ? { signal: bigDataSignal } : {})
+              }
             );
             const bigDataData = await bigDataResponse.json();
             
@@ -178,8 +185,12 @@ const getLocationByGPS = (): Promise<{ location: string; accuracy: number; metho
           // Servicio 2: OpenStreetMap Nominatim (gratuito, buena precisión)
           if (!cityName) {
             try {
+              const nominatimSignal = createTimeoutSignal(4000);
               const nominatimResponse = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16&accept-language=es`
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16&accept-language=es`,
+                {
+                  ...(nominatimSignal ? { signal: nominatimSignal } : {})
+                }
               );
               const nominatimData = await nominatimResponse.json();
               
@@ -197,8 +208,12 @@ const getLocationByGPS = (): Promise<{ location: string; accuracy: number; metho
           // Servicio 3: LocationIQ (gratuito, muy preciso)
           if (!cityName) {
             try {
+              const locationIqSignal = createTimeoutSignal(4000);
               const locationIQResponse = await fetch(
-                `https://us1.locationiq.com/v1/reverse.php?key=pk.1234567890abcdef&lat=${latitude}&lon=${longitude}&format=json&accept-language=es`
+                `https://eu1.locationiq.com/v1/reverse.php?key=pk.1f029f930f7826dee6d16e0d9d9f06cb&lat=${latitude}&lon=${longitude}&format=json`,
+                {
+                  ...(locationIqSignal ? { signal: locationIqSignal } : {})
+                }
               );
               const locationIQData = await locationIQResponse.json();
               
@@ -2038,14 +2053,7 @@ export default function SocialPageContent() {
                       onLoadedData={(e) => {
                         const videoElement = e.currentTarget;
                         videoElement.muted = true;
-                        // Múltiples intentos de auto-play
                         videoElement.play()
-                          .catch(err => {
-                            // Intentar de nuevo después de un delay
-                            setTimeout(() => {
-                              videoElement.play()
-                            }, 1000);
-                          });
                       }}
                     />
                     

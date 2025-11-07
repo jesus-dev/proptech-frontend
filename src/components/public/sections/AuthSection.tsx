@@ -11,6 +11,7 @@ import {
   CheckCircleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { PROPTECH_STATS } from './constants/proptechStats';
 
 const AuthSection = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -186,18 +187,15 @@ const AuthSection = () => {
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 pt-8">
-              <div className="text-center p-6 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="text-3xl font-bold text-white mb-2 drop-shadow-lg">500+</div>
-                <div className="text-xs text-white/90 font-bold drop-shadow-md">Agentes activos</div>
-              </div>
-              <div className="text-center p-6 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="text-3xl font-bold text-white mb-2 drop-shadow-lg">10K+</div>
-                <div className="text-xs text-white/90 font-bold drop-shadow-md">Propiedades</div>
-              </div>
-              <div className="text-center p-6 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
-                <div className="text-3xl font-bold text-white mb-2 drop-shadow-lg">98%</div>
-                <div className="text-xs text-white/90 font-bold drop-shadow-md">Satisfacción</div>
-              </div>
+              {PROPTECH_STATS.map((stat) => (
+                <div
+                  key={stat.key}
+                  className="text-center p-6 rounded-2xl bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="text-3xl font-bold text-white mb-2 drop-shadow-lg">{stat.value}</div>
+                  <div className="text-xs text-white/90 font-bold drop-shadow-md">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </motion.div>
 

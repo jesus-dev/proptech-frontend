@@ -9,14 +9,14 @@ import {
   StarIcon,
   RocketLaunchIcon
 } from '@heroicons/react/24/outline';
+import { PROPTECH_STATS } from './constants/proptechStats';
 
 const HeroSection = () => {
   const stats = [
-    { value: '500+', label: 'Agentes activos' },
-    { value: '10K+', label: 'Propiedades gestionadas' },
-    { value: '98%', label: 'Satisfacción del cliente' },
-    { value: '24/7', label: 'Soporte disponible' }
+    ...PROPTECH_STATS,
+    { key: 'support' as const, value: '24/7', label: 'Soporte disponible' },
   ];
+  const agentsStat = PROPTECH_STATS.find((stat) => stat.key === 'agents');
 
   const features = [
     'Gestión completa de propiedades',
@@ -24,6 +24,14 @@ const HeroSection = () => {
     'Reportes en tiempo real',
     'App móvil incluida'
   ];
+
+  const handleScrollTo = (id: string) => {
+    if (typeof document === 'undefined') return;
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 overflow-hidden w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] -mt-8 sm:-mt-10 md:-mt-12 lg:-mt-16">
@@ -71,7 +79,7 @@ const HeroSection = () => {
               className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-400/30 text-white text-sm font-semibold mb-8 backdrop-blur-sm"
             >
               <RocketLaunchIcon className="w-5 h-5 mr-2" />
-              El CRM más avanzado para agentes inmobiliarios
+              El CRM más avanzado para asesores inmobiliarios
             </motion.div>
 
             {/* Main Heading */}
@@ -121,12 +129,20 @@ const HeroSection = () => {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              <button className="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 hover:scale-105">
+              <button
+                type="button"
+                onClick={() => handleScrollTo('contact-form')}
+                className="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 hover:scale-105"
+              >
                 Comenzar Gratis
                 <ArrowRightIcon className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
               
-              <button className="group inline-flex items-center justify-center px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-2xl font-bold text-lg border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105">
+              <button
+                type="button"
+                onClick={() => handleScrollTo('demo')}
+                className="group inline-flex items-center justify-center px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-2xl font-bold text-lg border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105"
+              >
                 <PlayIcon className="w-6 h-6 mr-2" />
                 Ver Demo
               </button>
@@ -145,7 +161,9 @@ const HeroSection = () => {
                     <StarIcon key={i} className="w-6 h-6 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <span className="ml-3 text-white font-medium">4.9/5 de 500+ agentes</span>
+                <span className="ml-3 text-white font-medium">
+                4.9/5 de {agentsStat?.value ?? '50+'} agentes
+                </span>
               </div>
             </motion.div>
           </motion.div>

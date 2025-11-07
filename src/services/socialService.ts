@@ -1,7 +1,8 @@
-import { config, getImageBaseUrl } from '@/config/environment';
+import { getImageBaseUrl } from '@/config/environment';
+import { createTimeoutSignal } from '@/utils/createTimeoutSignal';
+import { apiClient } from '@/lib/api';
+import type { AxiosError } from 'axios';
 
-const API_BASE_URL = config.API_BASE_URL;
-const UPLOADS_BASE_URL = config.UPLOADS_BASE_URL;
 const IMAGE_BASE_URL = getImageBaseUrl();
 
 // Cache para imágenes para evitar requests repetidos
@@ -143,9 +144,10 @@ export class SocialService {
     }
     
     try {
-      const response = await fetch(imageUrl, { 
+      const signal = createTimeoutSignal(5000);
+      const response = await fetch(imageUrl, {
         method: 'HEAD',
-        signal: AbortSignal.timeout(5000) // 5 segundos timeout
+        ...(signal ? { signal } : {})
       });
       const exists = response.ok;
       
@@ -367,16 +369,15 @@ export class SocialService {
     // NO usar cache - siempre obtener datos frescos de la BD
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/social/posts?page=${page}&size=${size}`, {
-        signal: AbortSignal.timeout(10000) // 10 segundos timeout
+      const signal = createTimeoutSignal(10000);
+      const response = await apiClient.get(`/api/social/posts`, {
+        params: { page, size },
+        signal,
+        responseType: 'text',
+        transformResponse: [(data) => data]
       });
-      
-      if (!response.ok) {
-        throw new Error(`Error al obtener posts: ${response.status}`);
-      }
-      
-      // Obtener el texto primero para poder manejarlo si falla el parsing
-      const text = await response.text();
+
+      const text = response.data as string;
       
       let posts: Post[];
       try {
@@ -451,22 +452,12 @@ export class SocialService {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/social/posts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postData),
-        signal: AbortSignal.timeout(15000) // 15 segundos timeout
+      const signal = createTimeoutSignal(15000);
+      const response = await apiClient.post('/api/social/posts', postData, {
+        signal,
       });
-      
-      if (!response.ok) {
-        throw new Error(`Error al crear post: ${response.status}`);
-      }
-      
-      // Ya no hay cache que limpiar - los datos siempre vienen de la BD
-      
-      return await response.json();
+
+      return response.data;
     } catch (error) {
       console.error('Error creating post:', error);
       throw error;
@@ -476,20 +467,18 @@ export class SocialService {
   // Eliminar un post
   static async deletePost(postId: number, userId: number): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/social/posts/${postId}?userId=${userId}`, {
-        method: 'DELETE',
-        signal: AbortSignal.timeout(10000)
+      const signal = createTimeoutSignal(10000);
+      await apiClient.delete(`/api/social/posts/${postId}`, {
+        data: { userId },
+        signal,
       });
-      
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('No tienes permiso para eliminar este post');
-        }
-        throw new Error(`Error al eliminar post: ${response.status}`);
-      }
-      
+
       console.log('✅ Post eliminado correctamente');
     } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError?.response?.status === 403) {
+        throw new Error('No tienes permiso para eliminar este post');
+      }
       console.error('Error deleting post:', error);
       throw error;
     }
@@ -502,18 +491,10 @@ export class SocialService {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/social/posts/${likeData.postId}/like`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId: likeData.userId }),
-        signal: AbortSignal.timeout(10000)
+      const signal = createTimeoutSignal(10000);
+      await apiClient.post(`/api/social/posts/${likeData.postId}/like`, { userId: likeData.userId }, {
+        signal,
       });
-      
-      if (!response.ok) {
-        throw new Error(`Error al dar like: ${response.status}`);
-      }
       
       // Ya no hay cache que limpiar - los datos siempre vienen de la BD
     } catch (error) {
@@ -552,23 +533,15 @@ export class SocialService {
         formData.append('file', image);
         formData.append('fileName', image.name);
 
-        const response = await fetch(`${API_BASE_URL}/api/social/upload-image`, {
-          method: 'POST',
-          body: formData,
-          signal: AbortSignal.timeout(30000) // 30 segundos para upload de imágenes
+        const signal = createTimeoutSignal(30000);
+        const response = await apiClient.post('/api/social/upload-image', formData, {
+          signal,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         });
 
-        if (!response.ok) {
-          throw new Error(`Error uploading image ${image.name}: ${response.status}`);
-        }
-
-        const result = await response.json();
-        return {
-          url: result.fileUrl,
-          fileName: result.fileName,
-          fileSize: image.size,
-          mimeType: image.type
-        };
+        return response.data;
       });
 
       return await Promise.all(uploadPromises);
@@ -585,23 +558,15 @@ export class SocialService {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/social/posts/${commentData.postId}/comment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
+      const signal = createTimeoutSignal(10000);
+      const response = await apiClient.post(`/api/social/posts/${commentData.postId}/comments`, { 
           userId: commentData.userId, 
           content: commentData.content 
-        }),
-        signal: AbortSignal.timeout(10000)
+        }, {
+        signal,
       });
-      
-      if (!response.ok) {
-        throw new Error(`Error al comentar: ${response.status}`);
-      }
-      
-      // Ya no hay cache que limpiar - los datos siempre vienen de la BD
+
+      return response.data;
     } catch (error) {
       console.error('Error commenting post:', error);
       throw error;

@@ -16,6 +16,8 @@ export interface PropertyFilters {
   operacion?: 'SALE' | 'RENT' | 'BOTH';
   featured?: boolean;
   premium?: boolean;
+  minArea?: number;
+  maxArea?: number;
 }
 
 export interface PropertyStatistics {

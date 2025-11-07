@@ -140,13 +140,18 @@ export default function EditPropertyPage({ params }: PageProps) {
             return `${apiBaseUrl}${imageUrl}`;
           };
 
+          let processedFeaturedImage = processFeaturedImageUrl(propertyData.featuredImage);
+          if ((!processedFeaturedImage || processedFeaturedImage === '') && Array.isArray(propertyData.images) && propertyData.images.length > 0) {
+            processedFeaturedImage = processFeaturedImageUrl(propertyData.images[0]);
+          }
+
           const initialData = {
             ...propertyData,
             id: propertyId,
             amenities: amenitiesIds,
             type: typeName,
             propertyTypeId: propertyData.propertyTypeId,
-            featuredImage: processFeaturedImageUrl(propertyData.featuredImage)
+            featuredImage: processedFeaturedImage
           };
           
           setInitialPropertyData(initialData);

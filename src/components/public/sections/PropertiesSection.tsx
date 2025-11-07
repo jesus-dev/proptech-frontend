@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, Suspense, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
-import { apiClient } from '@/lib/api';
+import type { PublicPropertyFilters } from '@/services/publicPropertyService';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -125,6 +125,22 @@ const areaRanges = [
   { value: '300+', label: 'Más de 300m²' }
 ];
 
+const defaultCityOptions = [
+  { value: '', label: 'Todas las Ciudades' }
+];
+
+const normalizePropertyType = (value?: string | null) => {
+  if (!value) return '';
+  return value
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
 const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: string }) => {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -144,9 +160,11 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
   
   // Estado para categorías dinámicas
   const [propertyCategories, setPropertyCategories] = useState(defaultPropertyCategories);
+  const [cityOptions, setCityOptions] = useState(defaultCityOptions);
 
   // Calcular ciudades únicas dinámicamente desde las propiedades cargadas
   const availableCities = React.useMemo(() => {
@@ -192,67 +210,198 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
 
   // Cargar categorías de propiedades dinámicamente
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadFilterOptions = async () => {
       try {
-        const response = await apiClient.get('/api/property-types');
-        if (response.data && Array.isArray(response.data)) {
-          const categories = response.data
-            .filter((type: any) => type.active !== false)
-            .map((type: any) => ({
-              value: type.name.toLowerCase().replace(/ /g, '-'),
-              label: type.name
-            }));
+        const filters = await publicPropertyService.getFilterOptions();
+
+        if (filters.propertyTypes && Array.isArray(filters.propertyTypes)) {
+          const uniqueCategories = new Map<string, { value: string; label: string; typeName: string }>();
+          filters.propertyTypes
+            .filter((type: any) => type && type.name)
+            .forEach((type: any) => {
+              const slug = normalizePropertyType(type.name);
+              if (!slug) return;
+              if (!uniqueCategories.has(slug)) {
+                uniqueCategories.set(slug, {
+                  value: slug,
+                  label: type.name,
+                  typeName: type.name
+                });
+              }
+            });
           setPropertyCategories([
             { value: '', label: 'Todas las Categorías' },
-            ...categories
+            ...Array.from(uniqueCategories.values()).map((item) => ({ value: item.value, label: item.label, typeName: item.typeName }))
+          ]);
+        }
+
+        if (filters.cities && Array.isArray(filters.cities)) {
+          const normalizedCities = filters.cities
+            .filter((city: any) => city && city.name)
+            .map((city: any) => ({
+              value: city.name,
+              label: city.count ? `${city.name} (${city.count})` : city.name
+            }))
+            .sort((a: any, b: any) => a.value.localeCompare(b.value));
+
+          setCityOptions([
+            { value: '', label: 'Todas las Ciudades' },
+            ...normalizedCities
           ]);
         }
       } catch (error) {
-        console.error('Error loading property categories:', error);
-        // Mantener las categorías por defecto si hay error
+        console.error('Error loading public filter options:', error);
       }
     };
 
-    loadCategories();
+    loadFilterOptions();
   }, []);
 
-  // Función para cargar propiedades iniciales con AUTO-RETRY TRANSPARENTE
-  const loadInitialProperties = async (attempt = 1) => {
-    try {
-      setLoading(true);
-      setError('');
-      setCurrentPage(1);
-      
-      const data = await publicPropertyService.getPropertiesPaginated({ page: 1, limit: 6 });
-      
-      if (data && data.properties) {
-        setProperties(Array.isArray(data.properties) ? data.properties : []);
-        setHasMore(data.properties.length === 6);
-      } else {
-        setProperties([]);
-        setHasMore(false);
-      }
-    } catch (e: any) {
-      console.warn(`⚠️ Error cargando propiedades (intento ${attempt}/3)`);
-      
-      // ⭐ AUTO-RETRY TRANSPARENTE: Reintentar hasta 3 veces
-      if (attempt < 3) {
-        setTimeout(() => loadInitialProperties(attempt + 1), attempt * 2000);
-      } else {
-        // Después de 3 intentos, mostrar vacío pero NO error visible
-        console.warn('❌ No se pudieron cargar propiedades después de 3 intentos');
-        setProperties([]);
-        setHasMore(false);
-      }
-    } finally {
-      setLoading(false);
+  const PAGE_SIZE = 6;
+
+  const buildFilters = useCallback((): PublicPropertyFilters => {
+    const filters: PublicPropertyFilters = {};
+
+    if (searchTerm.trim()) {
+      filters.search = searchTerm.trim();
     }
-  };
+
+    if (selectedType) {
+      if (selectedType === 'venta') {
+        filters.operacion = 'SALE';
+      } else if (selectedType === 'alquiler') {
+        filters.operacion = 'RENT';
+      } else if (selectedType === 'ambos') {
+        filters.operacion = 'BOTH';
+      }
+    }
+
+    const categoryOption = propertyCategories.find(category => category.value === selectedCategory);
+    if (categoryOption && (categoryOption as any).typeName) {
+      filters.type = (categoryOption as any).typeName;
+    } else if (selectedCategory) {
+      filters.type = selectedCategory;
+    }
+
+    if (selectedCity) {
+      filters.city = selectedCity;
+    }
+
+    if (selectedPriceRange) {
+      const [minPart, maxPart] = selectedPriceRange.split('-');
+      if (minPart) {
+        const minValue = Number(minPart.replace(/[^0-9]/g, ''));
+        if (!Number.isNaN(minValue)) {
+          filters.minPrice = minValue;
+        }
+      }
+      if (maxPart && maxPart !== '+') {
+        const maxValue = Number(maxPart.replace(/[^0-9]/g, ''));
+        if (!Number.isNaN(maxValue)) {
+          filters.maxPrice = maxValue;
+        }
+      }
+      if (selectedPriceRange.endsWith('+') && !filters.minPrice) {
+        const minValue = Number(selectedPriceRange.replace(/[^0-9]/g, ''));
+        if (!Number.isNaN(minValue)) {
+          filters.minPrice = minValue;
+        }
+      }
+    }
+
+    if (selectedBedrooms) {
+      const numericBedrooms = parseInt(selectedBedrooms.replace('+', ''), 10);
+      if (!Number.isNaN(numericBedrooms)) {
+        filters.bedrooms = numericBedrooms;
+      }
+    }
+
+    if (selectedBathrooms) {
+      const numericBathrooms = parseInt(selectedBathrooms.replace('+', ''), 10);
+      if (!Number.isNaN(numericBathrooms)) {
+        filters.bathrooms = numericBathrooms;
+      }
+    }
+
+    if (selectedAreaRange) {
+      if (selectedAreaRange.endsWith('+')) {
+        const minArea = Number(selectedAreaRange.replace('+', '').replace(/[^0-9]/g, ''));
+        if (!Number.isNaN(minArea)) {
+          filters.minArea = minArea;
+        }
+      } else {
+        const [minAreaPart, maxAreaPart] = selectedAreaRange.split('-');
+        if (minAreaPart) {
+          const minArea = Number(minAreaPart.replace(/[^0-9]/g, ''));
+          if (!Number.isNaN(minArea)) {
+            filters.minArea = minArea;
+          }
+        }
+        if (maxAreaPart) {
+          const maxArea = Number(maxAreaPart.replace(/[^0-9]/g, ''));
+          if (!Number.isNaN(maxArea)) {
+            filters.maxArea = maxArea;
+          }
+        }
+      }
+    }
+
+    return filters;
+  }, [searchTerm, selectedType, propertyCategories, selectedCategory, selectedCity, selectedPriceRange, selectedBedrooms, selectedBathrooms, selectedAreaRange]);
+
+  const fetchProperties = useCallback(async (page = 1, append = false) => {
+    try {
+      if (page === 1) {
+        setLoading(true);
+        setError('');
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const response = await publicPropertyService.getPropertiesPaginated({
+        page,
+        limit: PAGE_SIZE,
+        filters: buildFilters(),
+      });
+
+      const newProperties = Array.isArray(response.properties) ? response.properties : [];
+      const pagination = response.pagination || { currentPage: page, totalPages: 0, totalProperties: newProperties.length, propertiesPerPage: PAGE_SIZE };
+
+      setTotalResults(pagination.totalProperties || newProperties.length);
+
+      if (append) {
+        setProperties(prev => {
+          const existingIds = new Set(prev.map(property => property.id));
+          const filteredNew = newProperties.filter(property => !existingIds.has(property.id));
+          return [...prev, ...filteredNew];
+        });
+      } else {
+        setProperties(newProperties);
+      }
+
+      setCurrentPage(pagination.currentPage || page);
+      const totalPages = pagination.totalPages || Math.ceil((pagination.totalProperties || newProperties.length) / (pagination.propertiesPerPage || PAGE_SIZE));
+      setHasMore((pagination.currentPage || page) < totalPages);
+    } catch (err) {
+      console.error('Error loading public properties:', err);
+      if (!append) {
+        setProperties([]);
+        setTotalResults(0);
+      }
+      setHasMore(false);
+      setError('Error al cargar las propiedades. Por favor, intenta nuevamente.');
+    } finally {
+      if (page === 1) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
+    }
+  }, [buildFilters]);
 
   // Cargar propiedades reales y aplicar filtros desde URL
   useEffect(() => {
-    loadInitialProperties();
-
     const tipo = searchParams?.get('tipo');
     const categoria = searchParams?.get('categoria');
     
@@ -264,35 +413,15 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    fetchProperties(1, false);
+  }, [fetchProperties]);
+
   // Función para cargar más propiedades
   const loadMoreProperties = useCallback(async () => {
     if (loadingMore || !hasMore) return;
-    
-    try {
-      setLoadingMore(true);
-      const nextPage = currentPage + 1;
-      
-      // Timeout de 8 segundos para "cargar más"
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout cargando más propiedades')), 8000)
-      );
-      
-      const dataPromise = publicPropertyService.getPropertiesPaginated({ page: nextPage, limit: 6 });
-      const data = await Promise.race([dataPromise, timeoutPromise]) as any;
-      
-      if (data.properties && data.properties.length > 0) {
-        setProperties(prev => [...prev, ...data.properties]);
-        setCurrentPage(nextPage);
-        setHasMore(data.properties.length === 6);
-      } else {
-        setHasMore(false);
-      }
-    } catch (e: any) {
-      console.error('Error loading more properties:', e);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [currentPage, hasMore, loadingMore]);
+    await fetchProperties(currentPage + 1, true);
+  }, [fetchProperties, currentPage, hasMore, loadingMore]);
 
   const formatPrice = (price: number, currency: string, period?: string) => {
     const currencySymbol = currency === 'PYG' ? 'Gs.' : '$';
@@ -307,49 +436,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     return 'casa';
   };
 
-  const filteredProperties = properties.filter((property: any) => {
-    const title = property.title || '';
-    const loc = property.cityName || property.address || '';
-    const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         loc.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType ? (() => {
-      if (selectedType === 'venta') return property.operacion === 'SALE';
-      if (selectedType === 'alquiler') return property.operacion === 'RENT';
-      return true;
-    })() : true;
-    const matchesCategory = selectedCategory ? getPropertyCategory(property) === selectedCategory : true;
-    const matchesCity = selectedCity ? loc.includes(selectedCity) : true;
-    
-    // Filtro de precio
-    const matchesPrice = selectedPriceRange ? (() => {
-      if (selectedPriceRange === '1000000000+') return (property.price || 0) >= 1000000000;
-      const [min, max] = selectedPriceRange.split('-').map(Number);
-      const price = property.price || 0;
-      return price >= min && price <= max;
-    })() : true;
-    
-    // Filtro de dormitorios
-    const matchesBedrooms = selectedBedrooms ? (() => {
-      if (selectedBedrooms === '5+') return (property.bedrooms || 0) >= 5;
-      return (property.bedrooms || 0) === parseInt(selectedBedrooms);
-    })() : true;
-    
-    // Filtro de baños
-    const matchesBathrooms = selectedBathrooms ? (() => {
-      if (selectedBathrooms === '4+') return (property.bathrooms || 0) >= 4;
-      return (property.bathrooms || 0) === parseInt(selectedBathrooms);
-    })() : true;
-    
-    // Filtro de área
-    const matchesArea = selectedAreaRange ? (() => {
-      if (selectedAreaRange === '300+') return (property.area || 0) >= 300;
-      const [min, max] = selectedAreaRange.split('-').map(Number);
-      const area = property.area || 0;
-      return area >= min && area <= max;
-    })() : true;
-    
-    return matchesSearch && matchesType && matchesCategory && matchesCity && matchesPrice && matchesBedrooms && matchesBathrooms && matchesArea;
-  });
+  const filteredProperties = properties;
 
   const toggleFavorite = (propertyId: number) => {
     setFavorites(prev => 
@@ -369,12 +456,10 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     setSelectedBathrooms('');
     setSelectedAreaRange('');
     setShowAdvancedFilters(false);
-    // Resetear paginación
     setCurrentPage(1);
     setHasMore(true);
     setProperties([]);
-    // Recargar propiedades
-    loadInitialProperties();
+    setTotalResults(0);
   };
 
   return (
@@ -494,8 +579,12 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                     onChange={(e) => setSelectedCity(e.target.value)}
                     className="w-full pl-12 pr-10 py-4 border border-cyan-400/30 hover:border-cyan-300/50 rounded-2xl focus:ring-2 focus:ring-cyan-300/50 focus:border-cyan-200/70 appearance-none text-sm bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
                   >
-                    {availableCities.map(city => (
-                      <option key={city.value} value={city.value}>{city.label}</option>
+                    {cityOptions.map(city => (
+                      <option key={city.value} value={city.value}>
+                        {city.value === ''
+                          ? `Todas las Ciudades (${totalResults || properties.length || 0})`
+                          : city.label}
+                      </option>
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none z-20">
@@ -657,10 +746,10 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                   <div className="flex items-center space-x-2">
                     <div className="w-2.5 h-2.5 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-pulse shadow-lg shadow-cyan-500/50"></div>
                     <span className="text-white font-semibold">
-                      {filteredProperties.length}
+                      {totalResults}
                     </span>
                     <span className="text-cyan-200/80 font-medium">
-                      {filteredProperties.length === 1 ? 'propiedad' : 'propiedades'}
+                      {totalResults === 1 ? 'propiedad' : 'propiedades'}
                     </span>
                   </div>
                 </div>
@@ -706,7 +795,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                   <div className="flex items-center space-x-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-4 py-2 rounded-xl border border-cyan-400/30">
                     <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
                     <span className="text-cyan-100 font-semibold text-sm">
-                      {filteredProperties.length} resultados
+                      {totalResults} resultados
                     </span>
                   </div>
                   <button
@@ -776,8 +865,12 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                     onChange={(e) => setSelectedCity(e.target.value)}
                     className="w-full pl-12 pr-10 py-4 border border-cyan-400/40 hover:border-cyan-300/60 rounded-2xl focus:ring-2 focus:ring-cyan-300/60 focus:border-cyan-200/80 appearance-none text-base bg-white/98 backdrop-blur-sm shadow-xl text-gray-900 font-semibold hover:bg-white transition-all duration-300 hover:shadow-2xl"
                   >
-                    {availableCities.map(city => (
-                      <option key={city.value} value={city.value}>{city.label}</option>
+                    {cityOptions.map(city => (
+                      <option key={city.value} value={city.value}>
+                        {city.value === ''
+                          ? `Todas las Ciudades (${totalResults || properties.length || 0})`
+                          : city.label}
+                      </option>
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none z-20">
@@ -1009,8 +1102,12 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                   className="pl-10 pr-8 py-3 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm appearance-none bg-white hover:border-indigo-500 transition-all duration-200 min-w-[140px] font-bold text-gray-950 shadow-sm"
                 >
                   <option value="">Ubicación</option>
-                  {availableCities.map(city => (
-                    <option key={city.value} value={city.value}>{city.label}</option>
+                  {cityOptions.map(city => (
+                    <option key={city.value} value={city.value}>
+                      {city.value === ''
+                        ? `Todas las Ciudades (${totalResults || properties.length || 0})`
+                        : city.label}
+                    </option>
                   ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -1038,7 +1135,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
               <button
                 onClick={() => {
                   setCurrentPage(1);
-                  loadInitialProperties();
+                  fetchProperties(1, false);
                 }}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg flex items-center justify-center group"
               >
@@ -1611,7 +1708,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
           )}
 
           {/* Botón Cargar Más - Mejorado */}
-          {!loading && !error && filteredProperties.length > 0 && hasMore && (
+          {!loading && !error && properties.length > 0 && hasMore && (
             <div className="col-span-full flex justify-center mt-8">
               <motion.button
                 onClick={loadMoreProperties}
@@ -1663,7 +1760,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
           )}
 
           {/* Mensaje cuando no hay más propiedades */}
-          {!loading && !error && filteredProperties.length > 0 && !hasMore && (
+          {!loading && !error && properties.length > 0 && !hasMore && (
             <div className="col-span-full text-center mt-8">
               <p className="text-gray-500 text-sm">
                 Has visto todas las propiedades disponibles
