@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Comment } from '@/services/commentService';
 import { useAuth } from '@/hooks/useAuth';
+import { apiClient } from '@/lib/api';
 // Función simple para formatear fechas
 const formatTimeAgo = (dateString: string) => {
   const date = new Date(dateString);
@@ -80,26 +81,16 @@ export const CommentItem: React.FC<CommentItemProps> = ({
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/comments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: replyContent.trim(),
-          postId,
-          parentCommentId: comment.id
-        })
+      const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+      await apiClient.post(`/api/comments?userId=${user.id}&userName=${encodeURIComponent(userName)}`, {
+        content: replyContent.trim(),
+        postId,
+        parentCommentId: comment.id
       });
-
-      if (response.ok) {
-        setReplyContent('');
-        setIsReplying(false);
-        onCommentAdded();
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Error al crear el comentario');
-      }
+      
+      setReplyContent('');
+      setIsReplying(false);
+      onCommentAdded();
     } catch (error) {
       console.error('Error creating reply:', error);
       alert('Error al crear el comentario');
@@ -114,25 +105,17 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       return;
     }
 
+    if (!user) {
+      alert('Debes iniciar sesión para editar comentarios');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/comments/${comment.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: editContent.trim()
-        })
-      });
-
-      if (response.ok) {
-        setIsEditing(false);
-        onCommentUpdated();
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Error al actualizar el comentario');
-      }
+      await apiClient.put(`/api/comments/${comment.id}?content=${encodeURIComponent(editContent.trim())}&userId=${user.id}`);
+      
+      setIsEditing(false);
+      onCommentUpdated();
     } catch (error) {
       console.error('Error updating comment:', error);
       alert('Error al actualizar el comentario');
@@ -146,18 +129,15 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       return;
     }
 
+    if (!user) {
+      alert('Debes iniciar sesión para eliminar comentarios');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/comments/${comment.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        onCommentDeleted();
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Error al eliminar el comentario');
-      }
+      await apiClient.delete(`/api/comments/${comment.id}?userId=${user.id}`);
+      onCommentDeleted();
     } catch (error) {
       console.error('Error deleting comment:', error);
       alert('Error al eliminar el comentario');
@@ -173,16 +153,12 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     }
 
     try {
-      const response = await fetch(`/api/comments/${comment.id}/like`, {
-        method: comment.isLikedByCurrentUser ? 'DELETE' : 'POST',
-      });
-
-      if (response.ok) {
-        onCommentUpdated();
+      if (comment.isLikedByCurrentUser) {
+        await apiClient.delete(`/api/comments/${comment.id}/like?userId=${user.id}`);
       } else {
-        const error = await response.json();
-        alert(error.error || 'Error al procesar el like');
+        await apiClient.post(`/api/comments/${comment.id}/like?userId=${user.id}`);
       }
+      onCommentUpdated();
     } catch (error) {
       console.error('Error processing like:', error);
       alert('Error al procesar el like');

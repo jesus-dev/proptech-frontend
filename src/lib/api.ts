@@ -23,7 +23,7 @@ function resolveApiUrl(): string {
 // Configuración base del cliente API
 const apiClient = axios.create({
   baseURL: resolveApiUrl(),
-  timeout: 30000, // 30s para manejar intermitencias
+  timeout: 20000, // 20s (reducido de 30s - sin tunnel es más rápido)
   headers: {
     'Content-Type': 'application/json',
   },
@@ -53,7 +53,7 @@ apiClient.interceptors.response.use(
     
     // 🚨 PRIORIDAD 1: Errores de autenticación - IR DIRECTO AL LOGIN
     if (error.response?.status === 401) {
-      console.warn('🔒 Sesión expirada - redirigiendo al login');
+      // Sesión expirada, redirigir silenciosamente
       if (typeof window !== 'undefined') {
         localStorage.clear();
         window.location.href = '/login';
@@ -61,8 +61,6 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 🚨 PRIORIDAD 2: Error 500 con token (posible token inválido)
-    // Si es el primer intento Y hay token, verificar si es problema de autenticación
     if (error.response?.status === 500 && localStorage.getItem('token')) {
       const errorMessage = error.response?.data?.error || '';
       const isAuthError = 
@@ -72,7 +70,7 @@ apiClient.interceptors.response.use(
         errorMessage.includes('Tenant ID no establecido');
       
       if (isAuthError) {
-        console.warn('🔒 Token inválido detectado - limpiando sesión y redirigiendo');
+        // Token inválido, limpiar y redirigir
         if (typeof window !== 'undefined') {
           localStorage.clear();
           window.location.href = '/login';
@@ -85,7 +83,7 @@ apiClient.interceptors.response.use(
     if (!error.response && typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
       if (!token || token === 'undefined' || token === 'null') {
-        console.warn('🔒 Sin token - redirigiendo al login');
+        // Sin token, redirigir silenciosamente
         localStorage.clear();
         window.location.href = '/login';
         return Promise.reject(error);
@@ -115,9 +113,9 @@ apiClient.interceptors.response.use(
     if (!shouldNotRetry && shouldRetry && config.retry.count < config.retry.maxRetries) {
       config.retry.count += 1;
       
-      // Log silencioso SOLO en dev (NO en producción)
+      // Retry silencioso - solo errores críticos se loguean
       if (config.retry.count === 1 && process.env.NODE_ENV === 'development') {
-        console.debug(`♻️ Recuperando automáticamente... (intento ${config.retry.count}/${config.retry.maxRetries})`);
+        // Retry en progreso
       }
       
       // Espera progresiva más rápida: 300ms, 600ms, 900ms, 1200ms, 1500ms

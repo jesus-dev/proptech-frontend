@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/utils";
 import FavoriteButton from "@/components/ui/FavoriteButton";
 import PropertyTypeBadges from "@/components/ui/PropertyTypeBadges";
 import { propertyService } from "../services/propertyService";
+import { resolvePropertyStatus } from "../utils/status";
 import { BedIcon, BathIcon, AreaIcon } from "@/icons";
 import { getImageBaseUrl } from '@/config/environment';
 
@@ -14,7 +15,7 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
-  const [status, setStatus] = useState(property.status?.toLowerCase() || "inactive");
+  const [status, setStatus] = useState(() => resolvePropertyStatus(property));
   const [loading, setLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(property.favorite || false);
   
@@ -40,8 +41,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       const res = await fetch(endpoint, { method: "PATCH" });
       if (res.ok) {
         const data = await res.json();
-        const newStatus = (data.propertyStatus === "Disponible" || data.propertyStatus?.toLowerCase() === "active") ? "active" : "inactive";
-        setStatus(newStatus);
+        const updatedStatus = resolvePropertyStatus({ ...property, ...data });
+        setStatus(updatedStatus);
       }
     } finally {
       setLoading(false);

@@ -40,7 +40,7 @@ function getMetricRating(name: MetricName, value: number): 'good' | 'needs-impro
  */
 async function sendMetric(metric: PerformanceMetric) {
   if (process.env.NODE_ENV !== 'production') {
-    console.log('📊 Performance Metric:', metric);
+    // Performance metric collected in development
     return;
   }
   
@@ -91,7 +91,6 @@ export function measureResourceTiming(resourceName: string) {
   const perfEntries = performance.getEntriesByName(resourceName);
   if (perfEntries.length > 0) {
     const entry = perfEntries[0] as PerformanceResourceTiming;
-    console.log(`⏱️ ${resourceName}: ${entry.duration.toFixed(2)}ms`);
     
     return {
       duration: entry.duration,
@@ -107,10 +106,6 @@ export function measureResourceTiming(resourceName: string) {
 export function measureApiCall(endpoint: string, startTime: number) {
   const duration = Date.now() - startTime;
   const rating = duration < 200 ? 'good' : duration < 500 ? 'needs-improvement' : 'poor';
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`🌐 API Call [${rating}]: ${endpoint} - ${duration}ms`);
-  }
   
   // Enviar métrica
   sendMetric({
@@ -168,8 +163,6 @@ export function measureFirstInput() {
   const observer = new PerformanceObserver((list) => {
     const firstInput = list.getEntries()[0] as PerformanceEventTiming;
     firstInputDelay = firstInput.processingStart - firstInput.startTime;
-    
-    console.log('👆 First Input Delay:', firstInputDelay.toFixed(2) + 'ms');
   });
   
   try {
@@ -195,7 +188,8 @@ export function initPerformanceMonitoring() {
   window.addEventListener('load', () => {
     const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
     
-    console.log('📊 Navigation Timing:', {
+    // Navigation timing collected
+    const navigationData = {
       'DNS Lookup': perfData.domainLookupEnd - perfData.domainLookupStart,
       'TCP Connection': perfData.connectEnd - perfData.connectStart,
       'TLS Negotiation': perfData.requestStart - perfData.secureConnectionStart,
@@ -205,7 +199,5 @@ export function initPerformanceMonitoring() {
       'Total Load Time': perfData.loadEventEnd - perfData.fetchStart,
     });
   });
-  
-  console.log('✅ Performance monitoring inicializado');
 }
 

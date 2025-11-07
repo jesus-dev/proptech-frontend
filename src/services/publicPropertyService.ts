@@ -19,7 +19,6 @@ class PublicPropertyService {
         pagination: data.pagination || { currentPage: page, totalPages: 0, totalProperties: 0, propertiesPerPage: limit }
       };
     } catch (error) {
-      console.warn('⚠️ Error cargando propiedades');
       return { properties: [], pagination: { currentPage: page, totalPages: 0, totalProperties: 0, propertiesPerPage: limit } };
     }
   }
@@ -89,9 +88,9 @@ class PublicPropertyService {
   }
 
   /**
-   * Obtener propiedad por slug con retry para intermitencias
+   * Obtener propiedad por slug con retry (reducido sin tunnel)
    */
-  async getPropertySummaryBySlug(slug: string, retries = 3): Promise<any> {
+  async getPropertySummaryBySlug(slug: string, retries = 2): Promise<any> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         // Intentar endpoint /summary primero (más rápido)
@@ -102,10 +101,6 @@ class PublicPropertyService {
           // Si es 404, no reintentar
           if (error.response?.status === 404) {
             throw new Error('PROPERTY_NOT_FOUND');
-          }
-          // Si es 500 y no es último intento, continuar al endpoint completo
-          if (error.response?.status === 500 && attempt < retries) {
-            console.warn(`⚠️ Intento ${attempt}/${retries} falló en /summary, intentando endpoint completo...`);
           }
         }
 
@@ -120,13 +115,11 @@ class PublicPropertyService {
         
         // Si es el último intento, lanzar error
         if (attempt === retries) {
-          console.error(`❌ Todos los intentos fallaron para slug: ${slug}`);
           throw error;
         }
         
         // Esperar antes de reintentar (backoff exponencial)
         await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-        console.warn(`🔄 Reintentando ${attempt + 1}/${retries}...`);
       }
     }
     
@@ -143,7 +136,6 @@ class PublicPropertyService {
         return response.data;
       } catch (error) {
         if (attempt === retries) {
-          console.warn(`⚠️ Error cargando galería para ${slug}, usando fallback vacío`);
           return { galleryImages: [] };
         }
         await new Promise(resolve => setTimeout(resolve, 500 * attempt));
@@ -162,7 +154,6 @@ class PublicPropertyService {
         return response.data;
       } catch (error) {
         if (attempt === retries) {
-          console.warn(`⚠️ Error cargando amenidades para ${slug}, usando fallback vacío`);
           return { amenityIds: [], amenities: [] };
         }
         await new Promise(resolve => setTimeout(resolve, 500 * attempt));

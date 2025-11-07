@@ -17,8 +17,6 @@ export function checkAndUpdateVersion(): void {
 
   // Si la versión almacenada es diferente, limpiar y recargar
   if (storedVersion && storedVersion !== CURRENT_VERSION) {
-    console.log(`🔄 Nueva versión detectada (${storedVersion} → ${CURRENT_VERSION})`);
-    console.log('🧹 Limpiando cache y recargando...');
     
     // Limpiar solo datos de app, mantener preferencias básicas
     const keysToKeep = ['theme', 'language'];

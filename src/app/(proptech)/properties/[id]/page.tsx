@@ -181,9 +181,6 @@ export default function PropertyDetailsPage({ params }: PageProps) {
           // Incrementar vistas después de cargar la propiedad
           try {
             await propertyService.incrementViews(propertyId);
-            if (!isCancelled) {
-              console.log('✅ Vista registrada para propiedad:', propertyId);
-            }
           } catch (error) {
             if (!isCancelled) {
               console.error('Error incrementing views:', error);
@@ -465,10 +462,7 @@ export default function PropertyDetailsPage({ params }: PageProps) {
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <div className="flex flex-col">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {property.address}, {property.city}
-                </p>
-                <h1 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white mt-1 sm:mt-0 leading-tight">
+                <h1 className="text-sm sm:text-lg font-semibold text-gray-900 dark:text-white leading-tight">
                   {property.title}
                 </h1>
                 {!isAuthenticated && (

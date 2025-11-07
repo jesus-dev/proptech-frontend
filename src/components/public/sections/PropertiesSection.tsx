@@ -237,7 +237,6 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
       
       // ⭐ AUTO-RETRY TRANSPARENTE: Reintentar hasta 3 veces
       if (attempt < 3) {
-        console.log(`🔄 Reintentando en ${attempt * 2} segundos...`);
         setTimeout(() => loadInitialProperties(attempt + 1), attempt * 2000);
       } else {
         // Después de 3 intentos, mostrar vacío pero NO error visible

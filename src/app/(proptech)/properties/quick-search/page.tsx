@@ -117,6 +117,35 @@ const getImageUrl = (imageUrl: string | null | undefined): string | null => {
   return `${apiBaseUrl}${imageUrl}`;
 };
 
+const getPrimaryImageUrl = (property: PropertyWithAgencyUrl): string | null => {
+  if (property.galleryImages && property.galleryImages.length > 0) {
+    const firstGalleryImage = property.galleryImages[0];
+    if (!firstGalleryImage) {
+      return null;
+    }
+    if (typeof (firstGalleryImage as any) === 'string') {
+      return getImageUrl(firstGalleryImage as unknown as string);
+    }
+    return getImageUrl((firstGalleryImage as { url: string }).url);
+  }
+
+  if (property.featuredImage) {
+    return getImageUrl(property.featuredImage);
+  }
+
+  if (property.images && property.images.length > 0) {
+    const firstImage = property.images[0];
+    if (typeof firstImage === 'string') {
+      return getImageUrl(firstImage);
+    }
+    if (firstImage && typeof (firstImage as any).url === 'string') {
+      return getImageUrl((firstImage as { url: string }).url);
+    }
+  }
+
+  return null;
+};
+
 // Custom Hooks
 const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -566,20 +595,28 @@ export default function QuickSearchPage() {
               className="absolute top-4 right-4 w-6 h-6 accent-brand-500 rounded-lg border-2 border-gray-300 shadow" 
             />
             <div className="h-32 w-full bg-gray-100 rounded-xl mb-2 flex items-center justify-center overflow-hidden">
-              {property.galleryImages && property.galleryImages.length > 0 ? (
-                <img 
-                  src={getImageUrl(property.galleryImages[0].url) || '/images/placeholder.jpg'} 
-                  alt={property.title} 
-                  className="object-cover w-full h-32 rounded-xl"
-                  onError={(e) => {
-                    e.currentTarget.src = '/images/placeholder.jpg';
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center w-full h-full">
-                  <Home className="w-12 h-12 text-gray-300" strokeWidth={1} />
-                </div>
-              )}
+              {(() => {
+                const primaryImageUrl = getPrimaryImageUrl(property);
+                if (primaryImageUrl) {
+                  return (
+                    <img 
+                      src={primaryImageUrl} 
+                      alt={property.title} 
+                      className="object-cover w-full h-32 rounded-xl"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/images/placeholder.jpg';
+                      }}
+                    />
+                  );
+                }
+
+                return (
+                  <div className="flex items-center justify-center w-full h-full">
+                    <Home className="w-12 h-12 text-gray-300" strokeWidth={1} />
+                  </div>
+                );
+              })()}
             </div>
             <div className="font-bold text-lg text-gray-900 line-clamp-2">{property.title}</div>
             <div className="flex items-center gap-2 text-gray-500 text-sm">

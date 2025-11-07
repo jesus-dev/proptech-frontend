@@ -25,7 +25,7 @@ import {
   ChatBubbleLeftRightIcon,
   DocumentTextIcon
 } from "@heroicons/react/24/outline";
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import Link from "next/link";
 
 export default function PropertyStatisticsPage() {
@@ -42,16 +42,16 @@ export default function PropertyStatisticsPage() {
     const fetchData = async () => {
       try {
         // Cargar datos de la propiedad
-        const propertyResponse = await fetch(getEndpoint(`/api/properties/${propertyId}`));
-        const propertyData = await propertyResponse.json();
-        setProperty(propertyData);
+        const propertyResponse = await apiClient.get(`/api/properties/${propertyId}`);
+        setProperty(propertyResponse.data);
 
         // Cargar estadísticas de la propiedad
-        const params = new URLSearchParams({ days: dateRange });
-        const statsResponse = await fetch(`${getEndpoint(`/api/properties/${propertyId}/statistics`)}?${params}`);
-        const statsData = await statsResponse.json();
-        setStats(statsData);
+        const statsResponse = await apiClient.get(`/api/properties/${propertyId}/statistics`, {
+          params: { days: dateRange }
+        });
+        setStats(statsResponse.data);
       } catch (err) {
+        console.error('Error loading property statistics:', err);
         setError("No se pudieron cargar las estadísticas de la propiedad");
       } finally {
         setLoading(false);

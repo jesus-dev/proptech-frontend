@@ -28,6 +28,7 @@ interface TypeAndOperationStepProps {
   formData: PropertyFormData;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   errors: PropertyFormErrors;
+  isEditing?: boolean;
 }
 
 // Importar el editor de forma dinámica para evitar problemas con SSR
@@ -83,7 +84,7 @@ function usePropertyOperations() {
   return operations;
 }
 
-export default function TypeAndOperationStep({ formData, handleChange, errors }: TypeAndOperationStepProps) {
+export default function TypeAndOperationStep({ formData, handleChange, errors, isEditing = false }: TypeAndOperationStepProps) {
   
   const [propertyTypes, setPropertyTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,6 +127,20 @@ export default function TypeAndOperationStep({ formData, handleChange, errors }:
       setLoadingStatuses(true);
       const statuses = await getAllPropertyStatuses();
       setPropertyStatuses(statuses);
+      
+      // Si no hay status seleccionado Y es una nueva propiedad, establecer DRAFT (Borrador) por defecto
+      if (!formData.propertyStatusId && !isEditing) {
+        const draftStatus = statuses.find(s => s.code === 'DRAFT' || s.name === 'Borrador');
+        if (draftStatus) {
+          const event = {
+            target: {
+              name: "propertyStatusId",
+              value: draftStatus.id.toString(),
+            },
+          } as React.ChangeEvent<HTMLSelectElement>;
+          handleChange(event);
+        }
+      }
     } catch (error) {
       console.error("Error loading property statuses:", error);
     } finally {

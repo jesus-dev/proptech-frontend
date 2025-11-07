@@ -29,7 +29,6 @@ const AppHeaderCRM: React.FC = () => {
 
   const handleSettings = () => {
     // TODO: Implementar navegación a configuración
-    console.log('Navegar a configuración');
   };
 
   const handleLogout = async () => {
@@ -90,6 +89,7 @@ const AppHeaderCRM: React.FC = () => {
                 alt="PropTech CRM"
                 width={200}
                 height={55}
+                priority
                 style={{ width: 'auto', height: '48px' }}
                 className="object-contain"
               />

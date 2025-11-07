@@ -145,22 +145,16 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     const isPropertyPage = pathname?.includes('/properties');
     
     if (!isPropertyPage) {
-      console.log('⏸️ Auto-guardado desactivado - no estamos en página de propiedades');
       return;
     }
     
     const autoSaveInterval = setInterval(async () => {
       if (hasUnsavedChanges && !isAutoSaving) {
-        console.log('🔄 Auto-guardando borrador...', {
-          draftPropertyId,
-          title: formData.title || 'sin título'
-        });
-        
         setIsAutoSaving(true);
         
         try {
           // Preparar datos mínimos - SIN validaciones
-          const { currency, ...propertyDataWithoutCurrency } = formData;
+          const { currency, propertyStatusId, ...propertyDataWithoutCurrency } = formData;
           const propertyData: any = {
             ...propertyDataWithoutCurrency,
             // El título puede estar vacío (el backend pone "Borrador sin título")
@@ -169,20 +163,17 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             featuredImage: "",
             // operacion se enviará con valor por defecto en backend si está vacío
             operacion: formData.operacion || '',
+            // NO enviar propertyStatusId para que el backend use DRAFT por defecto
           };
 
           if (draftPropertyId) {
             // Actualizar borrador existente
-            console.log('💾 Actualizando borrador:', draftPropertyId);
             await propertyService.updateProperty(draftPropertyId, propertyData);
-            console.log('✅ Borrador actualizado');
           } else {
             // Crear nuevo borrador - siempre se puede crear
-            console.log('💾 Creando nuevo borrador...');
             const newProperty = await propertyService.createProperty(propertyData);
             if (newProperty && newProperty.id) {
               setDraftPropertyId(newProperty.id);
-              console.log('✅ Nuevo borrador creado con ID:', newProperty.id);
             }
           }
           

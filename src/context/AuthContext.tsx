@@ -152,6 +152,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('refreshToken');
       setUser(null);
       setIsAuthenticated(false);
+      
+      // Redirigir a la página de login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
   }, []);
 

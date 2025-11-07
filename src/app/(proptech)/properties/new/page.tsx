@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { currencyService } from "@/app/(proptech)/catalogs/services/catalogService";
+import { useToast } from "@/components/ui/use-toast";
 
 interface StepInfo {
   id: number;
@@ -46,6 +47,7 @@ interface StepInfo {
 
 export default function NewPropertyPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -119,6 +121,41 @@ export default function NewPropertyPage() {
     const isValidForm = validate(allRequiredFields);
     
     if (!isValidForm) {
+      // Construir lista de campos faltantes
+      const missingFields = allRequiredFields
+        .filter(field => errors[field])
+        .map(field => {
+          const labels: Record<string, string> = {
+            title: 'Título',
+            price: 'Precio',
+            propertyTypeId: 'Tipo de Propiedad',
+            propertyStatusId: 'Estado',
+            operacion: 'Operación',
+            address: 'Dirección',
+            city: 'Ciudad',
+            cityId: 'Ciudad',
+            area: 'Área',
+            bedrooms: 'Dormitorios',
+            bathrooms: 'Baños',
+            description: 'Descripción'
+          };
+          return labels[field] || field;
+        });
+      
+      // Mostrar toast con campos faltantes
+      toast({
+        title: "Campos obligatorios faltantes",
+        description: (
+          <div className="mt-2">
+            {missingFields.map((field, idx) => (
+              <div key={idx}>• {field}</div>
+            ))}
+          </div>
+        ) as any,
+        variant: "destructive",
+        duration: 5000,
+      });
+      
       // Mostrar el primer paso con errores
       const firstStepWithErrors = steps.find(step => 
         step.requiredFields.some(field => errors[field])
@@ -305,16 +342,11 @@ export default function NewPropertyPage() {
     const currentStepInfo = updatedSteps.find(step => step.id === currentStep);
     if (!currentStepInfo) return;
 
-    console.log(`NewPropertyPage: Validating step ${currentStep} with fields:`, currentStepInfo.requiredFields);
     const isValidCurrentStep = validate(currentStepInfo.requiredFields);
 
-    console.log(`NewPropertyPage: Validation result for step ${currentStep}:`, isValidCurrentStep);
-
     if (isValidCurrentStep) {
-      console.log(`NewPropertyPage: Advancing from step ${currentStep} to ${currentStep + 1}`);
       setCurrentStep(currentStep + 1);
     } else {
-      console.log("Validation failed for current step.");
       // Scroll to first error
       const firstErrorField = currentStepInfo.requiredFields.find(field => errors[field]);
       if (firstErrorField) {
@@ -343,11 +375,9 @@ export default function NewPropertyPage() {
       if (!stepInfo) continue;
 
       if (stepInfo.requiredFields.length > 0) {
-        console.log(`NewPropertyPage: Validating step ${stepToValidate} via tab click with fields:`, stepInfo.requiredFields);
         const isValidStep = validate(stepInfo.requiredFields);
         
         if (!isValidStep) {
-          console.log(`NewPropertyPage: Step ${stepToValidate} validation failed, stopping navigation.`);
           return;
         }
       }

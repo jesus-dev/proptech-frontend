@@ -23,44 +23,33 @@ function getFullImageUrl(url: string): string {
   
   // Si es una URL relativa del backend (como /uploads/gallery/...), usar getEndpoint
   if (url.startsWith('/uploads/')) {
-    const fullUrl = getEndpoint(url);
-    console.log('🔄 Using uploads URL:', url, '->', fullUrl);
-    return fullUrl;
+    return getEndpoint(url);
   }
   
   // Si ya es una URL de API, usar getEndpoint
   if (url.startsWith('/api/')) {
-    const fullUrl = getEndpoint(url);
-    console.log('🔗 API URL:', url, '->', fullUrl);
-    return fullUrl;
+    return getEndpoint(url);
   }
   
   // Si es solo un nombre de archivo, asumir que está en la carpeta de archivos
-  const fullUrl = getEndpoint(`/api/files/${url}`);
-  console.log('📁 Filename URL:', url, '->', fullUrl);
-  return fullUrl;
+  return getEndpoint(`/api/files/${url}`);
 }
 
 export async function getGalleryImages(propertyId: number | string): Promise<GalleryImage[]> {
   const apiUrl = getApiUrl();
   const fullUrl = `${apiUrl}/api/gallery-images/property/${propertyId}`;
-  console.log('GalleryImageService - API URL:', apiUrl);
-  console.log('GalleryImageService - Full URL:', fullUrl);
   
   const res = await fetch(fullUrl);
-  console.log('GalleryImageService - Response status:', res.status);
   
   if (!res.ok) {
     if (res.status === 404) {
       // Si no hay imágenes, devolver array vacío
-      console.log('GalleryImageService - No images found, returning empty array');
       return [];
     }
     console.error('GalleryImageService - Error response:', res.status, res.statusText);
     throw new Error('Error al obtener imágenes de galería');
   }
   const images = await res.json();
-  console.log('GalleryImageService - Images received:', images);
   
   // Convertir URLs relativas a completas
   return images.map((image: GalleryImage) => ({
@@ -72,7 +61,6 @@ export async function getGalleryImages(propertyId: number | string): Promise<Gal
 export async function uploadGalleryImage(propertyId: number | string, file: File): Promise<GalleryImage> {
   const apiUrl = getApiUrl();
   const fullUrl = `${apiUrl}/api/gallery-images/property/${propertyId}`;
-  console.log('GalleryImageService - Upload URL:', fullUrl);
   
   const formData = new FormData();
   formData.append('file', file);
@@ -82,8 +70,6 @@ export async function uploadGalleryImage(propertyId: number | string, file: File
     method: 'POST',
     body: formData,
   });
-  
-  console.log('GalleryImageService - Upload response status:', res.status);
   
   if (!res.ok) {
     console.error('GalleryImageService - Upload error:', res.status, res.statusText);
@@ -101,10 +87,8 @@ export async function uploadGalleryImage(propertyId: number | string, file: File
 export async function deleteGalleryImage(imageId: number | string): Promise<void> {
   const apiUrl = getApiUrl();
   const fullUrl = `${apiUrl}/api/gallery-images/${imageId}`;
-  console.log('GalleryImageService - Delete URL:', fullUrl);
   
   const res = await fetch(fullUrl, { method: 'DELETE' });
-  console.log('GalleryImageService - Delete response status:', res.status);
   
   if (!res.ok) {
     console.error('GalleryImageService - Delete error:', res.status, res.statusText);
@@ -115,10 +99,8 @@ export async function deleteGalleryImage(imageId: number | string): Promise<void
 export async function setImageAsFeatured(imageId: number | string): Promise<void> {
   const apiUrl = getApiUrl();
   const fullUrl = `${apiUrl}/api/gallery-images/${imageId}/set-featured`;
-  console.log('GalleryImageService - Set featured URL:', fullUrl);
   
   const res = await fetch(fullUrl, { method: 'PUT' });
-  console.log('GalleryImageService - Set featured response status:', res.status);
   
   if (!res.ok) {
     console.error('GalleryImageService - Set featured error:', res.status, res.statusText);
@@ -129,10 +111,8 @@ export async function setImageAsFeatured(imageId: number | string): Promise<void
 export async function updateImageOrder(imageId: number | string, orderIndex: number): Promise<GalleryImage> {
   const apiUrl = getApiUrl();
   const fullUrl = `${apiUrl}/api/gallery-images/${imageId}/order?orderIndex=${orderIndex}`;
-  console.log('GalleryImageService - Update order URL:', fullUrl);
   
   const res = await fetch(fullUrl, { method: 'PUT' });
-  console.log('GalleryImageService - Update order response status:', res.status);
   
   if (!res.ok) {
     console.error('GalleryImageService - Update order error:', res.status, res.statusText);

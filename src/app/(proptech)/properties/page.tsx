@@ -223,7 +223,7 @@ export default function PropertiesPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Cargar propiedades con scroll infinito + timeout de seguridad
-  const loadProperties = async (page: number = 1, append: boolean = false) => {
+  const loadProperties = async (page: number = 1, append: boolean = false, draftsOnly: boolean = false) => {
     // Timeout de seguridad: si tarda más de 15 segundos, forzar que termine
     const timeoutId = setTimeout(() => {
       console.warn('⚠️ Timeout cargando propiedades - forzando fin');
@@ -244,10 +244,18 @@ export default function PropertiesPage() {
         setIsLoadingMore(true);
       }
 
-      const response = await propertyService.getPropertiesPaginated({ 
+      // Construir filtros para el backend
+      const filters: any = { 
         page, 
-        limit: 16 // Cargar 16 propiedades por página
-      });
+        limit: 16
+      };
+      
+      // Si solo queremos borradores, filtrar por status DRAFT en el backend
+      if (draftsOnly) {
+        filters.propertyStatus = 'DRAFT';
+      }
+
+      const response = await propertyService.getPropertiesPaginated(filters);
 
       // Limpiar timeout si la respuesta llegó a tiempo
       clearTimeout(timeoutId);
@@ -297,15 +305,12 @@ export default function PropertiesPage() {
 
   // Cargar primera página al inicio y prefetch de catálogos
   useEffect(() => {
-    loadProperties(1, false);
+    loadProperties(1, false, showDraftsOnly);
     
     // Prefetch de datos comunes en segundo plano (lazy)
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
       window.requestIdleCallback(() => {
         // Precargar tipos de propiedad y ciudades si aún no están cargados
-        if (propertyTypes.length === 0 || cities.length === 0) {
-          console.debug('⚡ Prefetching catalogs en segundo plano...');
-        }
       }, { timeout: 2000 });
     }
   }, []);
@@ -313,7 +318,7 @@ export default function PropertiesPage() {
   // Función para cargar más propiedades
   const loadMoreProperties = () => {
     if (!isLoadingMore && hasMore) {
-      loadProperties(currentPage + 1, true);
+      loadProperties(currentPage + 1, true, showDraftsOnly);
     }
   };
 
@@ -330,6 +335,13 @@ export default function PropertiesPage() {
   useEffect(() => {
     getAllCities().then(setCities).catch(() => setCities([]));
   }, []);
+  
+  // Recargar propiedades cuando cambie el filtro de borradores
+  useEffect(() => {
+    if (isInitialized) {
+      loadProperties(1, false, showDraftsOnly);
+    }
+  }, [showDraftsOnly]);
 
   // Debounce para la búsqueda
   useEffect(() => {
@@ -341,26 +353,31 @@ export default function PropertiesPage() {
   }, [searchQuery]);
 
   // Calcular stats de borradores
+  // Nota: Cuando showDraftsOnly está activo, allProperties YA contiene solo borradores del backend
   const draftCount = useMemo(() => {
-    return allProperties.filter(p => 
+    // Si ya estamos mostrando borradores, el count es el total actual
+    if (showDraftsOnly) {
+      return totalElements; // El backend devuelve el total de borradores
+    }
+    
+    // Si no, contar borradores en las propiedades cargadas (estimación)
+    const drafts = allProperties.filter(p => 
       p.propertyStatusCode === 'DRAFT' || 
+      p.propertyStatusCode === 'draft' ||
       p.propertyStatus === 'Borrador' ||
-      p.status === 'DRAFT'
-    ).length;
-  }, [allProperties]);
+      p.propertyStatus === 'Draft' ||
+      p.propertyStatus === 'borrador'
+    );
+    
+    return drafts.length;
+  }, [allProperties, showDraftsOnly, totalElements]);
 
   // Filtrar propiedades localmente sin recargar
   const filteredProperties = useMemo(() => {
     let filtered = allProperties;
     
-    // Filtro de solo borradores
-    if (showDraftsOnly) {
-      filtered = filtered.filter(property => 
-        property.propertyStatusCode === 'DRAFT' || 
-        property.propertyStatus === 'Borrador' ||
-        property.status === 'DRAFT'
-      );
-    }
+    // ⚠️ ELIMINADO: El filtro de borradores ahora se hace en el backend
+    // cuando showDraftsOnly cambia, se recarga desde el backend con filters.propertyStatus='DRAFT'
     
     // Filtros básicos (exactos)
     if (statusFilter.trim()) {
@@ -419,7 +436,7 @@ export default function PropertiesPage() {
     }
     
     return filtered;
-  }, [allProperties, debouncedSearchQuery, statusFilter, typeFilter, cityFilter, priceRangeFilter, featuredFilter, premiumFilter, showDraftsOnly]);
+  }, [allProperties, debouncedSearchQuery, statusFilter, typeFilter, cityFilter, priceRangeFilter, featuredFilter, premiumFilter]);
 
   // Para scroll infinito, mostramos todas las propiedades filtradas
   const paginatedProperties = filteredProperties;

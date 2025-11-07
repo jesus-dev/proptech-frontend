@@ -61,6 +61,7 @@ import {
   User
 } from "lucide-react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface PageProps {
   params: { id: string }
@@ -79,6 +80,7 @@ interface StepInfo {
 export default function EditPropertyPage({ params }: PageProps) {
   const [propertyId, setPropertyId] = useState<string>(params.id || '');
   const router = useRouter();
+  const { toast } = useToast();
   const [initialPropertyData, setInitialPropertyData] = useState<PropertyFormData & { id?: string } | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,8 +145,10 @@ export default function EditPropertyPage({ params }: PageProps) {
             id: propertyId,
             amenities: amenitiesIds,
             type: typeName,
+            propertyTypeId: propertyData.propertyTypeId,
             featuredImage: processFeaturedImageUrl(propertyData.featuredImage)
           };
+          
           setInitialPropertyData(initialData);
         } else {
           // Create a new property with the requested ID
@@ -247,6 +251,41 @@ export default function EditPropertyPage({ params }: PageProps) {
     const isValidForm = validate(allRequiredFields);
     
     if (!isValidForm) {
+      // Construir lista de campos faltantes
+      const missingFields = allRequiredFields
+        .filter(field => errors[field])
+        .map(field => {
+          const labels: Record<string, string> = {
+            title: 'Título',
+            price: 'Precio',
+            propertyTypeId: 'Tipo de Propiedad',
+            propertyStatusId: 'Estado',
+            operacion: 'Operación',
+            address: 'Dirección',
+            city: 'Ciudad',
+            cityId: 'Ciudad',
+            area: 'Área',
+            bedrooms: 'Dormitorios',
+            bathrooms: 'Baños',
+            description: 'Descripción'
+          };
+          return labels[field] || field;
+        });
+      
+      // Mostrar toast con campos faltantes
+      toast({
+        title: "Campos obligatorios faltantes",
+        description: (
+          <div className="mt-2">
+            {missingFields.map((field, idx) => (
+              <div key={idx}>• {field}</div>
+            ))}
+          </div>
+        ) as any,
+        variant: "destructive",
+        duration: 5000,
+      });
+      
       // Mostrar el primer paso con errores
       const firstStepWithErrors = steps.find(step => 
         step.requiredFields.some(field => errors[field])
@@ -526,6 +565,7 @@ export default function EditPropertyPage({ params }: PageProps) {
             formData={formData}
             handleChange={handleChange}
             errors={errors}
+            isEditing={true}
           />
         );
       case 2:

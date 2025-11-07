@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import PropertyCard from "./PropertyCard";
-import PropertyListItem from "./PropertyListItem";
 import { Property } from "./types";
 import { useRouter } from "next/navigation";
 import DeleteConfirmationDialog from "../../contracts/components/DeleteConfirmationDialog";
 import Link from "next/link";
 import { useAmenities } from "@/app/(proptech)/catalogs/amenities/hooks/useAmenities";
 import { propertyService } from "../services/propertyService";
+import { resolvePropertyStatus } from "../utils/status";
 import { GlassWater, ParkingSquare, Wifi, Dumbbell, HelpCircle, MoveUpRight, Home, Shield, Leaf, Snowflake, Flame, PawPrint, Car, Star, Heart, MapPin, Building, Sun, Moon, Cloud, Droplets, Utensils, Phone, Mail, Globe, Download, Eye as EyeIcon, Clock, Award, Zap, Wrench, Bell, Pencil, Trash2 } from "lucide-react";
 import { formatPrice, formatCurrency } from "@/lib/utils";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
@@ -319,11 +319,12 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
       <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full min-w-0 overflow-x-auto">
           {properties.map((property) => {
+            const normalizedStatus = resolvePropertyStatus(property as any);
             return (
-            <div
-              key={property.id}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all duration-200 group"
-            >
+              <div
+                key={property.id}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all duration-200 group"
+              >
               {/* Property Image */}
               <div className="relative h-48 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                 {(() => {
@@ -337,7 +338,6 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                       decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                       onError={(e) => {
-                        // Silently hide the image if it fails to load
                         e.currentTarget.style.display = 'none';
                       }}
                     />
@@ -351,11 +351,11 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                    property.status === "active"
+                    normalizedStatus === "active"
                       ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                       : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                   }`}>
-                    {property.status === "active" ? (
+                    {normalizedStatus === "active" ? (
                       <>
                         <CheckCircleIcon className="w-3 h-3" />
                         Activa
@@ -552,8 +552,10 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {properties.map((property) => (
-                <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              {properties.map((property) => {
+                const normalizedStatus = resolvePropertyStatus(property as any);
+                return (
+                  <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
@@ -661,11 +663,11 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                      property.status === "active"
+                      normalizedStatus === "active"
                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                         : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                     }`}>
-                      {property.status === "active" ? (
+                      {normalizedStatus === "active" ? (
                         <>
                           <CheckCircleIcon className="w-3 h-3" />
                           Activa
@@ -709,8 +711,9 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                       </button>
                     </div>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

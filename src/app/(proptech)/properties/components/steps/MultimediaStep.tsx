@@ -86,7 +86,7 @@ function SortableImageItem({
           alt={image.altText || `Imagen ${image.id}`}
           className="w-full h-full object-cover"
           onLoad={() => {
-            console.log(`✅ Successfully loaded image ${index + 1}:`, image.url);
+            // Image loaded successfully
           }}
           onError={(e) => {
             console.error(`❌ Failed to load image ${index + 1}:`, image.url);
@@ -198,13 +198,6 @@ export default function MultimediaStep({
     setLoadingGallery(true);
     try {
       const images = await getGalleryImages(propertyId);
-      console.log('🖼️ Loaded gallery images:', images.length);
-      console.table(images.map(img => ({ 
-        id: img.id, 
-        orderIndex: img.orderIndex, 
-        isFeatured: img.isFeatured,
-        url: img.url?.substring(0, 50) + '...' 
-      })));
       setGalleryImages(images);
     } catch (error) {
       console.error('❌ Error loading gallery images:', error);
@@ -229,8 +222,7 @@ export default function MultimediaStep({
         uploadGalleryImage(propertyId, file)
       );
       
-      const uploadedImages = await Promise.all(uploadPromises);
-      console.log('✅ Uploaded gallery images:', uploadedImages);
+      await Promise.all(uploadPromises);
       
       // Recargar la galería
       await loadGalleryImages();
@@ -253,7 +245,6 @@ export default function MultimediaStep({
     setDeletingImageId(imageId);
     try {
       await deleteGalleryImage(imageId);
-      console.log('✅ Deleted gallery image:', imageId);
       
       // Actualizar la lista local
       setGalleryImages(prev => prev.filter(img => img.id !== imageId));
@@ -269,7 +260,6 @@ export default function MultimediaStep({
     setSettingFeaturedId(imageId);
     try {
       await setImageAsFeatured(imageId);
-      console.log('✅ Set image as featured:', imageId);
       
       // Actualizar la imagen destacada en el formData usando handleChange
       const syntheticEvent = {
@@ -316,19 +306,15 @@ export default function MultimediaStep({
 
     // Actualizar todos los orderIndex en el backend
     try {
-      console.log('🔄 Updating image order...');
-      
       // Actualizar cada imagen con su nuevo orderIndex
       const updatePromises = reorderedImages.map((image, index) => {
         if (image.orderIndex !== index) {
-          console.log(`Updating image ${image.id} from order ${image.orderIndex} to ${index}`);
           return updateImageOrder(image.id, index);
         }
         return Promise.resolve(image);
       });
       
       await Promise.all(updatePromises);
-      console.log('✅ All images reordered successfully');
       
       // Recargar para sincronizar con el backend
       await loadGalleryImages();
