@@ -9,7 +9,7 @@ const SocialPageContent = dynamic(() => import('./SocialPageContent'), {
   loading: () => (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                     <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500/60 border-t-blue-700 mx-auto"></div>
         <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando red social...</p>
                   </div>
                     </div>
@@ -21,7 +21,7 @@ export default function SocialPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                     <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500/60 border-t-blue-700 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Cargando red social...</p>
                     </div>
               </div>

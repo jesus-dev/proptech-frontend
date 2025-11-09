@@ -267,11 +267,11 @@ export default function PropShotsPage() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-12 sm:h-14 lg:h-16">
-            <h1 className="text-base sm:text-lg lg:text-2xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">PropShots</h1>
+            <h1 className="text-base sm:text-lg lg:text-2xl font-bold bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 bg-clip-text text-transparent">PropShots</h1>
             {isAuthenticated ? (
               <button
                 onClick={() => setShowCreatePropShot(true)}
-                className="bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 rounded-lg sm:rounded-xl flex items-center gap-1 sm:gap-2 transition-all duration-300 text-xs sm:text-sm lg:text-base shadow-lg hover:shadow-xl hover:scale-105 group"
+                className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-indigo-600 hover:to-indigo-700 text-white px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 rounded-lg sm:rounded-xl flex items-center gap-1 sm:gap-2 transition-all duration-300 text-xs sm:text-sm lg:text-base shadow-lg hover:shadow-xl hover:scale-105 group"
               >
                 <Plus className="w-3 h-3 sm:w-4 sm:h-4 group-hover:rotate-90 transition-transform duration-300" />
                 <span className="hidden sm:inline">Crear PropShot</span>
@@ -291,14 +291,14 @@ export default function PropShotsPage() {
             <div className="flex-1 w-full max-w-md">
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                  <Search className="w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                  <Search className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 </div>
                 <input
                   type="text"
                   placeholder="Buscar PropShots..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-800 placeholder-gray-400 shadow-sm outline-none focus:outline-none focus:ring-2 focus:ring-orange-500/80 focus:border-transparent focus:shadow-md transition-all sm:text-base text-sm"
+                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-800 placeholder-gray-400 shadow-sm outline-none focus:outline-none focus:ring-2 focus:ring-blue-500/80 focus:border-transparent focus:shadow-md transition-all sm:text-base text-sm"
                 />
               </div>
             </div>
@@ -306,11 +306,11 @@ export default function PropShotsPage() {
             {/* Botón para mostrar/ocultar filtros */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300 outline-none focus:outline-none focus:ring-2 focus:ring-orange-500/60 font-medium shadow-sm group transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 outline-none focus:outline-none focus:ring-2 focus:ring-blue-500/60 font-medium shadow-sm group transition-all"
             >
-              <Filter className={`w-4 h-4 transition-transform duration-300 ${showFilters ? 'rotate-180 text-orange-600' : 'group-hover:text-orange-600 text-orange-500'}`} />
+              <Filter className={`w-4 h-4 transition-transform duration-300 ${showFilters ? 'rotate-180 text-blue-600' : 'group-hover:text-blue-600 text-blue-500'}`} />
               <span className="text-sm">{showFilters ? 'Filtros' : 'Filtros'}</span>
-              <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-orange-600 border border-orange-200 text-[10px] font-bold">
+              <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-blue-600 border border-blue-200 text-[10px] font-bold">
                 {(filterStatus !== 'all' || filterAgent !== 'all' || filterDate !== 'all' || filterLikes !== 'all') ? '1' : '0'}
               </span>
             </button>
@@ -324,7 +324,7 @@ export default function PropShotsPage() {
               {/* Título de la sección */}
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-800">Filtros avanzados</h3>
-                <button onClick={clearAllFilters} className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-orange-600">
+                <button onClick={clearAllFilters} className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-blue-600">
                   <XCircle className="w-4 h-4" />
                   Limpiar filtros
                 </button>
@@ -338,7 +338,7 @@ export default function PropShotsPage() {
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-orange-500/80 focus:border-transparent shadow-sm"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500/80 focus:border-transparent shadow-sm"
                   >
                     <option value="all">Todos los estados</option>
                     <option value="active">✅ Activos</option>
@@ -353,7 +353,7 @@ export default function PropShotsPage() {
                   <select
                     value={filterAgent}
                     onChange={(e) => setFilterAgent(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-orange-500/80 focus:border-transparent shadow-sm"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500/80 focus:border-transparent shadow-sm"
                   >
                     <option value="all">Todos los agentes</option>
                     <option value="1">👤 María González</option>
@@ -367,7 +367,7 @@ export default function PropShotsPage() {
                   <select
                     value={filterDate}
                     onChange={(e) => setFilterDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-orange-500/80 focus:border-transparent shadow-sm"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500/80 focus:border-transparent shadow-sm"
                   >
                     <option value="all">Todas las fechas</option>
                     <option value="today">📅 Hoy</option>
@@ -383,7 +383,7 @@ export default function PropShotsPage() {
                   <select
                     value={filterLikes}
                     onChange={(e) => setFilterLikes(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-orange-500/80 focus:border-transparent shadow-sm"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500/80 focus:border-transparent shadow-sm"
                   >
                     <option value="all">Todas las categorías</option>
                     <option value="popular">🔥 Populares (100+ likes)</option>
@@ -401,11 +401,11 @@ export default function PropShotsPage() {
                                          <div className="flex flex-wrap gap-2">
                        <span className="text-sm font-medium text-gray-700">Filtros aplicados:</span>
                        {searchQuery && (
-                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                            🔍 "{searchQuery}"
                            <button
                              onClick={() => setSearchQuery('')}
-                             className="ml-1 hover:text-orange-600"
+                             className="ml-1 hover:text-blue-600"
                            >
                              ×
                            </button>
@@ -501,7 +501,7 @@ export default function PropShotsPage() {
               {/* Ordenamiento */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Ordenar por:</span>
-                <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm">
+                <select className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                   <option value="newest">Más recientes</option>
                   <option value="oldest">Más antiguos</option>
                   <option value="popular">Más populares</option>
@@ -514,7 +514,7 @@ export default function PropShotsPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Cargando PropShots...</p>
           </div>
         ) : filteredPropShots.length === 0 ? (

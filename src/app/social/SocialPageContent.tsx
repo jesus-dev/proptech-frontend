@@ -40,7 +40,7 @@ const convertUrlsToLinks = (text: string): string => {
   return text.replace(urlRegex, (url) => {
     // Si no tiene protocolo, agregar https://
     const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-    return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" class="text-orange-600 hover:text-orange-700 underline break-all">${url}</a>`;
+    return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 underline break-all">${url}</a>`;
   });
 };
 
@@ -1009,7 +1009,7 @@ export default function SocialPageContent() {
   if (!mounted) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
         <p className="ml-4 text-gray-600">Cargando red social...</p>
       </div>
     );
@@ -1018,7 +1018,7 @@ export default function SocialPageContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
       </div>
     );
   }
@@ -1045,7 +1045,7 @@ export default function SocialPageContent() {
           {/* Botones de prueba temporal */}
 
           <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white text-lg font-bold">
+            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white text-lg font-bold">
                   {user?.fullName?.charAt(0) || 'U'}
                 </div>
                 <div className="flex-1">
@@ -1058,28 +1058,28 @@ export default function SocialPageContent() {
                         setDetectedUrls(urls);
                       }}
                       placeholder={`¿Qué quieres compartir, ${user?.fullName || 'Usuario'}?`}
-                      className="w-full p-4 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full p-4 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       rows={3}
                                         />
                     
                     {/* URLs detectadas en tiempo real */}
                     {detectedUrls.length > 0 && (
-                      <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center mb-2">
-                          <svg className="w-4 h-4 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
                           </svg>
-                          <span className="text-sm font-medium text-orange-800">Enlaces detectados:</span>
+                          <span className="text-sm font-medium text-blue-800">Enlaces detectados:</span>
                         </div>
                         <div className="space-y-3">
                           {detectedUrls.map((url, index) => (
-                            <div key={index} className="bg-white rounded-lg p-3 border border-orange-200">
+                            <div key={index} className="bg-white rounded-lg p-3 border border-blue-200">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
                                   <h4 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">
                                     {urlLoadingStates[url] ? (
-                                      <span className="flex items-center text-orange-600">
-                                        <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <span className="flex items-center text-blue-600">
+                                        <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
@@ -1097,7 +1097,7 @@ export default function SocialPageContent() {
                                   href={url.startsWith('http') ? url : `https://${url}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="ml-3 px-3 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors flex-shrink-0"
+                                  className="ml-3 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-indigo-700 transition-colors flex-shrink-0"
                                 >
                                   Abrir
                                 </a>
@@ -1112,25 +1112,25 @@ export default function SocialPageContent() {
                     {userLocation && (
                       <div className={`mt-3 p-3 border rounded-lg ${
                         userLocation.includes('GPS requerido') 
-                          ? 'bg-orange-50 border-orange-200' 
-                          : 'bg-blue-50 border-blue-200'
+                          ? 'bg-blue-50 border-blue-200' 
+                          : 'bg-gray-50 border-gray-200'
                       }`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <MapPin className={`w-4 h-4 mr-2 ${
                               userLocation.includes('GPS requerido') 
-                                ? 'text-orange-600' 
-                                : 'text-blue-600'
+                                ? 'text-blue-600' 
+                                : 'text-gray-600'
                             }`} />
                             <span className={`text-sm font-medium ${
                               userLocation.includes('GPS requerido') 
-                                ? 'text-orange-800' 
-                                : 'text-blue-800'
+                                ? 'text-blue-800' 
+                                : 'text-gray-800'
                             }`}>Ubicación:</span>
                             <span className={`text-sm ml-2 ${
                               userLocation.includes('GPS requerido') 
-                                ? 'text-orange-700' 
-                                : 'text-blue-700'
+                                ? 'text-blue-700' 
+                                : 'text-gray-700'
                             }`}>{userLocation}</span>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -1139,8 +1139,8 @@ export default function SocialPageContent() {
                               disabled={locationLoading}
                               className={`text-xs underline disabled:opacity-50 ${
                                 userLocation.includes('GPS requerido') 
-                                  ? 'text-orange-600 hover:text-orange-800' 
-                                  : 'text-blue-600 hover:text-blue-800'
+                                  ? 'text-blue-600 hover:text-blue-800' 
+                                  : 'text-gray-600 hover:text-gray-800'
                               }`}
                             >
                               {locationLoading ? 'Detectando...' : 'Redetectar'}
@@ -1148,9 +1148,9 @@ export default function SocialPageContent() {
                             <div className="flex flex-col items-end">
                               <span className={`text-xs px-2 py-1 rounded-full mb-1 ${
                                 userLocation.includes('GPS requerido') 
-                                  ? 'text-orange-500 bg-orange-100' 
+                                  ? 'text-blue-500 bg-blue-100' 
                                   : userLocation.includes('GPS no disponible') || userLocation.includes('Ubicación no disponible')
-                                    ? 'text-blue-500 bg-blue-100'
+                                    ? 'text-gray-500 bg-gray-100'
                                     : 'text-green-500 bg-green-100'
                               }`}>
                                 {userLocation.includes('GPS requerido') 
@@ -1162,9 +1162,9 @@ export default function SocialPageContent() {
                               </span>
                               <span className={`text-xs ${
                                 userLocation.includes('GPS requerido') 
-                                  ? 'text-orange-400' 
+                                  ? 'text-blue-400' 
                                   : userLocation.includes('GPS no disponible') || userLocation.includes('Ubicación no disponible')
-                                    ? 'text-blue-400'
+                                    ? 'text-gray-400'
                                     : 'text-green-400'
                               }`}>
                                 {userLocation.includes('GPS requerido') 
@@ -1180,8 +1180,8 @@ export default function SocialPageContent() {
                         
                         {/* Mensaje especial para Paraguay */}
                         {userLocation.includes('GPS requerido') && (
-                          <div className="mt-2 p-2 bg-orange-100 border border-orange-200 rounded">
-                            <p className="text-xs text-orange-800">
+                          <div className="mt-2 p-2 bg-blue-100 border border-blue-200 rounded">
+                            <p className="text-xs text-blue-800">
                               <strong>⚠️ Para Paraguay:</strong> Los servicios de IP siempre detectan Asunción (400km de error). 
                               <br />
                               <strong>✅ Solución:</strong> Permite acceso a GPS para ubicación precisa en tu ciudad.
@@ -1214,7 +1214,7 @@ export default function SocialPageContent() {
 
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors cursor-pointer">
+                    <label className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors cursor-pointer">
                       <Camera className="w-5 h-5" />
                       <span className="text-sm">Fotos (máx. 5)</span>
                       <input
@@ -1227,7 +1227,7 @@ export default function SocialPageContent() {
                     </label>
                     <button
                       onClick={openLocationPicker}
-                      className="flex items-center space-x-2 text-gray-600 hover:text-orange-500 transition-colors"
+                      className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors"
                       title="Seleccionar ubicación en mapa"
                     >
                       <MapPin className="w-5 h-5" />
@@ -1239,7 +1239,7 @@ export default function SocialPageContent() {
                   <button
                     onClick={handleCreatePost}
                     disabled={!newPost.trim()}
-                    className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Publicar
                   </button>
@@ -1256,9 +1256,9 @@ export default function SocialPageContent() {
             {/* Izquierda: avatar + texto */}
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 p-[2px]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 p-[2px]">
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                    <svg className="w-4 h-4 text-orange-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                     </svg>
                   </div>
@@ -1274,7 +1274,7 @@ export default function SocialPageContent() {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => { if (typeof window !== 'undefined') window.location.href = '/login'; }}
-                className="px-2.5 sm:px-3 py-1 rounded-full text-white bg-orange-600 hover:bg-orange-700 text-[11px] sm:text-xs font-medium transition-colors"
+                className="px-2.5 sm:px-3 py-1 rounded-full text-white bg-blue-600 hover:bg-indigo-700 text-[11px] sm:text-xs font-medium transition-colors"
               >
                 Empezar ahora
               </button>
@@ -1294,7 +1294,7 @@ export default function SocialPageContent() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
-              <svg className="w-6 h-6 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
               </svg>
               PropShots
@@ -1305,7 +1305,7 @@ export default function SocialPageContent() {
             {isAuthenticated && (
                 <button 
                 onClick={() => setShowCreatePropShot(true)}
-                className="text-gray-600 hover:text-orange-500 transition-colors font-medium flex items-center space-x-1 text-sm"
+                className="text-gray-600 hover:text-blue-500 transition-colors font-medium flex items-center space-x-1 text-sm"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
@@ -1322,7 +1322,7 @@ export default function SocialPageContent() {
                 }
               }}
               disabled={propShotsLoading || propShots.length === 0}
-              className="text-gray-600 hover:text-orange-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="text-gray-600 hover:text-blue-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   Ver todos los tours
                 </button>
@@ -1373,7 +1373,7 @@ export default function SocialPageContent() {
                     
                     {/* Indicador de PropShot */}
                     <div className="absolute top-3 left-3 pointer-events-none">
-                      <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs rounded-full font-bold shadow-lg">
+                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-bold shadow-lg">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                         </svg>
@@ -1387,17 +1387,17 @@ export default function SocialPageContent() {
                     </div>
                   </div>
                 ) : (
-                  <div className="aspect-[9/16] bg-gradient-to-br from-orange-400 via-orange-500 to-red-500 rounded-xl overflow-hidden shadow-lg">
+                  <div className="aspect-[9/16] bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-xl overflow-hidden shadow-lg">
                     {/* Play button overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <Play className="w-6 h-6 text-orange-500 ml-1" />
+                        <Play className="w-6 h-6 text-blue-500 ml-1" />
                       </div>
                     </div>
                     
                     {/* Indicador de PropShot */}
                     <div className="absolute top-3 left-3">
-                      <div className="flex items-center gap-1 px-2 py-1 bg-orange-500 text-white text-xs rounded-full font-bold shadow-lg">
+                      <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs rounded-full font-bold shadow-lg">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                         </svg>
@@ -1415,7 +1415,7 @@ export default function SocialPageContent() {
                     
               {/* Información del PropShot */}
               <div className="px-1">
-                <h4 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-orange-600 transition-colors">
+                <h4 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
                   {shot.title}
                       </h4>
                                 <p className="text-gray-600 text-xs mb-2">
@@ -1441,8 +1441,8 @@ export default function SocialPageContent() {
           ) : (
             // Empty state
             <div className="col-span-full text-center py-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                 </svg>
               </div>
@@ -1457,8 +1457,8 @@ export default function SocialPageContent() {
       {!loading && !error && posts.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
           <div className="max-w-md mx-auto">
-            <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-12 h-12 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
               </svg>
             </div>
@@ -1472,7 +1472,7 @@ export default function SocialPageContent() {
                   // Scroll hacia el área de crear post
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="inline-flex items-center px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
@@ -1490,11 +1490,11 @@ export default function SocialPageContent() {
                 {posts.map((post) => (
             <div key={post.id} className="group bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden">
               {/* Header del Post - Mejorado */}
-              <div className="p-4 sm:p-5 bg-gradient-to-r from-orange-50/30 to-transparent">
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-blue-50/30 to-transparent">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="relative">
-                      <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md ring-2 ring-orange-100">
+                      <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md ring-2 ring-blue-100">
                         {post.user?.firstName?.charAt(0) || post.user?.lastName?.charAt(0) || 'U'}
                       </div>
                       {/* Indicador de verificación */}
@@ -1745,17 +1745,17 @@ export default function SocialPageContent() {
                   {/* Like Button */}
                   <button 
                     onClick={() => handleLike(post.id)}
-                    className="group/like flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-orange-50 transition-all duration-300"
+                    className="group/like flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-all duration-300"
                   >
                     <div className="relative">
-                      <ThumbsUp className="w-5 h-5 text-gray-600 group-hover/like:text-orange-500 group-hover/like:scale-110 transition-all duration-300" />
+                      <ThumbsUp className="w-5 h-5 text-gray-600 group-hover/like:text-blue-500 group-hover/like:scale-110 transition-all duration-300" />
                       {(post.likesCount || 0) > 0 && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
                           <span className="text-[8px] text-white font-bold">{post.likesCount > 99 ? '99+' : post.likesCount}</span>
                         </div>
                       )}
                     </div>
-                    <span className="text-sm font-medium text-gray-700 group-hover/like:text-orange-600 hidden sm:inline">
+                    <span className="text-sm font-medium text-gray-700 group-hover/like:text-blue-600 hidden sm:inline">
                       {post.likesCount || 0}
                     </span>
                   </button>
@@ -1768,7 +1768,7 @@ export default function SocialPageContent() {
                     <div className="relative">
                       <MessageSquare className="w-5 h-5 text-gray-600 group-hover/comment:text-blue-500 group-hover/comment:scale-110 transition-all duration-300" />
                       {(commentCounts[post.id] || 0) > 0 && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
                           <span className="text-[8px] text-white font-bold">{commentCounts[post.id] > 99 ? '99+' : commentCounts[post.id]}</span>
                         </div>
                       )}
@@ -1906,11 +1906,11 @@ export default function SocialPageContent() {
                       key={conv.id}
                       onClick={() => setSelectedConversation(conv.id)}
                       className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedConversation === conv.id ? 'bg-orange-50 border-r-2 border-orange-500' : ''
+                        selectedConversation === conv.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
-                        conv.unread ? 'bg-orange-500' : 'bg-gray-400'
+                        conv.unread ? 'bg-blue-500' : 'bg-gray-400'
                       }`}>
                         {conv.avatar}
                       </div>
@@ -1921,7 +1921,7 @@ export default function SocialPageContent() {
                       <div className="flex flex-col items-end space-y-1">
                         <span className="text-xs text-gray-500">{conv.lastMessageTime}</span>
                         {conv.unread && (
-                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         )}
                       </div>
                     </div>
@@ -1935,7 +1935,7 @@ export default function SocialPageContent() {
                   <div className="h-full flex flex-col">
                     <div className="p-3 border-b border-gray-200 bg-gray-50">
                       <div className="flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
                           {conversations.find(c => c.id === selectedConversation)?.avatar}
                         </div>
                         <span className="font-medium text-gray-900 text-sm">
@@ -1949,7 +1949,7 @@ export default function SocialPageContent() {
                         <div key={index} className={`flex ${msg.sent ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-xs px-2 py-1 rounded-lg text-xs ${
                             msg.sent 
-                              ? 'bg-orange-500 text-white' 
+                              ? 'bg-blue-500 text-white' 
                               : 'bg-white text-gray-800'
                           }`}>
                             {msg.text}
@@ -1966,11 +1966,11 @@ export default function SocialPageContent() {
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                           placeholder="Escribe un mensaje..."
-                          className="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          className="flex-1 px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                         />
                         <button 
                           onClick={sendMessage}
-                          className="px-3 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600 transition-colors"
+                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-indigo-700 transition-colors"
                         >
                           Enviar
                         </button>
@@ -2101,7 +2101,7 @@ export default function SocialPageContent() {
                   </div>
                 ) : (
                   /* Área de upload - TODO clickeable */
-                  <label htmlFor="video-upload" className="aspect-[9/16] bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl border-2 border-dashed border-orange-300 flex items-center justify-center cursor-pointer hover:border-orange-400 transition-colors group">
+                  <label htmlFor="video-upload" className="aspect-[9/16] bg-gradient-to-br from-blue-100 to-indigo-200 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center cursor-pointer hover:border-blue-400 transition-colors group">
                     <input
                       type="file"
                       accept="video/*"
@@ -2124,12 +2124,12 @@ export default function SocialPageContent() {
                       }}
                     />
                     <div className="text-center">
-                      <svg className="w-16 h-16 text-orange-400 mx-auto mb-3 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-16 h-16 text-blue-400 mx-auto mb-3 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
                       </svg>
-                      <p className="text-orange-600 font-medium text-lg">Seleccionar Video</p>
-                      <p className="text-orange-500 text-sm mt-1">o arrastra y suelta aquí</p>
-                      <p className="text-orange-400 text-xs mt-2">MP4, MOV • Máximo 100MB</p>
+                      <p className="text-blue-600 font-medium text-lg">Seleccionar Video</p>
+                      <p className="text-blue-500 text-sm mt-1">o arrastra y suelta aquí</p>
+                      <p className="text-blue-400 text-xs mt-2">MP4, MOV • Máximo 100MB</p>
                     </div>
                   </label>
                 )}
@@ -2159,7 +2159,7 @@ export default function SocialPageContent() {
                     value={newPropShot.title}
                     onChange={(e) => setNewPropShot(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Ej: Casa en Las Mercedes"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     maxLength={100}
                   />
                   <p className="text-xs text-gray-500 mt-1">{newPropShot.title.length}/100</p>
@@ -2172,7 +2172,7 @@ export default function SocialPageContent() {
                     onChange={(e) => setNewPropShot(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Describe la propiedad, características principales, ubicación..."
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     maxLength={500}
                   />
                   <p className="text-xs text-gray-500 mt-1">{newPropShot.description.length}/500</p>
@@ -2184,18 +2184,18 @@ export default function SocialPageContent() {
                     value={newPropShot.link}
                     onChange={(e) => setNewPropShot(prev => ({ ...prev, link: e.target.value }))}
                     placeholder="https://ejemplo.com/propiedad"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <p className="text-xs text-gray-500 mt-1">Enlace opcional para más información de la propiedad</p>
                 </div>
                 
                 {/* Información adicional */}
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start space-x-2">
-                    <svg className="w-5 h-5 text-orange-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
-                    <div className="text-sm text-orange-700">
+                    <div className="text-sm text-blue-700">
                       <p className="font-medium">Consejos para un buen PropShot:</p>
                       <ul className="mt-2 space-y-1 text-xs">
                         <li>• Muestra la propiedad desde diferentes ángulos</li>
@@ -2221,7 +2221,7 @@ export default function SocialPageContent() {
                 <button
                   onClick={handleCreatePropShot}
                   disabled={!newPropShot.title.trim() || !selectedVideo || creatingPropShot}
-                  className="flex-1 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   {creatingPropShot ? 'Creando...' : 'Crear PropShot'}
                 </button>
@@ -2256,9 +2256,9 @@ export default function SocialPageContent() {
                   <input
                     type="text"
                     placeholder="Buscar dirección, ciudad, propiedad..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
                     Buscar
                   </button>
                 </div>
@@ -2273,30 +2273,30 @@ export default function SocialPageContent() {
               </div>
 
               {/* Información de ubicación seleccionada */}
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                 <div className="flex items-center mb-2">
-                  <MapPin className="w-4 h-4 text-orange-600 mr-2" />
-                  <span className="text-sm font-medium text-orange-800">Ubicación Seleccionada:</span>
+                  <MapPin className="w-4 h-4 text-blue-600 mr-2" />
+                  <span className="text-sm font-medium text-blue-800">Ubicación Seleccionada:</span>
                 </div>
-                <p className="text-sm text-orange-700 font-medium">
+                <p className="text-sm text-blue-700 font-medium">
                   {selectedLocation ? selectedLocation.address : 'Haz clic en el mapa para seleccionar una ubicación'}
                 </p>
                 {selectedLocation && selectedLocation.fullAddress && selectedLocation.fullAddress !== selectedLocation.address && (
                   <details className="mt-2">
-                    <summary className="text-xs text-orange-600 cursor-pointer hover:text-orange-700">
+                    <summary className="text-xs text-blue-600 cursor-pointer hover:text-blue-700">
                       📍 Ver dirección completa
                     </summary>
-                    <p className="text-xs text-orange-500 mt-1 pl-4 border-l-2 border-orange-200">
+                    <p className="text-xs text-blue-500 mt-1 pl-4 border-l-2 border-blue-200">
                       {selectedLocation.fullAddress}
                     </p>
                   </details>
                 )}
                 {selectedLocation && (
                   <div className="mt-2 space-y-1">
-                    <p className="text-xs text-orange-600">
+                    <p className="text-xs text-blue-600">
                       Coordenadas: {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
                     </p>
-                    <div className="text-xs text-orange-500">
+                    <div className="text-xs text-blue-500">
                       <span className="font-medium">Formato:</span> Calle, Barrio, Ciudad
                     </div>
                   </div>
@@ -2314,7 +2314,7 @@ export default function SocialPageContent() {
                 <button
                   onClick={() => selectedLocation && confirmSelectedLocation(selectedLocation)}
                   disabled={!selectedLocation}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Confirmar Ubicación
                 </button>

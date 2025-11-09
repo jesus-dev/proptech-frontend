@@ -121,8 +121,8 @@ export default function MessagesPage() {
     return (
       <div className="bg-white rounded-lg shadow-sm p-12 text-center">
         <div className="max-w-md mx-auto">
-          <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-12 h-12 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+          <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-12 h-12 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
             </svg>
           </div>
@@ -132,7 +132,7 @@ export default function MessagesPage() {
           </p>
           <button 
             onClick={() => window.location.href = '/login'}
-            className="inline-flex items-center px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-indigo-700 transition-colors"
           >
             Iniciar sesión
           </button>
@@ -186,7 +186,7 @@ export default function MessagesPage() {
                 key={conv.id}
                 onClick={() => setSelectedConversation(conv.id)}
                 className={`flex items-center space-x-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedConversation === conv.id ? 'bg-orange-50 border-r-2 border-orange-500' : ''
+                  selectedConversation === conv.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                 }`}
               >
                 {conv.participantPhoto ? (
@@ -201,7 +201,7 @@ export default function MessagesPage() {
                       if (parent) {
                         const fallback = document.createElement('div');
                         fallback.className = `w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium ${
-                          (conv.unreadCount || 0) > 0 ? 'bg-orange-500' : 'bg-gray-400'
+                          (conv.unreadCount || 0) > 0 ? 'bg-blue-600' : 'bg-gray-400'
                         }`;
                         fallback.textContent = conv.participantName?.charAt(0) || 'U';
                         parent.appendChild(fallback);
@@ -210,7 +210,7 @@ export default function MessagesPage() {
                   />
                 ) : (
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-medium ${
-                    (conv.unreadCount || 0) > 0 ? 'bg-orange-500' : 'bg-gray-400'
+                    (conv.unreadCount || 0) > 0 ? 'bg-blue-600' : 'bg-gray-400'
                   }`}>
                     {conv.participantName?.charAt(0) || 'U'}
                   </div>
@@ -222,7 +222,7 @@ export default function MessagesPage() {
                 <div className="flex flex-col items-end space-y-1">
                   <span className="text-xs text-gray-500">{conv.lastMessageTime || ''}</span>
                   {(conv.unreadCount || 0) > 0 && (
-                    <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-orange-500 rounded-full">
+                    <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-blue-600 rounded-full">
                       <span className="text-[10px] text-white font-bold">{conv.unreadCount}</span>
                     </div>
                   )}
@@ -263,7 +263,7 @@ export default function MessagesPage() {
                             className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-medium text-sm sm:text-base">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm sm:text-base">
                             {conv.participantName?.charAt(0) || 'U'}
                           </div>
                         )}
@@ -308,7 +308,7 @@ export default function MessagesPage() {
                     <div key={msg.id} className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] sm:max-w-md px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base ${
                         msg.senderId === user?.id
-                          ? 'bg-orange-500 text-white' 
+                          ? 'bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white' 
                           : 'bg-gray-100 text-gray-800'
                       }`}>
                         {msg.content}
@@ -328,12 +328,12 @@ export default function MessagesPage() {
                     onKeyPress={(e) => e.key === 'Enter' && !sending && sendMessage()}
                     placeholder="Escribe un mensaje..."
                     disabled={sending}
-                    className="flex-1 px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-3 sm:px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button 
                     onClick={sendMessage}
                     disabled={!newMessage.trim() || sending}
-                    className="px-4 sm:px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-colors font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {sending ? 'Enviando...' : 'Enviar'}
                   </button>

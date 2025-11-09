@@ -168,7 +168,7 @@ export default function GalleryPage() {
   const convertUrlsToLinks = (text: string): string => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return text.replace(urlRegex, (url) => {
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-600 underline">${url}</a>`;
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-600 underline">${url}</a>`;
     });
   };
 
@@ -176,7 +176,7 @@ export default function GalleryPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-12 h-12 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+          <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
           <div className="text-gray-700 text-lg">Cargando...</div>
         </div>
       </div>
@@ -190,7 +190,7 @@ export default function GalleryPage() {
           <div className="text-gray-900 text-xl font-semibold">Post no encontrado</div>
           <button
             onClick={handleBack}
-            className="px-6 py-2 bg-orange-500 hover:bg-orange-600 rounded-full text-white transition-colors"
+            className="px-6 py-2 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-indigo-600 hover:to-indigo-700 rounded-full text-white transition-colors"
           >
             Volver
           </button>
@@ -300,7 +300,7 @@ export default function GalleryPage() {
                           onClick={() => goToImage(index)}
                           className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                             index === currentIndex
-                              ? 'border-orange-500 ring-2 ring-orange-500/50'
+                              ? 'border-blue-600 ring-2 ring-blue-500/50'
                               : 'border-transparent hover:border-gray-600'
                           }`}
                         >
@@ -328,7 +328,7 @@ export default function GalleryPage() {
               {/* Header del usuario */}
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md">
                     {post.user?.firstName?.charAt(0) || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -385,7 +385,7 @@ export default function GalleryPage() {
                     {post.linkDescription && (
                       <p className="text-sm text-gray-600 line-clamp-2">{post.linkDescription}</p>
                     )}
-                    <p className="text-xs text-orange-500 mt-1">{new URL(post.linkUrl).hostname}</p>
+                    <p className="text-xs text-blue-500 mt-1">{new URL(post.linkUrl).hostname}</p>
                   </a>
                 </div>
               )}
