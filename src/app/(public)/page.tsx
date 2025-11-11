@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import React from 'react';
 import PropertiesSection from '@/components/public/sections/PropertiesSection';
+import DiscoverProptechBanner from '@/components/public/sections/DiscoverProptechBanner';
 import SimpleContactSection from '@/components/public/sections/SimpleContactSection';
 
 export const metadata: Metadata = {
@@ -30,6 +31,9 @@ export default function PublicHome() {
   return (
     <div className="min-h-screen">
       <PropertiesSection />
+      <div className="px-4 pb-10 sm:px-6 lg:px-8">
+        <DiscoverProptechBanner />
+      </div>
       <SimpleContactSection />
     </div>
   );

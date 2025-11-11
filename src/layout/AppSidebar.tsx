@@ -20,7 +20,7 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import Logo from "@/components/common/Logo";
 
@@ -112,6 +112,27 @@ const navItems: NavItem[] = [
       {
         name: "Registro de Ventas",
         path: "/sales",
+      },
+    ],
+  },
+  {
+    name: "Finanzas",
+    path: "/financial",
+    icon: <Wallet className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Dashboard",
+        path: "/financial",
+      },
+      {
+        name: "Proveedores",
+        path: "/financial/providers",
+        nuevo: true,
+      },
+      {
+        name: "Categorías",
+        path: "/financial/categories",
+        nuevo: true,
       },
     ],
   },

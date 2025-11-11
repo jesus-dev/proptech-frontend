@@ -16,6 +16,7 @@ interface StatsCardProps {
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   onClick?: () => void;
+  className?: string;
 }
 
 const colorClasses = {
@@ -84,7 +85,8 @@ export default function StatsCard({
   color = 'primary',
   size = 'md',
   loading = false,
-  onClick
+  onClick,
+  className = ''
 }: StatsCardProps) {
   const colors = colorClasses[color];
   const sizes = sizeClasses[size];
@@ -131,6 +133,7 @@ export default function StatsCard({
         border rounded-lg ${sizes.padding} transition-all duration-200
         ${onClick ? 'cursor-pointer hover:shadow-md hover:scale-105' : ''}
         ${loading ? 'animate-pulse' : ''}
+        ${className}
       `}
       onClick={onClick}
     >
