@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
 import type { PublicPropertyFilters } from '@/services/publicPropertyService';
@@ -141,8 +141,37 @@ const normalizePropertyType = (value?: string | null) => {
     .replace(/^-+|-+$/g, '');
 };
 
+const resolveAgentAvatar = (agent: any, property: any): string | null => {
+  if (!agent) return null;
+
+  // Buscar en múltiples campos posibles (priorizando fotoPerfilUrl)
+  const possiblePaths = [
+    agent.fotoPerfilUrl,
+    property.agent?.fotoPerfilUrl,
+    agent.avatar,
+    property.agent?.avatar,
+    agent.photo, // Legacy
+    property.agent?.photo, // Legacy
+    property.agentPhoto,
+    agent.media?.photo
+  ];
+
+  for (const path of possiblePaths) {
+    if (typeof path === "string" && path.trim().length > 0) {
+      const trimmed = path.trim();
+      // No devolver placeholders o rutas vacías
+      if (trimmed !== '/images/placeholder.jpg' && trimmed !== '') {
+        return trimmed;
+      }
+    }
+  }
+
+  return null;
+};
+
 const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: string }) => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(defaultCategory || '');
@@ -1325,15 +1354,36 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
           ) : filteredProperties.length > 0 ? (
             filteredProperties.map((property, index) => {
               // Procesar datos del agente para el frontend
-              if (property.agent) {
-                const firstName = property.agent.firstName || '';
-                const lastName = property.agent.lastName || '';
-                property.agent.name = `${firstName} ${lastName}`.trim();
-                property.agent.avatar = property.agent.photo;
-                // Si no hay nombre completo, usar email como fallback
-                if (!property.agent.name) {
-                  property.agent.name = property.agent.email || 'Agente';
+              if (!property.agent) {
+                property.agent = {};
+              }
+
+              const firstName = property.agent.firstName || property.agentName || "";
+              const lastName = property.agent.lastName || "";
+              property.agent.name = `${firstName} ${lastName}`.trim();
+
+              if (!property.agent.name) {
+                property.agent.name =
+                  property.agent.email ||
+                  property.agentName ||
+                  property.agencyName ||
+                  "Agente";
+              }
+
+              // Asegurar que el campo fotoPerfilUrl se preserve si viene del backend
+              // El backend envía agent.fotoPerfilUrl directamente desde PropertySummaryDTO
+              if (!property.agent.fotoPerfilUrl && !property.agent.avatar) {
+                const resolvedAvatar = resolveAgentAvatar(property.agent, property);
+                if (resolvedAvatar) {
+                  property.agent.avatar = resolvedAvatar;
+                  property.agent.fotoPerfilUrl = resolvedAvatar;
                 }
+              } else if (property.agent.fotoPerfilUrl && !property.agent.avatar) {
+                // Si viene fotoPerfilUrl del backend, también asignarlo a avatar para compatibilidad
+                property.agent.avatar = property.agent.fotoPerfilUrl;
+              } else if (property.agent.avatar && !property.agent.fotoPerfilUrl) {
+                // Si viene avatar pero no fotoPerfilUrl, asignarlo también a fotoPerfilUrl
+                property.agent.fotoPerfilUrl = property.agent.avatar;
               }
               
               return (
@@ -1442,17 +1492,32 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 {/* Información del Agente y Agencia - Mejorada */}
                 <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 rounded-xl p-3 mb-3 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center flex-1 min-w-0">
+                    {(property.agent?.slug || property.agent?.id) ? (
+                      <div 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const agentSlug = property.agent?.slug || property.agent?.id;
+                          if (agentSlug) {
+                            router.push(`/agente/${agentSlug}`);
+                          }
+                        }}
+                        className="flex items-center flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      >
                       <div className="relative flex-shrink-0">
                         {property.agent?.name || property.agentName ? (
                           <>
-                            {property.agent?.avatar || property.agent?.photo ? (
+                            {(property.agent?.fotoPerfilUrl || property.agent?.avatar) ? (
                               <img 
-                                src={getImageUrl(property.agent.avatar || property.agent.photo)} 
+                                src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar)} 
                                 alt={property.agent?.name || property.agentName}
                                 className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
                                 loading="lazy"      // ⭐ Lazy loading
                                 decoding="async"    // ⭐ Async decoding
+                                onError={(e) => {
+                                  // Si falla la carga, ocultar la imagen y mostrar placeholder
+                                  e.currentTarget.style.display = 'none';
+                                }}
                               />
                             ) : (
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
@@ -1524,6 +1589,89 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                         </div>
                       </div>
                     </div>
+                    ) : (
+                      <div className="flex items-center flex-1 min-w-0">
+                      <div className="relative flex-shrink-0">
+                        {property.agent?.name || property.agentName ? (
+                          <>
+                            {(property.agent?.fotoPerfilUrl || property.agent?.avatar) ? (
+                              <img 
+                                src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar)} 
+                                alt={property.agent?.name || property.agentName}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                                loading="lazy"
+                                decoding="async"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                                <span className="text-white text-base font-bold">
+                                  {(property.agent?.name || property.agentName || 'A').charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm">
+                              <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+                            </div>
+                          </>
+                        ) : property.agencyName ? (
+                          <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="ml-3 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900 truncate">
+                            {property.agent?.name || property.agentName || property.agencyName || 'Propietario'}
+                          </p>
+                          {(property.agent?.name || property.agentName) && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <svg className="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              Agente
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {(property.agent?.name || property.agentName) && property.agencyName && (
+                            <>
+                              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              <p className="text-xs text-slate-600 truncate font-medium">{property.agencyName}</p>
+                            </>
+                          )}
+                          {!(property.agent?.name || property.agentName) && property.agencyName && (
+                            <p className="text-xs text-blue-600 font-semibold">Agencia Inmobiliaria</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <svg key={i} className="w-3 h-3 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                            <span className="text-xs text-slate-600 ml-1">4.9</span>
+                          </div>
+                          <span className="text-xs text-slate-500">•</span>
+                          <span className="text-xs text-green-600 font-medium">Disponible</span>
+                        </div>
+                      </div>
+                    </div>
+                    )}
                     
                     {/* Botones de contacto mejorados */}
                     <div className="flex items-center gap-2 flex-shrink-0">

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Property } from "./types";
 import { formatPrice } from "@/lib/utils";
@@ -14,8 +14,39 @@ interface PropertyCardProps {
   property: Property;
 }
 
+type CardStatus = ReturnType<typeof resolvePropertyStatus>;
+
+const computeStatusLabel = (sourceProperty: Property, normalizedStatus: CardStatus): string => {
+  const candidates: Array<string | undefined> = [
+    sourceProperty.propertyStatusLabel,
+    sourceProperty.propertyStatusName,
+    sourceProperty.propertyStatusText,
+    typeof sourceProperty.propertyStatus === "object" && sourceProperty.propertyStatus !== null
+      ? (sourceProperty.propertyStatus as any).label ?? (sourceProperty.propertyStatus as any).name
+      : undefined,
+    sourceProperty.statusLabel,
+    sourceProperty.statusName,
+    sourceProperty.statusText,
+    sourceProperty.status
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "string") {
+      const trimmed = candidate.trim();
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+  }
+
+  if (normalizedStatus === "draft") return "Borrador";
+  if (normalizedStatus === "active") return "Activa";
+  return "Inactiva";
+};
+
 export default function PropertyCard({ property }: PropertyCardProps) {
-  const [status, setStatus] = useState(() => resolvePropertyStatus(property));
+  const [status, setStatus] = useState<CardStatus>(() => resolvePropertyStatus(property));
+  const [statusLabel, setStatusLabel] = useState(() => computeStatusLabel(property, resolvePropertyStatus(property)));
   const [loading, setLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(property.favorite || false);
   
@@ -41,8 +72,10 @@ export default function PropertyCard({ property }: PropertyCardProps) {
       const res = await fetch(endpoint, { method: "PATCH" });
       if (res.ok) {
         const data = await res.json();
-        const updatedStatus = resolvePropertyStatus({ ...property, ...data });
+        const mergedProperty = { ...property, ...data };
+        const updatedStatus = resolvePropertyStatus(mergedProperty);
         setStatus(updatedStatus);
+        setStatusLabel(computeStatusLabel(mergedProperty, updatedStatus));
       }
     } finally {
       setLoading(false);
@@ -52,6 +85,18 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const handleToggleFavorite = async (newFavoriteState: boolean) => {
     setIsFavorite(newFavoriteState);
   };
+
+  useEffect(() => {
+    const nextStatus = resolvePropertyStatus(property);
+    if (nextStatus !== status) {
+      setStatus(nextStatus);
+    }
+    const nextLabel = computeStatusLabel(property, nextStatus);
+    if (nextLabel !== statusLabel) {
+      setStatusLabel(nextLabel);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property]);
 
   return (
     <Link href={`/properties/${property.id}`} className="block">
@@ -100,21 +145,27 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
           <span
             className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-              status === "active"
-                ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400"
-                : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400"
+              status === 'active'
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400'
+                : status === 'draft'
+                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'
+                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
             }`}
           >
-            {status === "active" ? (
+            {status === 'active' && (
               <>
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
-                Activa
               </>
-            ) : (
-              "Inactiva"
             )}
+            {status === 'inactive' && null}
+            {status === 'draft' && null}
+            {statusLabel ? statusLabel : status === 'active' ? 'Activa' : status === 'draft' ? 'Borrador' : 'Inactiva'}
           </span>
         </div>
         <div className="absolute top-4 left-4 flex flex-col gap-1">

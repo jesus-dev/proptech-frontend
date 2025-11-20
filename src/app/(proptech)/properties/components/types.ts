@@ -69,6 +69,11 @@ export interface Property {
   propertyType?: string;
   propertyTypeLabel?: string;
   propertyStatusLabel?: string;
+  propertyStatusName?: string;
+  propertyStatusText?: string;
+  statusLabel?: string;
+  statusName?: string;
+  statusText?: string;
   propertyPrice?: number;
   propertyPriceLabel?: string;
   propertyBedrooms?: number;

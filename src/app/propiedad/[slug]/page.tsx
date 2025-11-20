@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { publicPropertyService } from "@/services/publicPropertyService";
 import { getImageBaseUrl } from "@/config/environment";
 import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, StarIcon, CheckCircleIcon, VideoCameraIcon, MapIcon, ArrowLeftIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon, WifiIcon, ShieldCheckIcon, ClockIcon, BanknotesIcon, DocumentTextIcon, InformationCircleIcon, XMarkIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
@@ -327,12 +328,23 @@ export default function PropertyDetailPage() {
 
   // Procesar datos del agente
   if (property.agent) {
-    const firstName = property.agent.firstName || '';
-    const lastName = property.agent.lastName || '';
-    property.agent.name = `${firstName} ${lastName}`.trim();
-    property.agent.avatar = property.agent.photo;
+    const firstName = property.agent.firstName || property.agent.nombre || '';
+    const lastName = property.agent.lastName || property.agent.apellido || '';
+    property.agent.name = property.agent.nombreCompleto || property.agent.name || `${firstName} ${lastName}`.trim();
+    // Asegurar que fotoPerfilUrl se preserve y se asigne a avatar para compatibilidad
+    if (property.agent.fotoPerfilUrl && !property.agent.avatar) {
+      property.agent.avatar = property.agent.fotoPerfilUrl;
+    } else if (property.agent.photo && !property.agent.avatar && !property.agent.fotoPerfilUrl) {
+      property.agent.avatar = property.agent.photo;
+      property.agent.fotoPerfilUrl = property.agent.photo;
+    }
     if (!property.agent.name) {
       property.agent.name = property.agent.email || 'Agente';
+    }
+    // Asegurar que el slug esté disponible (priorizar slug sobre ID)
+    if (!property.agent.slug && property.agent.id) {
+      // Si no hay slug, el ID se usará como fallback en los enlaces
+      console.log('Agent slug not found, will use ID as fallback:', property.agent.id);
     }
   }
 
@@ -463,142 +475,353 @@ export default function PropertyDetailPage() {
 
             {/* Card del agente */}
             <div className="lg:col-span-1">
-              <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/30 sticky top-24">
-                <div className="text-center mb-6">
-                  <div className="relative w-24 h-24 mx-auto mb-4">
-                    {property.agent?.avatar || property.agent?.photo ? (
-                      <img 
-                        src={getImageUrl(property.agent.avatar || property.agent.photo)} 
-                        alt={property.agent?.name || property.agentName || 'Agente'} 
-                        className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg" 
-                      />
-                    ) : (property.agent?.name || property.agentName) ? (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                        <span className="text-white text-3xl font-bold">
-                          {(property.agent?.name || property.agentName).charAt(0).toUpperCase()}
-                        </span>
+              {(property.agent?.slug || property.agent?.id) ? (
+                <div 
+                  onClick={(e) => {
+                    // Prevenir cualquier navegación por defecto
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Navegar al perfil del agente
+                    const agentSlug = property.agent?.slug || property.agent?.id;
+                    if (agentSlug) {
+                      console.log('Navigating to agent profile:', agentSlug);
+                      router.push(`/agente/${agentSlug}`);
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    // Prevenir el comportamiento por defecto del mouse down
+                    e.stopPropagation();
+                  }}
+                  className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/30 sticky top-24 hover:shadow-3xl transition-all duration-300 cursor-pointer group"
+                  style={{ position: 'relative', zIndex: 10 }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      const agentSlug = property.agent?.slug || property.agent?.id;
+                      if (agentSlug) {
+                        router.push(`/agente/${agentSlug}`);
+                      }
+                    }
+                  }}
+                >
+                    <div className="text-center mb-6">
+                      <div className="relative w-24 h-24 mx-auto mb-4">
+                        {property.agent?.fotoPerfilUrl || property.agent?.avatar || property.agent?.photo ? (
+                          <img 
+                            src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar || property.agent.photo)} 
+                            alt={property.agent?.name || property.agentName || 'Agente'} 
+                            className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg group-hover:scale-105 transition-transform" 
+                          />
+                        ) : (property.agent?.name || property.agentName) ? (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg group-hover:scale-105 transition-transform">
+                            <span className="text-white text-3xl font-bold">
+                              {(property.agent?.name || property.agentName).charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        ) : property.agencyName ? (
+                          <div className="w-full h-full bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-4 border-white shadow-lg group-hover:scale-105 transition-transform">
+                            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          </div>
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-4 border-white shadow-lg group-hover:scale-105 transition-transform">
+                            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                        )}
+                        {(property.agent?.name || property.agentName) && (
+                          <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg">
+                            <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+                          </div>
+                        )}
                       </div>
-                    ) : property.agencyName ? (
-                      <div className="w-full h-full bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+                      
+                      {/* Nombre y badge */}
+                      <div className="mb-3">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                          {property.agent?.name || property.agentName || property.agencyName || 'Propietario'}
+                        </h3>
+                        
+                        {/* Badge de tipo */}
+                        {(property.agent?.name || property.agentName) ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              Agente Verificado
+                            </span>
+                          </div>
+                        ) : property.agencyName ? (
+                          <p className="text-blue-600 font-semibold text-sm">
+                            Agencia Inmobiliaria
+                          </p>
+                        ) : null}
+                        
+                        {/* Agencia del agente */}
+                        {(property.agent?.name || property.agentName) && property.agencyName && (
+                          <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-600">
+                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span className="font-medium">{property.agencyName}</span>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    )}
-                    {(property.agent?.name || property.agentName) && (
-                      <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg">
-                        <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Nombre y badge */}
-                  <div className="mb-3">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {property.agent?.name || property.agentName || property.agencyName || 'Propietario'}
-                    </h3>
-                    
-                    {/* Badge de tipo */}
-                    {(property.agent?.name || property.agentName) ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
-                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          Agente Verificado
-                        </span>
-                      </div>
-                    ) : property.agencyName ? (
-                      <p className="text-blue-600 font-semibold text-sm">
-                        Agencia Inmobiliaria
-                      </p>
-                    ) : null}
-                    
-                    {/* Agencia del agente */}
-                    {(property.agent?.name || property.agentName) && property.agencyName && (
-                      <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-600">
-                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <span className="font-medium">{property.agencyName}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Rating */}
-                  <div className="flex items-center justify-center gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                    <span className="text-sm font-semibold text-gray-700 ml-2">4.9</span>
-                  </div>
-                </div>
+                      
+                      {/* Rating - Solo mostrar si hay datos */}
+                      {property.agent?.rating && (
+                        <div className="flex items-center justify-center gap-1 mb-4">
+                          {[...Array(5)].map((_, i) => (
+                            <svg 
+                              key={i} 
+                              className={`w-5 h-5 ${
+                                i < Math.floor(property.agent.rating || 0) 
+                                  ? 'text-yellow-400 fill-current' 
+                                  : 'text-gray-300'
+                              }`} 
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                          <span className="text-sm font-semibold text-gray-700 ml-2">
+                            {property.agent.rating.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                <div className="space-y-3">
-                  {(property.agent?.phone || property.agent?.mobile) && (
-                    <a 
-                      href={`tel:${property.agent.phone || property.agent.mobile}`} 
-                      className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-                    >
-                      <PhoneIcon className="w-5 h-5 group-hover:animate-pulse" />
-                      <span>Llamar Ahora</span>
-                    </a>
-                  )}
-                  {(property.agent?.phone || property.agent?.mobile) && (
-                    <a 
-                      href={`https://wa.me/${(property.agent.phone || property.agent.mobile).replace(/[^\d]/g, '')}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-                    >
-                      <ChatBubbleLeftRightIcon className="w-5 h-5 group-hover:animate-pulse" />
-                      <span>WhatsApp</span>
-                    </a>
-                  )}
-                  {property.agent?.email && (
-                    <a 
-                      href={`mailto:${property.agent.email}`} 
-                      className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-                    >
-                      <EnvelopeIcon className="w-5 h-5 group-hover:animate-pulse" />
-                      <span>Enviar Email</span>
-                    </a>
-                  )}
-                  
-                  {/* Información adicional del agente/agencia */}
-                  {(property.agent?.bio || property.agent?.description || property.agencyName) && (
-                    <div className="pt-4 mt-4 border-t border-gray-200">
-                      <p className="text-xs text-gray-600 leading-relaxed">
-                        {property.agent?.bio || property.agent?.description || `Contacta con ${property.agencyName} para más información sobre esta propiedad.`}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {/* Stats del agente */}
-                  <div className="pt-4 grid grid-cols-3 gap-3 border-t border-gray-200">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">{property.views || 0}</div>
-                      <div className="text-xs text-gray-500">Vistas</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">15+</div>
-                      <div className="text-xs text-gray-500">Ventas</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-gray-900">5★</div>
-                      <div className="text-xs text-gray-500">Rating</div>
+                    <div className="space-y-3">
+                      {(property.agent?.phone || property.agent?.mobile) && (
+                        <a 
+                          href={`tel:${property.agent.phone || property.agent.mobile}`} 
+                          onClick={(e) => e.stopPropagation()}
+                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                        >
+                          <PhoneIcon className="w-5 h-5 group-hover:animate-pulse" />
+                          <span>Llamar Ahora</span>
+                        </a>
+                      )}
+                      {(property.agent?.phone || property.agent?.mobile) && (
+                        <a 
+                          href={`https://wa.me/${(property.agent.phone || property.agent.mobile).replace(/[^\d]/g, '')}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                        >
+                          <ChatBubbleLeftRightIcon className="w-5 h-5 group-hover:animate-pulse" />
+                          <span>WhatsApp</span>
+                        </a>
+                      )}
+                      {property.agent?.email && (
+                        <a 
+                          href={`mailto:${property.agent.email}`} 
+                          onClick={(e) => e.stopPropagation()}
+                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                        >
+                          <EnvelopeIcon className="w-5 h-5 group-hover:animate-pulse" />
+                          <span>Enviar Email</span>
+                        </a>
+                      )}
+                      
+                      {/* Información adicional del agente/agencia */}
+                      {(property.agent?.bio || property.agent?.description || property.agencyName) && (
+                        <div className="pt-4 mt-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            {property.agent?.bio || property.agent?.description || `Contacta con ${property.agencyName} para más información sobre esta propiedad.`}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Stats del agente - Solo mostrar si hay datos */}
+                      {(property.views || property.agent?.propertiesCount || property.agent?.rating) && (
+                        <div className="pt-4 grid grid-cols-3 gap-3 border-t border-gray-200">
+                          {property.views !== undefined && property.views !== null && (
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-gray-900">{property.views}</div>
+                              <div className="text-xs text-gray-500">Vistas</div>
+                            </div>
+                          )}
+                          {property.agent?.propertiesCount !== undefined && property.agent?.propertiesCount !== null && (
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-gray-900">{property.agent.propertiesCount}</div>
+                              <div className="text-xs text-gray-500">Propiedades</div>
+                            </div>
+                          )}
+                          {property.agent?.rating !== undefined && property.agent?.rating !== null && (
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-gray-900">{property.agent.rating.toFixed(1)}★</div>
+                              <div className="text-xs text-gray-500">Rating</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
+              ) : (
+                <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/30 sticky top-24">
+                  <div className="text-center mb-6">
+                    <div className="relative w-24 h-24 mx-auto mb-4">
+                      {property.agent?.fotoPerfilUrl || property.agent?.avatar || property.agent?.photo ? (
+                        <img 
+                          src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar || property.agent.photo)} 
+                          alt={property.agent?.name || property.agentName || 'Agente'} 
+                          className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg" 
+                        />
+                      ) : (property.agent?.name || property.agentName) ? (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                          <span className="text-white text-3xl font-bold">
+                            {(property.agent?.name || property.agentName).charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      ) : property.agencyName ? (
+                        <div className="w-full h-full bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                          <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                          <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                      {(property.agent?.name || property.agentName) && (
+                        <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg">
+                          <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Nombre y badge */}
+                    <div className="mb-3">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        {property.agent?.name || property.agentName || property.agencyName || 'Propietario'}
+                      </h3>
+                      
+                      {/* Badge de tipo */}
+                      {(property.agent?.name || property.agentName) ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
+                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Agente Verificado
+                          </span>
+                        </div>
+                      ) : property.agencyName ? (
+                        <p className="text-blue-600 font-semibold text-sm">
+                          Agencia Inmobiliaria
+                        </p>
+                      ) : null}
+                      
+                      {/* Agencia del agente */}
+                      {(property.agent?.name || property.agentName) && property.agencyName && (
+                        <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-600">
+                          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="font-medium">{property.agencyName}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Rating - Solo mostrar si hay datos */}
+                    {property.agent?.rating && (
+                      <div className="flex items-center justify-center gap-1 mb-4">
+                        {[...Array(5)].map((_, i) => (
+                          <svg 
+                            key={i} 
+                            className={`w-5 h-5 ${
+                              i < Math.floor(property.agent.rating || 0) 
+                                ? 'text-yellow-400 fill-current' 
+                                : 'text-gray-300'
+                            }`} 
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                        <span className="text-sm font-semibold text-gray-700 ml-2">
+                          {property.agent.rating.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    {(property.agent?.phone || property.agent?.mobile) && (
+                      <a 
+                        href={`tel:${property.agent.phone || property.agent.mobile}`} 
+                        className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                      >
+                        <PhoneIcon className="w-5 h-5 group-hover:animate-pulse" />
+                        <span>Llamar Ahora</span>
+                      </a>
+                    )}
+                    {(property.agent?.phone || property.agent?.mobile) && (
+                      <a 
+                        href={`https://wa.me/${(property.agent.phone || property.agent.mobile).replace(/[^\d]/g, '')}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                      >
+                        <ChatBubbleLeftRightIcon className="w-5 h-5 group-hover:animate-pulse" />
+                        <span>WhatsApp</span>
+                      </a>
+                    )}
+                    {property.agent?.email && (
+                      <a 
+                        href={`mailto:${property.agent.email}`} 
+                        className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                      >
+                        <EnvelopeIcon className="w-5 h-5 group-hover:animate-pulse" />
+                        <span>Enviar Correo</span>
+                      </a>
+                    )}
+                    
+                    {/* Información adicional del agente/agencia */}
+                    {(property.agent?.bio || property.agent?.description || property.agencyName) && (
+                      <div className="pt-4 mt-4 border-t border-gray-200">
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                          {property.agent?.bio || property.agent?.description || `Contacta con ${property.agencyName} para más información sobre esta propiedad.`}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Stats del agente - Solo mostrar si hay datos */}
+                    {(property.views || property.agent?.propertiesCount || property.agent?.rating) && (
+                      <div className="pt-4 grid grid-cols-3 gap-3 border-t border-gray-200">
+                        {property.views !== undefined && property.views !== null && (
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-gray-900">{property.views}</div>
+                            <div className="text-xs text-gray-500">Vistas</div>
+                          </div>
+                        )}
+                        {property.agent?.propertiesCount !== undefined && property.agent?.propertiesCount !== null && (
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-gray-900">{property.agent.propertiesCount}</div>
+                            <div className="text-xs text-gray-500">Propiedades</div>
+                          </div>
+                        )}
+                        {property.agent?.rating !== undefined && property.agent?.rating !== null && (
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-gray-900">{property.agent.rating.toFixed(1)}★</div>
+                            <div className="text-xs text-gray-500">Rating</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

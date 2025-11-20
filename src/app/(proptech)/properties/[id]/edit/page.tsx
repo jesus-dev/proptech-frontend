@@ -89,6 +89,8 @@ export default function EditPropertyPage({ params }: PageProps) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [autoSave, setAutoSave] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
   const { 
     formData, 
     errors, 
@@ -105,7 +107,8 @@ export default function EditPropertyPage({ params }: PageProps) {
     resetForm,
     handleFloorPlansChange,
     handleFloorPlanImageUpload,
-    handleNearbyFacilitiesChange
+    handleNearbyFacilitiesChange,
+    publishProperty,
   } = usePropertyForm(initialPropertyData);
 
   // Sin promesas: params ya viene resuelto
@@ -346,6 +349,68 @@ export default function EditPropertyPage({ params }: PageProps) {
       setSaving(false);
     }
   };
+
+  const isDraftStatus = useMemo(() => {
+    const candidates = [
+      formData.status,
+      formData.propertyStatus,
+      formData.propertyStatusCode,
+      formData.propertyStatusLabel,
+      initialPropertyData?.status,
+      initialPropertyData?.propertyStatus,
+      initialPropertyData?.propertyStatusCode,
+      initialPropertyData?.propertyStatusLabel,
+    ]
+      .filter(Boolean)
+      .map((value) => value!.toString().toLowerCase());
+
+    return candidates.some((value) => value === 'draft' || value === 'borrador');
+  }, [formData, initialPropertyData]);
+
+  const markStatusAsPublished = useCallback(() => {
+    const publishLabelCandidates = ['published', 'publicado', 'activa', 'active'];
+
+    setInitialPropertyData((prev) =>
+      prev
+        ? {
+            ...prev,
+            status: 'active',
+            propertyStatus: 'Publicado',
+            propertyStatusCode: 'ACTIVE',
+            propertyStatusLabel: 'Publicado',
+          }
+        : prev
+    );
+
+    setHasUnsavedChanges(false);
+  }, []);
+
+  const onPublish = useCallback(async () => {
+    if (!isDraftStatus) return;
+
+    setPublishing(true);
+    setPublishSuccess(false);
+    try {
+      await publishProperty();
+      setPublishSuccess(true);
+      markStatusAsPublished();
+      toast({
+        variant: 'success',
+        title: 'Propiedad publicada',
+        description: 'La propiedad ahora es visible en el portal público.',
+      });
+      setTimeout(() => router.push('/properties'), 1800);
+    } catch (err) {
+      console.error('❌ Error al publicar propiedad:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error al publicar',
+        description: 'No se pudo publicar la propiedad. Intenta nuevamente.',
+      });
+    } finally {
+      setPublishing(false);
+    }
+  }, [isDraftStatus, publishProperty, router, toast, markStatusAsPublished]);
 
   // Confirmación antes de salir si hay cambios
   useEffect(() => {
@@ -722,6 +787,40 @@ export default function EditPropertyPage({ params }: PageProps) {
                   </>
                 )}
               </button>
+
+              {isDraftStatus ? (
+                <button
+                  onClick={onPublish}
+                  disabled={publishing || saving || loading}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    publishing || saving || loading
+                      ? 'bg-gray-300 text-white cursor-not-allowed'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg'
+                  }`}
+                >
+                  {publishing ? (
+                    <>
+                      <LoadingSpinner size="md" />
+                      <span className="ml-2">Publicando...</span>
+                    </>
+                  ) : publishSuccess ? (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      ¡Publicado!
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      Publicar Propiedad
+                    </>
+                  )}
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                  <CheckCircle className="w-4 h-4" />
+                  Propiedad publicada
+                </span>
+              )}
             </div>
           </div>
         </div>

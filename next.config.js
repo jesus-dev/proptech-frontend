@@ -176,11 +176,28 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  webpack(config) {
+  webpack(config, { isServer }) {
+    // Configuración para SVG
     config.module.rules.push({
       test: /.svg$/,
       use: ["@svgr/webpack"],
     });
+
+    // Mejorar el manejo de módulos para evitar errores de "undefined"
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+
+    // Asegurar que los módulos se resuelvan correctamente
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+      };
+    }
+
     return config;
   },
 };

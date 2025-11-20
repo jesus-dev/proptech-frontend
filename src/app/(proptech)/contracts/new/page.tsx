@@ -7,7 +7,7 @@ import { Contract } from "../components/types";
 import { contractService } from "../services/contractService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, ArrowLeftIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
-import { lazy } from "react";
+import dynamic from "next/dynamic";
 
 // Error Boundary simple
 class ErrorBoundary extends React.Component<
@@ -51,14 +51,15 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Importar dinámicamente el ContractForm para evitar problemas de dependencias circulares
-const ContractForm = lazy(() => {
-  return import("../components/ContractForm").then(module => {
-    return module;
-  }).catch(error => {
-    console.error('❌ NewContractPage: Error loading ContractForm:', error);
-    throw error;
-  });
+// Importar dinámicamente el ContractForm usando dynamic() de Next.js
+const ContractForm = dynamic(() => import("../components/ContractForm"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <LoadingSpinner size="lg" />
+      <span className="ml-3 text-gray-600">Cargando formulario...</span>
+    </div>
+  ),
 });
 
 export default function NewContractPage() {
@@ -173,39 +174,32 @@ export default function NewContractPage() {
             </p>
           </div>
           
-          <React.Suspense fallback={
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner size="lg" />
-              <span className="ml-3 text-gray-600">Cargando formulario...</span>
-            </div>
-          }>
-            <ErrorBoundary>
-              <ContractForm
-                onSubmit={handleSaveNewContract}
-                onCancel={handleBack}
-                templateVariables={selectedTemplate.variables}
-                initialData={{
-                  title: selectedTemplate.name,
-                  type: selectedTemplate.type === "BROKERAGE" ? "MANAGEMENT" : selectedTemplate.type as "SALE" | "RENT" | "MANAGEMENT",
-                  templateContent: selectedTemplate.content,
-                  status: "DRAFT",
-                  clientName: "",
-                  clientIdentification: "",
-                  brokerName: "",
-                  brokerId: "",
-                  commissionPercentage: 3.0,
-                  propertyAddress: "",
-                  propertyDescription: "",
-                  startDate: new Date().toISOString().split("T")[0],
-                  amount: 0,
-                  currency: "USD",
-                  clientId: undefined,
-                  agentId: undefined,
-                  propertyId: undefined,
-                }}
-              />
-            </ErrorBoundary>
-          </React.Suspense>
+          <ErrorBoundary>
+            <ContractForm
+              onSubmit={handleSaveNewContract}
+              onCancel={handleBack}
+              templateVariables={selectedTemplate.variables}
+              initialData={{
+                title: selectedTemplate.name,
+                type: selectedTemplate.type === "BROKERAGE" ? "MANAGEMENT" : selectedTemplate.type as "SALE" | "RENT" | "MANAGEMENT",
+                templateContent: selectedTemplate.content,
+                status: "DRAFT",
+                clientName: "",
+                clientIdentification: "",
+                brokerName: "",
+                brokerId: "",
+                commissionPercentage: 3.0,
+                propertyAddress: "",
+                propertyDescription: "",
+                startDate: new Date().toISOString().split("T")[0],
+                amount: 0,
+                currency: "USD",
+                clientId: undefined,
+                agentId: undefined,
+                propertyId: undefined,
+              }}
+            />
+          </ErrorBoundary>
         </div>
       </div>
     );

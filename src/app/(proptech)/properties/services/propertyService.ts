@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api';
 import { Property } from '../components/types';
+import { normalizePropertyStatus as normalizePropertyStatusValue } from '../utils/status';
 
 export interface PropertyFilters {
   page?: number;
@@ -42,21 +43,6 @@ export interface PaginatedPropertiesResponse {
   total: number;
   page: number;
   size: number;
-}
-
-// Función para normalizar el status de la propiedad
-function normalizePropertyStatus(status: string | undefined): string {
-  if (!status) return "active";
-  
-  const statusLower = status.toLowerCase();
-  
-  // Estados que se consideran "activo"
-  if (statusLower === "disponible" || statusLower === "active" || statusLower === "activo" || statusLower === "activa") {
-    return "active";
-  }
-  
-  // Cualquier otro estado se considera "inactive"
-  return "inactive";
 }
 
 // Función para transformar la respuesta del backend al formato del frontend
@@ -109,6 +95,26 @@ function transformPropertyResponse(backendProperty: any): Property {
   //     finalCurrencyCode: currencyCode
   //   });
   // }
+  const statusCandidates: Array<string | undefined> = [
+    backendProperty.propertyStatusLabel,
+    backendProperty.statusLabel,
+    backendProperty.propertyStatusName,
+    backendProperty.statusName,
+    backendProperty.statusText,
+    backendProperty.propertyStatusText,
+    typeof backendProperty.propertyStatus === 'object' && backendProperty.propertyStatus !== null
+      ? (backendProperty.propertyStatus.label ||
+         backendProperty.propertyStatus.name ||
+         backendProperty.propertyStatus.status ||
+         backendProperty.propertyStatus.code)
+      : undefined,
+    backendProperty.status,
+    backendProperty.propertyStatus,
+    backendProperty.state
+  ];
+
+  const rawStatus = statusCandidates.find((candidate) => typeof candidate === 'string' && candidate.trim().length > 0);
+  const normalizedStatus = normalizePropertyStatusValue(rawStatus);
 
   return {
     ...backendProperty,
@@ -137,7 +143,8 @@ function transformPropertyResponse(backendProperty: any): Property {
     zip: backendProperty.zip || backendProperty.postalCode || "",
     // Asegurar que el tipo sea string
     type: backendProperty.type || backendProperty.propertyTypeName || "",
-    status: normalizePropertyStatus(backendProperty.status || backendProperty.propertyStatus)
+    statusRaw: rawStatus || backendProperty.status || backendProperty.propertyStatus || null,
+    status: normalizedStatus
   };
 }
 

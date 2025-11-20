@@ -12,6 +12,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import Pagination from "@/components/common/Pagination";
 import { apiClient } from '@/lib/api';
 import { usePropertyTypes } from "../catalogs/property-types/hooks/usePropertyTypes";
+import { resolvePropertyStatus } from "./utils/status";
 import { getAllCities, City } from "../catalogs/cities/services/cityService";
 
 // Función para calcular similitud entre strings (algoritmo de Levenshtein simplificado)
@@ -407,13 +408,7 @@ export default function PropertiesPage() {
     }
     
     // Si no, contar borradores en las propiedades cargadas (estimación)
-    const drafts = allProperties.filter(p => 
-      p.propertyStatusCode === 'DRAFT' || 
-      p.propertyStatusCode === 'draft' ||
-      p.propertyStatus === 'Borrador' ||
-      p.propertyStatus === 'Draft' ||
-      p.propertyStatus === 'borrador'
-    );
+    const drafts = allProperties.filter((p) => resolvePropertyStatus(p) === 'draft');
     
     return drafts.length;
   }, [allProperties, showDraftsOnly, totalElements]);
@@ -422,9 +417,11 @@ export default function PropertiesPage() {
   const filteredProperties = useMemo(() => {
     let filtered = allProperties;
     
-    // ⚠️ ELIMINADO: El filtro de borradores ahora se hace en el backend
-    // cuando showDraftsOnly cambia, se recarga desde el backend con filters.propertyStatus='DRAFT'
-    
+    // Filtrar borradores fuera del listado principal (excepto si se está filtrando por borradores)
+    if (!showDraftsOnly) {
+      filtered = filtered.filter((property) => resolvePropertyStatus(property) !== 'draft');
+    }
+
     // Filtros básicos (exactos)
     if (statusFilter.trim()) {
       filtered = filtered.filter(property => 
@@ -482,7 +479,7 @@ export default function PropertiesPage() {
     }
     
     return filtered;
-  }, [allProperties, debouncedSearchQuery, statusFilter, typeFilter, cityFilter, priceRangeFilter, featuredFilter, premiumFilter]);
+  }, [allProperties, debouncedSearchQuery, statusFilter, typeFilter, cityFilter, priceRangeFilter, featuredFilter, premiumFilter, showDraftsOnly]);
 
   // Para scroll infinito, mostramos todas las propiedades filtradas
   const paginatedProperties = filteredProperties;

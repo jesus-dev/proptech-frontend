@@ -476,6 +476,10 @@ export default function NewPropertyPage() {
   };
 
   const progressPercentage = (currentStep / steps.length) * 100;
+  const isDraftStatus =
+    !draftPropertyId ||
+    formData.status?.toUpperCase() === 'DRAFT' ||
+    formData.propertyStatusLabel?.toLowerCase() === 'borrador';
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -569,32 +573,38 @@ export default function NewPropertyPage() {
               </button>
 
               {/* Publish button */}
-              <button
-                onClick={onPublish}
-                disabled={saving || isInitializing}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  saving || isInitializing
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
-                }`}
-              >
-                {saving ? (
-                  <>
-                    <LoadingSpinner size="md" />
-                    <span className="ml-2">Publicando...</span>
-                  </>
-                ) : saveSuccess ? (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    ¡Publicado!
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    Publicar Propiedad
-                  </>
-                )}
-              </button>
+              {isDraftStatus ? (
+                <button
+                  onClick={onPublish}
+                  disabled={saving || isInitializing}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                    saving || isInitializing
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
+                  }`}
+                >
+                  {saving ? (
+                    <>
+                      <LoadingSpinner size="md" />
+                      <span className="ml-2">Publicando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      {draftPropertyId ? 'Publicar Propiedad' : 'Guardar y Publicar'}
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center gap-2 px-6 py-3 rounded-lg font-medium bg-emerald-100 text-emerald-700 cursor-not-allowed"
+                >
+                  <CheckCircle className="w-5 h-5" />
+                  Publicada
+                </button>
+              )}
             </div>
           </div>
         </div>
