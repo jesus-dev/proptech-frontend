@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { PropShot, PropShotService, CreatePropShotRequest } from '@/services/propShotService';
+import { getEndpoint } from '@/lib/api-config';
 import CreatePropShotModal from '@/components/social/CreatePropShotModal';
 import PropShotGrid from '@/components/social/PropShotGrid';
 import PropShotReelViewer from '@/components/social/PropShotReelViewer';
@@ -242,7 +243,7 @@ export default function PropShotsPage() {
     handleViewPropShot(shot.id);
   };
 
-  // Función para convertir URLs relativas en URLs completas
+  // Función para convertir URLs relativas en URLs completas - usando la misma solución del CRM
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
@@ -251,50 +252,23 @@ export default function PropShotsPage() {
       return url;
     }
     
-    // Determinar la URL base del API
-    let apiBaseUrl: string;
-    if (process.env.NEXT_PUBLIC_API_URL) {
-      apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-    } else if (typeof window !== 'undefined') {
-      // En el navegador, detectar el entorno
-      const isLocalhost = window.location.origin.includes('localhost') || 
-                         window.location.origin.includes('127.0.0.1') ||
-                         window.location.origin.includes('192.168.');
-      apiBaseUrl = isLocalhost ? 'http://localhost:8080' : 'https://api.proptech.com.py';
-    } else {
-      // En el servidor (SSR), usar producción por defecto
-      apiBaseUrl = 'https://api.proptech.com.py';
+    // Si es una URL relativa del backend (como /uploads/social/propshots/...), usar getEndpoint
+    if (url.startsWith('/uploads/')) {
+      return getEndpoint(url);
     }
     
-    // Limpiar la URL base (remover trailing slash)
-    apiBaseUrl = apiBaseUrl.replace(/\/$/, '');
-    
-    // Manejar URLs de PropShots - convertir a ruta directa de uploads
-    if (url.includes('/api/prop-shots/media/') || url.includes('/prop-shots/media/')) {
-      const filename = url.split('/').pop();
-      url = `/uploads/social/propshots/${filename}`;
-    }
-    
-    // Si la URL ya empieza con /prop-shots/media/, convertirla a /uploads/social/propshots/
-    if (url.startsWith('/prop-shots/media/')) {
-      const filename = url.replace('/prop-shots/media/', '');
-      url = `/uploads/social/propshots/${filename}`;
+    // Si es una URL de API, usar getEndpoint
+    if (url.startsWith('/api/')) {
+      return getEndpoint(url);
     }
     
     // Si solo es el nombre del archivo (sin ruta), agregar la ruta completa
     if (!url.startsWith('/') && !url.includes('/')) {
-      url = `/uploads/social/propshots/${url}`;
+      return getEndpoint(`/uploads/social/propshots/${url}`);
     }
     
-    // Construir URL completa
-    const fullUrl = `${apiBaseUrl}${url.startsWith('/') ? url : `/${url}`}`;
-    
-    // Log para debugging en producción
-    if (typeof window !== 'undefined' && !window.location.origin.includes('localhost')) {
-      console.log('🔍 getFullUrl:', { original: url, full: fullUrl, apiBase: apiBaseUrl });
-    }
-    
-    return fullUrl;
+    // Para cualquier otra ruta relativa, usar getEndpoint
+    return getEndpoint(url.startsWith('/') ? url : `/${url}`);
   };
 
   // Ya no se requiere autenticación para ver PropShots
