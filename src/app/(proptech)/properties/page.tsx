@@ -390,6 +390,14 @@ export default function PropertiesPage() {
     }
   }, [showDraftsOnly]);
 
+  // Recargar propiedades cuando cambien los filtros de destacados/premium
+  useEffect(() => {
+    if (isInitialized) {
+      loadProperties(1, false, showDraftsOnly);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featuredFilter, premiumFilter, showDraftsOnly]);
+
   // Debounce para la búsqueda
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -451,12 +459,14 @@ export default function PropertiesPage() {
       }
     }
     
+    // Nota: Los filtros de featured y premium se aplican en el backend,
+    // pero mantenemos el filtro del frontend como respaldo por si acaso
     if (featuredFilter) {
-      filtered = filtered.filter(property => property.featured);
+      filtered = filtered.filter(property => property.featured === true);
     }
     
     if (premiumFilter) {
-      filtered = filtered.filter(property => property.premium);
+      filtered = filtered.filter(property => property.premium === true);
     }
     
     // Búsqueda inteligente con scores de relevancia

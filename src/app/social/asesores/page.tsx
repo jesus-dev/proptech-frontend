@@ -31,23 +31,44 @@ export default function AsesoresPage() {
         setLoading(true);
         console.log('📥 Cargando agentes desde BD...');
         const agents = await AgentService.getAllAgents();
+        console.log('📊 Agentes recibidos del servicio:', agents.length);
+        console.log('📊 Detalle de agentes:', agents.map(a => ({
+          id: a.id,
+          firstName: a.firstName,
+          lastName: a.lastName,
+          nombre: (a as any).nombre,
+          apellido: (a as any).apellido,
+          active: a.active,
+          isActive: a.isActive,
+          email: a.email
+        })));
         
         // Convertir agentes de BD al formato de display
+        // El servicio ya normaliza los campos (español -> inglés)
+        // El backend ya filtra por activos, así que mostramos todos los que vienen
         const displayAdvisors: AdvisorDisplay[] = agents
-          .filter(agent => agent.active || agent.isActive) // Solo agentes activos
-          .map(agent => ({
-            id: agent.id,
-            name: `${agent.firstName} ${agent.lastName}`,
-            avatar: agent.firstName?.charAt(0) || 'A',
+          .map(agent => {
+            console.log(`🔍 Procesando agente ${agent.id}:`, {
+              firstName: agent.firstName,
+              lastName: agent.lastName,
+              active: agent.active,
+              isActive: agent.isActive,
+              email: agent.email
+            });
+            return {
+            id: String(agent.id),
+            name: `${agent.firstName || ''} ${agent.lastName || ''}`.trim() || 'Agente',
+            avatar: agent.firstName?.charAt(0) || agent.lastName?.charAt(0) || 'A',
             role: agent.position || 'Agente Inmobiliario',
             phone: agent.phone || 'No disponible',
             email: agent.email || 'No disponible',
             specialties: [agent.role || 'General'],
             rating: 4.5, // Por ahora estático, se puede agregar rating real después
             experience: agent.agencyName ? `en ${agent.agencyName}` : 'Independiente',
-            available: agent.active || agent.isActive,
+            available: !!(agent.active || agent.isActive),
             photo: agent.photo
-          }));
+            };
+          });
 
         setAdvisors(displayAdvisors);
         console.log(`✅ ${displayAdvisors.length} agentes activos cargados`);

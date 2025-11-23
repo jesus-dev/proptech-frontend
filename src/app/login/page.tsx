@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -9,8 +10,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({ 
-    email: 'dev@proptech.com', 
-    password: 'dev123' 
+    email: '', 
+    password: '' 
   });
   const [error, setError] = useState<string | null>(null);
   const [showError, setShowError] = useState(false);
@@ -149,12 +150,6 @@ export default function LoginPage() {
             <div className="text-center space-y-2 mb-6">
               <h1 className="text-3xl sm:text-4xl font-bold animate-fade-in-up">Iniciar Sesión</h1>
               <p className="text-base text-gray-500 animate-fade-in-up">Accede a tu panel de control</p>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs sm:text-sm font-medium animate-fade-in-up">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                dev@proptech.com / dev123
-              </div>
             </div>
             {/* Formulario */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-6 animate-fade-in-up w-full">
@@ -179,7 +174,7 @@ export default function LoginPage() {
                       className={`w-full pl-10 pr-10 h-12 rounded-xl px-4 border-2 text-gray-900 bg-white/90 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-gray-400/20 focus:border-gray-500 text-base transition-all duration-300 disabled:opacity-50 placeholder-gray-400 shadow-sm hover:shadow-md ${focusedField === 'email' ? 'shadow-lg' : ''}`}
                       placeholder="tu@email.com"
                       autoFocus
-                      autoComplete="email"
+                      autoComplete="username"
                       inputMode="email"
                     />
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-gray-300/10 to-gray-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
@@ -295,9 +290,9 @@ export default function LoginPage() {
             )}
             <div className="text-center text-sm text-gray-500">
               ¿No tienes una cuenta? 
-              <a href="#" className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors duration-200 ml-1">
+              <Link href="/register" className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors duration-200 ml-1">
                 Solicitar acceso
-              </a>
+              </Link>
             </div>
           </div>
         </div>

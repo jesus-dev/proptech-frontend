@@ -7,18 +7,23 @@ import { apiClient } from '@/lib/api';
 
 export interface Agent {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  nombre?: string; // Campo del backend en español
+  apellido?: string; // Campo del backend en español
   email: string;
-  phone: string;
+  phone?: string;
+  telefono?: string; // Campo del backend en español
   license?: string;
+  licenciaInmobiliaria?: string; // Campo del backend en español
   position?: string;
   bio?: string;
   photo?: string;
+  fotoPerfilUrl?: string; // Campo del backend en español
   agencyId?: string;
   agencyName?: string;
-  active: boolean;
-  isActive: boolean;
+  active?: boolean;
+  isActive?: boolean;
   role?: string;
 }
 
@@ -37,7 +42,34 @@ export class AgentService {
         : `/api/public/agents`;
 
       const response = await apiClient.get(endpoint);
-      return response.data || [];
+      const agents = response.data || [];
+      console.log('📥 Respuesta del backend:', agents.length, 'agentes');
+      console.log('📥 Primer agente (raw):', agents[0]);
+      
+      // Normalizar campos: convertir campos en español a inglés para compatibilidad
+      const normalizedAgents = agents.map((agent: any) => {
+        const normalized = {
+          ...agent,
+          id: String(agent.id),
+          firstName: agent.firstName || agent.nombre || '',
+          lastName: agent.lastName || agent.apellido || '',
+          phone: agent.phone || agent.telefono || '',
+          photo: agent.photo || agent.fotoPerfilUrl || undefined,
+          active: agent.active ?? agent.isActive ?? false,
+          isActive: agent.isActive ?? agent.active ?? false,
+          license: agent.license || agent.licenciaInmobiliaria || undefined
+        };
+        console.log(`🔍 Agente ${normalized.id} normalizado:`, {
+          firstName: normalized.firstName,
+          lastName: normalized.lastName,
+          active: normalized.active,
+          isActive: normalized.isActive
+        });
+        return normalized;
+      });
+      
+      console.log(`✅ ${normalizedAgents.length} agentes normalizados`);
+      return normalizedAgents;
     } catch (error) {
       console.warn('Error cargando agentes, mostrando vacío');
       return [];

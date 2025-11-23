@@ -336,6 +336,7 @@ export default function SocialPageContent() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [currentPage, setCurrentPage] = useState(0); // Panache usa índice 0 para la primera página
   const [postsPerPage] = useState(10); // Con manejo robusto de errores
@@ -779,10 +780,16 @@ export default function SocialPageContent() {
   const handleCreatePost = async () => {
     if (!newPost.trim()) return;
 
+    // Validar que el usuario esté autenticado
+    if (!isAuthenticated || !user || !user.id) {
+      alert('Debes iniciar sesión para crear un post.');
+      return;
+    }
+
     try {
       const postData: CreatePostRequest = {
         content: newPost,
-        userId: user?.id || 0,
+        userId: user.id,
         location: userLocation || undefined
       };
 
@@ -798,6 +805,12 @@ export default function SocialPageContent() {
       }
 
       const createdPost = await SocialService.createPost(postData);
+      
+      // Mostrar notificación de éxito
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
       
       // Limpiar el formulario
       setNewPost('');
@@ -824,9 +837,10 @@ export default function SocialPageContent() {
       });
       
       console.log(`✅ Lista recargada: ${updatedPosts.length} posts desde BD`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al crear post:', error);
-      alert('Error al crear el post. Intenta nuevamente.');
+      const errorMessage = error?.response?.data?.error || error?.response?.data || error?.message || 'Error al crear el post. Intenta nuevamente.';
+      alert(errorMessage);
     }
   };
 
@@ -1039,6 +1053,29 @@ export default function SocialPageContent() {
 
   return (
     <>
+      {/* Notificación de éxito */}
+      {showSuccess && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-down">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px]">
+            <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <div>
+              <p className="font-semibold">¡Post creado exitosamente!</p>
+              <p className="text-sm text-green-100">Tu publicación ya está visible en el feed.</p>
+            </div>
+            <button
+              onClick={() => setShowSuccess(false)}
+              className="ml-auto text-white hover:text-green-100 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Campo para crear post */}
       {isAuthenticated && (
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
