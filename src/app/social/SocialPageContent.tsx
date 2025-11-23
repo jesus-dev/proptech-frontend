@@ -969,10 +969,31 @@ export default function SocialPageContent() {
       return url;
     }
     
+    // Determinar la URL base del API
+    let apiBaseUrl: string;
+    if (process.env.NEXT_PUBLIC_UPLOADS_BASE_URL) {
+      apiBaseUrl = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL;
+    } else if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+      apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    } else if (process.env.NEXT_PUBLIC_API_URL) {
+      apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+    } else if (typeof window !== 'undefined') {
+      // En el navegador, detectar el entorno
+      const isLocalhost = window.location.origin.includes('localhost') || 
+                         window.location.origin.includes('127.0.0.1') ||
+                         window.location.origin.includes('192.168.');
+      apiBaseUrl = isLocalhost ? 'http://localhost:8080' : 'https://api.proptech.com.py';
+    } else {
+      // En el servidor (SSR), usar producción por defecto
+      apiBaseUrl = 'https://api.proptech.com.py';
+    }
+    
+    // Limpiar la URL base (remover trailing slash)
+    apiBaseUrl = apiBaseUrl.replace(/\/$/, '');
+    
     // Manejar URLs de PropShots - convertir a ruta directa de uploads
     if (url.includes('/api/prop-shots/media/') || url.includes('/prop-shots/media/')) {
       const filename = url.split('/').pop();
-      // Usar la ruta directa de uploads que es donde realmente están los archivos
       url = `/uploads/social/propshots/${filename}`;
     }
     
@@ -982,41 +1003,18 @@ export default function SocialPageContent() {
       url = `/uploads/social/propshots/${filename}`;
     }
     
-    // Si la URL ya empieza con /uploads/social/propshots/, usarla directamente
-    if (url.startsWith('/uploads/social/propshots/')) {
-      // Construir URL completa para el backend
-      const apiBaseUrl = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
-                        process.env.NEXT_PUBLIC_API_BASE_URL || 
-                        process.env.NEXT_PUBLIC_API_URL || 
-                        (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
-                          ? 'http://localhost:8080' 
-                          : 'https://api.proptech.com.py');
-      return `${apiBaseUrl.replace(/\/$/, '')}${url}`;
+    // Si solo es el nombre del archivo (sin ruta), agregar la ruta completa
+    if (!url.startsWith('/') && !url.includes('/')) {
+      url = `/uploads/social/propshots/${url}`;
     }
     
-    // Si es una ruta relativa de uploads, construirla
-    if (url.startsWith('/uploads/')) {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
-                        process.env.NEXT_PUBLIC_API_BASE_URL || 
-                        process.env.NEXT_PUBLIC_API_URL || 
-                        (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
-                          ? 'http://localhost:8080' 
-                          : 'https://api.proptech.com.py');
-      return `${apiBaseUrl.replace(/\/$/, '')}${url}`;
+    // Construir URL completa
+    const fullUrl = `${apiBaseUrl}${url.startsWith('/') ? url : `/${url}`}`;
+    
+    // Log para debugging en producción
+    if (typeof window !== 'undefined' && !window.location.origin.includes('localhost')) {
+      console.log('🔍 getFullUrl:', { original: url, full: fullUrl, apiBase: apiBaseUrl });
     }
-    
-    // Base desde variables de entorno con fallback a localhost
-    const uploadsBase = 
-      process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
-      process.env.NEXT_PUBLIC_API_BASE_URL || 
-      process.env.NEXT_PUBLIC_API_URL || 
-      (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
-        ? 'http://localhost:8080' 
-        : 'https://api.proptech.com.py');
-    
-    const base = uploadsBase.replace(/\/$/, '');
-    const path = url.startsWith('/') ? url : `/${url}`;
-    const fullUrl = `${base}${path}`;
     
     return fullUrl;
   };
