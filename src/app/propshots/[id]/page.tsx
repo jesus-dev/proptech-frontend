@@ -67,14 +67,21 @@ export default function PropShotReelPage() {
       return url;
     }
     
-    // Manejar URLs incorrectas de PropShots
-    if (url.includes('/api/prop-shots/media/')) {
+    // Manejar URLs de PropShots - convertir a ruta directa de uploads
+    if (url.includes('/api/prop-shots/media/') || url.includes('/prop-shots/media/')) {
       const filename = url.split('/').pop();
-      url = `/prop-shots/media/${filename}`;
+      // Usar la ruta directa de uploads que es donde realmente están los archivos
+      url = `/uploads/social/propshots/${filename}`;
     }
     
-    // Si la URL ya empieza con /prop-shots/media/, usarla directamente
+    // Si la URL ya empieza con /prop-shots/media/, convertirla a /uploads/social/propshots/
     if (url.startsWith('/prop-shots/media/')) {
+      const filename = url.replace('/prop-shots/media/', '');
+      url = `/uploads/social/propshots/${filename}`;
+    }
+    
+    // Si la URL ya empieza con /uploads/social/propshots/, usarla directamente
+    if (url.startsWith('/uploads/social/propshots/')) {
       // Construir URL completa para el backend
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
                         (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
