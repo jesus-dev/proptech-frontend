@@ -963,20 +963,49 @@ export default function SocialPageContent() {
   // Función para convertir URLs relativas en URLs completas (usando env)
   const getFullUrl = (url: string): string => {
     if (!url) return '';
-    if (url.startsWith('http') || url.startsWith('blob:')) return url;
-
-    // Corrección de rutas PropShots
+    
+    // Si ya es una URL completa, retornarla
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+      return url;
+    }
+    
+    // Manejar URLs incorrectas de PropShots
     if (url.includes('/api/prop-shots/media/')) {
       const filename = url.split('/').pop();
-      url = `/uploads/prop-shots/media/${filename}`;
+      url = `/prop-shots/media/${filename}`;
     }
-
+    
+    // Si la URL ya empieza con /prop-shots/media/, usarla directamente
+    if (url.startsWith('/prop-shots/media/')) {
+      // Construir URL completa para el backend
+      const apiBaseUrl = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
+                        process.env.NEXT_PUBLIC_API_BASE_URL || 
+                        process.env.NEXT_PUBLIC_API_URL || 
+                        (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
+                          ? 'http://localhost:8080' 
+                          : 'https://api.proptech.com.py');
+      return `${apiBaseUrl.replace(/\/$/, '')}${url}`;
+    }
+    
+    // Si es una ruta relativa de uploads, construirla
+    if (url.startsWith('/uploads/')) {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
+                        process.env.NEXT_PUBLIC_API_BASE_URL || 
+                        process.env.NEXT_PUBLIC_API_URL || 
+                        (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
+                          ? 'http://localhost:8080' 
+                          : 'https://api.proptech.com.py');
+      return `${apiBaseUrl.replace(/\/$/, '')}${url}`;
+    }
+    
     // Base desde variables de entorno con fallback a localhost
     const uploadsBase = 
       process.env.NEXT_PUBLIC_UPLOADS_BASE_URL || 
       process.env.NEXT_PUBLIC_API_BASE_URL || 
       process.env.NEXT_PUBLIC_API_URL || 
-      (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
+      (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
+        ? 'http://localhost:8080' 
+        : 'https://api.proptech.com.py');
     
     const base = uploadsBase.replace(/\/$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;

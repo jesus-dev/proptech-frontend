@@ -245,17 +245,43 @@ export default function PropShotsPage() {
   // Función para convertir URLs relativas en URLs completas
   const getFullUrl = (url: string): string => {
     if (!url) return '';
-    if (url.startsWith('http') || url.startsWith('blob:')) return url;
-
-    // Corrección de rutas PropShots
+    
+    // Si ya es una URL completa, retornarla
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
+      return url;
+    }
+    
+    // Manejar URLs incorrectas de PropShots
     if (url.includes('/api/prop-shots/media/')) {
       const filename = url.split('/').pop();
-      url = `/uploads/prop-shots/media/${filename}`;
+      url = `/prop-shots/media/${filename}`;
     }
-
-    // Construir URL completa con el backend
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
-    return `${apiUrl}${url.startsWith('/') ? url : `/${url}`}`;
+    
+    // Si la URL ya empieza con /prop-shots/media/, usarla directamente
+    if (url.startsWith('/prop-shots/media/')) {
+      // Construir URL completa para el backend
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
+                        (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
+                          ? 'http://localhost:8080' 
+                          : 'https://api.proptech.com.py');
+      return `${apiBaseUrl}${url}`;
+    }
+    
+    // Si es una ruta relativa de uploads, construirla
+    if (url.startsWith('/uploads/')) {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
+                        (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
+                          ? 'http://localhost:8080' 
+                          : 'https://api.proptech.com.py');
+      return `${apiBaseUrl}${url}`;
+    }
+    
+    // Construir URL completa para el backend usando la configuración correcta
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
+                      (typeof window !== 'undefined' && window.location.origin.includes('localhost') 
+                        ? 'http://localhost:8080' 
+                        : 'https://api.proptech.com.py');
+    return `${apiBaseUrl}${url.startsWith('/') ? url : `/${url}`}`;
   };
 
   // Ya no se requiere autenticación para ver PropShots

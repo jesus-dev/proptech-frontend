@@ -362,17 +362,44 @@ export default function PropShotReelViewer({
               muted={isMuted}
               loop
               playsInline
+              preload="auto"
+              crossOrigin="anonymous"
               onClick={() => {
                 if (videoRef.current) {
                   if (videoRef.current.paused) {
-                    videoRef.current.play();
+                    videoRef.current.play().catch(err => {
+                      console.error('Error al reproducir video:', err);
+                    });
                   } else {
                     videoRef.current.pause();
                   }
                 }
               }}
               onError={(e) => {
-                console.error('Error al cargar video:', currentPropShot.mediaUrl);
+                console.error('Error al cargar video:', {
+                  originalUrl: currentPropShot.mediaUrl,
+                  fullUrl: currentPropShot.mediaUrl ? getFullUrl(currentPropShot.mediaUrl) : 'N/A',
+                  error: e
+                });
+                // Intentar recargar el video después de un breve delay
+                setTimeout(() => {
+                  if (videoRef.current) {
+                    videoRef.current.load();
+                  }
+                }, 1000);
+              }}
+              onLoadStart={() => {
+                if (currentPropShot.mediaUrl) {
+                  console.log('Video cargando:', getFullUrl(currentPropShot.mediaUrl));
+                }
+              }}
+              onCanPlay={() => {
+                console.log('Video listo para reproducir');
+                if (videoRef.current && videoRef.current.paused) {
+                  videoRef.current.play().catch(err => {
+                    console.error('Error al reproducir video:', err);
+                  });
+                }
               }}
             />
           </div>
