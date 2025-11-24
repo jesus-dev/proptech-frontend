@@ -71,9 +71,11 @@ export default function PropShotsPage() {
       try {
         setLoadingAgents(true);
         const fetchedAgents = await AgentService.getAllAgents();
+        console.log('Agentes cargados:', fetchedAgents?.length || 0, fetchedAgents);
         setAgents(fetchedAgents || []);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error loading agents:', err);
+        console.error('Error details:', err?.response?.data || err?.message);
         setAgents([]);
       } finally {
         setLoadingAgents(false);
@@ -188,39 +190,46 @@ export default function PropShotsPage() {
 
   // Función para dar like a un PropShot
   const handleLikePropShot = async (propShotId: number) => {
-    // Verificar si ya dio like (localStorage para anónimos)
-    const likedPropShots = JSON.parse(localStorage.getItem('likedPropShots') || '[]');
-    if (likedPropShots.includes(propShotId)) {
-      alert('Ya diste like a este PropShot');
-      return;
-    }
-    
     try {
+      const userData = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+      const user = userData ? JSON.parse(userData) : null;
+      const likedPropShots = JSON.parse(localStorage.getItem('likedPropShots') || '[]');
+      
+      // Verificar si ya se dio like
+      const alreadyLiked = likedPropShots.includes(propShotId);
+      
       const userId = user?.id || 0;
       await PropShotService.likePropShot(propShotId, userId);
       
       // Guardar en localStorage si es anónimo
-      if (!isAuthenticated) {
+      if (!isAuthenticated && !alreadyLiked) {
         likedPropShots.push(propShotId);
         localStorage.setItem('likedPropShots', JSON.stringify(likedPropShots));
       }
       
-      // Actualizar el PropShot en la lista
-      setPropShots(prev => prev.map(shot =>
-        shot.id === propShotId
-          ? { ...shot, likes: shot.likes + 1 }
-          : shot
-      ));
-      
-      // Actualizar también en filteredPropShots
-      setFilteredPropShots(prev => prev.map(shot =>
-        shot.id === propShotId
-          ? { ...shot, likes: shot.likes + 1 }
-          : shot
-      ));
+      // Actualizar el PropShot en la lista (solo si no se había dado like antes)
+      if (!alreadyLiked) {
+        setPropShots(prev => prev.map(shot =>
+          shot.id === propShotId
+            ? { ...shot, likes: shot.likes + 1 }
+            : shot
+        ));
+        
+        // Actualizar también en filteredPropShots
+        setFilteredPropShots(prev => prev.map(shot =>
+          shot.id === propShotId
+            ? { ...shot, likes: shot.likes + 1 }
+            : shot
+        ));
+        
+        // Actualizar también el selectedPropShot si es el mismo
+        if (selectedPropShot?.id === propShotId) {
+          setSelectedPropShot(prev => prev ? { ...prev, likes: prev.likes + 1 } : null);
+        }
+      }
     } catch (error) {
       console.error('Error liking PropShot:', error);
-      alert('Error al dar like. Intenta nuevamente.');
+      // No mostrar alert para no interrumpir la experiencia
     }
   };
 
@@ -228,6 +237,25 @@ export default function PropShotsPage() {
   const handleViewPropShot = async (propShotId: number) => {
     try {
       await PropShotService.incrementViews(propShotId);
+      
+      // Actualizar el contador de vistas en la lista
+      setPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
+          ? { ...shot, views: (shot.views || 0) + 1 }
+          : shot
+      ));
+      
+      // Actualizar también en filteredPropShots
+      setFilteredPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
+          ? { ...shot, views: (shot.views || 0) + 1 }
+          : shot
+      ));
+      
+      // Actualizar también el selectedPropShot si es el mismo
+      if (selectedPropShot?.id === propShotId) {
+        setSelectedPropShot(prev => prev ? { ...prev, views: (prev.views || 0) + 1 } : null);
+      }
     } catch (error) {
       console.error('Error incrementing views:', error);
     }
@@ -395,11 +423,17 @@ export default function PropShotsPage() {
                     disabled={loadingAgents}
                   >
                     <option value="all">Todos los agentes</option>
-                    {agents.map((agent) => (
-                      <option key={agent.id} value={String(agent.id)}>
-                        👤 {agent.firstName || ''} {agent.lastName || ''}
-                      </option>
-                    ))}
+                    {agents.map((agent) => {
+                      // El backend retorna nombre/apellido, pero normalizamos a firstName/lastName
+                      const displayName = agent.firstName && agent.lastName
+                        ? `${agent.firstName} ${agent.lastName}`.trim()
+                        : agent.firstName || agent.lastName || 'Agente sin nombre';
+                      return (
+                        <option key={agent.id} value={String(agent.id)}>
+                          👤 {displayName}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 

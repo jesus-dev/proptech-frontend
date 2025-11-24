@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Phone, Mail, Star, Users, Award, TrendingUp } from 'lucide-react';
 import { AgentService, Agent } from '@/services/agentService';
+import { getEndpoint } from '@/lib/api-config';
 
 interface AdvisorDisplay {
   id: string;
@@ -82,6 +83,35 @@ export default function AsesoresPage() {
 
     loadAgents();
   }, []); // Solo cargar al montar el componente
+
+  // Función para obtener URL completa de la foto del agente
+  const getFullPhotoUrl = (photo: string | undefined): string => {
+    if (!photo) return '';
+    
+    // Si ya es una URL completa, retornarla
+    if (photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('blob:')) {
+      return photo;
+    }
+    
+    // Si es una URL relativa del backend (como /uploads/...), usar getEndpoint
+    if (photo.startsWith('/uploads/')) {
+      return getEndpoint(photo);
+    }
+    
+    // Si es una URL de API, usar getEndpoint
+    if (photo.startsWith('/api/')) {
+      return getEndpoint(photo);
+    }
+    
+    // Si solo es el nombre del archivo (sin ruta), intentar rutas comunes
+    if (!photo.startsWith('/') && !photo.includes('/')) {
+      // Intentar primero con /uploads/inmo/ (fotos de agentes)
+      return getEndpoint(`/uploads/inmo/${photo}`);
+    }
+    
+    // Para cualquier otra ruta relativa, usar getEndpoint
+    return getEndpoint(photo.startsWith('/') ? photo : `/${photo}`);
+  };
 
   // Filtrar asesores por especialidad y búsqueda
   const filteredAdvisors = advisors.filter(advisor => {
@@ -212,15 +242,15 @@ export default function AsesoresPage() {
                 <div className="relative">
                   {advisor.photo ? (
                     <img 
-                      src={advisor.photo}
+                      src={getFullPhotoUrl(advisor.photo)}
                       alt={advisor.name}
                       className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-lg ring-4 ring-white"
                       onError={(e) => {
                         // Fallback a avatar con iniciales si la imagen falla
                         const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
                         const parent = target.parentElement;
                         if (parent) {
+                          target.style.display = 'none';
                           const fallback = document.createElement('div');
                           fallback.className = `w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shadow-lg ${
                             advisor.available ? 'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700' : 'bg-gradient-to-br from-gray-400 to-gray-500'

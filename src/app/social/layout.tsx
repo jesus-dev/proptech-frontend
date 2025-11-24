@@ -109,8 +109,8 @@ export default function SocialLayout({ children }: any) {
                 className={`group relative p-3 sm:p-4 hover:bg-gray-100 rounded-full transition-all duration-300 ${
                   pathname === '/social/propshots' ? 'bg-gradient-to-r from-blue-100 to-indigo-50 shadow-sm' : ''
                 }`}
-                title="Tours Virtuales"
-                aria-label="Tours Virtuales"
+                title="PropShots"
+                aria-label="PropShots"
               >
                 <div className="relative">
                   <PlayCircle className={`w-6 h-6 sm:w-7 sm:h-7 transition-all duration-300 ${

@@ -1057,6 +1057,28 @@ export default function SocialPageContent() {
 
   return (
     <>
+      {/* Slogan de marca - Premium Minimalista */}
+      <div className="relative mb-6 overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-xl p-5 sm:p-6 shadow-2xl border border-slate-700/50">
+          {/* Efecto de brillo sutil */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-shimmer"></div>
+          
+          <div className="relative z-10 text-center">
+            <div className="inline-flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10">
+                <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg tracking-tight">
+                Verse
+              </h2>
+            </div>
+            <p className="text-sm sm:text-base text-white/90 font-normal tracking-wide">
+              La red profesional para agentes Inmobiliarios
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Notificación de éxito */}
       {showSuccess && (
         <div className="fixed top-4 right-4 z-50 animate-slide-down">
@@ -1365,7 +1387,7 @@ export default function SocialPageContent() {
               disabled={propShotsLoading || propShots.length === 0}
               className="text-gray-600 hover:text-blue-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  Ver todos los tours
+                  Ver todos los PropShots
                 </button>
           </div>
               </div>
@@ -1404,8 +1426,17 @@ export default function SocialPageContent() {
                       preload="metadata"
                       onLoadedData={(e) => {
                         const videoElement = e.currentTarget;
+                        // Mantener silenciado en preview del home
                         videoElement.muted = true;
-                        videoElement.play()
+                        videoElement.play().catch(() => {
+                          // Ignorar errores de autoplay
+                        });
+                      }}
+                      onClick={(e) => {
+                        // Al hacer click, abrir el reproductor completo con sonido
+                        e.stopPropagation();
+                        handleViewPropShot(shot.id);
+                        setSelectedPropShot(shot);
                       }}
                     />
                     
@@ -1418,7 +1449,7 @@ export default function SocialPageContent() {
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                         </svg>
-                            <span>Tour Virtual</span>
+                            <span>PropShots</span>
                       </div>
                     </div>
                     
@@ -1442,7 +1473,7 @@ export default function SocialPageContent() {
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                         </svg>
-                            <span>Tour Virtual</span>
+                            <span>PropShots</span>
                       </div>
                     </div>
                     
@@ -1487,8 +1518,8 @@ export default function SocialPageContent() {
                   <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                 </svg>
               </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">No hay tours virtuales aún</h4>
-              <p className="text-gray-600">Crea tu primer tour virtual para mostrar propiedades</p>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">No hay PropShots aún</h4>
+              <p className="text-gray-600">Crea tu primer PropShot para mostrar propiedades</p>
             </div>
           )}
               </div>

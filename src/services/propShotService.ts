@@ -19,6 +19,7 @@ export interface PropShot {
   likes: number;
   comments?: number;
   shares?: number;
+  views?: number;
   createdAt: string;
   updatedAt: string;
   status?: string;

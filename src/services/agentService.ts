@@ -9,17 +9,13 @@ export interface Agent {
   id: string;
   firstName?: string;
   lastName?: string;
-  nombre?: string; // Campo del backend en español
-  apellido?: string; // Campo del backend en español
+  fullName?: string;
   email: string;
   phone?: string;
-  telefono?: string; // Campo del backend en español
   license?: string;
-  licenciaInmobiliaria?: string; // Campo del backend en español
   position?: string;
   bio?: string;
   photo?: string;
-  fotoPerfilUrl?: string; // Campo del backend en español
   agencyId?: string;
   agencyName?: string;
   active?: boolean;
@@ -36,42 +32,75 @@ export class AgentService {
       const token = localStorage.getItem('token');
       const isValidToken = token && token !== 'undefined' && token !== 'null';
 
-      // Decidir endpoint según token
-      const endpoint = isValidToken 
-        ? `/api/agents`
-        : `/api/public/agents`;
-
+      // Siempre usar endpoint público para PropShots (no requiere autenticación)
+      const endpoint = `/api/public/agents`;
+      
+      console.log('🔍 Cargando agentes desde:', endpoint);
       const response = await apiClient.get(endpoint);
       const agents = response.data || [];
       console.log('📥 Respuesta del backend:', agents.length, 'agentes');
       console.log('📥 Primer agente (raw):', agents[0]);
       
-      // Normalizar campos: convertir campos en español a inglés para compatibilidad
-      const normalizedAgents = agents.map((agent: any) => {
-        const normalized = {
+      if (agents.length === 0) {
+        console.warn('⚠️ No se encontraron agentes en la respuesta');
+        return [];
+      }
+      
+      // El backend retorna campos en inglés (firstName, lastName, phone, photo, license)
+      const normalizedAgents = agents.map((agent: any): Agent => {
+        const normalized: Agent = {
           ...agent,
           id: String(agent.id),
-          firstName: agent.firstName || agent.nombre || '',
-          lastName: agent.lastName || agent.apellido || '',
-          phone: agent.phone || agent.telefono || '',
-          photo: agent.photo || agent.fotoPerfilUrl || undefined,
-          active: agent.active ?? agent.isActive ?? false,
-          isActive: agent.isActive ?? agent.active ?? false,
-          license: agent.license || agent.licenciaInmobiliaria || undefined
+          // Usar directamente los campos en inglés del backend
+          firstName: agent.firstName || '',
+          lastName: agent.lastName || '',
+          phone: agent.phone || '',
+          photo: agent.photo || undefined,
+          active: agent.active ?? agent.isActive ?? true,
+          isActive: agent.isActive ?? agent.active ?? true,
+          license: agent.license || undefined,
+          email: agent.email || ''
         };
-        console.log(`🔍 Agente ${normalized.id} normalizado:`, {
+        
+        console.log(`🔍 Agente normalizado ID ${normalized.id}:`, {
           firstName: normalized.firstName,
           lastName: normalized.lastName,
-          active: normalized.active,
-          isActive: normalized.isActive
+          hasFirstName: !!normalized.firstName,
+          hasLastName: !!normalized.lastName
         });
+        
         return normalized;
+      }).filter((agent: Agent) => {
+        // Filtrar solo agentes que tengan al menos nombre o apellido
+        const hasName = (agent.firstName && agent.firstName.trim()) || (agent.lastName && agent.lastName.trim());
+        if (!hasName) {
+          console.warn(`⚠️ Agente ${agent.id} filtrado: sin nombre/apellido`, agent);
+        }
+        return hasName;
       });
       
-      console.log(`✅ ${normalizedAgents.length} agentes normalizados`);
+      console.log(`✅ ${normalizedAgents.length} agentes normalizados y filtrados (de ${agents.length} totales)`);
       return normalizedAgents;
-    } catch (error) {
-      console.warn('Error cargando agentes, mostrando vacío');
+    } catch (error: any) {
+      console.error('❌ Error cargando agentes:', error);
+      console.error('❌ Error response:', error?.response?.data || error?.message);
+      // Intentar con endpoint privado si el público falla
+      try {
+        const token = localStorage.getItem('token');
+        if (token && token !== 'undefined' && token !== 'null') {
+          console.log('🔄 Intentando con endpoint privado...');
+          const response = await apiClient.get('/api/agents');
+          const agents = response.data || [];
+          return agents.map((agent: any): Agent => ({
+            ...agent,
+            id: String(agent.id),
+            firstName: agent.firstName || agent.nombre || '',
+            lastName: agent.lastName || agent.apellido || '',
+          })).filter((agent: Agent) => agent.firstName || agent.lastName);
+        }
+      } catch (fallbackError) {
+        console.error('❌ Error también en endpoint privado:', fallbackError);
+      }
       return [];
     }
   }
