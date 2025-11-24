@@ -49,6 +49,8 @@ export default function PropShotReelViewer({
   const [sendingComment, setSendingComment] = useState(false);
   const [comments, setComments] = useState<PropShotComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(true);
   
   const currentPropShot = allPropShots[currentIndex] || initialPropShot;
 
@@ -224,15 +226,19 @@ export default function PropShotReelViewer({
 
   // Reproducir video cuando cambie
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && currentPropShot.mediaUrl) {
+      setVideoError(false);
+      setVideoLoading(true);
       videoRef.current.currentTime = 0;
+      videoRef.current.load(); // Recargar el video
       videoRef.current.play().catch(err => {
         console.log('Autoplay bloqueado:', err);
+        setVideoLoading(false);
       });
     }
     
     onView(currentPropShot.id);
-  }, [currentIndex, currentPropShot.id, onView]);
+  }, [currentIndex, currentPropShot.id, currentPropShot.mediaUrl, onView]);
 
   // Prevenir scroll del body cuando el visualizador está abierto
   useEffect(() => {
@@ -351,8 +357,18 @@ export default function PropShotReelViewer({
 
       {/* Video - Estilo Reel vertical (9:16) */}
       <div className="absolute inset-0 bg-black flex items-center justify-center">
-        {currentPropShot.mediaUrl ? (
+        {currentPropShot.mediaUrl && !videoError ? (
           <div className="relative w-full h-full max-w-md mx-auto">
+            {/* Indicador de carga */}
+            {videoLoading && (
+              <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/50">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-3"></div>
+                  <p className="text-white text-sm">Cargando video...</p>
+                </div>
+              </div>
+            )}
+            
             <video
               ref={videoRef}
               src={getFullUrl(currentPropShot.mediaUrl)}
@@ -363,7 +379,6 @@ export default function PropShotReelViewer({
               loop
               playsInline
               preload="auto"
-              crossOrigin="anonymous"
               onClick={() => {
                 if (videoRef.current) {
                   if (videoRef.current.paused) {
@@ -381,38 +396,74 @@ export default function PropShotReelViewer({
                   fullUrl: currentPropShot.mediaUrl ? getFullUrl(currentPropShot.mediaUrl) : 'N/A',
                   error: e
                 });
-                // Intentar recargar el video después de un breve delay
-                setTimeout(() => {
-                  if (videoRef.current) {
-                    videoRef.current.load();
-                  }
-                }, 1000);
+                setVideoError(true);
+                setVideoLoading(false);
+                // Intentar recargar el video después de un breve delay (máximo 2 intentos)
+                const retryCount = (videoRef.current as any)?._retryCount || 0;
+                if (retryCount < 2) {
+                  setTimeout(() => {
+                    if (videoRef.current) {
+                      (videoRef.current as any)._retryCount = retryCount + 1;
+                      setVideoError(false);
+                      setVideoLoading(true);
+                      videoRef.current.load();
+                    }
+                  }, 2000);
+                }
               }}
               onLoadStart={() => {
+                setVideoLoading(true);
                 if (currentPropShot.mediaUrl) {
                   console.log('Video cargando:', getFullUrl(currentPropShot.mediaUrl));
                 }
               }}
               onCanPlay={() => {
                 console.log('Video listo para reproducir');
+                setVideoLoading(false);
                 if (videoRef.current && videoRef.current.paused) {
                   videoRef.current.play().catch(err => {
                     console.error('Error al reproducir video:', err);
+                    setVideoLoading(false);
                   });
                 }
+              }}
+              onPlaying={() => {
+                setVideoLoading(false);
+              }}
+              onLoadedData={() => {
+                setVideoLoading(false);
               }}
             />
           </div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-white">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-6">
+            <div className="text-center px-4">
+              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-6 mx-auto">
                 <svg className="w-10 h-10 text-white/60" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                 </svg>
               </div>
               <p className="text-xl font-semibold mb-2">Video no disponible</p>
-              <p className="text-sm text-white/70">El video no se pudo cargar</p>
+              <p className="text-sm text-white/70 mb-4">
+                {videoError 
+                  ? 'Error al cargar el video. Intenta recargar la página.'
+                  : 'El video no se pudo cargar'
+                }
+              </p>
+              {videoError && (
+                <button
+                  onClick={() => {
+                    setVideoError(false);
+                    setVideoLoading(true);
+                    if (videoRef.current) {
+                      videoRef.current.load();
+                    }
+                  }}
+                  className="px-6 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg font-medium transition-colors"
+                >
+                  Reintentar
+                </button>
+              )}
             </div>
           </div>
         )}

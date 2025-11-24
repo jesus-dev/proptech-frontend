@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { PropShot, PropShotService, CreatePropShotRequest } from '@/services/propShotService';
+import { AgentService, Agent } from '@/services/agentService';
 import { getEndpoint } from '@/lib/api-config';
 import CreatePropShotModal from '@/components/social/CreatePropShotModal';
 import PropShotGrid from '@/components/social/PropShotGrid';
@@ -19,7 +20,10 @@ export default function PropShotsPage() {
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const [propShots, setPropShots] = useState<PropShot[]>([]);
   const [filteredPropShots, setFilteredPropShots] = useState<PropShot[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAgents, setLoadingAgents] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreatePropShot, setShowCreatePropShot] = useState(false);
   const [creatingPropShot, setCreatingPropShot] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,11 +47,13 @@ export default function PropShotsPage() {
     const loadPropShots = async () => {
       try {
         setLoading(true);
+        setError(null);
         const fetchedPropShots = await PropShotService.getPropShots();
-        setPropShots(fetchedPropShots);
-        setFilteredPropShots(fetchedPropShots);
-      } catch (err) {
+        setPropShots(fetchedPropShots || []);
+        setFilteredPropShots(fetchedPropShots || []);
+      } catch (err: any) {
         console.error('Error loading PropShots:', err);
+        setError('Error al cargar los PropShots. Por favor, intenta recargar la página.');
         setPropShots([]);
         setFilteredPropShots([]);
       } finally {
@@ -55,7 +61,26 @@ export default function PropShotsPage() {
       }
     };
 
+    // Cargar PropShots (no requiere autenticación para ver)
     loadPropShots();
+  }, []);
+
+  // Cargar agentes dinámicamente
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        setLoadingAgents(true);
+        const fetchedAgents = await AgentService.getAllAgents();
+        setAgents(fetchedAgents || []);
+      } catch (err) {
+        console.error('Error loading agents:', err);
+        setAgents([]);
+      } finally {
+        setLoadingAgents(false);
+      }
+    };
+
+    loadAgents();
   }, []);
 
   // Filtrar PropShots basado en búsqueda y filtros
@@ -367,10 +392,14 @@ export default function PropShotsPage() {
                     value={filterAgent}
                     onChange={(e) => setFilterAgent(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white/90 text-sm text-gray-800 focus:ring-2 focus:ring-blue-500/80 focus:border-transparent shadow-sm"
+                    disabled={loadingAgents}
                   >
                     <option value="all">Todos los agentes</option>
-                    <option value="1">👤 María González</option>
-                    <option value="2">👤 Carlos Mendoza</option>
+                    {agents.map((agent) => (
+                      <option key={agent.id} value={String(agent.id)}>
+                        👤 {agent.firstName || ''} {agent.lastName || ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -435,17 +464,23 @@ export default function PropShotsPage() {
                           </button>
                         </span>
                       )}
-                      {filterAgent !== 'all' && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                          👤 {filterAgent === '1' ? 'María González' : 'Carlos Mendoza'}
-                          <button
-                            onClick={() => setFilterAgent('all')}
-                            className="ml-1 hover:text-green-600"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      )}
+                      {filterAgent !== 'all' && (() => {
+                        const selectedAgent = agents.find(a => String(a.id) === filterAgent);
+                        const agentName = selectedAgent 
+                          ? `${selectedAgent.firstName || ''} ${selectedAgent.lastName || ''}`.trim()
+                          : 'Agente';
+                        return (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            👤 {agentName}
+                            <button
+                              onClick={() => setFilterAgent('all')}
+                              className="ml-1 hover:text-green-600"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })()}
                       {filterDate !== 'all' && (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
                           📅 {filterDate === 'today' ? 'Hoy' : filterDate === 'week' ? 'Esta semana' : filterDate === 'month' ? 'Este mes' : 'Este año'}
@@ -525,7 +560,20 @@ export default function PropShotsPage() {
           </div>
         )}
 
-        {loading ? (
+        {error ? (
+          <div className="text-center py-12">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+              <p className="text-red-800 font-medium mb-2">Error al cargar PropShots</p>
+              <p className="text-red-600 text-sm mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Recargar página
+              </button>
+            </div>
+          </div>
+        ) : loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Cargando PropShots...</p>
