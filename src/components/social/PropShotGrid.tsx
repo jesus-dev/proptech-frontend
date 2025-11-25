@@ -152,17 +152,16 @@ export default function PropShotGrid({
       {displayedPropShots.map((shot) => (
         <div
           key={shot.id}
-          className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer group"
+          className="group cursor-pointer transform hover:scale-105 transition-all duration-300"
           onClick={() => handlePropShotClick(shot)}
         >
-          {/* Video Thumbnail */}
-          <div className="relative aspect-[9/16] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+          {/* Thumbnail del video */}
+          <div className="relative mb-3">
             {shot.mediaUrl ? (
-              <div className="relative w-full h-full">
-                {/* Video thumbnail */}
+              <div className="aspect-[9/16] rounded-xl overflow-hidden shadow-lg relative">
                 <video
                   src={getFullUrl(shot.mediaUrl)}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  className="w-full h-full object-cover"
                   autoPlay
                   muted
                   loop
@@ -170,162 +169,95 @@ export default function PropShotGrid({
                   preload="metadata"
                   onLoadedData={(e) => {
                     const videoElement = e.currentTarget;
-                    // Asegurar que se reproduzca silenciado en preview
+                    // Mantener silenciado en preview
                     videoElement.muted = true;
                     videoElement.play().catch(() => {
                       // Ignorar errores de autoplay
                     });
                   }}
+                  onClick={(e) => {
+                    // Al hacer click, abrir el reproductor completo con sonido
+                    e.stopPropagation();
+                    handleViewPropShot(shot.id);
+                    handlePropShotClick(shot);
+                  }}
                 />
                 
-                {/* Gradient overlay superior */}
-                <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/40 to-transparent" />
+                {/* Overlay de información */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
                 
-                {/* Badge de estado (si existe) */}
-                {shot.status && shot.status !== 'active' && (
-                  <div className="absolute top-3 left-3 z-10">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md ${
-                      shot.status === 'pending' 
-                        ? 'bg-yellow-500/90 text-white' 
-                        : 'bg-gray-500/90 text-white'
-                    }`}>
-                      {shot.status === 'pending' ? '⏳ Pendiente' : '📁 Archivado'}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Play button overlay - Mejorado */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
-                  <div className="relative">
-                    {/* Glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 rounded-full blur-2xl opacity-60 animate-pulse"></div>
-                    {/* Button */}
-                    <div className="relative w-20 h-20 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-500">
-                      <Play className="w-10 h-10 text-white ml-1" fill="white" />
-                    </div>
-                    {/* Pulse rings */}
-                    <div className="absolute inset-0 border-2 border-white/30 rounded-full animate-ping"></div>
+                {/* Indicador de PropShot */}
+                <div className="absolute top-3 left-3 pointer-events-none">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-bold shadow-lg">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                    </svg>
+                    <span>PropShots</span>
                   </div>
                 </div>
                 
-                {/* Estadísticas en overlay inferior */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="flex items-center justify-between text-white">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5">
-                        <HeartIcon className="w-4 h-4 fill-white" />
-                        <span className="text-sm font-bold">{shot.likes}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <MessageIcon className="w-4 h-4" />
-                        <span className="text-sm font-bold">{shot.comments || 0}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <EyeIcon className="w-4 h-4" />
-                        <span className="text-sm font-bold">{shot.views ?? 0}</span>
-                      </div>
-                    </div>
-                  </div>
+                {/* Duración del video */}
+                <div className="absolute bottom-3 right-3 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded-lg font-medium pointer-events-none">
+                  0:30
                 </div>
               </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 via-orange-50 to-red-100">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-                  <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-full shadow-xl">
-                    <Camera className="w-12 h-12 text-orange-500" />
+              <div className="aspect-[9/16] bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 rounded-xl overflow-hidden shadow-lg">
+                {/* Play button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <Play className="w-6 h-6 text-blue-500 ml-1" />
                   </div>
+                </div>
+                
+                {/* Indicador de PropShot */}
+                <div className="absolute top-3 left-3">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white text-xs rounded-full font-bold shadow-lg">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                    </svg>
+                    <span>PropShots</span>
+                  </div>
+                </div>
+                
+                {/* Duración del video */}
+                <div className="absolute bottom-3 right-3 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded-lg font-medium">
+                  0:30
                 </div>
               </div>
             )}
           </div>
-
-          {/* Información - Mejorada */}
-          <div className="p-4 sm:p-5 bg-white">
-            {/* Título */}
-            <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 text-sm sm:text-base group-hover:text-orange-600 transition-colors duration-300">
+                    
+          {/* Información del PropShot */}
+          <div className="px-1">
+            <h4 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
               {shot.title}
-            </h3>
-            
-            {/* Descripción */}
-            <p className="text-xs sm:text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-              {shot.description}
+            </h4>
+            <p className="text-gray-600 text-xs mb-2">
+              {shot.agentFirstName} {shot.agentLastName}
             </p>
-
-            {/* Agente - Mejorado */}
-            {shot.agentFirstName && (
-              <div className="flex items-center gap-3 mb-4 p-2 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                {shot.agentPhoto ? (
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 shadow-md ring-2 ring-white relative">
-                    <img
-                      src={getFullUrl(shot.agentPhoto)}
-                      alt={`${shot.agentFirstName} ${shot.agentLastName || ''}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // Fallback a avatar con iniciales si la imagen falla
-                        const target = e.target as HTMLImageElement;
-                        const parent = target.parentElement;
-                        if (parent && shot.agentFirstName) {
-                          target.style.display = 'none';
-                          const firstInitial = shot.agentFirstName.trim()[0] || '';
-                          const lastInitial = shot.agentLastName?.trim()[0] || '';
-                          // Crear elemento de fallback
-                          const fallback = document.createElement('div');
-                          fallback.className = 'w-full h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center';
-                          fallback.innerHTML = `<span class="text-white text-xs font-bold">${firstInitial}${lastInitial}</span>`;
-                          parent.appendChild(fallback);
-                        }
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
-                    <span className="text-white text-xs font-bold">
-                      {shot.agentFirstName.trim()[0] || ''}{shot.agentLastName?.trim()[0] || ''}
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
-                    {shot.agentFirstName.trim()} {shot.agentLastName?.trim() || ''}
-                  </p>
-                  <p className="text-xs text-gray-500">Agente inmobiliario</p>
-                </div>
-                <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <span className="flex items-center gap-0.5">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>{shot.views ?? 0}</span>
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                  <span>{shot.shares || 0}</span>
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                  <span>{shot.likes}</span>
+                </span>
               </div>
-            )}
-
-            {/* Estadísticas - Mejoradas */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLikePropShot(shot.id);
-                  }}
-                  className="flex items-center gap-1.5 hover:text-orange-600 transition-all duration-300 group/like hover:scale-110"
-                >
-                  <div className="relative">
-                    <HeartIcon className="w-5 h-5 group-hover/like:fill-orange-600 transition-all duration-300" />
-                    <div className="absolute inset-0 bg-orange-500 rounded-full blur-md opacity-0 group-hover/like:opacity-50 transition-opacity duration-300"></div>
-                  </div>
-                  <span className="font-bold text-sm">{shot.likes}</span>
-                </button>
-                <div className="flex items-center gap-1.5 group/comment hover:text-blue-600 transition-colors duration-300">
-                  <MessageIcon className="w-5 h-5" />
-                  <span className="font-bold text-sm">{shot.comments || 0}</span>
-                </div>
-                <div className="flex items-center gap-1.5 group/views hover:text-purple-600 transition-colors duration-300">
-                  <EyeIcon className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-bold text-sm whitespace-nowrap">{shot.views ?? 0}</span>
-                </div>
-              </div>
-              <span className="text-xs text-gray-400 font-medium flex-shrink-0 ml-2">
-                {new Date(shot.createdAt).toLocaleDateString('es-ES', {
-                  day: 'numeric',
-                  month: 'short'
-                })}
-              </span>
             </div>
           </div>
         </div>

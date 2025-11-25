@@ -153,75 +153,6 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
       {/* Dropdown - Responsive */}
       {open && (
         <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl sm:rounded-2xl shadow-xl border border-gray-200 z-50 overflow-hidden">
-          {/* Header del perfil */}
-          <div className="relative p-4 sm:p-6 bg-gradient-to-br from-orange-50 to-orange-100">
-            {/* Fondo decorativo */}
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 to-orange-600/10"></div>
-            
-            <div className="relative flex items-center space-x-3 sm:space-x-4">
-              {/* Avatar grande */}
-              <div className="relative">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-lg sm:text-xl md:text-2xl shadow-lg">
-                  {getInitials(user.fullName)}
-                </div>
-                
-                {/* Botón de editar */}
-                <button className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 bg-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 border border-orange-200">
-                  <Edit3 className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 text-orange-600" />
-                </button>
-              </div>
-
-              {/* Información del usuario */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 truncate">
-                  {user.fullName || 'Usuario'}
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600 truncate">
-                  {user.email || 'usuario@ejemplo.com'}
-                </p>
-                
-                {/* Badge del rol */}
-                <div className="mt-1 sm:mt-2">
-                  {getRoleBadge(user.role)}
-                </div>
-
-                {/* Estadísticas rápidas - Solo en desktop */}
-                <div className="hidden md:flex items-center space-x-4 mt-2 text-xs text-gray-600">
-                  <div className="flex items-center space-x-1">
-                    <Bell className="w-3 h-3" />
-                    <span>12 notificaciones</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <MessageSquare className="w-3 h-3" />
-                    <span>5 mensajes</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Información adicional */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <MapPin className="w-4 h-4 text-orange-500" />
-                <span>Ubicación no especificada</span>
-              </div>
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <Phone className="w-4 h-4 text-orange-500" />
-                <span>Teléfono no especificado</span>
-              </div>
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <Mail className="w-4 h-4 text-orange-500" />
-                <span className="truncate">{user.email || 'Email no especificado'}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
-                <Calendar className="w-4 h-4 text-orange-500" />
-                <span>Miembro desde {user.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}</span>
-              </div>
-            </div>
-          </div>
-
           {/* Menú de opciones */}
           <div className="p-2">
             <div className="space-y-1">
@@ -321,7 +252,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>PropTech Social v2.0</span>
+                <span>Verse v1</span>
               </div>
               <span className="text-green-500 font-medium">● Online</span>
             </div>

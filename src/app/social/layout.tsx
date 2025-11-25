@@ -85,17 +85,17 @@ export default function SocialLayout({ children }: any) {
             </div>
 
             {/* Navigation - Estilo Facebook Mejorado */}
-            <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
+            <div className="flex items-center gap-0">
               <button 
                 onClick={() => window.location.href = '/social'}
-                className={`group relative p-3 sm:p-4 hover:bg-gray-100 rounded-full transition-all duration-300 ${
+                className={`group relative p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-all duration-300 ${
                   pathname === '/social' ? 'bg-gradient-to-r from-blue-100 to-indigo-50 shadow-sm' : ''
                 }`}
                 title="Feed Inmobiliario"
                 aria-label="Feed Inmobiliario"
               >
                 <div className="relative">
-                  <Home className={`w-6 h-6 sm:w-7 sm:h-7 transition-all duration-300 ${
+                  <Home className={`w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300 ${
                     pathname === '/social' ? 'text-blue-600' : 'text-gray-600 group-hover:text-blue-500'
                   }`} />
                   {pathname === '/social' && (
@@ -106,14 +106,14 @@ export default function SocialLayout({ children }: any) {
               
               <button 
                 onClick={() => window.location.href = '/social/propshots'}
-                className={`group relative p-3 sm:p-4 hover:bg-gray-100 rounded-full transition-all duration-300 ${
+                className={`group relative p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-all duration-300 ${
                   pathname === '/social/propshots' ? 'bg-gradient-to-r from-blue-100 to-indigo-50 shadow-sm' : ''
                 }`}
                 title="PropShots"
                 aria-label="PropShots"
               >
                 <div className="relative">
-                  <PlayCircle className={`w-6 h-6 sm:w-7 sm:h-7 transition-all duration-300 ${
+                  <PlayCircle className={`w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300 ${
                     pathname === '/social/propshots' ? 'text-blue-600' : 'text-gray-600 group-hover:text-blue-500'
                   }`} />
                   {pathname === '/social/propshots' && (
@@ -124,14 +124,14 @@ export default function SocialLayout({ children }: any) {
               
               <button 
                 onClick={() => window.location.href = '/social/asesores'}
-                className={`group relative p-3 sm:p-4 hover:bg-gray-100 rounded-full transition-all duration-300 ${
+                className={`group relative p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-all duration-300 ${
                   pathname === '/social/asesores' ? 'bg-gradient-to-r from-blue-100 to-indigo-50 shadow-sm' : ''
                 }`}
                 title="Agentes Inmobiliarios"
                 aria-label="Agentes Inmobiliarios"
               >
                 <div className="relative">
-                  <Users className={`w-6 h-6 sm:w-7 sm:h-7 transition-all duration-300 ${
+                  <Users className={`w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300 ${
                     pathname === '/social/asesores' ? 'text-blue-600' : 'text-gray-600 group-hover:text-blue-500'
                   }`} />
                   {pathname === '/social/asesores' && (
@@ -142,14 +142,14 @@ export default function SocialLayout({ children }: any) {
               
               <button 
                 onClick={() => window.location.href = '/social/messages'}
-                className={`group relative p-3 sm:p-4 hover:bg-gray-100 rounded-full transition-all duration-300 ${
+                className={`group relative p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-all duration-300 ${
                   pathname === '/social/messages' ? 'bg-gradient-to-r from-blue-100 to-indigo-50 shadow-sm' : ''
                 }`}
                 title="Consultas Inmobiliarias"
                 aria-label="Consultas Inmobiliarias"
               >
                 <div className="relative">
-                  <MessageSquare className={`w-6 h-6 sm:w-7 sm:h-7 transition-all duration-300 ${
+                  <MessageSquare className={`w-5 h-5 sm:w-6 sm:h-6 transition-all duration-300 ${
                     pathname === '/social/messages' ? 'text-blue-600' : 'text-gray-600 group-hover:text-blue-500'
                   }`} />
                   {pathname === '/social/messages' && (
@@ -165,17 +165,17 @@ export default function SocialLayout({ children }: any) {
               </button>
 
               {isAuthenticated ? (
-                <UserDropdown />
-              ) : (
-                <div className="flex items-center">
-                  <button 
-                    onClick={() => window.location.href = '/login'}
-                    className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-300 hover:bg-gray-50 flex items-center space-x-1.5 border border-gray-200 hover:border-blue-300"
-                  >
-                    <Key className="w-4 h-4" />
-                    <span>Acceso</span>
-                  </button>
+                <div className="ml-1">
+                  <UserDropdown />
                 </div>
+              ) : (
+                <button 
+                  onClick={() => window.location.href = '/login'}
+                  className="text-gray-700 hover:text-blue-600 px-2 py-1.5 rounded-lg font-medium text-sm transition-all duration-300 hover:bg-gray-50 flex items-center gap-1 border border-gray-200 hover:border-blue-300 ml-1"
+                >
+                  <Key className="w-4 h-4" />
+                  <span className="hidden sm:inline">Acceso</span>
+                </button>
               )}
             </div>
           </div>

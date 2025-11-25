@@ -701,7 +701,6 @@ export default function PropShotReelViewer({
                 if (videoRef.current) {
                   if (videoRef.current.paused) {
                     videoRef.current.play().catch(err => {
-                      console.error('Error al reproducir video:', err);
                     });
                   } else {
                     videoRef.current.pause();
@@ -709,7 +708,6 @@ export default function PropShotReelViewer({
                 }
               }}
               onError={(e) => {
-                console.error('Error al cargar video:', e);
                 setVideoError(true);
                 setVideoLoading(false);
               }}

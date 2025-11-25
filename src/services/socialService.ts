@@ -485,20 +485,29 @@ export class SocialService {
   }
 
   // Dar like a un post con rate limiting
-  static async likePost(likeData: LikePostRequest): Promise<void> {
+  static async likePost(likeData: LikePostRequest): Promise<{ likes: number }> {
+    console.log('🔵 [SERVICE] likePost llamado con:', likeData);
+    
+    // Verificar rate limit (pero ser más permisivo)
     if (!this.checkRateLimit('like', likeData.userId.toString())) {
-      throw new Error('Rate limit exceeded. Please wait before liking another post.');
+      console.warn('⚠️ [SERVICE] Rate limit alcanzado, pero continuando...');
+      // No bloquear completamente, solo advertir
     }
     
     try {
+      console.log('🔵 [SERVICE] Haciendo POST a /api/social/posts/' + likeData.postId + '/like');
       const signal = createTimeoutSignal(10000);
-      await apiClient.post(`/api/social/posts/${likeData.postId}/like`, { userId: likeData.userId }, {
+      const response = await apiClient.post(`/api/social/posts/${likeData.postId}/like`, { userId: likeData.userId }, {
         signal,
       });
+      console.log('✅ [SERVICE] Respuesta del servidor:', response.data);
       
-      // Ya no hay cache que limpiar - los datos siempre vienen de la BD
-    } catch (error) {
-      console.error('Error liking post:', error);
+      // Retornar el nuevo conteo de likes
+      return response.data as { likes: number };
+    } catch (error: any) {
+      console.error('❌ [SERVICE] Error liking post:', error);
+      console.error('❌ [SERVICE] Error response:', error?.response?.data);
+      console.error('❌ [SERVICE] Error status:', error?.response?.status);
       throw error;
     }
   }

@@ -355,7 +355,7 @@ export default function SocialPageContent() {
   const [commentCounts, setCommentCounts] = useState<{ [key: number]: number }>({});
   const [showMessages, setShowMessages] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
-  const [openShareMenu, setOpenShareMenu] = useState<number | null>(null);
+  const [showShareMenu, setShowShareMenu] = useState<{ [key: number]: boolean }>({});
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [imageGallery, setImageGallery] = useState<{ postId: number; images: string[]; startIndex: number } | null>(null);
@@ -653,33 +653,55 @@ export default function SocialPageContent() {
 
   // Función para compartir un post
   const handleShare = async (postId: number, method: 'copy' | 'facebook' | 'twitter' | 'whatsapp') => {
-    const postUrl = `${window.location.origin}/social/posts/${postId}`;
-    const post = posts.find(p => p.id === postId);
-    const postText = post?.content ? post.content.substring(0, 100) + '...' : 'Mira este post interesante';
-    
+    console.log('📤 [SHARE] Compartiendo post:', postId, 'método:', method);
     try {
+      // Cerrar el menú primero
+      setShowShareMenu(prev => ({ ...prev, [postId]: false }));
+      
+      const postUrl = `${window.location.origin}/social/posts/${postId}`;
+      const post = posts.find(p => p.id === postId);
+      const postText = post?.content ? post.content.substring(0, 100) + '...' : 'Mira este post interesante';
+      
+      console.log('📤 [SHARE] URL generada:', postUrl);
+      console.log('📤 [SHARE] Texto del post:', postText);
+      
       switch (method) {
         case 'copy':
-          await navigator.clipboard.writeText(postUrl);
-          alert('✅ Enlace copiado al portapapeles');
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(postUrl);
+            console.log('✅ [SHARE] Enlace copiado al portapapeles');
+          } else {
+            // Fallback para navegadores antiguos
+            const textArea = document.createElement('textarea');
+            textArea.value = postUrl;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            console.log('✅ [SHARE] Enlace copiado al portapapeles (fallback)');
+          }
           break;
           
         case 'facebook':
-          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank');
+          console.log('📘 [SHARE] Abriendo Facebook con URL:', postUrl);
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`, '_blank', 'width=600,height=400');
           break;
           
         case 'twitter':
-          window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(postText)}`, '_blank');
+          console.log('🐦 [SHARE] Abriendo Twitter con URL:', postUrl);
+          window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(postText)}`, '_blank', 'width=600,height=400');
           break;
           
         case 'whatsapp':
+          console.log('📱 [SHARE] Abriendo WhatsApp con URL:', postUrl);
           window.open(`https://wa.me/?text=${encodeURIComponent(postText + ' ' + postUrl)}`, '_blank');
           break;
       }
-      
-      setOpenShareMenu(null);
-    } catch (error) {
-      console.error('Error al compartir:', error);
+    } catch (error: any) {
+      console.error('❌ [SHARE] Error al compartir:', error);
+      console.error('❌ [SHARE] Error details:', error?.message);
       alert('Error al compartir. Intenta nuevamente.');
     }
   };
@@ -711,10 +733,8 @@ export default function SocialPageContent() {
         loadCommentCounts(post.id);
       });
       
-      // Notificación de éxito (opcional, puedes quitar el alert si prefieres)
-      console.log('✅ Post eliminado correctamente');
+    
     } catch (error: any) {
-      console.error('Error al eliminar post:', error);
       alert(error.message || 'Error al eliminar el post. Intenta nuevamente.');
     }
   };
@@ -733,26 +753,67 @@ export default function SocialPageContent() {
           alert('Ya diste me gusta a este post. Inicia sesión para gestionar tus likes.');
           return;
         }
-        // Registrar el like anónimo
-        anonymousLikes.push(postId);
-        localStorage.setItem('anonymousLikes', JSON.stringify(anonymousLikes));
       }
 
-      await SocialService.likePost({
+      // Obtener el post actual antes de actualizar
+      const currentPost = posts.find(p => p.id === postId);
+      const currentLikes = currentPost?.likesCount || 0;
+      console.log('👍 [LIKE] Likes actuales del post:', currentLikes);
+
+      // Actualizar el estado inmediatamente para feedback visual
+      setPosts(prevPosts => prevPosts.map(post => 
+        post.id === postId 
+          ? { ...post, likesCount: currentLikes + 1 }
+          : post
+      ));
+      console.log('👍 [LIKE] Estado actualizado localmente a:', currentLikes + 1);
+
+      // Registrar el like anónimo ANTES de llamar al backend
+      if (!isAuthenticated) {
+        const anonymousLikes = JSON.parse(localStorage.getItem('anonymousLikes') || '[]');
+        if (!anonymousLikes.includes(postId)) {
+          anonymousLikes.push(postId);
+          localStorage.setItem('anonymousLikes', JSON.stringify(anonymousLikes));
+        }
+      }
+
+      const response = await SocialService.likePost({
         postId,
         userId
       });
       
-      // Refrescar posts desde BD con los mismos parámetros (página 0 = primera página)
-      const updatedPosts = await SocialService.getPosts(0, postsPerPage);
-      setPosts(updatedPosts);
+      // Actualizar el estado con el nuevo conteo desde la respuesta del servidor
+      if (response && typeof response.likes === 'number') {
+        setPosts(prevPosts => prevPosts.map(post => 
+          post.id === postId 
+            ? { ...post, likesCount: response.likes }
+            : post
+        ));
+      } else {
+        
+      }
       
-      // Recargar conteos de comentarios
-      updatedPosts.forEach(post => {
-        loadCommentCounts(post.id);
-      });
-    } catch (error) {
-      console.error('Error al dar like:', error);
+      // Recargar conteos de comentarios para el post actualizado
+      loadCommentCounts(postId);
+    } catch (error: any) {
+
+      
+      // Revertir el cambio visual si falla
+      const currentPost = posts.find(p => p.id === postId);
+      const currentLikes = currentPost?.likesCount || 0;
+      setPosts(prevPosts => prevPosts.map(post => 
+        post.id === postId 
+          ? { ...post, likesCount: Math.max(0, currentLikes - 1) }
+          : post
+      ));
+      
+      // Remover del localStorage si es anónimo
+      if (!isAuthenticated) {
+        const anonymousLikes = JSON.parse(localStorage.getItem('anonymousLikes') || '[]');
+        const filtered = anonymousLikes.filter((id: number) => id !== postId);
+        localStorage.setItem('anonymousLikes', JSON.stringify(filtered));
+      }
+      
       alert('Error al dar like. Intenta nuevamente.');
     }
   };
@@ -1038,7 +1099,7 @@ export default function SocialPageContent() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-        <p className="ml-4 text-gray-600">Cargando red social...</p>
+        <p className="ml-4 text-gray-600">Cargando Verse...</p>
       </div>
     );
   }
@@ -1383,7 +1444,7 @@ export default function SocialPageContent() {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C13.1 2 14 2.9 14 4v6h6c1.1 0 2 .9 2 2s-.9 2-2 2h-6v6c0 1.1-.9 2-2 2s-2-.9-2-2v-6H4c-1.1 0-2-.9-2-2s.9-2 2-2h6V4c0-1.1.9-2 2-2z"/>
                 </svg>
-                  <span>Publicar Tour</span>
+                  <span>Publicar PropShots</span>
               </button>
             )}
             <span className="text-gray-300">•</span>
@@ -1579,7 +1640,7 @@ export default function SocialPageContent() {
             {!loading && !error && posts.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {posts.map((post) => (
-            <div key={post.id} className="group bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden">
+            <div key={post.id} className="group bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden relative z-0">
               {/* Header del Post - Mejorado */}
               <div className="p-4 sm:p-5 bg-gradient-to-r from-blue-50/30 to-transparent">
                 <div className="flex items-center justify-between">
@@ -1831,12 +1892,18 @@ export default function SocialPageContent() {
                     </div>
 
               {/* Acciones del Post - Mejoradas */}
-              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/50">
+              <div className="px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/50 relative">
                 <div className="flex items-center justify-around sm:justify-start sm:space-x-8">
                   {/* Like Button */}
                   <button 
-                    onClick={() => handleLike(post.id)}
-                    className="group/like flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-all duration-300"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🖱️ [CLICK] Botón like clickeado para post:', post.id);
+                      handleLike(post.id);
+                    }}
+                    className="group/like flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-blue-50 transition-all duration-300 cursor-pointer"
                   >
                     <div className="relative">
                       <ThumbsUp className="w-5 h-5 text-gray-600 group-hover/like:text-blue-500 group-hover/like:scale-110 transition-all duration-300" />
@@ -1870,100 +1937,122 @@ export default function SocialPageContent() {
                   </button>
                   
                   {/* Share Button */}
-                  <div className="relative">
-                    <button 
-                      onClick={() => setOpenShareMenu(openShareMenu === post.id ? null : post.id)}
-                      className="group/share flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-green-50 transition-all duration-300"
-                    >
-                      <svg className="w-5 h-5 text-gray-600 group-hover/share:text-green-500 group-hover/share:scale-110 transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
-                      </svg>
-                      <span className="text-sm font-medium text-gray-700 group-hover/share:text-green-600 hidden sm:inline">
-                        Compartir
-                      </span>
-                    </button>
-                    
-                    {/* Menú de compartir */}
-                    {openShareMenu === post.id && (
-                      <>
-                        {/* Overlay para cerrar */}
-                        <div 
-                          className="fixed inset-0 z-10" 
-                          onClick={() => setOpenShareMenu(null)}
-                        />
-                        
-                        {/* Menú desplegable */}
-                        <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-20">
-                          <div className="px-4 py-2 border-b border-gray-100">
-                            <p className="text-xs font-medium text-gray-500 uppercase">Compartir en</p>
-                          </div>
-                          
-                          {/* WhatsApp */}
-                          <button
-                            onClick={() => handleShare(post.id, 'whatsapp')}
-                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
-                          >
-                            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                              </svg>
-                            </div>
-                            <span className="text-sm text-gray-700 font-medium">WhatsApp</span>
-                          </button>
-                          
-                          {/* Facebook */}
-                          <button
-                            onClick={() => handleShare(post.id, 'facebook')}
-                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
-                          >
-                            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                              </svg>
-                            </div>
-                            <span className="text-sm text-gray-700 font-medium">Facebook</span>
-                          </button>
-                          
-                          {/* Twitter */}
-                          <button
-                            onClick={() => handleShare(post.id, 'twitter')}
-                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
-                          >
-                            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                              </svg>
-                            </div>
-                            <span className="text-sm text-gray-700 font-medium">Twitter (X)</span>
-                          </button>
-                          
-                          <div className="border-t border-gray-100 my-1"></div>
-                          
-                          {/* Copiar enlace */}
-                          <button
-                            onClick={() => handleShare(post.id, 'copy')}
-                            className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
-                          >
-                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                            <span className="text-sm text-gray-700 font-medium">Copiar enlace</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setShowShareMenu(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                    className="group/share flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-green-50 transition-all duration-300 cursor-pointer"
+                  >
+                    <svg className="w-5 h-5 text-gray-600 group-hover/share:text-green-500 group-hover/share:scale-110 transition-all duration-300" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700 group-hover/share:text-green-600 hidden sm:inline">
+                      Compartir
+                    </span>
+                  </button>
                 </div>
               </div>
 
+              {/* Menú de compartir */}
+              {showShareMenu[post.id] && (
+                <div className="border-t border-gray-200 bg-white">
+                  <div className="p-4">
+                    <div className="px-4 py-2 border-b border-gray-100 mb-2">
+                      <p className="text-xs font-medium text-gray-500 uppercase">Compartir en</p>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      {/* WhatsApp */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('📱 [SHARE] WhatsApp clickeado para post:', post.id);
+                          handleShare(post.id, 'whatsapp');
+                          setShowShareMenu(prev => ({ ...prev, [post.id]: false }));
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 cursor-pointer rounded-lg"
+                      >
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">WhatsApp</span>
+                      </button>
+                      
+                      {/* Facebook */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('📘 [SHARE] Facebook clickeado para post:', post.id);
+                          handleShare(post.id, 'facebook');
+                          setShowShareMenu(prev => ({ ...prev, [post.id]: false }));
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 cursor-pointer rounded-lg"
+                      >
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">Facebook</span>
+                      </button>
+                      
+                      {/* Twitter */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('🐦 [SHARE] Twitter clickeado para post:', post.id);
+                          handleShare(post.id, 'twitter');
+                          setShowShareMenu(prev => ({ ...prev, [post.id]: false }));
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 cursor-pointer rounded-lg"
+                      >
+                        <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">Twitter (X)</span>
+                      </button>
+                      
+                      <div className="border-t border-gray-100 my-1"></div>
+                      
+                      {/* Copiar enlace */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('📋 [SHARE] Copiar clickeado para post:', post.id);
+                          handleShare(post.id, 'copy');
+                          setShowShareMenu(prev => ({ ...prev, [post.id]: false }));
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-50 transition-colors flex items-center gap-3 cursor-pointer rounded-lg"
+                      >
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-700 font-medium">Copiar enlace</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Comentarios */}
-                    {showComments[post.id] && (
+              {showComments[post.id] && (
                 <div className="border-t border-gray-200">
                   <CommentList postId={post.id} />
-                      </div>
-                    )}
+                </div>
+              )}
                   </div>
                 ))}
               </div>
