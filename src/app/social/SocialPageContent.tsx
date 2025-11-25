@@ -933,7 +933,17 @@ export default function SocialPageContent() {
     try {
       await PropShotService.incrementViews(propShotId);
       
-    
+      // Actualizar el contador de vistas en la lista
+      setPropShots(prev => prev.map(shot =>
+        shot.id === propShotId
+          ? { ...shot, views: (shot.views ?? 0) + 1 }
+          : shot
+      ));
+      
+      // Actualizar también el selectedPropShot si es el mismo
+      if (selectedPropShot?.id === propShotId) {
+        setSelectedPropShot(prev => prev ? { ...prev, views: (prev.views ?? 0) + 1 } : null);
+      }
     } catch (error) {
       console.error('Error incrementing views:', error);
     }
@@ -1494,19 +1504,28 @@ export default function SocialPageContent() {
                   {shot.agentFirstName} {shot.agentLastName}
                 </p>
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                                                  <span className="flex items-center space-x-1">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                            </svg>
-                            <span>{shot.shares || 0}</span>
-                          </span>
-                        <span className="flex items-center space-x-1">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                          </svg>
-                    <span>{shot.likes}</span>
-                        </span>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <span>{shot.views ?? 0}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                      </svg>
+                      <span>{shot.shares || 0}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                      <span>{shot.likes}</span>
+                    </span>
+                  </div>
+                </div>
                     </div>
                   </div>
           ))

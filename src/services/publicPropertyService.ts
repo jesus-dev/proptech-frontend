@@ -58,9 +58,14 @@ class PublicPropertyService {
    */
   async incrementViews(propertyId: string): Promise<void> {
     try {
-      await apiClient.post(`/api/properties/${propertyId}/views`);
-    } catch (error) {
-      // Silencioso - no mostrar error si falla
+      console.log('👁️ [FRONTEND] Incrementando vistas para propiedad:', propertyId);
+      // Usar endpoint público que registra vistas correctamente
+      const response = await apiClient.patch(`/api/public/properties/${propertyId}/view`);
+      console.log('✅ [FRONTEND] Vista registrada exitosamente:', response.data);
+    } catch (error: any) {
+      // Log del error para debugging
+      console.error('❌ [FRONTEND] Error incrementing views:', error);
+      console.error('❌ [FRONTEND] Error details:', error?.response?.data || error?.message);
     }
   }
 

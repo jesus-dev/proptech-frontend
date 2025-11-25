@@ -9,6 +9,7 @@ import {
   Play,
   Heart as HeartIcon,
   MessageCircle as MessageIcon,
+  Eye as EyeIcon,
   Building2
 } from 'lucide-react';
 
@@ -219,6 +220,10 @@ export default function PropShotGrid({
                         <MessageIcon className="w-4 h-4" />
                         <span className="text-sm font-bold">{shot.comments || 0}</span>
                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <EyeIcon className="w-4 h-4" />
+                        <span className="text-sm font-bold">{shot.views ?? 0}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -292,7 +297,7 @@ export default function PropShotGrid({
 
             {/* Estadísticas - Mejoradas */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -310,8 +315,12 @@ export default function PropShotGrid({
                   <MessageIcon className="w-5 h-5" />
                   <span className="font-bold text-sm">{shot.comments || 0}</span>
                 </div>
+                <div className="flex items-center gap-1.5 group/views hover:text-purple-600 transition-colors duration-300">
+                  <EyeIcon className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-bold text-sm whitespace-nowrap">{shot.views ?? 0}</span>
+                </div>
               </div>
-              <span className="text-xs text-gray-400 font-medium">
+              <span className="text-xs text-gray-400 font-medium flex-shrink-0 ml-2">
                 {new Date(shot.createdAt).toLocaleDateString('es-ES', {
                   day: 'numeric',
                   month: 'short'

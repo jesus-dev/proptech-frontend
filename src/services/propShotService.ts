@@ -217,9 +217,12 @@ export class PropShotService {
 
   static async incrementViews(id: number): Promise<void> {
     try {
-      await apiClient.post(`/api/social/propshots/${id}/view`);
-    } catch (error) {
-      // Silencioso - no es crítico
+      console.log('👁️ [PROPSHOT-FRONTEND] Incrementando vistas para PropShot:', id);
+      const response = await apiClient.post(`/api/social/propshots/${id}/view`);
+      console.log('✅ [PROPSHOT-FRONTEND] Vista registrada exitosamente:', response.data);
+    } catch (error: any) {
+      console.error('❌ [PROPSHOT-FRONTEND] Error incrementing views:', error);
+      console.error('❌ [PROPSHOT-FRONTEND] Error details:', error?.response?.data || error?.message);
     }
   }
 

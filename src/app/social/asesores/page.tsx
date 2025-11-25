@@ -192,27 +192,27 @@ export default function AsesoresPage() {
 
       {/* Estado de carga */}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden animate-pulse">
-              <div className="bg-gradient-to-br from-gray-200 to-gray-300 p-6 pb-20">
+            <div key={i} className="bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-100 overflow-hidden animate-pulse">
+              <div className="bg-gradient-to-br from-gray-200 to-gray-300 p-3 sm:p-6 pb-16 sm:pb-20">
                 <div className="flex justify-center">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-400"></div>
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-gray-400"></div>
                 </div>
               </div>
-              <div className="px-6 -mt-12 relative z-10">
-                <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
-                  <div className="h-6 bg-gray-300 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-3"></div>
-                  <div className="flex gap-2 justify-center">
-                    <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
-                    <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+              <div className="px-3 sm:px-6 -mt-10 sm:-mt-12 relative z-10">
+                <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-2 sm:p-4 border border-gray-100">
+                  <div className="h-4 sm:h-6 bg-gray-300 rounded mb-1 sm:mb-2"></div>
+                  <div className="h-3 sm:h-4 bg-gray-200 rounded mb-2 sm:mb-3"></div>
+                  <div className="flex gap-1 sm:gap-2 justify-center">
+                    <div className="h-5 sm:h-6 w-12 sm:w-16 bg-gray-200 rounded-full"></div>
+                    <div className="h-5 sm:h-6 w-12 sm:w-16 bg-gray-200 rounded-full"></div>
                   </div>
                 </div>
               </div>
-              <div className="px-6 py-4 space-y-2">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
+              <div className="px-3 sm:px-6 py-2 sm:py-4 space-y-1 sm:space-y-2">
+                <div className="h-3 sm:h-4 bg-gray-200 rounded"></div>
+                <div className="h-3 sm:h-4 bg-gray-200 rounded"></div>
               </div>
             </div>
           ))}
@@ -221,19 +221,19 @@ export default function AsesoresPage() {
 
       {/* Lista de Asesores - Mejorada */}
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {filteredAdvisors.map((advisor) => (
-          <div key={advisor.id} className="group bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+          <div key={advisor.id} className="group bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
             {/* Header del card con gradiente */}
-            <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 p-6 pb-20">
-              <div className="absolute top-4 right-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${
+            <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 p-3 sm:p-6 pb-16 sm:pb-20">
+              <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                <span className={`inline-flex items-center gap-1 px-2 py-1 sm:gap-1.5 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs font-semibold rounded-full shadow-sm ${
                   advisor.available 
                     ? 'bg-green-500 text-white' 
                     : 'bg-gray-400 text-white'
                 }`}>
-                  <span className={`w-2 h-2 rounded-full ${advisor.available ? 'bg-white animate-pulse' : 'bg-gray-200'}`}></span>
-                  {advisor.available ? 'Disponible' : 'Ocupado'}
+                  <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${advisor.available ? 'bg-white animate-pulse' : 'bg-gray-200'}`}></span>
+                  <span>{advisor.available ? 'Disponible' : 'Ocupado'}</span>
                 </span>
               </div>
               
@@ -244,7 +244,7 @@ export default function AsesoresPage() {
                     <img 
                       src={getFullPhotoUrl(advisor.photo)}
                       alt={advisor.name}
-                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-lg ring-4 ring-white"
+                      className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full object-cover shadow-lg ring-2 sm:ring-4 ring-white"
                       onError={(e) => {
                         // Fallback a avatar con iniciales si la imagen falla
                         const target = e.target as HTMLImageElement;
@@ -252,7 +252,7 @@ export default function AsesoresPage() {
                         if (parent) {
                           target.style.display = 'none';
                           const fallback = document.createElement('div');
-                          fallback.className = `w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shadow-lg ${
+                          fallback.className = `w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-lg sm:text-2xl md:text-3xl font-bold shadow-lg ${
                             advisor.available ? 'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700' : 'bg-gradient-to-br from-gray-400 to-gray-500'
                           }`;
                           fallback.textContent = advisor.avatar;
@@ -261,15 +261,15 @@ export default function AsesoresPage() {
                       }}
                     />
                   ) : (
-                    <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shadow-lg ${
+                    <div className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-white text-lg sm:text-2xl md:text-3xl font-bold shadow-lg ${
                       advisor.available ? 'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700' : 'bg-gradient-to-br from-gray-400 to-gray-500'
                     }`}>
                       {advisor.avatar}
                     </div>
                   )}
                   {advisor.rating >= 4.8 && (
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full border-3 border-white flex items-center justify-center shadow-md">
-                      <Award className="w-4 h-4 text-white" />
+                    <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full border-2 sm:border-3 border-white flex items-center justify-center shadow-md">
+                      <Award className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </div>
                   )}
                 </div>
@@ -277,63 +277,70 @@ export default function AsesoresPage() {
             </div>
 
             {/* Información principal */}
-            <div className="px-6 -mt-12 relative z-10">
-              <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900 text-center mb-1">{advisor.name}</h3>
-                <p className="text-xs sm:text-sm text-gray-600 text-center mb-2">{advisor.role}</p>
+            <div className="px-3 sm:px-6 -mt-10 sm:-mt-12 relative z-10">
+              <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-2 sm:p-4 border border-gray-100">
+                <h3 className="text-sm sm:text-lg md:text-xl font-bold text-gray-900 text-center mb-0.5 sm:mb-1 line-clamp-1">{advisor.name}</h3>
+                <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 text-center mb-1.5 sm:mb-2 line-clamp-1">{advisor.role}</p>
                 
                 {/* Rating y experiencia */}
-                <div className="flex items-center justify-center gap-4 mb-3">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-sm font-bold text-gray-900">{advisor.rating}</span>
+                <div className="flex items-center justify-center gap-2 sm:gap-4 mb-2 sm:mb-3">
+                  <div className="flex items-center gap-0.5 sm:gap-1">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
+                    <span className="text-xs sm:text-sm font-bold text-gray-900">{advisor.rating}</span>
                   </div>
-                  <div className="w-px h-4 bg-gray-300"></div>
-                  <div className="flex items-center gap-1 text-xs text-gray-600">
-                    <TrendingUp className="w-3 h-3" />
-                    <span>{advisor.experience}</span>
+                  <div className="w-px h-3 sm:h-4 bg-gray-300"></div>
+                  <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-gray-600">
+                    <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    <span className="truncate max-w-[60px] sm:max-w-none">{advisor.experience}</span>
                   </div>
                 </div>
 
                 {/* Especialidades */}
-                <div className="flex flex-wrap gap-1.5 justify-center">
-                  {advisor.specialties.map((specialty, index) => (
-                    <span key={index} className="px-2.5 py-1 bg-gradient-to-r from-blue-100 to-indigo-50 text-blue-700 text-[10px] sm:text-xs rounded-full font-medium border border-blue-200">
+                <div className="flex flex-wrap gap-1 sm:gap-1.5 justify-center">
+                  {advisor.specialties.slice(0, 2).map((specialty, index) => (
+                    <span key={index} className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-gradient-to-r from-blue-100 to-indigo-50 text-blue-700 text-[9px] sm:text-[10px] md:text-xs rounded-full font-medium border border-blue-200">
                       {specialty}
                     </span>
                   ))}
+                  {advisor.specialties.length > 2 && (
+                    <span className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-gradient-to-r from-blue-100 to-indigo-50 text-blue-700 text-[9px] sm:text-[10px] md:text-xs rounded-full font-medium border border-blue-200">
+                      +{advisor.specialties.length - 2}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Información de contacto */}
-            <div className="px-6 py-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 group/phone hover:text-blue-600 transition-colors">
-                <Phone className="w-4 h-4 flex-shrink-0" />
+            <div className="px-3 sm:px-6 py-2 sm:py-4 space-y-1 sm:space-y-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm text-gray-600 group/phone hover:text-blue-600 transition-colors">
+                <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span className="truncate">{advisor.phone}</span>
               </div>
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 group/email hover:text-blue-600 transition-colors">
-                <Mail className="w-4 h-4 flex-shrink-0" />
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm text-gray-600 group/email hover:text-blue-600 transition-colors">
+                <Mail className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span className="truncate">{advisor.email}</span>
               </div>
             </div>
 
             {/* Botones de acción */}
-            <div className="px-6 pb-6">
-              <div className="flex items-center gap-2">
+            <div className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button 
                   onClick={() => window.location.href = `tel:${advisor.phone}`}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 flex items-center justify-center gap-2"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs md:text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 flex items-center justify-center gap-1 sm:gap-2"
                 >
-                  <Phone className="w-4 h-4" />
-                  Llamar
+                  <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Llamar</span>
+                  <span className="sm:hidden">📞</span>
                 </button>
                 <button 
                   onClick={() => window.location.href = `mailto:${advisor.email}`}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs md:text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-1 sm:gap-2"
                 >
-                  <Mail className="w-4 h-4" />
-                  Email
+                  <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Email</span>
+                  <span className="sm:hidden">✉️</span>
                 </button>
               </div>
             </div>
