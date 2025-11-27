@@ -59,8 +59,9 @@ export interface Property {
   country?: string;
   neighborhood?: string;
   locationDescription?: string;
-  videoUrl?: string;
   virtualTourUrl?: string;
+  reelVideoUrl?: string;
+  fullVideoUrl?: string;
   featuredImage?: string;
   propertyId?: string;
   propertyStatus?: string;
@@ -94,8 +95,9 @@ export interface Property {
   propertyCountry?: string;
   propertyNeighborhood?: string;
   propertyLocationDescription?: string;
-  propertyVideoUrl?: string;
   propertyVirtualTourUrl?: string;
+  propertyReelVideoUrl?: string;
+  propertyFullVideoUrl?: string;
   propertyFeaturedImage?: string;
   propertyGalleryImages?: string[];
   propertyPrivateFiles?: { url: string; name: string }[];

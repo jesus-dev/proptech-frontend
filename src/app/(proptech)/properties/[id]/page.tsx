@@ -995,6 +995,21 @@ export default function PropertyDetailsPage({ params }: PageProps) {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Botón para ver en sitio web público */}
+            {property.slug && (
+              <a
+                href={`${process.env.NEXT_PUBLIC_WEB_URL || (process.env.NODE_ENV === 'production' ? 'https://onbienesraices.com.py' : 'http://localhost:3001')}/propiedad/${property.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold rounded-lg hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
+                title="Ver en sitio web público"
+              >
+                <Globe className="h-5 w-5" />
+                Ver en Sitio Web
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
+            
             {/* Contact Information */}
             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Información de Contacto</h3>

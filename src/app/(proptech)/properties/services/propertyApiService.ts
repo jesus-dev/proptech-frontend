@@ -3,6 +3,7 @@ import { propertyApi, ApiResponse, PaginatedResponse } from '@/lib/api';
 
 export interface BackendProperty {
   id: number;
+  slug?: string;
   titulo: string;
   descripcion: string;
   zona: string;
@@ -28,6 +29,8 @@ export interface BackendProperty {
   detallesAdicionales: string;
   videoUrl: string;
   tourVirtualUrl: string;
+  reelVideoUrl?: string;
+  fullVideoUrl?: string;
   imagenDestacada: string;
   etiquetaPropiedad: string;
   estadoPropiedad: string;
@@ -106,6 +109,7 @@ function normalizePropertyStatus(status: string | undefined): string {
 function mapBackendToFrontend(backend: BackendProperty): Property {
   return {
     id: backend.id.toString(),
+    slug: backend.slug,
     title: backend.titulo,
     address: backend.direccion,
     city: backend.ciudad,
@@ -146,8 +150,9 @@ function mapBackendToFrontend(backend: BackendProperty): Property {
     country: backend.pais,
     neighborhood: backend.barrio,
     locationDescription: backend.descripcionUbicacion,
-    videoUrl: backend.videoUrl,
     virtualTourUrl: backend.tourVirtualUrl,
+    reelVideoUrl: backend.reelVideoUrl,
+    fullVideoUrl: backend.fullVideoUrl,
     featuredImage: backend.imagenDestacada,
     propertyId: backend.id.toString(),
     propertyStatus: backend.estadoPropiedad,
@@ -175,8 +180,9 @@ function mapBackendToFrontend(backend: BackendProperty): Property {
     propertyCountry: backend.pais,
     propertyNeighborhood: backend.barrio,
     propertyLocationDescription: backend.descripcionUbicacion,
-    propertyVideoUrl: backend.videoUrl,
     propertyVirtualTourUrl: backend.tourVirtualUrl,
+    propertyReelVideoUrl: backend.reelVideoUrl,
+    propertyFullVideoUrl: backend.fullVideoUrl,
     propertyFeaturedImage: backend.imagenDestacada,
     propertyGalleryImages: backend.imagenesGaleria ? JSON.parse(backend.imagenesGaleria) : [],
     propertyPrivateFiles: backend.archivosPrivados ? JSON.parse(backend.archivosPrivados) : [],
@@ -248,8 +254,9 @@ function mapFrontendToBackend(frontend: Partial<Property>): Partial<BackendPrope
     anoConstruccion: frontend.yearBuilt,
     disponibleDesde: frontend.availableFrom,
     detallesAdicionales: frontend.additionalDetails,
-    videoUrl: frontend.videoUrl,
     tourVirtualUrl: frontend.virtualTourUrl,
+    reelVideoUrl: frontend.reelVideoUrl,
+    fullVideoUrl: frontend.fullVideoUrl,
     imagenDestacada: frontend.featuredImage,
     etiquetaPropiedad: frontend.propertyLabel,
     estadoPropiedad: frontend.status,

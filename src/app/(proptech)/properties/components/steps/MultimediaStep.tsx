@@ -500,30 +500,63 @@ export default function MultimediaStep({
         </div>
       )}
 
-      {/* Video URL */}
+      {/* Reel Video URL */}
       <div>
         <label
-          htmlFor="videoUrl"
+          htmlFor="reelVideoUrl"
           className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
-          URL del Video
+          URL del Video Reel (Vertical)
         </label>
         <div className="relative">
           <Video className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="url"
-            id="videoUrl"
-            name="videoUrl"
-            value={formData.videoUrl}
+            id="reelVideoUrl"
+            name="reelVideoUrl"
+            value={formData.reelVideoUrl || ''}
             onChange={handleChange}
-            placeholder="https://www.youtube.com/watch?v=..."
+            placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
             className={`w-full pl-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-              errors.videoUrl ? "border-red-500" : "border-gray-300"
+              errors.reelVideoUrl ? "border-red-500" : "border-gray-300"
             }`}
           />
         </div>
-        {errors.videoUrl && (
-          <p className="mt-1 text-sm text-red-500">{errors.videoUrl}</p>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Video corto tipo Reels (formato vertical 9:16)
+        </p>
+        {errors.reelVideoUrl && (
+          <p className="mt-1 text-sm text-red-500">{errors.reelVideoUrl}</p>
+        )}
+      </div>
+
+      {/* Full Video URL */}
+      <div>
+        <label
+          htmlFor="fullVideoUrl"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
+          URL del Video Completo (Horizontal)
+        </label>
+        <div className="relative">
+          <Video className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="url"
+            id="fullVideoUrl"
+            name="fullVideoUrl"
+            value={formData.fullVideoUrl || ''}
+            onChange={handleChange}
+            placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
+            className={`w-full pl-10 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              errors.fullVideoUrl ? "border-red-500" : "border-gray-300"
+            }`}
+          />
+        </div>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Video completo tipo tradicional (formato horizontal 16:9)
+        </p>
+        {errors.fullVideoUrl && (
+          <p className="mt-1 text-sm text-red-500">{errors.fullVideoUrl}</p>
         )}
       </div>
 

@@ -139,6 +139,7 @@ export default function ContactsPage() {
       case "prospect": return "Interesado";
       case "buyer": return "Comprador";
       case "seller": return "Vendedor";
+      case "owner": return "Propietario";
       default: return type;
     }
   };
@@ -284,7 +285,7 @@ export default function ContactsPage() {
             <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-lg transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Titulares</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Propietarios</p>
                   <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.owners}</p>
                 </div>
                 <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -326,7 +327,7 @@ export default function ContactsPage() {
                   <option value="prospect">Interesados</option>
                   <option value="buyer">Compradores</option>
                   <option value="seller">Vendedores</option>
-                  <option value="owner">Titulares</option>
+                  <option value="owner">Propietarios</option>
                 </select>
 
                 <select

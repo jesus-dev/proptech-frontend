@@ -39,7 +39,15 @@ interface ToolbarButtonProps {
 const ToolbarButton: React.FC<ToolbarButtonProps> = ({ icon, onClick, isActive, title }) => (
   <button
     type="button"
-    onClick={onClick}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
+    }}
+    onMouseDown={(e) => {
+      // Prevenir que el botón quite el foco del editor
+      e.preventDefault();
+    }}
     className={`p-2 rounded-md transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${
       isActive 
         ? 'bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400' 
@@ -67,14 +75,90 @@ export default function RichTextEditor({
   }, [value]);
 
   const execCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    editorRef.current?.focus();
-    updateContent();
+    if (!editorRef.current) return false;
+    
+    // Obtener la selección actual ANTES de cambiar el foco
+    const selection = window.getSelection();
+    let savedRange: Range | null = null;
+    
+    // Guardar la selección actual si existe
+    if (selection && selection.rangeCount > 0) {
+      savedRange = selection.getRangeAt(0).cloneRange();
+    }
+    
+    // Asegurar que el editor tenga el foco
+    editorRef.current.focus();
+    
+    // Restaurar la selección guardada o crear una nueva
+    if (savedRange && selection) {
+      try {
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+      } catch (e) {
+        // Si falla, crear una nueva selección al final
+        const range = document.createRange();
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    } else if (!selection || selection.rangeCount === 0) {
+      // Si no hay selección, crear una al final
+      const range = document.createRange();
+      if (editorRef.current.lastChild) {
+        range.setStartAfter(editorRef.current.lastChild);
+        range.setEndAfter(editorRef.current.lastChild);
+      } else {
+        range.selectNodeContents(editorRef.current);
+        range.collapse(false);
+      }
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
+    
+    try {
+      // Ejecutar el comando
+      const result = document.execCommand(command, false, value);
+      
+      // Actualizar el contenido
+      updateContent();
+      
+      // Mantener el foco después del comando
+      setTimeout(() => {
+        editorRef.current?.focus();
+      }, 0);
+      
+      return result;
+    } catch (error) {
+      console.error(`Error executing command ${command}:`, error);
+      return false;
+    }
   };
 
   const updateContent = () => {
     if (editorRef.current) {
+      // Guardar la posición del cursor antes de actualizar
+      const selection = window.getSelection();
+      let range = null;
+      if (selection && selection.rangeCount > 0) {
+        range = selection.getRangeAt(0);
+      }
+      
       onChange(editorRef.current.innerHTML);
+      
+      // Restaurar la posición del cursor si es posible
+      if (range && editorRef.current) {
+        try {
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        } catch (e) {
+          // Si falla, simplemente enfocar el editor
+          editorRef.current.focus();
+        }
+      }
     }
   };
 
@@ -181,12 +265,170 @@ export default function RichTextEditor({
     { divider: true },
     {
       icon: <List className="w-4 h-4" />,
-      onClick: () => execCommand('insertUnorderedList'),
+      onClick: () => {
+        if (!editorRef.current) return;
+        
+        // Asegurar que el editor tenga el foco
+        editorRef.current.focus();
+        
+        // Usar requestAnimationFrame para asegurar que el foco esté establecido
+        requestAnimationFrame(() => {
+          try {
+            const selection = window.getSelection();
+            
+            // Verificar que la selección esté dentro del editor
+            if (!editorRef.current) return;
+            
+            if (selection && selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              
+              // Verificar que el rango esté dentro del editor
+              if (!editorRef.current.contains(range.commonAncestorContainer)) {
+                // Si no está dentro, crear una selección al final
+                const newRange = document.createRange();
+                newRange.selectNodeContents(editorRef.current);
+                newRange.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+              }
+            } else {
+              // Si no hay selección, crear una al final
+              const range = document.createRange();
+              range.selectNodeContents(editorRef.current);
+              range.collapse(false);
+              selection?.removeAllRanges();
+              selection?.addRange(range);
+            }
+            
+            // Intentar con execCommand
+            const success = document.execCommand('insertUnorderedList', false, undefined);
+            
+            if (success) {
+              updateContent();
+              // Mantener el foco
+              setTimeout(() => {
+                editorRef.current?.focus();
+              }, 0);
+            } else {
+              // Fallback: crear lista manualmente
+              const sel = window.getSelection();
+              if (sel && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                const list = document.createElement('ul');
+                const li = document.createElement('li');
+                
+                if (range.collapsed) {
+                  // Si no hay selección, crear un elemento de lista vacío
+                  li.innerHTML = '<br>';
+                } else {
+                  // Si hay texto seleccionado, moverlo al elemento de lista
+                  const contents = range.extractContents();
+                  li.appendChild(contents);
+                }
+                
+                list.appendChild(li);
+                range.insertNode(list);
+                
+                // Colocar el cursor dentro del elemento de lista
+                const newRange = document.createRange();
+                newRange.setStart(li, 0);
+                newRange.setEnd(li, 0);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+                
+                updateContent();
+                editorRef.current?.focus();
+              }
+            }
+          } catch (error) {
+            console.error('Error creating unordered list:', error);
+          }
+        });
+      },
       title: 'Lista con viñetas'
     },
     {
       icon: <ListOrdered className="w-4 h-4" />,
-      onClick: () => execCommand('insertOrderedList'),
+      onClick: () => {
+        if (!editorRef.current) return;
+        
+        // Asegurar que el editor tenga el foco
+        editorRef.current.focus();
+        
+        // Usar requestAnimationFrame para asegurar que el foco esté establecido
+        requestAnimationFrame(() => {
+          try {
+            const selection = window.getSelection();
+            
+            // Verificar que la selección esté dentro del editor
+            if (!editorRef.current) return;
+            
+            if (selection && selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              
+              // Verificar que el rango esté dentro del editor
+              if (!editorRef.current.contains(range.commonAncestorContainer)) {
+                // Si no está dentro, crear una selección al final
+                const newRange = document.createRange();
+                newRange.selectNodeContents(editorRef.current);
+                newRange.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+              }
+            } else {
+              // Si no hay selección, crear una al final
+              const range = document.createRange();
+              range.selectNodeContents(editorRef.current);
+              range.collapse(false);
+              selection?.removeAllRanges();
+              selection?.addRange(range);
+            }
+            
+            // Intentar con execCommand
+            const success = document.execCommand('insertOrderedList', false, undefined);
+            
+            if (success) {
+              updateContent();
+              // Mantener el foco
+              setTimeout(() => {
+                editorRef.current?.focus();
+              }, 0);
+            } else {
+              // Fallback: crear lista manualmente
+              const sel = window.getSelection();
+              if (sel && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                const list = document.createElement('ol');
+                const li = document.createElement('li');
+                
+                if (range.collapsed) {
+                  // Si no hay selección, crear un elemento de lista vacío
+                  li.innerHTML = '<br>';
+                } else {
+                  // Si hay texto seleccionado, moverlo al elemento de lista
+                  const contents = range.extractContents();
+                  li.appendChild(contents);
+                }
+                
+                list.appendChild(li);
+                range.insertNode(list);
+                
+                // Colocar el cursor dentro del elemento de lista
+                const newRange = document.createRange();
+                newRange.setStart(li, 0);
+                newRange.setEnd(li, 0);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+                
+                updateContent();
+                editorRef.current?.focus();
+              }
+            }
+          } catch (error) {
+            console.error('Error creating ordered list:', error);
+          }
+        });
+      },
       title: 'Lista numerada'
     },
     { divider: true },
@@ -238,21 +480,57 @@ export default function RichTextEditor({
       </div>
 
       {/* Editor Content */}
-      <div
-        ref={editorRef}
-        contentEditable
-        className="min-h-[200px] p-4 focus:outline-none text-gray-900 dark:text-white bg-white dark:bg-gray-900"
-        onInput={updateContent}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onPaste={handlePaste}
-        onKeyDown={handleKeyDown}
-        data-placeholder={placeholder}
-        style={{
-          '--placeholder-color': 'rgb(156 163 175)',
-          '--placeholder-color-dark': 'rgb(107 114 128)'
-        } as React.CSSProperties}
-      />
+      <>
+        <style dangerouslySetInnerHTML={{__html: `
+          .rich-text-editor-content ul {
+            list-style-type: disc !important;
+            margin-left: 1.5rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+            padding-left: 0.5rem !important;
+          }
+          .rich-text-editor-content ul ul {
+            list-style-type: circle !important;
+          }
+          .rich-text-editor-content ul ul ul {
+            list-style-type: square !important;
+          }
+          .rich-text-editor-content ol {
+            list-style-type: decimal !important;
+            margin-left: 1.5rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+            padding-left: 0.5rem !important;
+          }
+          .rich-text-editor-content li {
+            margin: 0.25rem 0 !important;
+            padding-left: 0.25rem !important;
+            display: list-item !important;
+          }
+          .rich-text-editor-content:empty:before {
+            content: attr(data-placeholder);
+            color: rgb(156 163 175);
+            pointer-events: none;
+          }
+          .dark .rich-text-editor-content:empty:before {
+            color: rgb(107 114 128);
+          }
+        `}} />
+        <div
+          ref={editorRef}
+          contentEditable
+          className="rich-text-editor-content min-h-[200px] p-4 focus:outline-none text-gray-900 dark:text-white bg-white dark:bg-gray-900"
+          onInput={updateContent}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
+          data-placeholder={placeholder}
+          style={{
+            lineHeight: '1.6'
+          } as React.CSSProperties}
+        />
+      </>
     </div>
   );
 }
