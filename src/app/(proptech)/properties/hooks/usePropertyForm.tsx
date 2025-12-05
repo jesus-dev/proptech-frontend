@@ -10,6 +10,7 @@ import { getEndpoint } from '@/lib/api-config';
 import { useToast } from "@/components/ui/use-toast";
 import { FloorPlanForm } from "../components/steps/FloorPlansStep";
 import { useAuthContext } from "@/context/AuthContext";
+import { rentalPropertyService } from "@/app/(proptech)/rentals/services/rentalPropertyService";
 
 export type PropertyFormData = Omit<Property, "id"> & { 
   propertyStatusId?: number;
@@ -672,6 +673,77 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             console.error("❌ usePropertyForm: Error handling images:", imageError);
             // No fallar el formulario si hay error con las imágenes
           }
+        }
+
+        // Guardar configuración de alquiler temporal si está habilitada
+        console.log("🔍 Verificando configuración de alquiler temporal...");
+        console.log("📦 formData completo:", formData);
+        console.log("🏠 rentalConfig:", (formData as any).rentalConfig);
+        console.log("✅ enabled?", (formData as any).rentalConfig?.enabled);
+        
+        if ((formData as any).rentalConfig?.enabled) {
+          try {
+            console.log("🏠 ✅ Configuración de alquiler temporal ACTIVADA - Procediendo a guardar para propertyId:", propertyId);
+            const rentalConfig = (formData as any).rentalConfig;
+            console.log("📋 Datos del rental config:", rentalConfig);
+            
+            // Mapear los datos del formulario al formato del backend
+            const rentalData = {
+              propertyId: parseInt(propertyId),
+              pricePerNight: rentalConfig.pricePerNight,
+              pricePerWeek: rentalConfig.pricePerWeek,
+              pricePerMonth: rentalConfig.pricePerMonth,
+              cleaningFee: rentalConfig.cleaningFee,
+              currency: rentalConfig.currency || formData.currency,
+              minNights: rentalConfig.minNights || 1,
+              maxNights: rentalConfig.maxNights,
+              maxGuests: rentalConfig.maxGuests || 2,
+              checkInTime: rentalConfig.checkInTime || "14:00",
+              checkOutTime: rentalConfig.checkOutTime || "11:00",
+              instantBooking: rentalConfig.instantBooking || false,
+              rentalType: rentalConfig.rentalType || "APARTMENT",
+              petsAllowed: rentalConfig.petsAllowed || false,
+              petFee: rentalConfig.petFee,
+              smokingAllowed: rentalConfig.smokingAllowed || false,
+              eventsAllowed: rentalConfig.eventsAllowed || false,
+              wifiAvailable: rentalConfig.wifiAvailable !== false,
+              cancellationPolicy: rentalConfig.cancellationPolicy || "MODERATE",
+              houseRules: rentalConfig.houseRules,
+              alwaysAvailable: rentalConfig.alwaysAvailable !== false,
+            };
+
+            console.log("📝 Datos a enviar al backend:", rentalData);
+
+            // Verificar si ya existe una configuración para esta propiedad
+            console.log("🔍 Verificando si ya existe configuración de rental...");
+            const existingRental = await rentalPropertyService.getRentalPropertyByPropertyId(parseInt(propertyId));
+            
+            if (existingRental) {
+              // Actualizar existente
+              console.log("📝 Configuración existente encontrada:", existingRental.id);
+              await rentalPropertyService.updateRentalProperty(existingRental.id, rentalData);
+              console.log("✅ Configuración actualizada exitosamente");
+            } else {
+              // Crear nueva
+              console.log("✨ No existe configuración - Creando nueva configuración de rental");
+              const result = await rentalPropertyService.createRentalProperty(rentalData);
+              console.log("✅ Configuración creada exitosamente:", result);
+            }
+            
+            console.log("🎉 Configuración de alquiler temporal guardada exitosamente");
+          } catch (rentalError) {
+            console.error("❌ usePropertyForm: Error saving rental config:", rentalError);
+            console.error("❌ Error details:", rentalError);
+            toast({
+              variant: 'warning',
+              title: 'Advertencia',
+              description: 'La propiedad se guardó, pero hubo un error al configurar el alquiler temporal. Por favor, intenta configurarlo nuevamente.',
+            });
+          }
+        } else {
+          console.log("⚠️ Configuración de alquiler temporal NO ACTIVADA o no existe");
+          console.log("   rentalConfig:", (formData as any).rentalConfig);
+          console.log("   enabled:", (formData as any).rentalConfig?.enabled);
         }
 
         return true;

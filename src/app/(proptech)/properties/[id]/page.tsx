@@ -432,12 +432,6 @@ export default function PropertyDetailsPage({ params }: PageProps) {
     window.open(file.url, '_blank');
   };
 
-  const handleViewVideo = () => {
-    if (property.videoUrl) {
-      window.open(property.videoUrl, '_blank');
-    }
-  };
-
   const handleVirtualTour = () => {
     if (property.virtualTourUrl) {
       window.open(property.virtualTourUrl, '_blank');

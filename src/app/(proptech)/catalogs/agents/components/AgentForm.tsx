@@ -1,9 +1,12 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AgentFormData } from '../types';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { paraguayUtils } from '@/lib/paraguay-config';
+import { Upload, Edit } from 'lucide-react';
+import { getEndpoint } from '@/lib/api-config';
+import ImageCropModal from '@/components/common/ImageCropModal';
 
 interface AgentFormProps {
   formData: AgentFormData;
@@ -24,6 +27,14 @@ export default function AgentForm({
   isLoading = false,
   agencies,
 }: AgentFormProps) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string>('');
+
   const handleInputChange = (field: keyof AgentFormData, value: string | boolean) => {
     setFormData({ ...formData, [field]: value });
   };
@@ -33,8 +44,191 @@ export default function AgentForm({
     handleInputChange('phone', formattedPhone);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Solo se permiten archivos de imagen (JPG, PNG, GIF, WEBP)');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo es demasiado grande. Máximo 5MB');
+      return;
+    }
+
+    // Leer la imagen y mostrar el modal de edición
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropModal(true);
+      setUploadError(null);
+    };
+    reader.readAsDataURL(file);
+
+    // Resetear el input
+    e.target.value = '';
+  };
+
+  const handleCropComplete = (croppedImageBlob: Blob) => {
+    try {
+      setShowCropModal(false);
+      setUploadError(null);
+
+      // Guardar el blob para subirlo después al guardar el formulario
+      setPendingImageBlob(croppedImageBlob);
+      
+      // Crear URL local para previsualización
+      const localUrl = URL.createObjectURL(croppedImageBlob);
+      setPreviewUrl(localUrl);
+      
+      // Guardar la URL original si aún no lo hemos hecho
+      if (!originalPhotoUrl && formData.photo) {
+        setOriginalPhotoUrl(formData.photo.split('?')[0]);
+      }
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setUploadError('Error al procesar la imagen. Por favor intenta nuevamente.');
+    } finally {
+      setSelectedImage(null);
+    }
+  };
+
+  const handleDeletePhoto = () => {
+    // Si hay una imagen pendiente, solo limpiar el estado local
+    if (pendingImageBlob || previewUrl) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPendingImageBlob(null);
+      setPreviewUrl(null);
+      return;
+    }
+    
+    // Si hay una foto guardada en el servidor, marcarla para eliminar al guardar
+    if (formData.photo) {
+      if (!originalPhotoUrl) {
+        setOriginalPhotoUrl(formData.photo.split('?')[0]);
+      }
+      handleInputChange('photo', '');
+      handleInputChange('fotoPerfilUrl', '');
+    }
+  };
+
+  const uploadPendingImage = async (): Promise<string | null> => {
+    if (!pendingImageBlob) return null;
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', pendingImageBlob, 'photo.jpg');
+      uploadFormData.append('fileName', 'photo.jpg');
+      
+      // Enviar URL de foto anterior para que la elimine del servidor
+      if (originalPhotoUrl) {
+        uploadFormData.append('oldPhotoUrl', originalPhotoUrl);
+      }
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(getEndpoint('/api/agents/upload-photo'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al subir la foto');
+      }
+
+      const result = await response.json();
+      return result.fileUrl;
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  };
+
+  const deletePhotoFromServer = async () => {
+    if (!originalPhotoUrl) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(getEndpoint('/api/agents/delete-photo'), {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ photoUrl: originalPhotoUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar la foto');
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedImage(null);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setUploading(true);
+      setUploadError(null);
+
+      // Si hay una imagen pendiente, subirla primero
+      if (pendingImageBlob) {
+        const newPhotoUrl = await uploadPendingImage();
+        if (newPhotoUrl) {
+          handleInputChange('photo', newPhotoUrl);
+          handleInputChange('fotoPerfilUrl', newPhotoUrl);
+          
+          // Esperar un momento para que el estado se actualice
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Limpiar el estado local
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        setPendingImageBlob(null);
+        setPreviewUrl(null);
+        setOriginalPhotoUrl('');
+      } 
+      // Si se eliminó la foto pero había una original, eliminarla del servidor
+      else if (!formData.photo && originalPhotoUrl) {
+        await deletePhotoFromServer();
+        setOriginalPhotoUrl('');
+      }
+
+      // Llamar al onSubmit original
+      onSubmit(e);
+      
+    } catch (error) {
+      console.error('Error in form submit:', error);
+      setUploadError('Error al procesar la imagen. Por favor intenta nuevamente.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={handleFormSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Nombre */}
         <div>
@@ -106,42 +300,6 @@ export default function AgentForm({
           <p className="text-xs text-gray-500 mt-1">Formato paraguayo: +595 981 123-456</p>
         </div>
 
-        {/* Usuario */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Usuario {!isEditing && '*'}
-          </label>
-          <input
-            type="text"
-            name="username"
-            required={!isEditing}
-            value={formData.username ?? ''}
-            onChange={(e) => handleInputChange('username', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            placeholder="usuario.agente"
-            disabled={isEditing && !formData.username}
-          />
-          {isEditing && !formData.username && (
-            <p className="text-xs text-gray-500 mt-1">Este agente no tiene usuario de sistema</p>
-          )}
-        </div>
-
-        {/* Contraseña */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contraseña {isEditing ? '(dejar vacío para mantener)' : '*'}
-          </label>
-          <input
-            type="password"
-            name="password"
-            required={!isEditing}
-            value={formData.password ?? ''}
-            onChange={(e) => handleInputChange('password', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            placeholder={isEditing ? "••••••••" : "Contraseña"}
-          />
-        </div>
-
         {/* Documento de Identidad */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -207,19 +365,99 @@ export default function AgentForm({
           </select>
         </div>
 
-        {/* Foto URL */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Foto URL
+        {/* Foto de Perfil */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Foto de Perfil
           </label>
-          <input
-            type="url"
-            name="photo"
-            value={formData.photo ?? ''}
-            onChange={(e) => handleInputChange('photo', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            placeholder="https://ejemplo.com/foto.jpg"
-          />
+          
+          <div className="flex flex-col md:flex-row gap-4 items-start">
+            {/* Preview de la foto */}
+            <div className="flex-shrink-0 relative">
+              {(previewUrl || formData.photo) ? (
+                <>
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+                    <img 
+                      key={previewUrl || formData.photo}
+                      src={
+                        previewUrl || 
+                        (formData.photo?.startsWith('http') ? formData.photo : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${formData.photo}`)
+                      }
+                      alt="Foto de perfil"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ccircle fill="%23ddd" cx="50" cy="50" r="50"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EFoto%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                  </div>
+                  <label
+                    htmlFor="agent-photo-upload"
+                    className="absolute -bottom-2 -right-2 p-2 bg-brand-600 text-white rounded-full cursor-pointer hover:bg-brand-700 transition-colors shadow-lg"
+                    title="Editar foto"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </label>
+                </>
+              ) : (
+                <div className="w-32 h-32 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                  <Upload className="w-12 h-12 text-gray-400" />
+                </div>
+              )}
+            </div>
+
+            {/* Controles de carga */}
+            <div className="flex-1 space-y-3">
+              {/* Botón de carga */}
+              <div>
+                <label 
+                  htmlFor="agent-photo-upload" 
+                  className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploading ? (
+                    <>
+                      <LoadingSpinner />
+                      <span>Subiendo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>Seleccionar Foto</span>
+                    </>
+                  )}
+                </label>
+                <input
+                  id="agent-photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  disabled={uploading}
+                  className="hidden"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Formatos: JPG, PNG, GIF, WEBP (máx. 5MB)
+                </p>
+              </div>
+
+              {/* Error de carga */}
+              {uploadError && (
+                <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+                  {uploadError}
+                </div>
+              )}
+
+              {/* Botón para eliminar foto */}
+              {(previewUrl || formData.photo) && (
+                <button
+                  type="button"
+                  onClick={handleDeletePhoto}
+                  disabled={uploading}
+                  className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
+                >
+                  {uploading ? 'Eliminando...' : 'Eliminar foto'}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Biografía */}
@@ -316,6 +554,17 @@ export default function AgentForm({
         <div className="flex justify-center items-center">
           <LoadingSpinner />
         </div>
+      )}
+
+      {/* Modal de edición de imagen */}
+      {showCropModal && selectedImage && (
+        <ImageCropModal
+          imageSrc={selectedImage}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={1}
+          circularCrop={true}
+        />
       )}
     </form>
   );

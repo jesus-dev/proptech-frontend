@@ -61,18 +61,9 @@ interface PlanFormData {
   isRecommended: boolean;
 }
 
-const AVAILABLE_FEATURES = [
-  { value: 'unlimited_properties', label: 'Propiedades Ilimitadas' },
-  { value: 'advanced_analytics', label: 'Analíticas Avanzadas' },
-  { value: 'priority_support', label: 'Soporte Prioritario' },
-  { value: 'custom_branding', label: 'Marca Personalizada' },
-  { value: 'api_access', label: 'Acceso a API' },
-  { value: 'white_label', label: 'White Label' },
-  { value: 'multi_user', label: 'Múltiples Usuarios' },
-  { value: 'advanced_reports', label: 'Reportes Avanzados' },
-  { value: 'integrations', label: 'Integraciones' },
-  { value: 'training_sessions', label: 'Sesiones de Capacitación' }
-];
+// ELIMINADO: AVAILABLE_FEATURES hardcoded
+// Las features deben ser dinámicas, ingresadas por el admin al crear cada plan
+// En el formulario, el admin puede escribir las features que quiera, no seleccionar de una lista fija
 
 export default function PlansAndProductsPage() {
   const [products, setProducts] = useState<SubscriptionProduct[]>([]);
@@ -199,14 +190,8 @@ export default function PlansAndProductsPage() {
     });
   };
 
-  const handleFeatureToggle = (feature: string) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.includes(feature)
-        ? prev.features.filter(f => f !== feature)
-        : [...prev.features, feature]
-    }));
-  };
+  // ELIMINADO: handleFeatureToggle - Ya no se usa
+  // Las features ahora son de texto libre, no checkboxes
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -734,24 +719,21 @@ export default function PlansAndProductsPage() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Características del Plan
+              Características del Plan (una por línea)
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
-              {AVAILABLE_FEATURES.map((feature) => (
-                <div key={feature.value} className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id={feature.value}
-                    checked={formData.features.includes(feature.value)}
-                    onChange={() => handleFeatureToggle(feature.value)}
-                    className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500 dark:border-gray-600"
-                  />
-                  <label htmlFor={feature.value} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {feature.label}
-                  </label>
-                </div>
-              ))}
-            </div>
+            <textarea
+              value={formData.features.join('\n')}
+              onChange={(e) => setFormData({
+                ...formData,
+                features: e.target.value.split('\n').filter(f => f.trim())
+              })}
+              rows={8}
+              placeholder="Escribe cada característica en una línea nueva:&#10;Propiedades ilimitadas&#10;Analíticas avanzadas&#10;Soporte prioritario&#10;Acceso a API&#10;Reportes personalizados&#10;..."
+              className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 text-sm transition-all duration-200"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Las características se mostrarán en la página pública de planes con un checkmark (✓). Escribe una por línea.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

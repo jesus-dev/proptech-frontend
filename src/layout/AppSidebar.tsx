@@ -20,7 +20,7 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import Logo from "@/components/common/Logo";
 
@@ -112,6 +112,26 @@ const navItems: NavItem[] = [
       {
         name: "Registro de Ventas",
         path: "/sales",
+      },
+    ],
+  },
+  {
+    name: "Alquileres Temporales",
+    path: "/rentals",
+    icon: <CalenderIcon />,
+    subItems: [
+      {
+        name: "Todas las Reservas",
+        path: "/rentals",
+      },
+      {
+        name: "Calendario",
+        path: "/rentals/calendar",
+      },
+      {
+        name: "Nueva Reserva",
+        path: "/rentals/new",
+        nuevo: true,
       },
     ],
   },
@@ -399,6 +419,33 @@ const catalogItems: NavItem[] = [
       {
         name: "Facilidades Cercanas",
         path: "/catalogs/nearby-facilities",
+      },
+    ],
+  },
+  {
+    name: "CMS - Sitio Web",
+    path: "/cms",
+    icon: <Globe className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Panel CMS",
+        path: "/cms",
+      },
+      {
+        name: "Blog",
+        path: "/cms/blog",
+      },
+      {
+        name: "Eventos",
+        path: "/cms/events",
+      },
+      {
+        name: "Páginas Web",
+        path: "/cms/pages",
+      },
+      {
+        name: "Galería de Medios",
+        path: "/cms/media",
       },
     ],
   },

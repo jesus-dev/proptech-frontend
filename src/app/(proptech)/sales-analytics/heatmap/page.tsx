@@ -60,7 +60,7 @@ export default function HeatmapPage() {
     city: '',
     search: ''
   });
-  const [zoom, setZoom] = useState(6);
+  const [zoom, setZoom] = useState(13);
   const [isClient, setIsClient] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
@@ -192,16 +192,20 @@ export default function HeatmapPage() {
     
     const totalProperties = propertiesArray.length;
     const propertiesWithCoords = propertiesArray.filter(p => p.latitude && p.longitude).length;
+    const propertiesWithoutCoords = totalProperties - propertiesWithCoords;
     const totalValue = propertiesArray.reduce((sum, p) => sum + (p.price || 0), 0);
     const avgPrice = totalProperties > 0 ? totalValue / totalProperties : 0;
     const cities = new Set(propertiesArray.map(p => p.city).filter(Boolean)).size;
+    const coordsPercentage = totalProperties > 0 ? (propertiesWithCoords / totalProperties) * 100 : 0;
 
     return {
       totalProperties,
       propertiesWithCoords,
+      propertiesWithoutCoords,
       totalValue,
       avgPrice,
-      cities
+      cities,
+      coordsPercentage
     };
   };
 
@@ -268,7 +272,7 @@ export default function HeatmapPage() {
                 </h1>
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-lg">
-                Visualiza la concentración y distribución de propiedades por zona
+                Visualiza la concentración y distribución de propiedades en Ciudad del Este
               </p>
             </div>
 
@@ -316,7 +320,12 @@ export default function HeatmapPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Con Coordenadas</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.propertiesWithCoords.toLocaleString()}</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.propertiesWithCoords.toLocaleString()}</p>
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                    ({stats.coordsPercentage.toFixed(0)}%)
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -438,6 +447,48 @@ export default function HeatmapPage() {
           </div>
         )}
 
+        {/* Warning si no hay coordenadas */}
+        {stats.propertiesWithoutCoords > 0 && (
+          <div className="bg-amber-50/80 dark:bg-amber-900/20 backdrop-blur-sm rounded-2xl shadow-lg border border-amber-200/50 dark:border-amber-800/50 p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <InformationCircleIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                  {stats.propertiesWithoutCoords} {stats.propertiesWithoutCoords === 1 ? 'propiedad sin' : 'propiedades sin'} coordenadas
+                </h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
+                  Estas propiedades no aparecen en el mapa. Para visualizarlas, necesitan tener latitud y longitud.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => {
+                      const propertiesWithoutCoords = properties.filter(p => !p.latitude || !p.longitude);
+                      console.log('Propiedades sin coordenadas:', propertiesWithoutCoords);
+                      alert(`${propertiesWithoutCoords.length} propiedades sin coordenadas.\nRevisa la consola para más detalles.`);
+                    }}
+                    className="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors duration-200"
+                  >
+                    <EyeIcon className="w-4 h-4 mr-2" />
+                    Ver Lista
+                  </button>
+                  <a
+                    href="/properties"
+                    className="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-lg shadow-sm hover:bg-amber-50 dark:hover:bg-gray-700 transition-colors duration-200"
+                  >
+                    <HomeIcon className="w-4 h-4 mr-2" />
+                    Ir a Propiedades
+                  </a>
+                </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
+                  💡 Puedes agregar coordenadas editando cada propiedad o usando servicios de geocodificación
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Map Container */}
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
           <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
@@ -449,6 +500,11 @@ export default function HeatmapPage() {
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   {heatmapData.length} puntos de calor detectados
+                  {heatmapData.length === 0 && stats.totalProperties > 0 && (
+                    <span className="ml-2 text-amber-600 dark:text-amber-400">
+                      · Agrega coordenadas a tus propiedades para visualizarlas
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center space-x-4">
@@ -465,15 +521,49 @@ export default function HeatmapPage() {
           </div>
           
           <div className="h-[600px] relative">
-                         {isClient && (
-               <HeatmapMap
-                 heatmapData={heatmapData}
-                 zoom={zoom}
-                 formatCurrency={formatCurrency}
-                 getMarkerColor={getMarkerColor}
-                 onPropertyClick={setSelectedProperty}
-               />
-             )}
+            {heatmapData.length === 0 && stats.totalProperties > 0 ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-sm">
+                <div className="text-center max-w-md p-8">
+                  <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <MapPinIcon className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    Sin Datos Geográficos
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    Tus propiedades necesitan coordenadas (latitud y longitud) para aparecer en el mapa.
+                  </p>
+                  <div className="space-y-3 text-sm text-left bg-white/80 dark:bg-gray-800/80 rounded-xl p-4">
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">1.</span>
+                      <span className="text-gray-700 dark:text-gray-300">
+                        Edita tus propiedades y agrega las coordenadas manualmente
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">2.</span>
+                      <span className="text-gray-700 dark:text-gray-300">
+                        Usa un servicio de geocodificación para obtenerlas automáticamente
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">3.</span>
+                      <span className="text-gray-700 dark:text-gray-300">
+                        Las coordenadas de Ciudad del Este: Lat: -25.5095, Lng: -54.6154
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : isClient && (
+              <HeatmapMap
+                heatmapData={heatmapData}
+                zoom={zoom}
+                formatCurrency={formatCurrency}
+                getMarkerColor={getMarkerColor}
+                onPropertyClick={setSelectedProperty}
+              />
+            )}
           </div>
         </div>
 

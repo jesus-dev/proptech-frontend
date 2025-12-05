@@ -20,8 +20,6 @@ export default function NewAgentPage() {
     bio: '',
     photo: '',
     agencyId: '',
-    username: '',
-    password: '',
     isActive: true,
     active: true,
   });

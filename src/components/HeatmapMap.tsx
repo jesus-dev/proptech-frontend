@@ -83,9 +83,9 @@ export default function HeatmapMap({
           return;
         }
 
-        // Crear nuevo mapa
+        // Crear nuevo mapa - Centrado en Ciudad del Este
         const map = L.map(mapRef.current, {
-          center: [-25.2637, -57.5759],
+          center: [-25.5095, -54.6154],
           zoom: zoom,
           zoomControl: true
         });

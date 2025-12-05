@@ -34,8 +34,6 @@ export default function EditAgentClient({ agent, agencies, agentId }: EditAgentC
     fotoPerfilUrl: '',
     agencyId: '',
     agencyName: '',
-    username: '',
-    password: '',
     isActive: true,
     active: true,
     role: 'agente'
@@ -61,8 +59,6 @@ export default function EditAgentClient({ agent, agencies, agentId }: EditAgentC
         fotoPerfilUrl: agent.fotoPerfilUrl || agent.photo || '',
         agencyId: agent.agencyId || '',
         agencyName: agent.agencyName || '',
-        username: agent.username || '',
-        password: '', // Siempre vacío en edición
         isActive: agent.isActive !== undefined ? agent.isActive : true,
         active: agent.active !== undefined ? agent.active : true,
         role: agent.role || 'agente'

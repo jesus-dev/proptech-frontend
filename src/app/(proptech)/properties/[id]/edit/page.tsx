@@ -14,8 +14,10 @@ import VisibilityStep from "../../components/steps/VisibilityStep";
 import FloorPlansStep, { FloorPlanForm } from "../../components/steps/FloorPlansStep";
 import OwnerInfoStep from "../../components/steps/OwnerInfoStep";
 import NearbyFacilitiesStep from "../../components/steps/NearbyFacilitiesStep";
+import RentalConfigStep from "../../components/steps/RentalConfigStep";
 import { propertyService } from "../../services/propertyService";
 import { getActivePropertyTypes } from '@/services/publicPropertyTypeService';
+import { rentalPropertyService } from "@/app/(proptech)/rentals/services/rentalPropertyService";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -148,14 +150,53 @@ export default function EditPropertyPage({ params }: PageProps) {
             processedFeaturedImage = processFeaturedImageUrl(propertyData.images[0]);
           }
 
+          // Cargar configuración de alquiler temporal si existe
+          let rentalConfig = null;
+          try {
+            console.log("🔍 Verificando si la propiedad tiene configuración de rental...");
+            const rentalProperty = await rentalPropertyService.getRentalPropertyByPropertyId(parseInt(propertyId));
+            if (rentalProperty) {
+              console.log("✅ Configuración de rental encontrada:", rentalProperty);
+              rentalConfig = {
+                enabled: true,
+                pricePerNight: rentalProperty.pricePerNight,
+                pricePerWeek: rentalProperty.pricePerWeek,
+                pricePerMonth: rentalProperty.pricePerMonth,
+                cleaningFee: rentalProperty.cleaningFee,
+                currency: rentalProperty.currency,
+                minNights: rentalProperty.minNights,
+                maxNights: rentalProperty.maxNights,
+                maxGuests: rentalProperty.maxGuests,
+                checkInTime: rentalProperty.checkInTime,
+                checkOutTime: rentalProperty.checkOutTime,
+                instantBooking: rentalProperty.instantBooking,
+                rentalType: rentalProperty.rentalType,
+                petsAllowed: rentalProperty.petsAllowed,
+                petFee: rentalProperty.petFee,
+                smokingAllowed: rentalProperty.smokingAllowed,
+                eventsAllowed: rentalProperty.eventsAllowed,
+                wifiAvailable: rentalProperty.wifiAvailable,
+                cancellationPolicy: rentalProperty.cancellationPolicy,
+                houseRules: rentalProperty.houseRules,
+              };
+            } else {
+              console.log("ℹ️ No hay configuración de rental para esta propiedad");
+            }
+          } catch (error) {
+            console.log("ℹ️ No se encontró configuración de rental (esperado si no está configurada):", error);
+          }
+
           const initialData = {
             ...propertyData,
             id: propertyId,
             amenities: amenitiesIds,
             type: typeName,
             propertyTypeId: propertyData.propertyTypeId,
-            featuredImage: processedFeaturedImage
+            featuredImage: processedFeaturedImage,
+            rentalConfig: rentalConfig, // ← NUEVO
           };
+          
+          console.log("📦 InitialData con rentalConfig:", initialData);
           
           setInitialPropertyData(initialData);
         } else {
@@ -526,6 +567,15 @@ export default function EditPropertyPage({ params }: PageProps) {
       requiredFields: [],
       isCompleted: false,
       hasErrors: false
+    },
+    {
+      id: 12,
+      title: "Alquiler Temporal",
+      description: "Configuración para alquileres de corta duración (opcional)",
+      icon: <Calendar className="h-5 w-5" aria-label="Icono de alquiler temporal" />,
+      requiredFields: [],
+      isCompleted: false,
+      hasErrors: false
     }
   ];
 
@@ -709,6 +759,14 @@ export default function EditPropertyPage({ params }: PageProps) {
           <OwnerInfoStep
             formData={formData}
             handleChange={handleChange}
+            errors={errors}
+          />
+        );
+      case 12:
+        return (
+          <RentalConfigStep
+            formData={formData}
+            onChange={handleChange}
             errors={errors}
           />
         );

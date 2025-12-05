@@ -1,23 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Agency, AgencyFormData } from '../../types';
 import { getAgencyById, updateAgency } from '../../services/agencyService';
 import AgencyForm from '../../components/AgencyForm';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { ChevronLeft } from 'lucide-react';
 
-interface PageProps {
-  params: Promise<{ id: string }>
-}
-
-export default function EditAgencyPage({ params }: PageProps) {
-  const [agencyId, setAgencyId] = useState<string>('');
-  
-  useEffect(() => {
-    params.then(({ id }) => setAgencyId(id));
-  }, [params]);
+export default function EditAgencyPage() {
+  const params = useParams();
+  const agencyId = params?.id as string;
   const router = useRouter();
   const [agency, setAgency] = useState<Agency | null>(null);
   const [formData, setFormData] = useState<AgencyFormData>({

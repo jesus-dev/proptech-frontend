@@ -13,6 +13,7 @@ import VisibilityStep from "../components/steps/VisibilityStep";
 import FloorPlansStep, { FloorPlanForm } from "../components/steps/FloorPlansStep";
 import OwnerInfoStep from "../components/steps/OwnerInfoStep";
 import NearbyFacilitiesStep from "../components/steps/NearbyFacilitiesStep";
+import RentalConfigStep from "../components/steps/RentalConfigStep";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -29,7 +30,8 @@ import {
   Eye,
   Loader2,
   Users,
-  User
+  User,
+  Calendar
 } from "lucide-react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { currencyService } from "@/app/(proptech)/catalogs/services/catalogService";
@@ -316,6 +318,15 @@ export default function NewPropertyPage() {
       requiredFields: [],
       isCompleted: false,
       hasErrors: false
+    },
+    {
+      id: 12,
+      title: "Alquiler Temporal",
+      description: "Configuración para alquileres de corta duración (opcional)",
+      icon: <Calendar className="h-5 w-5" aria-label="Icono de alquiler temporal" />,
+      requiredFields: [],
+      isCompleted: false,
+      hasErrors: false
     }
   ];
 
@@ -467,6 +478,14 @@ export default function NewPropertyPage() {
           <OwnerInfoStep
             formData={formData}
             handleChange={handleChange}
+            errors={errors}
+          />
+        );
+      case 12:
+        return (
+          <RentalConfigStep
+            formData={formData}
+            onChange={handleChange}
             errors={errors}
           />
         );

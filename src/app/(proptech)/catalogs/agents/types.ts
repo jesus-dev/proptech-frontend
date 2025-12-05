@@ -57,9 +57,6 @@ export interface AgentFormData {
   bio?: string;
   agencyId?: string;
   isActive?: boolean;
-  // User (solo para login)
-  username?: string;
-  password?: string;
   // Campos legacy (compatibilidad)
   firstName?: string;
   lastName?: string;
