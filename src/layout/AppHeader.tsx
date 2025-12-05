@@ -2,6 +2,7 @@
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
+import TenantIndicator from "@/components/tenant/TenantIndicator";
 import { useSidebar } from "@/context/SidebarContext";
 import { useAuth } from "@/hooks/useAuth";
 import React, { useRef, useEffect } from "react";
@@ -130,6 +131,9 @@ const AppHeaderCRM: React.FC = () => {
               </div>
             </form>
           </div>
+          {/* Indicador de Tenant (solo visible para Super Admin) */}
+          <TenantIndicator />
+          
           <div className="flex items-center gap-2 2xsm:gap-3">
             <ThemeToggleButton />
             <NotificationDropdown />

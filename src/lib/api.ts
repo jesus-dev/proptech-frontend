@@ -29,13 +29,27 @@ const apiClient = axios.create({
   },
 });
 
-// Interceptor para agregar token de autenticación
+// Interceptor para agregar token de autenticación y tenant seleccionado
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token && token !== 'undefined' && token !== 'null') {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Si es SUPER_ADMIN y tiene un tenant seleccionado, enviarlo en el header
+    const selectedTenant = localStorage.getItem('selectedTenant');
+    if (selectedTenant) {
+      try {
+        const tenant = JSON.parse(selectedTenant);
+        if (tenant && tenant.id) {
+          config.headers['X-Selected-Tenant-Id'] = tenant.id.toString();
+        }
+      } catch (e) {
+        // Ignorar si el JSON está corrupto
+      }
+    }
+    
     return config;
   },
   (error) => {
