@@ -126,7 +126,7 @@ export default function AsesorDetailPage({ params }: { params: { id: string } })
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section con perfil del asesor */}
-      <section className="relative -mt-14 sm:-mt-16 bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 pt-20 pb-12 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] px-0">
+      <section className="relative -mt-[3.5rem] sm:-mt-16 bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 pt-12 sm:pt-16 pb-12 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] px-0">
         {/* Botón de volver */}
         <div className="absolute top-20 left-4 sm:left-8 z-20">
           <button

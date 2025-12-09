@@ -14,7 +14,11 @@ import {
   CloudIcon,
   ClockIcon,
   SparklesIcon,
-  RocketLaunchIcon
+  RocketLaunchIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  MapPinIcon,
+  ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import { PROPTECH_STATS, PROPTECH_STATS_COPY } from './constants/proptechStats';
 
@@ -263,15 +267,73 @@ const FeaturesSection = () => {
                 ))}
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <button className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 rounded-2xl hover:bg-gray-100 transition-all duration-300 font-bold text-base shadow-xl hover:shadow-2xl hover:scale-105">
-                  Ver Demo Gratis
-                  <span className="ml-2">🎬</span>
-                </button>
-                <button className="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-white rounded-2xl hover:bg-white hover:text-gray-900 transition-all duration-300 font-bold text-base">
-                  Hablar con un Experto
-                  <span className="ml-2">💬</span>
-                </button>
+              <div className="flex justify-center mb-10">
+                <a
+                  href="/proptech"
+                  className="inline-flex items-center justify-center px-10 py-5 bg-white text-gray-900 rounded-2xl hover:bg-gray-100 transition-all duration-300 font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105"
+                >
+                  Descubre PropTech
+                  <ArrowRightIcon className="w-5 h-5 ml-2" />
+                </a>
+              </div>
+
+              {/* Información de Contacto */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 pt-12 border-t border-white/20">
+                {[
+                  {
+                    icon: PhoneIcon,
+                    title: "Teléfono",
+                    subtitle: "Llámanos ahora",
+                    value: "+595 985 940797",
+                    action: "tel:+595985940797",
+                    color: "from-emerald-500 to-teal-600"
+                  },
+                  {
+                    icon: EnvelopeIcon,
+                    title: "Email",
+                    subtitle: "Escríbenos",
+                    value: "info@proptech.com.py",
+                    action: "mailto:info@proptech.com.py",
+                    color: "from-blue-500 to-cyan-600"
+                  },
+                  {
+                    icon: MapPinIcon,
+                    title: "Ubicación",
+                    subtitle: "Visítanos",
+                    value: "Ciudad del Este, Paraguay",
+                    action: "#",
+                    color: "from-purple-500 to-indigo-600"
+                  }
+                ].map((contact, index) => (
+                  <motion.div
+                    key={contact.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="group text-center"
+                  >
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-500 hover:scale-105 hover:shadow-2xl">
+                      <div className={`w-14 h-14 bg-gradient-to-r ${contact.color} rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                        <contact.icon className="w-7 h-7 text-white" />
+                      </div>
+                      
+                      <h3 className="text-lg font-bold text-white mb-1 group-hover:text-cyan-300 transition-colors">
+                        {contact.title}
+                      </h3>
+                      <p className="text-blue-200 text-xs mb-3 font-medium">
+                        {contact.subtitle}
+                      </p>
+                      
+                      <a
+                        href={contact.action}
+                        className="inline-block text-sm font-semibold text-cyan-300 hover:text-white transition-colors duration-300 hover:underline"
+                      >
+                        {contact.value}
+                      </a>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>

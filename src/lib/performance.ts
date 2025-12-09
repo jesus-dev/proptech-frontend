@@ -197,7 +197,7 @@ export function initPerformanceMonitoring() {
       'Download': perfData.responseEnd - perfData.responseStart,
       'DOM Processing': perfData.domComplete - perfData.domInteractive,
       'Total Load Time': perfData.loadEventEnd - perfData.fetchStart,
-    });
+    };
   });
 }
 

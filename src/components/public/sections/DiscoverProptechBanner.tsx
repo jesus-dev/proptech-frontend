@@ -23,7 +23,7 @@ const bulletPoints = [
 
 export default function DiscoverProptechBanner() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-br from-white via-brand-50/40 to-white shadow-lg">
+    <section id="descubre-proptech" className="relative overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-br from-white via-brand-50/40 to-white shadow-lg">
       <div className="absolute inset-0 opacity-60 mix-blend-screen">
         <div className="absolute top-[-20%] right-[-10%] h-64 w-64 rounded-full bg-brand-200 blur-3xl"></div>
         <div className="absolute bottom-[-25%] left-[-15%] h-72 w-72 rounded-full bg-brand-300 blur-3xl"></div>

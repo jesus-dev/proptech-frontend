@@ -1,11 +1,81 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
+import Script from "next/script";
 import { publicPropertyService } from "@/services/publicPropertyService";
 import { getImageBaseUrl } from "@/config/environment";
+import { generatePropertyStructuredData } from "@/lib/seo";
 import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, StarIcon, CheckCircleIcon, VideoCameraIcon, MapIcon, ArrowLeftIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon, WifiIcon, ShieldCheckIcon, ClockIcon, BanknotesIcon, DocumentTextIcon, InformationCircleIcon, XMarkIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+
+// Componente para manejar gestos de swipe en mobile
+const SwipeHandler = ({ onSwipeLeft, onSwipeRight }: { onSwipeLeft: () => void; onSwipeRight: () => void }) => {
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Ignorar si el toque es en un botón u otro elemento interactivo
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="button"]')) {
+      return;
+    }
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Ignorar si el toque es en un botón u otro elemento interactivo
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="button"]')) {
+      touchStartX.current = null;
+      touchStartY.current = null;
+      return;
+    }
+
+    if (!touchStartX.current || !touchStartY.current) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaX = touchEndX - touchStartX.current;
+    const deltaY = touchEndY - touchStartY.current;
+
+    // Solo procesar swipe horizontal si es más pronunciado que el vertical
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+      if (deltaX > 0) {
+        onSwipeRight();
+      } else {
+        onSwipeLeft();
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  return (
+    <div
+      className="block sm:hidden absolute inset-0 z-0 pointer-events-none"
+      style={{ touchAction: 'pan-y' }}
+    >
+      {/* Solo capturar eventos en el área central, no en los bordes donde están los botones */}
+      <div
+        className="absolute inset-0 pointer-events-auto"
+        style={{
+          left: '80px',
+          right: '80px',
+          top: '80px',
+          bottom: '80px',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+};
 
 // Función helper para construir URLs completas de imágenes
 const getImageUrl = (imagePath: string | null | undefined): string => {
@@ -70,6 +140,7 @@ export default function PropertyDetailPage() {
   const [error, setError] = useState<string>('');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [mounted, setMounted] = useState(false);
   
   // Estados para secciones expandibles
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -78,6 +149,45 @@ export default function PropertyDetailPage() {
     location: false,
     additional: false
   });
+
+  // Inicializar mounted para el portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevenir scroll del body cuando el lightbox está abierto
+  useEffect(() => {
+    if (lightboxOpen) {
+      // Guardar la posición actual del scroll
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restaurar el scroll
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+    
+    return () => {
+      // Cleanup: restaurar siempre al desmontar
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    };
+  }, [lightboxOpen]);
 
   // Botón WhatsApp flotante con DOM puro - se crea inmediatamente
   useEffect(() => {
@@ -114,7 +224,7 @@ export default function PropertyDetailPage() {
         'font-size: 30px',
         'text-decoration: none',
         'box-shadow: 0 4px 12px rgba(0,0,0,0.3)',
-        'z-index: 2147483647',
+        'z-index: 999999',
         'cursor: pointer',
         'display: flex',
         'align-items: center',
@@ -374,107 +484,180 @@ export default function PropertyDetailPage() {
     }
   };
 
+  // Generar structured data para SEO
+  const structuredData = property ? generatePropertyStructuredData({
+    id: property.id,
+    title: property.title,
+    description: property.description,
+    price: property.price || 0,
+    currencyCode: property.currencyCode || 'PYG',
+    address: property.address,
+    cityName: property.cityName,
+    stateName: property.stateName,
+    countryName: property.countryName,
+    zipCode: property.zipCode,
+    bedrooms: property.bedrooms,
+    bathrooms: property.bathrooms,
+    area: property.area,
+    propertyType: property.propertyType,
+    operacion: property.operacion,
+    featuredImage: property.featuredImage,
+    slug: property.slug,
+    agent: property.agent ? {
+      name: property.agent.name,
+      email: property.agent.email,
+      phone: property.agent.phone || property.agent.mobile,
+    } : undefined,
+  }) : null;
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
-      {/* Header con información principal */}
-      <section className="relative pt-20 pb-16 overflow-hidden">
-        {/* Imagen de fondo de la propiedad */}
-        <div className="absolute inset-0 z-0">
+    <main className="min-h-screen bg-white">
+      {/* Structured Data para SEO */}
+      {structuredData && (
+        <Script
+          id="property-structured-data"
+          type="application/ld+json"
+          strategy="afterInteractive"
+        >
+          {JSON.stringify(structuredData)}
+        </Script>
+      )}
+      
+      {/* Header con información principal - Diseño Premium */}
+      <section className="relative pt-0 pb-0 overflow-visible">
+        {/* Imagen de fondo de la propiedad con overlay mejorado */}
+        <div className="absolute inset-0 z-0 min-h-[100vh] sm:min-h-[85vh] lg:min-h-[70vh]">
           <img 
             src={images[0]} 
             alt={property.title} 
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+            className="w-full h-full object-cover"
+            loading="eager"
+            fetchPriority="high"
           />
-          {/* Overlay para mejor legibilidad */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/85 via-blue-900/75 to-cyan-900/70"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent"></div>
+          {/* Overlay premium con gradiente más sofisticado */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none"></div>
           
-          {/* Indicador visual de que es clickeable */}
-          <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium opacity-80 hover:opacity-100 transition-opacity">
-            <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Indicador visual premium */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Opening gallery from header button');
+              setLightboxIndex(0);
+              setLightboxOpen(true);
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Touch - Opening gallery from header button');
+              setLightboxIndex(0);
+              setLightboxOpen(true);
+            }}
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-white/10 backdrop-blur-md text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold border border-white/20 hover:bg-white/20 active:bg-white/30 transition-all duration-300 shadow-xl cursor-pointer"
+            style={{ zIndex: 9999, pointerEvents: 'auto' }}
+            aria-label="Ver galería completa"
+          >
+            <svg className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1.5 sm:mr-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            Haz clic para ver en grande
-          </div>
+            <span className="hidden sm:inline pointer-events-none">Ver galería completa</span>
+            <span className="sm:hidden pointer-events-none">Galería</span>
+          </button>
         </div>
         
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Información principal */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Badge y título */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow-lg">
-                    <SparklesIcon className="w-4 h-4 mr-2" />
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-32 pb-16 sm:pb-20 lg:pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Información principal - Diseño Premium */}
+            <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+              {/* Badge y título premium */}
+              <div className="space-y-4 sm:space-y-6">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <span className="inline-flex items-center px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs font-bold tracking-wider uppercase bg-white/95 backdrop-blur-sm text-gray-900 shadow-xl border border-white/50">
+                    <SparklesIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-blue-600" />
                     {property.operacion === 'SALE' ? 'EN VENTA' : 'EN ALQUILER'}
                   </span>
                   {property.featured && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <span className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-lg">
                       ⭐ Destacada
                     </span>
                   )}
                 </div>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight drop-shadow-xl">
-                  {property.title}
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
+                  <span className="block">{property.title}</span>
                 </h1>
-                <div className="flex items-center gap-2 text-white/90">
-                  <MapPinIcon className="w-5 h-5 drop-shadow-lg" />
-                  <span className="text-lg font-medium drop-shadow-lg">{property.cityName || property.address || 'Ubicación no disponible'}</span>
+                <div className="flex items-center gap-2 sm:gap-3 text-white/95">
+                  <MapPinIcon className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+                  <span className="text-base sm:text-xl font-medium">{property.cityName || property.address || 'Ubicación no disponible'}</span>
                 </div>
               </div>
 
-              {/* Características principales */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg hover:bg-white/25 transition-all duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <HomeModernIcon className="w-5 h-5 text-cyan-200" />
-                    <span className="text-white font-semibold text-sm">Habitaciones</span>
+              {/* Características principales - Diseño Premium */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 shadow-2xl hover:bg-white/15 hover:scale-105 transition-all duration-300 group">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl group-hover:bg-white/30 transition-colors">
+                      <HomeModernIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{property.bedrooms}</div>
+                    <div className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">Habitaciones</div>
                   </div>
-                  <div className="text-2xl font-bold text-white drop-shadow-lg">{property.bedrooms}</div>
                 </div>
-                <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg hover:bg-white/25 transition-all duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <UserIcon className="w-5 h-5 text-cyan-200" />
-                    <span className="text-white font-semibold text-sm">Baños</span>
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 shadow-2xl hover:bg-white/15 hover:scale-105 transition-all duration-300 group">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl group-hover:bg-white/30 transition-colors">
+                      <UserIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{property.bathrooms}</div>
+                    <div className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">Baños</div>
                   </div>
-                  <div className="text-2xl font-bold text-white drop-shadow-lg">{property.bathrooms}</div>
                 </div>
-                <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg hover:bg-white/25 transition-all duration-300">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CurrencyDollarIcon className="w-5 h-5 text-cyan-200" />
-                    <span className="text-white font-semibold text-sm">Área</span>
+                <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 shadow-2xl hover:bg-white/15 hover:scale-105 transition-all duration-300 group">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl group-hover:bg-white/30 transition-colors">
+                      <CurrencyDollarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{property.area}</div>
+                    <div className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">m²</div>
                   </div>
-                  <div className="text-2xl font-bold text-white drop-shadow-lg">{property.area} m²</div>
                 </div>
                 {property.parking && (
-                  <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg hover:bg-white/25 transition-all duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-5 h-5 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="7" rx="2" />
-                        <path d="M7 18v2m10-2v2" />
-                      </svg>
-                      <span className="text-white font-semibold text-sm">Estacionamientos</span>
+                  <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 shadow-2xl hover:bg-white/15 hover:scale-105 transition-all duration-300 group">
+                    <div className="flex flex-col items-center text-center">
+                      <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl group-hover:bg-white/30 transition-colors">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <rect x="3" y="11" width="18" height="7" rx="2" />
+                          <path d="M7 18v2m10-2v2" />
+                        </svg>
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{property.parking}</div>
+                      <div className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">Estacionamientos</div>
                     </div>
-                    <div className="text-2xl font-bold text-white drop-shadow-lg">{property.parking}</div>
                   </div>
                 )}
               </div>
 
-              {/* Precio destacado */}
-              <div className="bg-white/25 backdrop-blur-md rounded-2xl p-6 border border-white/40 shadow-2xl">
-                <div className="text-white/90 text-lg mb-2 font-medium">Precio</div>
-                <div className="text-4xl sm:text-5xl font-bold text-white drop-shadow-xl">
+              {/* Precio destacado - Diseño Premium */}
+              <div className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-white/30 shadow-2xl">
+                <div className="text-white/80 text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2 sm:mb-3">Precio</div>
+                <div className="text-2xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-white mb-1 sm:mb-2 tracking-tight leading-tight break-words">
                   {formatPrice(property.price || 0, property.currencyCode || 'PYG')}
                 </div>
                 {property.operacion === 'RENT' && (
-                  <div className="text-white/80 text-sm mt-2 font-medium">por mes</div>
+                  <div className="text-white/70 text-xs sm:text-base font-medium">por mes</div>
                 )}
               </div>
             </div>
 
-            {/* Card del agente */}
-            <div className="lg:col-span-1">
+            {/* Card del agente - Diseño Premium */}
+            <div className="lg:col-span-1 mt-8 lg:mt-0">
               {(property.agent?.slug || property.agent?.id) ? (
                 <div 
                   onClick={(e) => {
@@ -492,7 +675,7 @@ export default function PropertyDetailPage() {
                     // Prevenir el comportamiento por defecto del mouse down
                     e.stopPropagation();
                   }}
-                  className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/30 sticky top-24 hover:shadow-3xl transition-all duration-300 cursor-pointer group"
+                  className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 lg:sticky lg:top-24 hover:shadow-3xl transition-all duration-300 cursor-pointer group backdrop-blur-sm"
                   style={{ position: 'relative', zIndex: 10 }}
                   role="button"
                   tabIndex={0}
@@ -506,66 +689,66 @@ export default function PropertyDetailPage() {
                     }
                   }}
                 >
-                    <div className="text-center mb-6">
-                      <div className="relative w-24 h-24 mx-auto mb-4">
+                    <div className="text-center mb-8">
+                      <div className="relative w-28 h-28 mx-auto mb-5">
                         {property.agent?.fotoPerfilUrl || property.agent?.avatar || property.agent?.photo ? (
                           <img 
                             src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar || property.agent.photo)} 
                             alt={property.agent?.name || property.agentName || 'Agente'} 
-                            className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg group-hover:scale-105 transition-transform" 
+                            className="w-full h-full rounded-full object-cover border-4 border-gray-100 shadow-xl group-hover:scale-105 transition-transform duration-300" 
                           />
                         ) : (property.agent?.name || property.agentName) ? (
-                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg group-hover:scale-105 transition-transform">
-                            <span className="text-white text-3xl font-bold">
+                          <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center border-4 border-gray-100 shadow-xl group-hover:scale-105 transition-transform duration-300">
+                            <span className="text-white text-4xl font-bold">
                               {(property.agent?.name || property.agentName).charAt(0).toUpperCase()}
                             </span>
                           </div>
                         ) : property.agencyName ? (
-                          <div className="w-full h-full bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-4 border-white shadow-lg group-hover:scale-105 transition-transform">
-                            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-full h-full bg-gradient-to-br from-slate-600 to-blue-700 rounded-full flex items-center justify-center border-4 border-gray-100 shadow-xl group-hover:scale-105 transition-transform duration-300">
+                            <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                           </div>
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-4 border-white shadow-lg group-hover:scale-105 transition-transform">
-                            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-full h-full bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center border-4 border-gray-100 shadow-xl group-hover:scale-105 transition-transform duration-300">
+                            <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                           </div>
                         )}
                         {(property.agent?.name || property.agentName) && (
-                          <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg">
-                            <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
+                          <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-white shadow-xl flex items-center justify-center">
+                            <div className="w-3 h-3 bg-white rounded-full"></div>
                           </div>
                         )}
                       </div>
                       
                       {/* Nombre y badge */}
-                      <div className="mb-3">
-                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      <div className="mb-4">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
                           {property.agent?.name || property.agentName || property.agencyName || 'Propietario'}
                         </h3>
                         
                         {/* Badge de tipo */}
                         {(property.agent?.name || property.agentName) ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200">
-                              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="flex items-center justify-center gap-2 mb-3">
+                            <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 border border-emerald-200 shadow-sm">
+                              <svg className="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                               Agente Verificado
                             </span>
                           </div>
                         ) : property.agencyName ? (
-                          <p className="text-blue-600 font-semibold text-sm">
+                          <p className="text-blue-600 font-semibold text-base">
                             Agencia Inmobiliaria
                           </p>
                         ) : null}
                         
                         {/* Agencia del agente */}
                         {(property.agent?.name || property.agentName) && property.agencyName && (
-                          <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-600">
-                            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                             <span className="font-medium">{property.agencyName}</span>
@@ -575,13 +758,13 @@ export default function PropertyDetailPage() {
                       
                       {/* Rating - Solo mostrar si hay datos */}
                       {property.agent?.rating && (
-                        <div className="flex items-center justify-center gap-1 mb-4">
+                        <div className="flex items-center justify-center gap-1 mb-6">
                           {[...Array(5)].map((_, i) => (
                             <svg 
                               key={i} 
                               className={`w-5 h-5 ${
                                 i < Math.floor(property.agent.rating || 0) 
-                                  ? 'text-yellow-400 fill-current' 
+                                  ? 'text-amber-400 fill-current' 
                                   : 'text-gray-300'
                               }`} 
                               viewBox="0 0 20 20"
@@ -589,7 +772,7 @@ export default function PropertyDetailPage() {
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                           ))}
-                          <span className="text-sm font-semibold text-gray-700 ml-2">
+                          <span className="text-sm font-bold text-gray-700 ml-2">
                             {property.agent.rating.toFixed(1)}
                           </span>
                         </div>
@@ -601,9 +784,9 @@ export default function PropertyDetailPage() {
                         <a 
                           href={`tel:${property.agent.phone || property.agent.mobile}`} 
                           onClick={(e) => e.stopPropagation()}
-                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-100"
                         >
-                          <PhoneIcon className="w-5 h-5 group-hover:animate-pulse" />
+                          <PhoneIcon className="w-5 h-5" />
                           <span>Llamar Ahora</span>
                         </a>
                       )}
@@ -613,9 +796,9 @@ export default function PropertyDetailPage() {
                           target="_blank" 
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-100"
                         >
-                          <ChatBubbleLeftRightIcon className="w-5 h-5 group-hover:animate-pulse" />
+                          <ChatBubbleLeftRightIcon className="w-5 h-5" />
                           <span>WhatsApp</span>
                         </a>
                       )}
@@ -623,9 +806,9 @@ export default function PropertyDetailPage() {
                         <a 
                           href={`mailto:${property.agent.email}`} 
                           onClick={(e) => e.stopPropagation()}
-                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-bold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                          className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gradient-to-r from-slate-700 to-gray-700 hover:from-slate-800 hover:to-gray-800 text-white font-bold rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-100"
                         >
-                          <EnvelopeIcon className="w-5 h-5 group-hover:animate-pulse" />
+                          <EnvelopeIcon className="w-5 h-5" />
                           <span>Enviar Email</span>
                         </a>
                       )}
@@ -827,32 +1010,73 @@ export default function PropertyDetailPage() {
         </div>
       </section>
 
-      {/* Galería de imágenes tipo Instagram */}
-      <section className="py-6 md:py-12 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-4 md:space-y-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">Galería de Imágenes</h2>
+      {/* Galería de imágenes - Diseño Premium */}
+      <section className="py-16 md:py-20 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="space-y-8 md:space-y-12">
+            <div className="text-center">
+              <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">Galería de Imágenes</h2>
+              <p className="text-gray-600 text-lg">Explora cada detalle de esta propiedad</p>
+            </div>
             
-            {/* Grid de imágenes */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+            {/* Grid de imágenes premium */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
               {images.map((img: string, idx: number) => (
                 <div
                   key={idx}
-                  onClick={() => { setLightboxIndex(idx); setLightboxOpen(true); }}
-                  className="relative group cursor-pointer aspect-square overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 md:hover:scale-105 bg-gray-100"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Opening lightbox for image', idx);
+                    setLightboxIndex(idx);
+                    setLightboxOpen(true);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Touch - Opening lightbox for image', idx);
+                    setLightboxIndex(idx);
+                    setLightboxOpen(true);
+                  }}
+                  className="relative group cursor-pointer aspect-square overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 md:hover:scale-[1.02] bg-gray-100 touch-manipulation border border-gray-200/50"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setLightboxIndex(idx);
+                      setLightboxOpen(true);
+                    }
+                  }}
+                  aria-label={`Ver imagen ${idx + 1} en pantalla completa`}
                 >
                   <img
                     src={img}
                     alt={`${property.title} - Imagen ${idx + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover pointer-events-none select-none"
+                    loading={idx < 4 ? "eager" : "lazy"}
+                    draggable={false}
+                    onContextMenu={(e) => e.preventDefault()}
                   />
+                  
+                  {/* Overlay hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
                   
                   {/* Indicador */}
                   {images.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium pointer-events-none">
+                    <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium pointer-events-none z-10">
                       {idx + 1}/{images.length}
                     </div>
                   )}
+                  
+                  {/* Icono de expandir en hover */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                      <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -870,110 +1094,131 @@ export default function PropertyDetailPage() {
         </div>
       </section>
 
-      {/* Información detallada - Layout vertical */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      {/* Información detallada - Diseño Premium */}
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           
-          {/* Descripción */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <SparklesIcon className="w-6 h-6 text-blue-500" />
-              Descripción
-            </h2>
-            <div className="text-gray-700 leading-relaxed">
+          {/* Descripción Premium */}
+          <div className="bg-white rounded-3xl p-10 md:p-12 shadow-xl border border-gray-100">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
+                <SparklesIcon className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">Descripción</h2>
+            </div>
+            <div className="text-gray-700 leading-relaxed text-base md:text-lg">
               {property.description ? (
                 <div 
-                  className="max-w-none break-words text-sm"
+                  className="max-w-none break-words prose prose-lg max-w-none"
                   style={{ whiteSpace: 'pre-line' }}
                   dangerouslySetInnerHTML={{ 
                     __html: stripHtml(property.description).replace(/\n/g, '<br/>') 
                   }}
                 />
               ) : (
-                <p className="text-gray-500 italic">Descripción no disponible.</p>
+                <p className="text-gray-500 italic text-lg">Descripción no disponible.</p>
               )}
             </div>
           </div>
 
-          {/* Características Principales */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-              <CheckCircleIcon className="w-6 h-6 text-blue-500" />
-              Características Principales
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="flex items-center gap-3 text-gray-700">
-                  <HomeModernIcon className="w-5 h-5 text-blue-500" />
-                  Habitaciones
-                </span>
-                <span className="font-semibold text-gray-900">{property.bedrooms}</span>
+          {/* Características Principales - Premium */}
+          <div className="bg-white rounded-3xl p-10 md:p-12 shadow-xl border border-gray-100">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
+                <CheckCircleIcon className="w-7 h-7 text-white" />
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="flex items-center gap-3 text-gray-700">
-                  <UserIcon className="w-5 h-5 text-blue-500" />
-                  Baños
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900">Características Principales</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                <span className="flex items-center gap-4 text-gray-700">
+                  <div className="p-2.5 bg-blue-100 rounded-lg">
+                    <HomeModernIcon className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <span className="font-semibold text-lg">Habitaciones</span>
                 </span>
-                <span className="font-semibold text-gray-900">{property.bathrooms}</span>
+                <span className="font-bold text-2xl text-gray-900">{property.bedrooms}</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="flex items-center gap-3 text-gray-700">
-                  <CurrencyDollarIcon className="w-5 h-5 text-blue-500" />
-                  Área Total
+              <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                <span className="flex items-center gap-4 text-gray-700">
+                  <div className="p-2.5 bg-indigo-100 rounded-lg">
+                    <UserIcon className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <span className="font-semibold text-lg">Baños</span>
                 </span>
-                <span className="font-semibold text-gray-900">{property.area} m²</span>
+                <span className="font-bold text-2xl text-gray-900">{property.bathrooms}</span>
+              </div>
+              <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                <span className="flex items-center gap-4 text-gray-700">
+                  <div className="p-2.5 bg-emerald-100 rounded-lg">
+                    <CurrencyDollarIcon className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <span className="font-semibold text-lg">Área Total</span>
+                </span>
+                <span className="font-bold text-2xl text-gray-900">{property.area} m²</span>
               </div>
               {property.landArea && (
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="flex items-center gap-3 text-gray-700">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    Área del Terreno
+                <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                  <span className="flex items-center gap-4 text-gray-700">
+                    <div className="p-2.5 bg-amber-100 rounded-lg">
+                      <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <span className="font-semibold text-lg">Área del Terreno</span>
                   </span>
-                  <span className="font-semibold text-gray-900">{property.landArea} m²</span>
+                  <span className="font-bold text-2xl text-gray-900">{property.landArea} m²</span>
                 </div>
               )}
               {property.parking && (
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="flex items-center gap-3 text-gray-700">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-2" />
-                    </svg>
-                    Estacionamientos
+                <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                  <span className="flex items-center gap-4 text-gray-700">
+                    <div className="p-2.5 bg-purple-100 rounded-lg">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="7" rx="2" />
+                        <path d="M7 18v2m10-2v2" />
+                      </svg>
+                    </div>
+                    <span className="font-semibold text-lg">Estacionamientos</span>
                   </span>
-                  <span className="font-semibold text-gray-900">{property.parking}</span>
+                  <span className="font-bold text-2xl text-gray-900">{property.parking}</span>
                 </div>
               )}
               {property.floors && (
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="flex items-center gap-3 text-gray-700">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    Pisos
+                <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                  <span className="flex items-center gap-4 text-gray-700">
+                    <div className="p-2.5 bg-rose-100 rounded-lg">
+                      <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <span className="font-semibold text-lg">Pisos</span>
                   </span>
-                  <span className="font-semibold text-gray-900">{property.floors}</span>
+                  <span className="font-bold text-2xl text-gray-900">{property.floors}</span>
                 </div>
               )}
               {property.yearBuilt && (
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="flex items-center gap-3 text-gray-700">
-                    <ClockIcon className="w-5 h-5 text-blue-500" />
-                    Año de Construcción
+                <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                  <span className="flex items-center gap-4 text-gray-700">
+                    <div className="p-2.5 bg-cyan-100 rounded-lg">
+                      <ClockIcon className="w-6 h-6 text-cyan-600" />
+                    </div>
+                    <span className="font-semibold text-lg">Año de Construcción</span>
                   </span>
-                  <span className="font-semibold text-gray-900">{property.yearBuilt}</span>
+                  <span className="font-bold text-2xl text-gray-900">{property.yearBuilt}</span>
                 </div>
               )}
               {property.propertyType && (
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <span className="flex items-center gap-3 text-gray-700">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    Tipo de Propiedad
+                <div className="flex items-center justify-between py-4 px-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100 hover:shadow-md transition-shadow">
+                  <span className="flex items-center gap-4 text-gray-700">
+                    <div className="p-2.5 bg-teal-100 rounded-lg">
+                      <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <span className="font-semibold text-lg">Tipo de Propiedad</span>
                   </span>
-                  <span className="font-semibold text-gray-900">{property.propertyType}</span>
+                  <span className="font-bold text-2xl text-gray-900">{property.propertyType}</span>
                 </div>
               )}
             </div>
@@ -1213,79 +1458,206 @@ export default function PropertyDetailPage() {
         </div>
       </section>
 
-      {/* Lightbox nuestro - SIMPLE y FUNCIONAL */}
-      {lightboxOpen && (
+      {/* Lightbox optimizado para mobile */}
+      {typeof mounted !== 'undefined' && mounted && lightboxOpen && createPortal(
         <div 
-          className="fixed inset-0 bg-black z-[99999] flex flex-col"
-          onClick={() => setLightboxOpen(false)}
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm flex flex-col overscroll-none"
+          onClick={(e) => {
+            // Solo cerrar si se hace clic directamente en el fondo (no en elementos hijos)
+            if (e.target === e.currentTarget) {
+              console.log('Closing lightbox');
+              setLightboxOpen(false);
+            }
+          }}
+          style={{ 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            maxHeight: '100vh',
+            overflow: 'hidden',
+            zIndex: 9999999,
+          }}
         >
-          {/* Header con botón cerrar y contador */}
-          <div className="flex items-center justify-between p-3 sm:p-4">
-            <div className="text-white text-sm font-medium">
+          {/* Header con botón cerrar y contador - Mejorado para mobile */}
+          <div 
+            className="flex items-center justify-between p-3 sm:p-4 bg-black/50 backdrop-blur-md border-b border-white/10 flex-shrink-0 relative z-50"
+            onClick={(e) => e.stopPropagation()}
+            style={{ zIndex: 50 }}
+          >
+            <div className="text-white text-sm sm:text-base font-medium">
               {lightboxIndex + 1} / {images.length}
             </div>
             <button
-              onClick={() => setLightboxOpen(false)}
-              className="w-10 h-10 sm:w-12 sm:h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setLightboxOpen(false);
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+              }}
+              className="w-10 h-10 sm:w-12 sm:h-12 bg-white/90 hover:bg-white active:bg-white/80 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg active:scale-95 relative z-50"
+              style={{ zIndex: 50 }}
+              aria-label="Cerrar galería"
             >
-              <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
+              <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-black pointer-events-none" />
             </button>
           </div>
 
-          {/* Contenedor de imagen con navegación */}
-          <div className="flex-1 flex items-center justify-center relative px-3 sm:px-4 pb-3 sm:pb-4">
-            {/* Botones de navegación */}
+          {/* Contenedor de imagen con navegación - Optimizado para mobile */}
+          <div 
+            className="flex-1 flex items-center justify-center relative px-2 sm:px-4 py-2 sm:py-4 min-h-0 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              touchAction: 'pan-y pinch-zoom',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            {/* Botones de navegación - Mejorados para mobile */}
             {images.length > 1 && (
               <>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev - 1 + images.length) % images.length); }}
-                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-colors z-10"
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setLightboxIndex((prev) => (prev - 1 + images.length) % images.length); 
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 bg-white/95 hover:bg-white active:bg-white/90 rounded-full flex items-center justify-center transition-all duration-200 z-50 shadow-xl active:scale-95 touch-manipulation"
+                  style={{ zIndex: 50 }}
+                  aria-label="Imagen anterior"
                 >
-                  <ArrowLeftIcon className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
+                  <ArrowLeftIcon className="w-6 h-6 sm:w-7 sm:h-7 text-black pointer-events-none" />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setLightboxIndex((prev) => (prev + 1) % images.length); }}
-                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-colors z-10"
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setLightboxIndex((prev) => (prev + 1) % images.length); 
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 bg-white/95 hover:bg-white active:bg-white/90 rounded-full flex items-center justify-center transition-all duration-200 z-50 shadow-xl active:scale-95 touch-manipulation"
+                  style={{ zIndex: 50 }}
+                  aria-label="Imagen siguiente"
                 >
-                  <ArrowRightIcon className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
+                  <ArrowRightIcon className="w-6 h-6 sm:w-7 sm:h-7 text-black pointer-events-none" />
                 </button>
               </>
             )}
             
-            {/* Imagen */}
-            <img
-              src={images[lightboxIndex]}
-              alt={`Imagen ${lightboxIndex + 1}`}
-              className="max-w-full max-h-full w-auto h-auto object-contain"
+            {/* Imagen - Optimizada para mobile */}
+            <div 
+              className="relative w-full h-full flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
-            />
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{
+                minHeight: 0,
+                maxHeight: '100%',
+              }}
+            >
+              <img
+                src={images[lightboxIndex]}
+                alt={`${property.title} - Imagen ${lightboxIndex + 1} de ${images.length}`}
+                className="max-w-full max-h-full w-auto h-auto object-contain select-none pointer-events-none"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: 'calc(100vh - 140px)',
+                  width: 'auto',
+                  height: 'auto',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  touchAction: 'none',
+                  pointerEvents: 'none',
+                }}
+                loading="eager"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+            </div>
           </div>
 
-          {/* Indicadores de puntos en mobile */}
+          {/* Indicadores de puntos en mobile - Mejorados */}
           {images.length > 1 && images.length <= 10 && (
-            <div className="flex items-center justify-center gap-2 pb-4 sm:hidden">
+            <div 
+              className="flex items-center justify-center gap-2 pb-4 sm:hidden flex-shrink-0 bg-black/50 backdrop-blur-md border-t border-white/10 pt-3 relative z-50"
+              onClick={(e) => e.stopPropagation()}
+              style={{ zIndex: 50 }}
+            >
               {images.map((_img: string, idx: number) => (
                 <button
                   key={idx}
-                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  onClick={(e) => { 
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setLightboxIndex(idx); 
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className={`h-2 rounded-full transition-all duration-300 touch-manipulation relative z-50 ${
                     idx === lightboxIndex 
-                      ? 'bg-white w-6' 
-                      : 'bg-white/50'
+                      ? 'bg-white w-8' 
+                      : 'bg-white/50 w-2 hover:bg-white/75'
                   }`}
+                  style={{ zIndex: 50 }}
+                  aria-label={`Ir a imagen ${idx + 1}`}
                 />
               ))}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Botón Volver flotante */}
+          {/* Soporte para gestos táctiles en mobile - Mejorado */}
+          {images.length > 1 && (
+            <SwipeHandler
+              onSwipeLeft={() => setLightboxIndex((prev) => (prev + 1) % images.length)}
+              onSwipeRight={() => setLightboxIndex((prev) => (prev - 1 + images.length) % images.length)}
+            />
+          )}
+        </div>
+      , document.body)}
+
+      {/* Botón Volver flotante - Premium */}
       <button
         onClick={() => router.back()}
-        className="fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-black/80 hover:bg-black text-white font-semibold text-sm shadow-xl hover:scale-105 transition-all duration-200 backdrop-blur-sm"
+        className="fixed top-6 left-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-white/95 backdrop-blur-md hover:bg-white text-gray-900 font-bold text-sm shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-100 transition-all duration-300 border border-gray-200/50"
       >
-        <ArrowLeftIcon className="w-4 h-4" />
+        <ArrowLeftIcon className="w-5 h-5" />
         <span className="hidden sm:inline">Volver</span>
       </button>
 

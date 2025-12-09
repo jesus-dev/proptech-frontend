@@ -61,16 +61,12 @@ export default function AgentProfilePage() {
         
         // Obtener datos del agente
         const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/agents/${agentSlugOrId}`;
-        console.log('🔍 Fetching agent from:', apiUrl);
         const agentResponse = await fetch(apiUrl);
-        console.log('📡 Agent response status:', agentResponse.status);
         if (!agentResponse.ok) {
           const errorText = await agentResponse.text();
-          console.error('❌ Agent fetch failed:', errorText);
           throw new Error('Agente no encontrado');
         }
         const agentData = await agentResponse.json();
-        console.log('✅ Agent data received:', agentData);
         
         // Normalizar datos del agente
         const normalizedAgent = {
@@ -104,29 +100,16 @@ export default function AgentProfilePage() {
         
         if (agentSlug) {
           const propertiesUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/properties/agent/${agentSlug}?page=1&limit=12`;
-          console.log('📡 Properties URL:', propertiesUrl);
           const propertiesResponse = await fetch(propertiesUrl);
-          console.log('📡 Properties response status:', propertiesResponse.status);
           if (propertiesResponse.ok) {
             const propertiesData = await propertiesResponse.json();
-            console.log('✅ Properties data received:', propertiesData);
-            console.log('📊 Properties count:', propertiesData.properties?.length || 0);
-            console.log('📊 Total properties:', propertiesData.pagination?.totalProperties || 0);
-            console.log('📊 Full response:', JSON.stringify(propertiesData, null, 2));
             setProperties(propertiesData.properties || []);
             setTotalProperties(propertiesData.pagination?.totalProperties || 0);
             setHasMore((propertiesData.properties?.length || 0) < (propertiesData.pagination?.totalProperties || 0));
             setCurrentPage(1);
-          } else {
-            const errorText = await propertiesResponse.text();
-            console.error('❌ Properties fetch failed:', errorText);
-            console.error('❌ Status:', propertiesResponse.status);
           }
-        } else {
-          console.error('❌ No agent slug or ID available to fetch properties');
         }
       } catch (err: any) {
-        console.error('❌ Error:', err);
         setError(err.message || 'Error al cargar el perfil del agente');
       } finally {
         setLoading(false);
@@ -196,7 +179,7 @@ export default function AgentProfilePage() {
   return (
     <main className="min-h-screen bg-white">
       {/* Hero Section - Diseño Completamente Nuevo */}
-      <section className="relative h-[100vh] w-[100vw] overflow-hidden flex items-center justify-center" style={{ marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)', marginTop: '-4rem' }}>
+      <section className="relative -mt-[3.5rem] sm:-mt-16 h-[100vh] w-[100vw] overflow-hidden flex items-center justify-center pt-12 sm:pt-16" style={{ marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }}>
         {/* Fondo con gradiente dinámico */}
         <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
           {/* Patrón de grid sutil */}

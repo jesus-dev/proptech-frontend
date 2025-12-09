@@ -16,8 +16,9 @@ const Header = () => {
   const isProptechPage = pathname === '/proptech' || pathname === '/proptech/';
   const isPropiedadesPage = pathname === '/propiedades' || pathname === '/propiedades/';
   const isContactPage = pathname === '/contact' || pathname === '/contact/';
+  const isAsesoresPage = pathname === '/asesores' || pathname?.startsWith('/asesores');
   const isHomePage = pathname === '/';
-  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage;
+  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage || isAsesoresPage;
   
   
   // Determinar el color del texto basado en si no hay scroll
@@ -28,17 +29,22 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
+    // Asegurar que empiece transparente
+    setIsScrolled(false);
+    
     const handleScroll = () => {
       const scrolled = window.scrollY > 50;
       setIsScrolled(scrolled);
     };
     
-    // Verificar estado inicial
-    handleScroll();
+    // Verificar estado inicial después de un pequeño delay para asegurar que el DOM esté listo
+    setTimeout(() => {
+      handleScroll();
+    }, 100);
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []); // Removido isMenuOpen de las dependencias
+  }, [pathname]); // Agregar pathname para resetear al cambiar de página
 
   // Prevenir scroll del body cuando el menú está abierto
   useEffect(() => {
@@ -84,10 +90,20 @@ const Header = () => {
         className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 ${
           isScrolled
             ? 'bg-white/90 backdrop-blur-md shadow-md border-b border-gray-200'
-            : 'bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900'
+            : 'bg-transparent !important'
         }`}
         data-scrolled={isScrolled}
-        style={{ position: 'fixed', top: 0, left: 0, right: 0, width: '100%', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          width: '100%', 
+          backfaceVisibility: 'hidden', 
+          WebkitBackfaceVisibility: 'hidden', 
+          transform: 'translateZ(0)',
+          backgroundColor: isScrolled ? 'rgba(255, 255, 255, 0.9)' : 'transparent'
+        }}
       >
         <nav className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between h-14 sm:h-16 py-1">

@@ -46,13 +46,23 @@ export const metadata: Metadata = {
 };
 
 export default function PublicPropiedades() {
-  // Structured Data (JSON-LD) para SEO
+  // Structured Data (JSON-LD) mejorado para SEO
   const structuredData = {
     '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: 'Propiedades en Venta y Alquiler en Paraguay',
+    '@type': 'RealEstateAgent',
+    name: 'PropTech CRM - Propiedades en Paraguay',
     description: 'Encuentra las mejores propiedades en venta y alquiler en Paraguay. Casas, departamentos, terrenos y locales comerciales.',
     url: 'https://proptech.com.py/propiedades',
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'PY',
+      addressRegion: 'Paraguay',
+    },
+    areaServed: {
+      '@type': 'Country',
+      name: 'Paraguay',
+    },
+    serviceType: ['Real Estate Sales', 'Property Rental', 'Property Management'],
     publisher: {
       '@type': 'Organization',
       name: 'PropTech CRM',
@@ -60,6 +70,9 @@ export default function PublicPropiedades() {
         '@type': 'ImageObject',
         url: 'https://proptech.com.py/images/logo/proptech.png',
       },
+      sameAs: [
+        'https://proptech.com.py',
+      ],
     },
     breadcrumb: {
       '@type': 'BreadcrumbList',
@@ -77,6 +90,14 @@ export default function PublicPropiedades() {
           item: 'https://proptech.com.py/propiedades',
         },
       ],
+    },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://proptech.com.py/propiedades?search={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
     },
   };
 

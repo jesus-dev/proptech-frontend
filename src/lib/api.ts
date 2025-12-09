@@ -142,8 +142,7 @@ apiClient.interceptors.response.use(
 
     // Si agotó todos los reintentos Y sigue siendo 500, verificar si es auth error
     if (config.retry.count >= config.retry.maxRetries && error.response?.status === 500) {
-      console.error(`❌ Error persistente después de ${config.retry.maxRetries} intentos - limpiando sesión`);
-      // Si después de 3 intentos sigue fallando con 500, probablemente es el token
+      // Si después de todos los intentos sigue fallando con 500, probablemente es el token
       if (typeof window !== 'undefined') {
         localStorage.clear();
         window.location.href = '/login';
@@ -151,9 +150,9 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Para 403, mostrar mensaje pero no es crítico
+    // Para 403, no es crítico, solo rechazar
     if (error.response?.status === 403) {
-      console.warn('⚠️ Acceso denegado: permisos insuficientes');
+      // Acceso denegado - no reintentar
     }
 
     return Promise.reject(error);

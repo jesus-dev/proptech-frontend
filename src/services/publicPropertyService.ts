@@ -18,12 +18,77 @@ export interface PublicPropertyFilters {
   operacion?: 'SALE' | 'RENT' | 'BOTH';
 }
 
+// Caché simple en memoria con TTL
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+  ttl: number;
+}
+
+class CacheManager {
+  private cache = new Map<string, CacheEntry>();
+  private defaultTTL = 5 * 60 * 1000; // 5 minutos por defecto
+
+  get(key: string): any | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    const now = Date.now();
+    if (now - entry.timestamp > entry.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.data;
+  }
+
+  set(key: string, data: any, ttl?: number): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl: ttl || this.defaultTTL
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  // Limpiar entradas expiradas
+  cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
+const cacheManager = new CacheManager();
+
+// Limpiar caché cada 10 minutos
+if (typeof window !== 'undefined') {
+  setInterval(() => cacheManager.cleanup(), 10 * 60 * 1000);
+}
+
 class PublicPropertyService {
   /**
-   * Obtener propiedades paginadas
+   * Obtener propiedades paginadas con caché
    */
   async getPropertiesPaginated({ page = 1, limit = 6, filters }: { page?: number; limit?: number; filters?: PublicPropertyFilters }) {
     try {
+      // Generar clave de caché única basada en parámetros
+      const cacheKey = `properties_${page}_${limit}_${JSON.stringify(filters || {})}`;
+      
+      // Intentar obtener de caché (solo para primera página sin filtros complejos)
+      if (page === 1 && (!filters || Object.keys(filters).length === 0)) {
+        const cached = cacheManager.get(cacheKey);
+        if (cached) {
+          return cached;
+        }
+      }
+
       const searchParams = new URLSearchParams();
       searchParams.append('page', page.toString());
       searchParams.append('limit', limit.toString());
@@ -44,10 +109,18 @@ class PublicPropertyService {
       const response = await apiClient.get(`/api/public/properties/paginated?${searchParams.toString()}`);
       const data = response.data;
       
-      return {
+      const result = {
         properties: data.properties || [],
         pagination: data.pagination || { currentPage: page, totalPages: 0, totalProperties: 0, propertiesPerPage: limit }
       };
+
+      // Guardar en caché (solo primera página sin filtros complejos, TTL más corto para búsquedas)
+      if (page === 1) {
+        const ttl = filters && Object.keys(filters).length > 0 ? 2 * 60 * 1000 : 5 * 60 * 1000; // 2 min para búsquedas, 5 min para sin filtros
+        cacheManager.set(cacheKey, result, ttl);
+      }
+      
+      return result;
     } catch (error) {
       return { properties: [], pagination: { currentPage: page, totalPages: 0, totalProperties: 0, propertiesPerPage: limit } };
     }

@@ -8,6 +8,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
 import type { PublicPropertyFilters } from '@/services/publicPropertyService';
+import { logger } from '@/lib/logger';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -40,15 +41,21 @@ const stripHtml = (html: string | null | undefined): string => {
   return tempDiv.textContent || tempDiv.innerText || '';
 };
 
-// Componente de imagen optimizada con Next.js Image
-const OptimizedImage = ({ src, alt, className }: {
+// Componente de imagen optimizada con Next.js Image y precarga inteligente
+const OptimizedImage = ({ src, alt, className, priority = false, index = 0, onLoad, onError }: {
   src: string | null;
   alt: string;
   className: string;
   onLoad?: () => void;
   onError?: () => void;
+  priority?: boolean;
+  index?: number;
 }) => {
   const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Precargar imágenes críticas (primeras 6)
+  const shouldPreload = priority || index < 6;
 
   // Si no hay src o error, mostrar placeholder bonito
   if (!src || hasError) {
@@ -63,6 +70,16 @@ const OptimizedImage = ({ src, alt, className }: {
 
   const imageUrl = getImageUrl(src);
 
+  // Precargar imagen crítica
+  if (shouldPreload && typeof window !== 'undefined') {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = imageUrl;
+    link.setAttribute('fetchpriority', index < 3 ? 'high' : 'auto');
+    document.head.appendChild(link);
+  }
+
   return (
     <div className="relative w-full h-full overflow-hidden">
       <Image
@@ -70,12 +87,21 @@ const OptimizedImage = ({ src, alt, className }: {
         alt={alt}
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        className={className}
-        quality={75}
-        loading="lazy"
+        className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+        quality={shouldPreload ? 85 : 75}
+        loading={shouldPreload ? 'eager' : 'lazy'}
+        priority={shouldPreload && index < 3}
+        fetchPriority={index < 3 ? 'high' : 'auto'}
         placeholder="blur"
         blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-        onError={() => setHasError(true)}
+        onLoad={() => {
+          setIsLoaded(true);
+          if (onLoad) onLoad();
+        }}
+        onError={() => {
+          setHasError(true);
+          if (onError) onError();
+        }}
       />
     </div>
   );
@@ -279,14 +305,15 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
           ]);
         }
       } catch (error) {
-        console.error('Error loading public filter options:', error);
+        logger.error('Error loading public filter options:', error);
       }
     };
 
     loadFilterOptions();
   }, []);
 
-  const PAGE_SIZE = 6;
+  // Aumentar tamaño de página inicial para mejor rendimiento
+  const PAGE_SIZE = 12; // Cargar más propiedades inicialmente para mejor UX
 
   const buildFilters = useCallback((): PublicPropertyFilters => {
     const filters: PublicPropertyFilters = {};
@@ -395,25 +422,33 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
       });
 
       const newProperties = Array.isArray(response.properties) ? response.properties : [];
-      const pagination = response.pagination || { currentPage: page, totalPages: 0, totalProperties: newProperties.length, propertiesPerPage: PAGE_SIZE };
+      
+      // ⭐ Aleatorizar propiedades (Fisher-Yates shuffle)
+      const shuffledProperties = [...newProperties];
+      for (let i = shuffledProperties.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledProperties[i], shuffledProperties[j]] = [shuffledProperties[j], shuffledProperties[i]];
+      }
+      
+      const pagination = response.pagination || { currentPage: page, totalPages: 0, totalProperties: shuffledProperties.length, propertiesPerPage: PAGE_SIZE };
 
-      setTotalResults(pagination.totalProperties || newProperties.length);
+      setTotalResults(pagination.totalProperties || shuffledProperties.length);
 
       if (append) {
         setProperties(prev => {
           const existingIds = new Set(prev.map(property => property.id));
-          const filteredNew = newProperties.filter(property => !existingIds.has(property.id));
+          const filteredNew = shuffledProperties.filter(property => !existingIds.has(property.id));
           return [...prev, ...filteredNew];
         });
       } else {
-        setProperties(newProperties);
+        setProperties(shuffledProperties);
       }
 
       setCurrentPage(pagination.currentPage || page);
       const totalPages = pagination.totalPages || Math.ceil((pagination.totalProperties || newProperties.length) / (pagination.propertiesPerPage || PAGE_SIZE));
       setHasMore((pagination.currentPage || page) < totalPages);
     } catch (err) {
-      console.error('Error loading public properties:', err);
+      logger.error('Error loading public properties:', err);
       if (!append) {
         setProperties([]);
         setTotalResults(0);
@@ -442,8 +477,13 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     }
   }, [searchParams]);
 
+  // Optimizar carga inicial: usar debounce para evitar múltiples llamadas
   useEffect(() => {
-    fetchProperties(1, false);
+    const timer = setTimeout(() => {
+      fetchProperties(1, false);
+    }, 100); // Pequeño delay para evitar llamadas duplicadas
+
+    return () => clearTimeout(timer);
   }, [fetchProperties]);
 
   // Función para cargar más propiedades
@@ -495,7 +535,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     <div className="min-h-screen">
       {/* Hero Section solo para página principal */}
       {!defaultCategory && (
-        <section className="relative -mt-14 sm:-mt-16 min-h-[70vh] sm:min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pt-0">
+        <section className="relative -mt-[3.5rem] sm:-mt-16 min-h-[70vh] sm:min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] pt-0">
         {/* Patrón de cuadrícula de bienes raíces */}
         <div className="absolute inset-0 opacity-10">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -1275,7 +1315,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                   }}></div>
                   
                   {/* Skeleton Image */}
-                  <div className="relative h-48 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 overflow-hidden">
+                  <div className="relative h-56 sm:h-48 md:h-52 lg:h-56 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-200 overflow-hidden">
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="relative">
                         <div className="w-16 h-16 border-4 border-gray-300 border-t-cyan-500 rounded-full animate-spin"></div>
@@ -1396,7 +1436,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 className={`group bg-gradient-to-br from-white via-white to-gray-50/50 rounded-xl shadow-lg hover:shadow-xl border border-gray-100/50 overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] relative h-full flex flex-col min-h-[420px] backdrop-blur-sm hover:backdrop-blur-md cursor-pointer ${viewMode === 'list' ? 'sm:flex-row sm:min-h-[280px]' : ''}`}
               >
               {/* Imagen con overlay premium y efectos mágicos ✨ */}
-              <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-full sm:w-80 h-40 sm:h-48' : 'h-40 sm:h-48'}`}>
+              <div className={`relative overflow-hidden ${viewMode === 'list' ? 'w-full sm:w-80 h-56 sm:h-48 md:h-52' : 'h-56 sm:h-48 md:h-52 lg:h-56'}`}>
                 {/* Overlay con gradiente más hermoso */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10 group-hover:from-black/50 transition-all duration-500"></div>
                 
@@ -1406,7 +1446,9 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 <OptimizedImage
                   src={property.featuredImage || (property.galleryImages && property.galleryImages.length > 0 ? property.galleryImages[0].url : null)}
                   alt={property.title || 'Propiedad'}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 group-hover:brightness-110"
+                  className="object-cover group-hover:scale-110 transition-all duration-700 group-hover:brightness-110"
+                  priority={index < 6}
+                  index={index}
                 />
                 
                 {/* Badge tipo premium con efectos mágicos ✨ */}
