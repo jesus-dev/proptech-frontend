@@ -58,6 +58,62 @@ export default function CreateAlbumPage() {
     e.stopPropagation();
   }, []);
 
+  // Función para crear preview optimizado (tamaño limitado)
+  const createOptimizedPreview = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === 'undefined') {
+        // Fallback para SSR
+        resolve(URL.createObjectURL(file));
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_PREVIEW_SIZE = 400; // Tamaño máximo del preview
+          
+          let width = img.width;
+          let height = img.height;
+          
+          // Redimensionar si es muy grande
+          if (width > MAX_PREVIEW_SIZE || height > MAX_PREVIEW_SIZE) {
+            if (width > height) {
+              height = (height * MAX_PREVIEW_SIZE) / width;
+              width = MAX_PREVIEW_SIZE;
+            } else {
+              width = (width * MAX_PREVIEW_SIZE) / height;
+              height = MAX_PREVIEW_SIZE;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('No se pudo crear contexto de canvas'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(URL.createObjectURL(blob));
+            } else {
+              // Fallback a preview original si falla
+              resolve(URL.createObjectURL(file));
+            }
+          }, 'image/jpeg', 0.7);
+        };
+        img.onerror = () => reject(new Error('Error al cargar imagen'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Error al leer archivo'));
+      reader.readAsDataURL(file);
+    });
+  };
+
   const processFiles = async (files: FileList | null) => {
     if (!files) return;
 
@@ -71,16 +127,63 @@ export default function CreateAlbumPage() {
     }
 
     try {
-      // Convertir HEIC a JPG antes de mostrar el preview
-      const convertedFiles = await processImageFiles(imageFiles);
+      // Procesar archivos en lotes para no bloquear la UI
+      const BATCH_SIZE = 5;
+      const newFiles: SelectedFile[] = [];
+      let processedCount = 0;
       
-      const newFiles: SelectedFile[] = convertedFiles.map(file => ({
-        file,
-        preview: URL.createObjectURL(file),
-        id: Math.random().toString(36).substring(2, 15)
-      }));
-
-      setSelectedFiles(prev => [...prev, ...newFiles]);
+      // Mostrar toast de inicio
+      toast.loading(`Procesando ${imageFiles.length} foto(s)...`, { id: 'processing' });
+      
+      // Procesar en lotes
+      for (let i = 0; i < imageFiles.length; i += BATCH_SIZE) {
+        const batch = imageFiles.slice(i, i + BATCH_SIZE);
+        
+        // Procesar batch actual
+        const batchPromises = batch.map(async (file) => {
+          try {
+            // Convertir HEIC si es necesario
+            const processedFile = isHeicFile(file) 
+              ? await processImageFiles([file]).then(files => files[0])
+              : file;
+            
+            // Crear preview optimizado
+            const preview = await createOptimizedPreview(processedFile);
+            
+            return {
+              file: processedFile,
+              preview,
+              id: Math.random().toString(36).substring(2, 15)
+            };
+          } catch (error) {
+            console.error('Error processing file:', file.name, error);
+            // Fallback: usar preview directo sin optimización
+            return {
+              file,
+              preview: URL.createObjectURL(file),
+              id: Math.random().toString(36).substring(2, 15)
+            };
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        newFiles.push(...batchResults);
+        processedCount += batch.length;
+        
+        // Actualizar estado progresivamente
+        setSelectedFiles(prev => [...prev, ...batchResults]);
+        
+        // Actualizar toast de progreso
+        toast.loading(`Procesando ${processedCount}/${imageFiles.length} foto(s)...`, { id: 'processing' });
+        
+        // Pequeña pausa para no bloquear la UI
+        if (i + BATCH_SIZE < imageFiles.length) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      }
+      
+      // Cerrar toast de procesamiento
+      toast.dismiss('processing');
       
       const heicCount = imageFiles.filter(f => isHeicFile(f)).length;
       if (heicCount > 0) {
@@ -89,6 +192,7 @@ export default function CreateAlbumPage() {
         toast.success(`${imageFiles.length} foto(s) agregada(s)`);
       }
     } catch (error: any) {
+      toast.dismiss('processing');
       console.error('Error processing files:', error);
       toast.error(error?.message || 'Error al procesar las imágenes');
     }
@@ -355,6 +459,8 @@ export default function CreateAlbumPage() {
                       src={selectedFile.preview}
                       alt={`Preview ${index + 1}`}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                     <button
                       onClick={() => removeFile(selectedFile.id)}
