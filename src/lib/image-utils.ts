@@ -1,5 +1,3 @@
-import heic2any from 'heic2any';
-
 /**
  * Detecta si un archivo es formato HEIC/HEIF
  */
@@ -25,7 +23,15 @@ export async function convertHeicToJpg(file: File): Promise<File> {
     return file;
   }
 
+  // Verificar que estamos en el cliente
+  if (typeof window === 'undefined') {
+    throw new Error('HEIC conversion is only available in the browser');
+  }
+
   try {
+    // Importación dinámica de heic2any para evitar problemas de SSR
+    const heic2any = (await import('heic2any')).default;
+    
     // Convertir HEIC a JPG usando heic2any
     // heic2any retorna un Blob o ArrayBuffer dependiendo de la configuración
     const convertedBlob = await heic2any({
