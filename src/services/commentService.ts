@@ -13,6 +13,9 @@ export interface Comment {
   createdAt: string;
   updatedAt: string;
   isLikedByCurrentUser?: boolean;
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  moderatedBy?: number;
+  moderatedAt?: string;
 }
 
 export interface CreateCommentRequest {

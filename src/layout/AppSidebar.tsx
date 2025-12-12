@@ -83,6 +83,11 @@ const navItems: NavItem[] = [
         path: "/properties/price-history",
         nuevo: true,
       },
+      {
+        name: "Moderar Comentarios",
+        path: "/properties/comments",
+        nuevo: true,
+      },
     ],
   },
 

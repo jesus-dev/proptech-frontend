@@ -109,7 +109,7 @@ export default function AsesoresPage() {
             phone: agent.phone || '+595 981 000-000',
             email: agent.email || 'agente@proptech.com.py',
             image: agent.photo || undefined,
-            verified: true,
+      verified: true,
             properties: Math.floor(10 + Math.random() * 80),
             description: agent.bio || `${fullName} es un profesional inmobiliario con experiencia en el mercado paraguayo. Especializado en ${position}.`
           };
@@ -548,9 +548,9 @@ export default function AsesoresPage() {
                               }}
                             />
                           ) : (
-                            <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ring-2 ring-white">
-                              {asesor.name.split(' ').map(n => n[0]).join('')}
-                            </div>
+                          <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 via-blue-600 to-purple-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ring-2 ring-white">
+                            {asesor.name.split(' ').map(n => n[0]).join('')}
+                          </div>
                           )}
                           {asesor.verified && (
                             <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
@@ -684,9 +684,9 @@ export default function AsesoresPage() {
                         }}
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                        {asesor.name.split(' ').map(n => n[0]).join('')}
-                      </div>
+                    <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                      {asesor.name.split(' ').map(n => n[0]).join('')}
+                    </div>
                     )}
                     
                     <div className="flex-1">

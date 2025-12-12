@@ -20,6 +20,16 @@ export enum AnalyticsEvent {
   FORM_SUBMIT = 'form_submit',
   LEAD_GENERATED = 'lead_generated',
   
+  // CMS y Contenido
+  EVENT_CREATED = 'event_created',
+  EVENT_VIEWED = 'event_viewed',
+  EVENT_DELETED = 'event_deleted',
+  ALBUM_CREATED = 'album_created',
+  ALBUM_VIEWED = 'album_viewed',
+  ALBUM_DELETED = 'album_deleted',
+  CONTENT_TAB_SWITCHED = 'content_tab_switched',
+  CREATE_BUTTON_CLICKED = 'create_button_clicked',
+  
   // Navegación
   PAGE_VIEW = 'page_view',
   SEARCH_EXECUTED = 'search_executed',
@@ -186,6 +196,45 @@ class AnalyticsService {
     this.track(AnalyticsEvent.ERROR_OCCURRED, {
       error_message: errorMessage,
       ...context,
+    });
+  }
+  
+  /**
+   * Trackear creación de evento
+   */
+  trackEventCreated(eventId: number, eventData?: Record<string, any>) {
+    this.track(AnalyticsEvent.EVENT_CREATED, {
+      event_id: eventId,
+      ...eventData,
+    });
+  }
+  
+  /**
+   * Trackear creación de álbum
+   */
+  trackAlbumCreated(albumId: number, albumData?: Record<string, any>) {
+    this.track(AnalyticsEvent.ALBUM_CREATED, {
+      album_id: albumId,
+      ...albumData,
+    });
+  }
+  
+  /**
+   * Trackear click en botón de creación
+   */
+  trackCreateButtonClicked(contentType: 'event' | 'album', source?: string) {
+    this.track(AnalyticsEvent.CREATE_BUTTON_CLICKED, {
+      content_type: contentType,
+      source: source || 'content_page',
+    });
+  }
+  
+  /**
+   * Trackear cambio de tab en contenido
+   */
+  trackContentTabSwitched(tab: 'events' | 'galleries') {
+    this.track(AnalyticsEvent.CONTENT_TAB_SWITCHED, {
+      tab,
     });
   }
   

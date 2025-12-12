@@ -63,11 +63,25 @@ export default function EditBlogPostPage() {
       if (response.ok) {
         router.push('/cms/blog');
       } else {
-        setError('Error al actualizar el post');
+        // Intentar obtener el mensaje de error del backend
+        let errorMessage = 'Error al actualizar el post';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        } catch (e) {
+          // Si no se puede parsear el error, usar el status text
+          errorMessage = `Error ${response.status}: ${response.statusText}`;
+        }
+        setError(errorMessage);
+        console.error('Error updating post:', response.status, errorMessage);
       }
     } catch (error) {
       console.error('Error:', error);
-      setError('Error de conexión');
+      setError('Error de conexión. Por favor, verifica tu conexión a internet.');
     } finally {
       setIsSubmitting(false);
     }

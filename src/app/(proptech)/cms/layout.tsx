@@ -33,10 +33,10 @@ export default function CMSLayout({
       description: 'Artículos'
     },
     {
-      name: 'Eventos',
-      href: '/cms/events',
+      name: 'Gestor de Contenido',
+      href: '/cms/content',
       icon: CalendarIcon,
-      description: 'Calendario'
+      description: 'Eventos, Actividades y Galerías'
     },
     {
       name: 'Páginas',
@@ -48,7 +48,7 @@ export default function CMSLayout({
       name: 'Medios',
       href: '/cms/media',
       icon: PhotoIcon,
-      description: 'Galería'
+      description: 'Galería de Archivos'
     }
   ];
 

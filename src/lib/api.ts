@@ -142,8 +142,18 @@ apiClient.interceptors.response.use(
 
     // Si agotó todos los reintentos Y sigue siendo 500, verificar si es auth error
     if (config.retry.count >= config.retry.maxRetries && error.response?.status === 500) {
-      // Si después de todos los intentos sigue fallando con 500, probablemente es el token
-      if (typeof window !== 'undefined') {
+      // Solo cerrar sesión si el mensaje de error indica específicamente un problema de autenticación
+      const errorMessage = error.response?.data?.error || '';
+      const isAuthError = 
+        errorMessage.includes('Usuario no encontrado') ||
+        errorMessage.includes('Usuario sin tenant') ||
+        errorMessage.includes('Autenticación requerida') ||
+        errorMessage.includes('Tenant ID no establecido') ||
+        errorMessage.includes('Token inválido') ||
+        errorMessage.includes('Sesión expirada');
+      
+      // Solo cerrar sesión si es específicamente un error de autenticación
+      if (isAuthError && typeof window !== 'undefined') {
         localStorage.clear();
         window.location.href = '/login';
       }

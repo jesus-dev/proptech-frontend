@@ -5,6 +5,7 @@ import { Comment, commentService } from '@/services/commentService';
 import { CommentItem } from './CommentItem';
 import { useAuth } from '@/hooks/useAuth';
 import { MessageCircle, Send, User } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CommentListProps {
   postId: number;
@@ -63,7 +64,7 @@ export const CommentList: React.FC<CommentListProps> = ({
     e.preventDefault();
 
     if (!newComment.trim()) {
-      alert('El comentario no puede estar vacío');
+      toast.error('El comentario no puede estar vacío');
       return;
     }
 
@@ -87,7 +88,16 @@ export const CommentList: React.FC<CommentListProps> = ({
         setNewComment('');
         setShowCommentForm(false);
         
+        // Mostrar mensaje de que el comentario está pendiente de moderación
+        if (createdComment.status === 'PENDING') {
+          toast.info('Tu comentario ha sido enviado y está pendiente de moderación. Será visible una vez que sea aprobado.');
+        } else {
+          toast.success('Comentario publicado exitosamente');
+        }
+        
         // Agregar el nuevo comentario al estado local (evitando duplicados)
+        // Solo si está aprobado, de lo contrario no se muestra
+        if (createdComment.status === 'APPROVED') {
         setComments(prevComments => {
           // Verificar si el comentario ya existe para evitar duplicados
           const commentExists = prevComments.some(c => c.id === createdComment.id);
@@ -103,6 +113,7 @@ export const CommentList: React.FC<CommentListProps> = ({
         if (onCommentCountChange) {
           const newCount = comments.length + 1;
           onCommentCountChange(newCount);
+          }
         }
         
         // Limpiar el formulario y cerrar
@@ -110,7 +121,7 @@ export const CommentList: React.FC<CommentListProps> = ({
       }
     } catch (error) {
       console.error('❌ Error creating comment:', error);
-      alert('Error al crear el comentario');
+      toast.error('Error al crear el comentario');
     } finally {
       setIsSubmitting(false);
     }

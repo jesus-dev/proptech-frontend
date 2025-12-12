@@ -22,12 +22,12 @@ export default function CMSPage() {
       stats: { label: 'Posts', value: '--' }
     },
     {
-      title: 'Eventos',
-      description: 'Administra eventos y actividades',
+      title: 'Gestor de Contenido',
+      description: 'Administra eventos, actividades y galerías de fotos',
       icon: CalendarIcon,
-      href: '/cms/events',
+      href: '/cms/content',
       color: 'from-purple-500 to-purple-600',
-      stats: { label: 'Eventos', value: '--' }
+      stats: { label: 'Eventos & Álbumes', value: '--' }
     },
     {
       title: 'Páginas Web',

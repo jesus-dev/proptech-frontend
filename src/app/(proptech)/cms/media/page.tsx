@@ -7,11 +7,12 @@ import {
   PhotoIcon,
   VideoCameraIcon,
   DocumentIcon,
-  MusicalNoteIcon,
-  FunnelIcon
+  MusicalNoteIcon
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { getEndpoint } from '@/lib/api-config';
+import { toast } from 'sonner';
+import { processImageFiles, isHeicFile } from '@/lib/image-utils';
 
 interface Media {
   id: number;
@@ -26,14 +27,16 @@ interface Media {
 }
 
 export default function MediaLibraryPage() {
+  // Media state
   const [media, setMedia] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'IMAGE' | 'VIDEO' | 'DOCUMENT'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
+  // Load data on mount
   useEffect(() => {
     loadMedia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadMedia = async () => {
@@ -57,35 +60,94 @@ export default function MediaLibraryPage() {
     }
   };
 
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     try {
       setUploading(true);
-      
-      const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-      uploadFormData.append('fileName', file.name);
-      uploadFormData.append('category', 'GENERAL');
-
       const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/media/upload'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: uploadFormData,
-      });
+      const fileArray = Array.from(files);
+      
+      // Separar imágenes de otros archivos
+      const imageFiles = fileArray.filter(file => 
+        file.type.startsWith('image/') || isHeicFile(file)
+      );
+      const otherFiles = fileArray.filter(file => 
+        !file.type.startsWith('image/') && !isHeicFile(file)
+      );
 
-      if (response.ok) {
+      // Convertir imágenes HEIC a JPG
+      let processedFiles: File[] = [];
+      try {
+        if (imageFiles.length > 0) {
+          processedFiles = await processImageFiles(imageFiles);
+        }
+        processedFiles = [...processedFiles, ...otherFiles];
+      } catch (error: any) {
+        console.error('Error processing files:', error);
+        toast.error(error?.message || 'Error al procesar las imágenes');
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const heicCount = imageFiles.filter(f => isHeicFile(f)).length;
+
+      // Subir archivos uno por uno
+      for (const file of processedFiles) {
+        try {
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', file);
+          uploadFormData.append('fileName', file.name);
+          uploadFormData.append('category', 'GENERAL');
+
+          const response = await fetch(getEndpoint('/api/cms/media/upload'), {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: uploadFormData,
+          });
+
+          if (response.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error(`Error uploading ${file.name}:`, response.statusText);
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`Error uploading ${file.name}:`, error);
+        }
+      }
+
+      // Mostrar resultado
+      if (successCount > 0) {
         loadMedia();
+        let message = '';
+        if (processedFiles.length === 1) {
+          message = 'Archivo subido exitosamente';
+        } else {
+          message = `${successCount} archivo(s) subido(s) exitosamente${errorCount > 0 ? `. ${errorCount} fallaron.` : ''}`;
+        }
+        if (heicCount > 0) {
+          message += ` (${heicCount} imagen${heicCount > 1 ? 'es' : ''} HEIC convertida${heicCount > 1 ? 's' : ''} a JPG)`;
+        }
+        toast.success(message);
+      } else {
+        toast.error(`Error al subir ${fileArray.length > 1 ? 'los archivos' : 'el archivo'}`);
       }
     } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Error al subir el archivo');
+      console.error('Error uploading files:', error);
+      toast.error('Error al subir archivos');
     } finally {
       setUploading(false);
+      // Limpiar el input
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
@@ -103,15 +165,25 @@ export default function MediaLibraryPage() {
 
       if (response.ok) {
         loadMedia();
+        toast.success('Archivo eliminado');
       }
     } catch (error) {
       console.error('Error deleting media:', error);
+      toast.error('Error al eliminar archivo');
     }
+  };
+
+
+
+
+  const getImageUrl = (url: string) => {
+    if (!url) return '/images/placeholder.jpg';
+    if (url.startsWith('http')) return url;
+    return getEndpoint(url);
   };
 
   const filteredMedia = media.filter(item => {
     if (filter !== 'all' && item.fileType !== filter) return false;
-    if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
     return true;
   });
 
@@ -138,21 +210,15 @@ export default function MediaLibraryPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Galería de Medios</h2>
-          <p className="text-gray-600 dark:text-gray-400">Administra imágenes y archivos multimedia</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Administra archivos multimedia (imágenes, videos, documentos)
+          </p>
         </div>
         <label className="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium cursor-pointer">
           {uploading ? (
@@ -163,7 +229,7 @@ export default function MediaLibraryPage() {
           ) : (
             <>
               <PlusIcon className="w-5 h-5" />
-              Subir Archivo
+              Subir Archivos
             </>
           )}
           <input
@@ -171,139 +237,143 @@ export default function MediaLibraryPage() {
             onChange={handleFileUpload}
             className="hidden"
             disabled={uploading}
+            multiple
+            accept="image/*,.heic,.heif,.hif,video/*,application/pdf,.doc,.docx"
+            title="Selecciona uno o más archivos (imágenes, videos, documentos, etc.). Las imágenes HEIC se convertirán automáticamente a JPG."
           />
         </label>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Imágenes</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.images}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Videos</p>
-          <p className="text-2xl font-bold text-purple-600">{stats.videos}</p>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Documentos</p>
-          <p className="text-2xl font-bold text-orange-600">{stats.documents}</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'all'
-              ? 'bg-orange-600 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
-          }`}
-        >
-          Todos
-        </button>
-        <button
-          onClick={() => setFilter('IMAGE')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'IMAGE'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
-          }`}
-        >
-          Imágenes
-        </button>
-        <button
-          onClick={() => setFilter('VIDEO')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'VIDEO'
-              ? 'bg-purple-600 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
-          }`}
-        >
-          Videos
-        </button>
-        <button
-          onClick={() => setFilter('DOCUMENT')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            filter === 'DOCUMENT'
-              ? 'bg-gray-600 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
-          }`}
-        >
-          Documentos
-        </button>
-      </div>
-
-      {/* Grid View */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {filteredMedia.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400">
-            No hay archivos para mostrar
-          </div>
-        ) : (
-          filteredMedia.map((item) => (
-            <div
-              key={item.id}
-              className="group relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all"
-            >
-              {/* Preview */}
-              <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                {item.fileType === 'IMAGE' ? (
-                  <img
-                    src={getEndpoint(item.fileUrl)}
-                    alt={item.altText || item.fileName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-gray-400">
-                    {getFileIcon(item.fileType)}
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="p-3">
-                <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={item.fileName}>
-                  {item.fileName}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {formatFileSize(item.fileSize)}
-                </p>
-                <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
-                  {item.category}
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg"
-                  title="Eliminar"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Copy URL on click */}
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(getEndpoint(item.fileUrl));
-                  alert('URL copiada al portapapeles');
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                title="Click para copiar URL"
-              />
+      {/* Media Content */}
+      <div>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
-          ))
-        )}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Imágenes</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.images}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Videos</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.videos}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Documentos</p>
+              <p className="text-2xl font-bold text-orange-600">{stats.documents}</p>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-2 mb-6">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'all'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setFilter('IMAGE')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'IMAGE'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
+              }`}
+            >
+              Imágenes
+            </button>
+            <button
+              onClick={() => setFilter('VIDEO')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'VIDEO'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
+              }`}
+            >
+              Videos
+            </button>
+            <button
+              onClick={() => setFilter('DOCUMENT')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'DOCUMENT'
+                  ? 'bg-gray-600 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700'
+              }`}
+            >
+              Documentos
+            </button>
+          </div>
+
+          {/* Grid View */}
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {filteredMedia.length === 0 ? (
+                <div className="col-span-full py-12 text-center text-gray-500 dark:text-gray-400">
+                  No hay archivos para mostrar
+                </div>
+              ) : (
+                filteredMedia.map((item) => (
+                  <div
+                    key={item.id}
+                    className="group relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all"
+                  >
+                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      {item.fileType === 'IMAGE' ? (
+                        <img
+                          src={getEndpoint(item.fileUrl)}
+                          alt={item.altText || item.fileName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-gray-400">
+                          {getFileIcon(item.fileType)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white truncate" title={item.fileName}>
+                        {item.fileName}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatFileSize(item.fileSize)}
+                      </p>
+                      <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                        {item.category}
+                      </span>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg"
+                        title="Eliminar"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(getEndpoint(item.fileUrl));
+                        toast.success('URL copiada al portapapeles');
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      title="Click para copiar URL"
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          )}
       </div>
     </div>
   );
 }
-

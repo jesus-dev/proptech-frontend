@@ -39,7 +39,7 @@ const Header = () => {
     
     // Verificar estado inicial después de un pequeño delay para asegurar que el DOM esté listo
     setTimeout(() => {
-      handleScroll();
+    handleScroll();
     }, 100);
     
     window.addEventListener('scroll', handleScroll);

@@ -480,7 +480,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
   // Optimizar carga inicial: usar debounce para evitar múltiples llamadas
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchProperties(1, false);
+    fetchProperties(1, false);
     }, 100); // Pequeño delay para evitar llamadas duplicadas
 
     return () => clearTimeout(timer);

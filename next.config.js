@@ -133,19 +133,17 @@ const nextConfig = {
   
   // Configuración de imágenes
   images: {
-    domains: [
-      'localhost',
-      'api.proptech.com.py',
-      'proptech.com.py',
-      'images.unsplash.com',
-      'via.placeholder.com'
-    ],
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '8080',
         pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        pathname: '/**',
       },
       {
         protocol: 'https',

@@ -90,20 +90,20 @@ export default function PublicLayout({ children }: any) {
       <SkipToContent />
       <Header />
       <ErrorBoundary>
-        <main 
-          id="main-content"
-          className={`min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 antialiased ${
+      <main 
+        id="main-content"
+        className={`min-h-screen bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 antialiased ${
             hasHeroSection ? '' : 'pt-14 sm:pt-16 px-3 sm:px-4'
-          }`}
-          role="main"
-          aria-label="Contenido principal"
-        >
+        }`}
+        role="main"
+        aria-label="Contenido principal"
+      >
           <div className={`${hasHeroSection ? 'w-full' : 'max-w-7xl mx-auto w-full'} selection:bg-brand-200 selection:text-brand-900 dark:selection:bg-brand-400/30 dark:selection:text-white`}>
             <div className={hasHeroSection ? '' : 'space-y-10 sm:space-y-14 lg:space-y-20'}>
-              {children}
-            </div>
+            {children}
           </div>
-        </main>
+        </div>
+      </main>
       </ErrorBoundary>
       <Footer />
     </>

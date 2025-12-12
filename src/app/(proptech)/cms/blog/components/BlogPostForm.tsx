@@ -6,8 +6,8 @@ import { Upload, Image as ImageIcon } from 'lucide-react';
 import { getEndpoint } from '@/lib/api-config';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
-// Import TinyMCE editor dynamically to avoid SSR issues
-const Editor = dynamic(() => import('@tinymce/tinymce-react').then(mod => mod.Editor), {
+// Importar el editor de forma dinámica para evitar problemas con SSR (mismo que en propiedades)
+const Editor = dynamic(() => import("@/components/Editor"), {
   ssr: false,
   loading: () => <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
     <LoadingSpinner />
@@ -39,9 +39,6 @@ export default function BlogPostForm({
     status: 'DRAFT',
     featuredImage: '',
     featured: false,
-    metaTitle: '',
-    metaDescription: '',
-    metaKeywords: '',
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -58,9 +55,6 @@ export default function BlogPostForm({
         status: initialData.status || 'DRAFT',
         featuredImage: initialData.featuredImage || '',
         featured: initialData.featured || false,
-        metaTitle: initialData.metaTitle || '',
-        metaDescription: initialData.metaDescription || '',
-        metaKeywords: initialData.metaKeywords || '',
       });
     }
   }, [initialData]);
@@ -181,78 +175,14 @@ export default function BlogPostForm({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Contenido *
             </label>
-            <div className="prose-editor">
+            <div className="border rounded-lg border-gray-300 dark:border-gray-600">
               <Editor
-                apiKey="no-api-key"
                 value={formData.content}
-                onEditorChange={(content) => handleChange('content', content)}
-                init={{
-                  height: 500,
-                  menubar: true,
-                  plugins: [
-                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                    'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
-                  ],
-                  toolbar: 'undo redo | blocks | ' +
-                    'bold italic forecolor | alignleft aligncenter ' +
-                    'alignright alignjustify | bullist numlist outdent indent | ' +
-                    'removeformat | help',
-                  content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size:14px }',
-                  skin: 'oxide',
-                  content_css: 'default',
-                }}
+                onChange={(content) => handleChange('content', content)}
               />
             </div>
           </div>
 
-          {/* SEO Section */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">SEO y Metadatos</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Meta Título
-                </label>
-                <input
-                  type="text"
-                  value={formData.metaTitle}
-                  onChange={(e) => handleChange('metaTitle', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Título para SEO (60 caracteres máx.)"
-                  maxLength={60}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Meta Descripción
-                </label>
-                <textarea
-                  value={formData.metaDescription}
-                  onChange={(e) => handleChange('metaDescription', e.target.value)}
-                  rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Descripción para motores de búsqueda (160 caracteres máx.)"
-                  maxLength={160}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Palabras Clave
-                </label>
-                <input
-                  type="text"
-                  value={formData.metaKeywords}
-                  onChange={(e) => handleChange('metaKeywords', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="inmobiliaria, propiedades, paraguay"
-                />
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Sidebar */}

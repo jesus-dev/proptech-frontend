@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EventForm from '../components/EventForm';
 import { getEndpoint } from '@/lib/api-config';
+import { analytics } from '@/lib/analytics';
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -26,6 +27,12 @@ export default function NewEventPage() {
       });
 
       if (response.ok) {
+        const eventData = await response.json();
+        analytics.trackEventCreated(eventData.id, {
+          title: formData.title,
+          event_date: formData.eventDate,
+          featured: formData.featured || false,
+        });
         router.push('/cms/events');
       } else {
         setError('Error al crear el evento');

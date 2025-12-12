@@ -82,9 +82,9 @@ export default function PublicHome() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageStructuredData) }}
       />
       
-      <div className="min-h-screen">
+    <div className="min-h-screen">
         {/* Sección Principal de Propiedades (incluye Hero con búsqueda) */}
-        <PropertiesSection />
+      <PropertiesSection />
         
         {/* Sección de Estadísticas del Mercado */}
         <StatsSection />

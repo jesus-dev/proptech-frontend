@@ -8,6 +8,7 @@ import Script from "next/script";
 import { publicPropertyService } from "@/services/publicPropertyService";
 import { getImageBaseUrl } from "@/config/environment";
 import { generatePropertyStructuredData } from "@/lib/seo";
+import { CommentList } from "@/components/comments/CommentList";
 import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, StarIcon, CheckCircleIcon, VideoCameraIcon, MapIcon, ArrowLeftIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon, WifiIcon, ShieldCheckIcon, ClockIcon, BanknotesIcon, DocumentTextIcon, InformationCircleIcon, XMarkIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 
 // Componente para manejar gestos de swipe en mobile
@@ -69,10 +70,10 @@ const SwipeHandler = ({ onSwipeLeft, onSwipeRight }: { onSwipeLeft: () => void; 
           top: '80px',
           bottom: '80px',
         }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
         onClick={(e) => e.stopPropagation()}
-      />
+    />
     </div>
   );
 };
@@ -605,16 +606,16 @@ export default function PropertyDetailPage() {
                   <div className="flex flex-col items-center text-center">
                     <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl group-hover:bg-white/30 transition-colors">
                       <HomeModernIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    </div>
+                  </div>
                     <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{property.bedrooms}</div>
                     <div className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">Habitaciones</div>
-                  </div>
                 </div>
+                  </div>
                 <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/20 shadow-2xl hover:bg-white/15 hover:scale-105 transition-all duration-300 group">
                   <div className="flex flex-col items-center text-center">
                     <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl group-hover:bg-white/30 transition-colors">
                       <UserIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                    </div>
+                </div>
                     <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{property.bathrooms}</div>
                     <div className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">Baños</div>
                   </div>
@@ -633,10 +634,10 @@ export default function PropertyDetailPage() {
                     <div className="flex flex-col items-center text-center">
                       <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-white/20 rounded-lg sm:rounded-xl group-hover:bg-white/30 transition-colors">
                         <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <rect x="3" y="11" width="18" height="7" rx="2" />
-                          <path d="M7 18v2m10-2v2" />
-                        </svg>
-                      </div>
+                        <rect x="3" y="11" width="18" height="7" rx="2" />
+                        <path d="M7 18v2m10-2v2" />
+                      </svg>
+                    </div>
                       <div className="text-2xl sm:text-3xl font-extrabold text-white mb-1">{property.parking}</div>
                       <div className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider">Estacionamientos</div>
                     </div>
@@ -1162,8 +1163,8 @@ export default function PropertyDetailPage() {
                   <span className="flex items-center gap-4 text-gray-700">
                     <div className="p-2.5 bg-amber-100 rounded-lg">
                       <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                      </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
                     </div>
                     <span className="font-semibold text-lg">Área del Terreno</span>
                   </span>
@@ -1177,7 +1178,7 @@ export default function PropertyDetailPage() {
                       <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <rect x="3" y="11" width="18" height="7" rx="2" />
                         <path d="M7 18v2m10-2v2" />
-                      </svg>
+                    </svg>
                     </div>
                     <span className="font-semibold text-lg">Estacionamientos</span>
                   </span>
@@ -1189,8 +1190,8 @@ export default function PropertyDetailPage() {
                   <span className="flex items-center gap-4 text-gray-700">
                     <div className="p-2.5 bg-rose-100 rounded-lg">
                       <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
                     </div>
                     <span className="font-semibold text-lg">Pisos</span>
                   </span>
@@ -1213,8 +1214,8 @@ export default function PropertyDetailPage() {
                   <span className="flex items-center gap-4 text-gray-700">
                     <div className="p-2.5 bg-teal-100 rounded-lg">
                       <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
                     </div>
                     <span className="font-semibold text-lg">Tipo de Propiedad</span>
                   </span>
@@ -1458,6 +1459,29 @@ export default function PropertyDetailPage() {
         </div>
       </section>
 
+      {/* Sección de Comentarios */}
+      {property && property.id && (
+        <section className="bg-white py-12 sm:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                <ChatBubbleLeftRightIcon className="w-8 h-8 text-cyan-600" />
+                Comentarios
+              </h2>
+              <p className="text-gray-600 text-lg">
+                Comparte tu opinión sobre esta propiedad y ayuda a otros usuarios a tomar decisiones informadas.
+              </p>
+            </div>
+            
+            <div className="max-w-4xl mx-auto">
+              <CommentList 
+                postId={property.id} 
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Lightbox optimizado para mobile */}
       {typeof mounted !== 'undefined' && mounted && lightboxOpen && createPortal(
         <div 
@@ -1465,8 +1489,8 @@ export default function PropertyDetailPage() {
           onClick={(e) => {
             // Solo cerrar si se hace clic directamente en el fondo (no en elementos hijos)
             if (e.target === e.currentTarget) {
-              console.log('Closing lightbox');
-              setLightboxOpen(false);
+            console.log('Closing lightbox');
+            setLightboxOpen(false);
             }
           }}
           style={{ 
@@ -1529,7 +1553,7 @@ export default function PropertyDetailPage() {
               <>
                 <button
                   onClick={(e) => { 
-                    e.stopPropagation();
+                    e.stopPropagation(); 
                     e.preventDefault();
                     setLightboxIndex((prev) => (prev - 1 + images.length) % images.length); 
                   }}
@@ -1551,7 +1575,7 @@ export default function PropertyDetailPage() {
                 </button>
                 <button
                   onClick={(e) => { 
-                    e.stopPropagation();
+                    e.stopPropagation(); 
                     e.preventDefault();
                     setLightboxIndex((prev) => (prev + 1) % images.length); 
                   }}
@@ -1616,7 +1640,7 @@ export default function PropertyDetailPage() {
                 <button
                   key={idx}
                   onClick={(e) => { 
-                    e.stopPropagation();
+                    e.stopPropagation(); 
                     e.preventDefault();
                     setLightboxIndex(idx); 
                   }}
