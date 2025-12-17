@@ -32,21 +32,29 @@ const apiClient = axios.create({
 // Interceptor para agregar token de autenticación y tenant seleccionado
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token && token !== 'undefined' && token !== 'null') {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Asegurar que headers existe (crítico en producción)
+    if (!config.headers) {
+      config.headers = {} as any;
     }
     
-    // Si es SUPER_ADMIN y tiene un tenant seleccionado, enviarlo en el header
-    const selectedTenant = localStorage.getItem('selectedTenant');
-    if (selectedTenant) {
-      try {
-        const tenant = JSON.parse(selectedTenant);
-        if (tenant && tenant.id) {
-          config.headers['X-Selected-Tenant-Id'] = tenant.id.toString();
+    // Solo acceder a localStorage si estamos en el navegador
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token && token !== 'undefined' && token !== 'null') {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      
+      // Si es SUPER_ADMIN y tiene un tenant seleccionado, enviarlo en el header
+      const selectedTenant = localStorage.getItem('selectedTenant');
+      if (selectedTenant) {
+        try {
+          const tenant = JSON.parse(selectedTenant);
+          if (tenant && tenant.id) {
+            config.headers['X-Selected-Tenant-Id'] = tenant.id.toString();
+          }
+        } catch (e) {
+          // Ignorar si el JSON está corrupto
         }
-      } catch (e) {
-        // Ignorar si el JSON está corrupto
       }
     }
     
@@ -82,26 +90,73 @@ apiClient.interceptors.response.use(
     
     // 🚨 PRIORIDAD 1: Errores de autenticación - INTENTAR REFRESCAR TOKEN
     // Manejar 401 siempre, y 403 solo si parece ser un error de token (no un error de permisos real)
-    const errorMessage = (error.response?.data?.error || error.response?.data?.message || '').toLowerCase();
-    const isRealPermissionError = errorMessage.includes('permiso') || 
-                                   errorMessage.includes('permission') || 
-                                   errorMessage.includes('plan free') ||
-                                   errorMessage.includes('límite') ||
-                                   errorMessage.includes('limit') ||
-                                   errorMessage.includes('no tienes permiso');
+    const errorMessage = (error.response?.data?.error || error.response?.data?.message || String(error.response?.data || '')).toLowerCase();
     
-    // Solo intentar refresh si es 401, o si es 403 pero NO es un error de permisos real
+    // Errores de permisos REALES (no intentar refresh para estos)
+    const isRealPermissionError = errorMessage.includes('no pertenece a tu tenant') ||
+                                   errorMessage.includes('not belongs to your tenant') ||
+                                   errorMessage.includes('permiso para modificar') ||
+                                   errorMessage.includes('permission to modify') ||
+                                   errorMessage.includes('plan free') ||
+                                   errorMessage.includes('plan free no permite') ||
+                                   errorMessage.includes('límite de propiedades') ||
+                                   errorMessage.includes('limit of properties') ||
+                                   errorMessage.includes('has alcanzado el límite') ||
+                                   errorMessage.includes('reached the limit') ||
+                                   errorMessage.includes('no tienes permiso') ||
+                                   errorMessage.includes('you do not have permission') ||
+                                   errorMessage.includes('role') ||
+                                   errorMessage.includes('rol') ||
+                                   errorMessage.includes('acceso denegado') ||
+                                   errorMessage.includes('access denied');
+    
+    // Intentar refresh:
+    // - Si es 401 (siempre es token)
+    // - Si es 403 pero NO es un error de permisos real Y hay refresh token disponible
+    // - Si es 403 sin mensaje de error claro (puede ser token expirado)
+    const hasRefreshToken = localStorage.getItem('refreshToken') && 
+                           localStorage.getItem('refreshToken') !== 'undefined' && 
+                           localStorage.getItem('refreshToken') !== 'null';
+    
     const shouldTryRefresh = (error.response?.status === 401 || 
-                             (error.response?.status === 403 && !isRealPermissionError)) && 
+                             (error.response?.status === 403 && !isRealPermissionError && hasRefreshToken)) && 
                              !config._retry;
     
+    // Log para debug - siempre mostrar para ayudar a diagnosticar
+    if (error.response?.status === 403) {
+      const logData = {
+        url: config.url,
+        method: config.method,
+        errorMessage: errorMessage || '(sin mensaje)',
+        isRealPermissionError,
+        hasRefreshToken,
+        willTryRefresh: shouldTryRefresh,
+        responseData: error.response?.data,
+        currentToken: localStorage.getItem('token') ? 'presente' : 'ausente'
+      };
+      
+      if (shouldTryRefresh) {
+        console.log('🔄 403 detectado - Intentando refresh de token:', logData);
+      } else if (isRealPermissionError) {
+        console.warn('⚠️ 403 Forbidden - Error de permisos real:', logData);
+      } else {
+        console.warn('⚠️ 403 Forbidden - Sin refresh token disponible:', logData);
+      }
+    }
+    
     if (shouldTryRefresh) {
+      // Guardar si es error de permisos para usarlo después
+      const wasPermissionError = isRealPermissionError;
+      
       // Si ya está refrescando, encolar esta petición
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then(token => {
+            if (!config.headers) {
+              config.headers = {} as any;
+            }
             config.headers.Authorization = `Bearer ${token}`;
             return apiClient(config);
           })
@@ -119,15 +174,31 @@ apiClient.interceptors.response.use(
         
         try {
           // Llamar al endpoint de refresh sin usar el interceptor (para evitar loop)
-          const refreshResponse = await axios.post(`${resolveApiUrl()}/api/auth/refresh`, {
+          const refreshUrl = `${resolveApiUrl()}/api/auth/refresh`;
+          console.log('🔄 Intentando refresh token en:', refreshUrl, process.env.NODE_ENV === 'production' ? '(PRODUCCIÓN)' : '(DEV)');
+          
+          const refreshResponse = await axios.post(refreshUrl, {
             refreshToken: refreshToken
           }, {
             headers: {
               'Content-Type': 'application/json'
-            }
+            },
+            timeout: 10000, // 10 segundos timeout para refresh
+            // No usar el interceptor de apiClient para evitar loops
+            validateStatus: (status) => status < 500 // Permitir 401, 403, etc para manejarlos
           });
+          
+          // Verificar si la respuesta es exitosa
+          if (refreshResponse.status < 200 || refreshResponse.status >= 300) {
+            throw new Error(`Refresh falló con status ${refreshResponse.status}: ${JSON.stringify(refreshResponse.data)}`);
+          }
 
           const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data;
+          
+          // Validar que se recibió el token ANTES de guardarlo
+          if (!accessToken) {
+            throw new Error('No se recibió accessToken en la respuesta de refresh');
+          }
           
           // Guardar nuevos tokens
           localStorage.setItem('token', accessToken);
@@ -135,23 +206,51 @@ apiClient.interceptors.response.use(
             localStorage.setItem('refreshToken', newRefreshToken);
           }
           
-          // Actualizar header de la petición original
+          // Actualizar header de la petición original - Asegurar que headers existe
+          if (!config.headers) {
+            config.headers = {} as any;
+          }
           config.headers.Authorization = `Bearer ${accessToken}`;
           
           // Procesar cola de peticiones pendientes
           processQueue(null, accessToken);
           isRefreshing = false;
           
-          // Reintentar petición original
+          // Reintentar petición original con el nuevo token
+          console.log('🔄 Token refrescado exitosamente, reintentando request:', config.method, config.url);
+          // Limpiar el flag _retry para permitir reintentos si es necesario
+          delete config._retry;
+          
           return apiClient(config);
-        } catch (refreshError) {
+        } catch (refreshError: any) {
           // Si falla el refresh, limpiar y redirigir
           processQueue(refreshError, null);
           isRefreshing = false;
           
+          const errorDetails = {
+            message: refreshError?.message,
+            status: refreshError?.response?.status,
+            statusText: refreshError?.response?.statusText,
+            data: refreshError?.response?.data,
+            url: refreshError?.config?.url,
+            code: refreshError?.code
+          };
+          
+          console.error('❌ Error al refrescar token en', process.env.NODE_ENV || 'unknown', ':', errorDetails);
+          
+          // Limpiar tokens inválidos
           if (typeof window !== 'undefined') {
-            localStorage.clear();
-            window.location.href = '/login';
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            // Solo redirigir si realmente falló la autenticación
+            // No redirigir si el error original era de permisos
+            if (error.response?.status === 401 || (!wasPermissionError && refreshError?.response?.status === 401)) {
+              console.log('🔐 Redirigiendo a login por fallo de autenticación');
+              window.location.href = '/login';
+            } else if (!wasPermissionError) {
+              // Si no era error de permisos pero el refresh falló, puede ser token expirado
+              console.warn('⚠️ Refresh falló pero no redirigiendo - puede ser problema de permisos real');
+            }
           }
           return Promise.reject(refreshError);
         }
