@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import Image from 'next/image';
 import { getEndpoint } from '@/lib/api-config';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { processImageFiles, isHeicFile } from '@/lib/image-utils';
+import { processImageFiles, isHeicFile, convertHeicToJpg } from '@/lib/image-utils';
 import { analytics } from '@/lib/analytics';
 
 interface SelectedFile {
@@ -61,55 +61,73 @@ export default function CreateAlbumPage() {
   // Función para crear preview optimizado (tamaño limitado)
   const createOptimizedPreview = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      if (typeof window === 'undefined') {
-        // Fallback para SSR
+      if (typeof window === 'undefined' || typeof HTMLImageElement === 'undefined') {
+        // Fallback para SSR o navegadores sin soporte
         resolve(URL.createObjectURL(file));
         return;
       }
       
       const reader = new FileReader();
       reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_PREVIEW_SIZE = 400; // Tamaño máximo del preview
-          
-          let width = img.width;
-          let height = img.height;
-          
-          // Redimensionar si es muy grande
-          if (width > MAX_PREVIEW_SIZE || height > MAX_PREVIEW_SIZE) {
-            if (width > height) {
-              height = (height * MAX_PREVIEW_SIZE) / width;
-              width = MAX_PREVIEW_SIZE;
-            } else {
-              width = (width * MAX_PREVIEW_SIZE) / height;
-              height = MAX_PREVIEW_SIZE;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            reject(new Error('No se pudo crear contexto de canvas'));
-            return;
-          }
-          
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (blob) {
-              resolve(URL.createObjectURL(blob));
-            } else {
-              // Fallback a preview original si falla
+        try {
+          // Usar HTMLImageElement en lugar de Image para evitar problemas de minificación
+          const img = document.createElement('img');
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              const MAX_PREVIEW_SIZE = 400; // Tamaño máximo del preview
+              
+              let width = img.naturalWidth || img.width;
+              let height = img.naturalHeight || img.height;
+              
+              // Redimensionar si es muy grande
+              if (width > MAX_PREVIEW_SIZE || height > MAX_PREVIEW_SIZE) {
+                if (width > height) {
+                  height = (height * MAX_PREVIEW_SIZE) / width;
+                  width = MAX_PREVIEW_SIZE;
+                } else {
+                  width = (width * MAX_PREVIEW_SIZE) / height;
+                  height = MAX_PREVIEW_SIZE;
+                }
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) {
+                // Fallback a preview original si no hay contexto
+                resolve(URL.createObjectURL(file));
+                return;
+              }
+              
+              ctx.drawImage(img, 0, 0, width, height);
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  resolve(URL.createObjectURL(blob));
+                } else {
+                  // Fallback a preview original si falla
+                  resolve(URL.createObjectURL(file));
+                }
+              }, 'image/jpeg', 0.7);
+            } catch (error) {
+              // Fallback a preview original si hay error
               resolve(URL.createObjectURL(file));
             }
-          }, 'image/jpeg', 0.7);
-        };
-        img.onerror = () => reject(new Error('Error al cargar imagen'));
-        img.src = e.target?.result as string;
+          };
+          img.onerror = () => {
+            // Fallback a preview original si falla la carga
+            resolve(URL.createObjectURL(file));
+          };
+          img.src = e.target?.result as string;
+        } catch (error) {
+          // Fallback a preview original si hay error
+          resolve(URL.createObjectURL(file));
+        }
       };
-      reader.onerror = () => reject(new Error('Error al leer archivo'));
+      reader.onerror = () => {
+        // Fallback a preview original si falla la lectura
+        resolve(URL.createObjectURL(file));
+      };
       reader.readAsDataURL(file);
     });
   };
@@ -117,8 +135,16 @@ export default function CreateAlbumPage() {
   const processFiles = async (files: FileList | null) => {
     if (!files) return;
 
+    // Aceptar todos los formatos de imagen (JPEG, PNG, WEBP, GIF, HEIC, etc.)
     const imageFiles = Array.from(files).filter(file => {
-      return file.type.startsWith('image/') || isHeicFile(file);
+      // Aceptar si tiene tipo MIME de imagen
+      if (file.type.startsWith('image/')) return true;
+      // Aceptar si es HEIC (puede no tener tipo MIME correcto)
+      if (isHeicFile(file)) return true;
+      // Aceptar por extensión común de imágenes (por si el tipo MIME no está disponible)
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.heic', '.heif'];
+      const fileName = file.name.toLowerCase();
+      return imageExtensions.some(ext => fileName.endsWith(ext));
     });
 
     if (imageFiles.length === 0) {

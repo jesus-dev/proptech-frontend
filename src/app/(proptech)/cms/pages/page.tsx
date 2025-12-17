@@ -10,7 +10,7 @@ import {
   Bars3Icon
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 interface WebPage {
   id: number;
@@ -35,19 +35,11 @@ export default function PagesManagementPage() {
   const loadPages = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/pages'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPages(data);
-      }
-    } catch (error) {
+      const response = await apiClient.get('/api/cms/pages');
+      setPages(response.data);
+    } catch (error: any) {
       console.error('Error loading pages:', error);
+      // 401 es manejado automáticamente por el interceptor de apiClient
     } finally {
       setLoading(false);
     }
@@ -57,19 +49,11 @@ export default function PagesManagementPage() {
     if (!confirm('¿Estás seguro de eliminar esta página?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/pages/${id}`), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        loadPages();
-      }
-    } catch (error) {
+      await apiClient.delete(`/api/cms/pages/${id}`);
+      loadPages();
+    } catch (error: any) {
       console.error('Error deleting page:', error);
+      // 401 es manejado automáticamente por el interceptor de apiClient
     }
   };
 

@@ -11,7 +11,7 @@ import {
   UserGroupIcon
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 interface Event {
   id: number;
@@ -38,19 +38,11 @@ export default function EventsManagementPage() {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/events'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
-      }
-    } catch (error) {
+      const response = await apiClient.get('/api/cms/events');
+      setEvents(response.data);
+    } catch (error: any) {
       console.error('Error loading events:', error);
+      // 401 es manejado automáticamente por el interceptor de apiClient
     } finally {
       setLoading(false);
     }
@@ -60,19 +52,11 @@ export default function EventsManagementPage() {
     if (!confirm('¿Estás seguro de eliminar este evento?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/events/${id}`), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        loadEvents();
-      }
-    } catch (error) {
+      await apiClient.delete(`/api/cms/events/${id}`);
+      loadEvents();
+    } catch (error: any) {
       console.error('Error deleting event:', error);
+      // 401 es manejado automáticamente por el interceptor de apiClient
     }
   };
 

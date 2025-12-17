@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BlogPostForm from '../components/BlogPostForm';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export default function NewBlogPostPage() {
   const router = useRouter();
@@ -15,24 +15,14 @@ export default function NewBlogPostPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/blog-posts'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        router.push('/cms/blog');
-      } else {
-        setError('Error al crear el post');
-      }
-    } catch (error) {
+      await apiClient.post('/api/cms/blog-posts', formData);
+      router.push('/cms/blog');
+    } catch (error: any) {
       console.error('Error:', error);
-      setError('Error de conexión');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        setError(error?.response?.data?.error || 'Error al crear el post');
+      }
     } finally {
       setIsSubmitting(false);
     }

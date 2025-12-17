@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import { webGalleryService, Gallery } from '@/services/webGalleryService';
 import { toast } from 'sonner';
 import Image from 'next/image';
@@ -84,35 +85,14 @@ export default function UnifiedContentPage() {
     
     try {
       setEventsLoading(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token || token === 'undefined' || token === 'null') {
-        handleUnauthorized();
-        return;
-      }
-      
-      const response = await fetch(getEndpoint('/api/cms/events'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        handleUnauthorized();
-        return;
-      }
-
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
-        setIsUnauthorized(false); // Reset si la request fue exitosa
-      } else {
-        console.error('Error loading events:', response.status, response.statusText);
-      }
+      const response = await apiClient.get('/api/cms/events');
+      setEvents(response.data);
+      setIsUnauthorized(false); // Reset si la request fue exitosa
     } catch (error: any) {
       console.error('Error loading events:', error);
-      if (error?.response?.status === 401 || error?.message?.includes('401')) {
-        handleUnauthorized();
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        toast.error('Error al cargar eventos');
       }
     } finally {
       setEventsLoading(false);
@@ -125,13 +105,6 @@ export default function UnifiedContentPage() {
     
     try {
       setGalleriesLoading(true);
-      const token = localStorage.getItem('token');
-      
-      if (!token || token === 'undefined' || token === 'null') {
-        handleUnauthorized();
-        return;
-      }
-      
       console.log('Loading galleries...');
       const data = await webGalleryService.getMyGalleries();
       console.log('Galleries loaded:', data);
@@ -147,10 +120,8 @@ export default function UnifiedContentPage() {
       }
     } catch (error: any) {
       console.error('Error loading galleries:', error);
-      
-      if (error?.response?.status === 401 || error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
-        handleUnauthorized();
-      } else {
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
         const errorMessage = error?.response?.data?.error || error?.message || 'Error al cargar álbumes';
         toast.error(errorMessage);
         setGalleries([]);
@@ -161,21 +132,16 @@ export default function UnifiedContentPage() {
   };
   
   // Función centralizada para manejar errores de autenticación
+  // Nota: El interceptor de apiClient maneja 401 automáticamente,
+  // pero mantenemos esta función por si hay casos especiales
   const handleUnauthorized = () => {
     if (isUnauthorized) return; // Evitar múltiples redirecciones
     
     setIsUnauthorized(true);
+    // El interceptor de apiClient ya redirige, pero mostramos el toast
     toast.error('Tu sesión ha expirado. Redirigiendo al login...', {
       duration: 2000,
     });
-    
-    // Limpiar localStorage y redirigir
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        localStorage.clear();
-        window.location.href = '/login';
-      }
-    }, 2000);
   };
 
   const handleDeleteEvent = async (id: number) => {
@@ -183,36 +149,14 @@ export default function UnifiedContentPage() {
     if (isUnauthorized) return;
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token || token === 'undefined' || token === 'null') {
-        handleUnauthorized();
-        return;
-      }
-      
-      const response = await fetch(getEndpoint(`/api/cms/events/${id}`), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        handleUnauthorized();
-        return;
-      }
-
-      if (response.ok) {
-        analytics.track(AnalyticsEvent.EVENT_DELETED, { event_id: id });
-        toast.success('Evento eliminado');
-        loadEvents();
-      } else {
-        toast.error('Error al eliminar evento');
-      }
+      await apiClient.delete(`/api/cms/events/${id}`);
+      analytics.track(AnalyticsEvent.EVENT_DELETED, { event_id: id });
+      toast.success('Evento eliminado');
+      loadEvents();
     } catch (error: any) {
       console.error('Error deleting event:', error);
-      if (error?.response?.status === 401 || error?.message?.includes('401')) {
-        handleUnauthorized();
-      } else {
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
         toast.error('Error al eliminar evento');
       }
     }
@@ -229,9 +173,8 @@ export default function UnifiedContentPage() {
       loadGalleries();
     } catch (error: any) {
       console.error('Error deleting gallery:', error);
-      if (error?.response?.status === 401 || error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
-        handleUnauthorized();
-      } else {
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
         toast.error(error.response?.data?.error || 'Error al eliminar álbum');
       }
     }
@@ -246,9 +189,8 @@ export default function UnifiedContentPage() {
       loadGalleries();
     } catch (error: any) {
       console.error('Error toggling publish:', error);
-      if (error?.response?.status === 401 || error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
-        handleUnauthorized();
-      } else {
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
         toast.error('Error al cambiar estado de publicación');
       }
     }
@@ -753,7 +695,10 @@ export default function UnifiedContentPage() {
                         src={getImageUrl(gallery.photos[0].url)}
                         alt={gallery.title}
                         fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-cover"
+                        loading="lazy"
+                        quality={75}
                       />
                       <div className="absolute top-2 right-2 flex gap-2">
                         {gallery.isPublished ? (

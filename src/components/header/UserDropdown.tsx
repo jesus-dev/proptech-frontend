@@ -199,11 +199,14 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
         {/* Avatar con gradiente moderno */}
         <div className="relative flex-shrink-0">
           {avatarUrl ? (
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg">
-              <img
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg relative">
+              <Image
                 src={avatarUrl}
                 alt={name}
-                className="w-full h-full object-cover"
+                fill
+                sizes="40px"
+                className="object-cover"
+                quality={85}
               />
             </div>
           ) : (
@@ -243,11 +246,14 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
             <div className="relative flex items-center gap-4">
               {/* Avatar grande */}
               {avatarUrl ? (
-                <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-white/50 shadow-xl">
-                  <img
+                <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-white/50 shadow-xl relative">
+                  <Image
                     src={avatarUrl}
                     alt={name}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                    quality={90}
                   />
                 </div>
               ) : (

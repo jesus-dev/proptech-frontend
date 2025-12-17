@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { 
   PlusIcon, 
   TrashIcon,
@@ -13,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { processImageFiles, isHeicFile } from '@/lib/image-utils';
 
@@ -44,19 +46,14 @@ export default function MediaLibraryPage() {
   const loadMedia = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/media'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMedia(data);
-      }
-    } catch (error) {
+      const response = await apiClient.get('/api/cms/media');
+      setMedia(response.data);
+    } catch (error: any) {
       console.error('Error loading media:', error);
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        toast.error('Error al cargar medios');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,21 +66,27 @@ export default function MediaLibraryPage() {
 
     try {
       setUploading(true);
-      const token = localStorage.getItem('token');
       const fileArray = Array.from(files);
       
       // Separar imágenes de otros archivos
-      const imageFiles = fileArray.filter(file => 
-        file.type.startsWith('image/') || isHeicFile(file)
-      );
-      const otherFiles = fileArray.filter(file => 
-        !file.type.startsWith('image/') && !isHeicFile(file)
-      );
+      // Aceptar todos los formatos de imagen (JPEG, PNG, WEBP, GIF, HEIC, etc.)
+      const imageFiles = fileArray.filter(file => {
+        // Aceptar si tiene tipo MIME de imagen
+        if (file.type.startsWith('image/')) return true;
+        // Aceptar si es HEIC (puede no tener tipo MIME correcto)
+        if (isHeicFile(file)) return true;
+        // Aceptar por extensión común de imágenes (por si el tipo MIME no está disponible)
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.heic', '.heif'];
+        const fileName = file.name.toLowerCase();
+        return imageExtensions.some(ext => fileName.endsWith(ext));
+      });
+      const otherFiles = fileArray.filter(file => !imageFiles.includes(file));
 
-      // Convertir imágenes HEIC a JPG
+      // Procesar solo archivos HEIC (JPEG, PNG, etc. se suben directamente)
       let processedFiles: File[] = [];
       try {
         if (imageFiles.length > 0) {
+          // processImageFiles solo convierte HEIC, el resto pasa sin modificar
           processedFiles = await processImageFiles(imageFiles);
         }
         processedFiles = [...processedFiles, ...otherFiles];
@@ -105,23 +108,19 @@ export default function MediaLibraryPage() {
           uploadFormData.append('fileName', file.name);
           uploadFormData.append('category', 'GENERAL');
 
-          const response = await fetch(getEndpoint('/api/cms/media/upload'), {
-            method: 'POST',
+          await apiClient.post('/api/cms/media/upload', uploadFormData, {
             headers: {
-              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
             },
-            body: uploadFormData,
           });
-
-          if (response.ok) {
-            successCount++;
-          } else {
-            errorCount++;
-            console.error(`Error uploading ${file.name}:`, response.statusText);
-          }
-        } catch (error) {
+          successCount++;
+        } catch (error: any) {
           errorCount++;
           console.error(`Error uploading ${file.name}:`, error);
+          // 401 es manejado automáticamente por el interceptor de apiClient
+          if (error?.response?.status === 401) {
+            break; // Si es 401, no continuar con más uploads
+          }
         }
       }
 
@@ -157,21 +156,15 @@ export default function MediaLibraryPage() {
     if (!confirm('¿Estás seguro de eliminar este archivo?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/media/${id}`), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        loadMedia();
-        toast.success('Archivo eliminado');
-      }
-    } catch (error) {
+      await apiClient.delete(`/api/cms/media/${id}`);
+      loadMedia();
+      toast.success('Archivo eliminado');
+    } catch (error: any) {
       console.error('Error deleting media:', error);
-      toast.error('Error al eliminar archivo');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        toast.error('Error al eliminar archivo');
+      }
     }
   };
 
@@ -240,7 +233,7 @@ export default function MediaLibraryPage() {
             className="hidden"
             disabled={uploading}
             multiple
-            accept="image/*,.heic,.heif,.hif,video/*,application/pdf,.doc,.docx"
+            accept="image/*,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.heic,.heif,.hif,video/*,application/pdf,.doc,.docx"
             title="Selecciona uno o más archivos (imágenes, videos, documentos, etc.). Las imágenes HEIC se convertirán automáticamente a JPG."
           />
         </label>
@@ -329,12 +322,16 @@ export default function MediaLibraryPage() {
                     key={item.id}
                     className="group relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all"
                   >
-                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center relative">
                       {item.fileType === 'IMAGE' ? (
-                        <img
+                        <Image
                           src={getEndpoint(item.fileUrl)}
                           alt={item.altText || item.fileName}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                          className="object-cover"
+                          loading="lazy"
+                          quality={75}
                         />
                       ) : (
                         <div className="text-gray-400">

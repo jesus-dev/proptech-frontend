@@ -20,7 +20,7 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe, Building2, Calendar, MessageSquare, AlertTriangle, Shield, QrCode, ClipboardList, BarChart3 } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import Logo from "@/components/common/Logo";
 
@@ -90,7 +90,11 @@ const navItems: NavItem[] = [
       },
     ],
   },
-
+  {
+    name: "Condominios",
+    path: "/condominiums",
+    icon: <Building2 className="w-5 h-5" />,
+  },
   {
     name: "Gestión de Propiedades de Propietarios",
     path: "/owners-property",
@@ -183,16 +187,14 @@ const navItems: NavItem[] = [
         path: "/agenda/today",
       },
       {
+        name: "Visitas",
+        path: "/visits",
+      },
+      {
         name: "Reportes",
         path: "/agenda/reports",
       },
-
     ],
-  },
-  {
-    name: "Visitas",
-    path: "/visits",
-    icon: <CalenderIcon />,
   },
   {
     name: "Contactos",
@@ -238,7 +240,6 @@ const navItems: NavItem[] = [
       },
     ],
   },
-
   {
     name: "Desarrollos",
     path: "/developments",
@@ -264,6 +265,21 @@ const navItems: NavItem[] = [
         name: "Reservas",
         path: "/developments/reservations",
       },
+    ],
+  },
+  {
+    name: "Documentos",
+    path: "/documents",
+    icon: <DocsIcon />,
+    subItems: [
+      {
+        name: "Gestión Documental",
+        path: "/documents",
+      },
+      {
+        name: "Plantillas",
+        path: "/documents/templates",
+      }
     ],
   },
   {

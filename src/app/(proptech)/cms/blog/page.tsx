@@ -11,7 +11,8 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface BlogPost {
   id: number;
@@ -38,19 +39,14 @@ export default function BlogManagementPage() {
   const loadPosts = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/blog-posts'), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data);
-      }
-    } catch (error) {
+      const response = await apiClient.get('/api/cms/blog-posts');
+      setPosts(response.data);
+    } catch (error: any) {
       console.error('Error loading posts:', error);
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        toast.error('Error al cargar posts');
+      }
     } finally {
       setLoading(false);
     }
@@ -60,19 +56,11 @@ export default function BlogManagementPage() {
     if (!confirm('¿Estás seguro de eliminar este post?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/blog-posts/${id}`), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        loadPosts();
-      }
-    } catch (error) {
+      await apiClient.delete(`/api/cms/blog-posts/${id}`);
+      loadPosts();
+    } catch (error: any) {
       console.error('Error deleting post:', error);
+      // 401 es manejado automáticamente por el interceptor de apiClient
     }
   };
 

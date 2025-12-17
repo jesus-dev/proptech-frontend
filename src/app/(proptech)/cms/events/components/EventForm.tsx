@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Upload, Image as ImageIcon, MapPin } from 'lucide-react';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 interface EventFormProps {
   initialData?: any;
@@ -86,22 +86,18 @@ export default function EventForm({
       uploadFormData.append('fileName', file.name);
       uploadFormData.append('category', 'EVENT');
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/media/upload'), {
-        method: 'POST',
+      const response = await apiClient.post('/api/cms/media/upload', uploadFormData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: uploadFormData,
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        handleChange('eventImage', result.fileUrl);
-      }
-    } catch (error) {
+      handleChange('eventImage', response.data.fileUrl);
+    } catch (error: any) {
       console.error('Error uploading image:', error);
-      alert('Error al subir la imagen');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        alert('Error al subir la imagen');
+      }
     } finally {
       setUploadingImage(false);
     }

@@ -71,23 +71,39 @@ export async function convertHeicToJpg(file: File): Promise<File> {
 
 /**
  * Procesa múltiples archivos, convirtiendo HEIC a JPG cuando sea necesario
+ * Optimizado: solo procesa HEIC, el resto se retorna sin modificar
  */
 export async function processImageFiles(files: File[]): Promise<File[]> {
-  const processedFiles: File[] = [];
+  // Separar archivos HEIC de los demás
+  const heicFiles: File[] = [];
+  const otherFiles: File[] = [];
 
   for (const file of files) {
-    try {
-      if (isHeicFile(file)) {
-        const convertedFile = await convertHeicToJpg(file);
-        processedFiles.push(convertedFile);
-      } else {
-        processedFiles.push(file);
-      }
-    } catch (error) {
-      console.error(`Error processing file ${file.name}:`, error);
-      // Continuar con otros archivos incluso si uno falla
+    if (isHeicFile(file)) {
+      heicFiles.push(file);
+    } else {
+      // JPEG, PNG, WEBP, etc. se retornan sin procesar
+      otherFiles.push(file);
     }
   }
 
-  return processedFiles;
+  // Procesar solo archivos HEIC en paralelo para mayor velocidad
+  const processedHeicFiles = await Promise.allSettled(
+    heicFiles.map(file => convertHeicToJpg(file))
+  );
+
+  // Agregar archivos HEIC convertidos exitosamente
+  const convertedFiles: File[] = [];
+  for (const result of processedHeicFiles) {
+    if (result.status === 'fulfilled') {
+      convertedFiles.push(result.value);
+    } else {
+      console.error('Error converting HEIC file:', result.reason);
+      // Si falla la conversión, no incluimos el archivo
+      // El usuario verá el error en el toast
+    }
+  }
+
+  // Retornar archivos convertidos + archivos normales (sin procesar)
+  return [...convertedFiles, ...otherFiles];
 }

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Upload, Image as ImageIcon } from 'lucide-react';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // Importar el editor de forma dinámica para evitar problemas con SSR (mismo que en propiedades)
@@ -77,7 +77,12 @@ export default function BlogPostForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    // Aceptar todos los formatos de imagen (incluyendo JPEG sin tipo MIME correcto)
+    const isImage = file.type.startsWith('image/') || 
+                   ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].some(ext => 
+                     file.name.toLowerCase().endsWith(ext)
+                   );
+    if (!isImage) {
       alert('Solo se permiten archivos de imagen');
       return;
     }
@@ -91,22 +96,18 @@ export default function BlogPostForm({
       uploadFormData.append('category', 'BLOG');
       uploadFormData.append('altText', formData.title);
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/media/upload'), {
-        method: 'POST',
+      const response = await apiClient.post('/api/cms/media/upload', uploadFormData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: uploadFormData,
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        handleChange('featuredImage', result.fileUrl);
-      }
-    } catch (error) {
+      handleChange('featuredImage', response.data.fileUrl);
+    } catch (error: any) {
       console.error('Error uploading image:', error);
-      alert('Error al subir la imagen');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        alert('Error al subir la imagen');
+      }
     } finally {
       setUploadingImage(false);
     }

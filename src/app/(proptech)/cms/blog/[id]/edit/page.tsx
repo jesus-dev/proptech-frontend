@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import BlogPostForm from '../../components/BlogPostForm';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export default function EditBlogPostPage() {
   const router = useRouter();
@@ -24,22 +24,16 @@ export default function EditBlogPostPage() {
 
   const loadPost = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/blog-posts/${postId}`), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPost(data);
-      } else {
-        setError('Post no encontrado');
-      }
-    } catch (error) {
+      const response = await apiClient.get(`/api/cms/blog-posts/${postId}`);
+      setPost(response.data);
+    } catch (error: any) {
       console.error('Error loading post:', error);
-      setError('Error al cargar el post');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status === 404) {
+        setError('Post no encontrado');
+      } else if (error?.response?.status !== 401) {
+        setError('Error al cargar el post');
+      }
     } finally {
       setLoading(false);
     }
@@ -50,38 +44,18 @@ export default function EditBlogPostPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/blog-posts/${postId}`), {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        router.push('/cms/blog');
-      } else {
-        // Intentar obtener el mensaje de error del backend
-        let errorMessage = 'Error al actualizar el post';
-        try {
-          const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (typeof errorData === 'string') {
-            errorMessage = errorData;
-          }
-        } catch (e) {
-          // Si no se puede parsear el error, usar el status text
-          errorMessage = `Error ${response.status}: ${response.statusText}`;
-        }
-        setError(errorMessage);
-        console.error('Error updating post:', response.status, errorMessage);
-      }
-    } catch (error) {
+      await apiClient.put(`/api/cms/blog-posts/${postId}`, formData);
+      router.push('/cms/blog');
+    } catch (error: any) {
       console.error('Error:', error);
-      setError('Error de conexión. Por favor, verifica tu conexión a internet.');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        const errorMessage = error?.response?.data?.error || 
+                            error?.response?.data || 
+                            error?.message || 
+                            'Error al actualizar el post';
+        setError(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }

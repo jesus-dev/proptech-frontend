@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import EventForm from '../../components/EventForm';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -24,22 +24,16 @@ export default function EditEventPage() {
 
   const loadEvent = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/events/${eventId}`), {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setEvent(data);
-      } else {
-        setError('Evento no encontrado');
-      }
-    } catch (error) {
+      const response = await apiClient.get(`/api/cms/events/${eventId}`);
+      setEvent(response.data);
+    } catch (error: any) {
       console.error('Error loading event:', error);
-      setError('Error al cargar el evento');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status === 404) {
+        setError('Evento no encontrado');
+      } else if (error?.response?.status !== 401) {
+        setError('Error al cargar el evento');
+      }
     } finally {
       setLoading(false);
     }
@@ -50,24 +44,14 @@ export default function EditEventPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/cms/events/${eventId}`), {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        router.push('/cms/events');
-      } else {
-        setError('Error al actualizar el evento');
-      }
-    } catch (error) {
+      await apiClient.put(`/api/cms/events/${eventId}`, formData);
+      router.push('/cms/events');
+    } catch (error: any) {
       console.error('Error:', error);
-      setError('Error de conexión');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        setError(error?.response?.data?.error || 'Error al actualizar el evento');
+      }
     } finally {
       setIsSubmitting(false);
     }

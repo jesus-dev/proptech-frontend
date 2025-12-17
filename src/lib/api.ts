@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 // Helper function to resolve API URL - usa localhost en server, URL pública en browser
 function resolveApiUrl(): string {
@@ -57,6 +57,21 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Flag para evitar múltiples refresh simultáneos
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value?: any) => void; reject: (reason?: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(promise => {
+    if (error) {
+      promise.reject(error);
+    } else {
+      promise.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Interceptor para manejar respuestas y errores CON RECUPERACIÓN AUTOMÁTICA
 apiClient.interceptors.response.use(
   (response) => {
@@ -65,14 +80,76 @@ apiClient.interceptors.response.use(
   async (error) => {
     const config = error.config;
     
-    // 🚨 PRIORIDAD 1: Errores de autenticación - IR DIRECTO AL LOGIN
-    if (error.response?.status === 401) {
-      // Sesión expirada, redirigir silenciosamente
-      if (typeof window !== 'undefined') {
-        localStorage.clear();
-        window.location.href = '/login';
+    // 🚨 PRIORIDAD 1: Errores de autenticación - INTENTAR REFRESCAR TOKEN
+    // También manejar 403 ya que algunos servidores devuelven 403 cuando el token está expirado
+    if ((error.response?.status === 401 || error.response?.status === 403) && !config._retry) {
+      // Si ya está refrescando, encolar esta petición
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            config.headers.Authorization = `Bearer ${token}`;
+            return apiClient(config);
+          })
+          .catch(err => {
+            return Promise.reject(err);
+          });
       }
-      return Promise.reject(error);
+
+      config._retry = true;
+      const refreshToken = localStorage.getItem('refreshToken');
+      
+      // Si hay refresh token, intentar renovar
+      if (refreshToken && refreshToken !== 'undefined' && refreshToken !== 'null') {
+        isRefreshing = true;
+        
+        try {
+          // Llamar al endpoint de refresh sin usar el interceptor (para evitar loop)
+          const refreshResponse = await axios.post(`${resolveApiUrl()}/api/auth/refresh`, {
+            refreshToken: refreshToken
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data;
+          
+          // Guardar nuevos tokens
+          localStorage.setItem('token', accessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('refreshToken', newRefreshToken);
+          }
+          
+          // Actualizar header de la petición original
+          config.headers.Authorization = `Bearer ${accessToken}`;
+          
+          // Procesar cola de peticiones pendientes
+          processQueue(null, accessToken);
+          isRefreshing = false;
+          
+          // Reintentar petición original
+          return apiClient(config);
+        } catch (refreshError) {
+          // Si falla el refresh, limpiar y redirigir
+          processQueue(refreshError, null);
+          isRefreshing = false;
+          
+          if (typeof window !== 'undefined') {
+            localStorage.clear();
+            window.location.href = '/login';
+          }
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // No hay refresh token, redirigir directamente
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
     }
 
     if (error.response?.status === 500 && localStorage.getItem('token')) {
@@ -119,9 +196,9 @@ apiClient.interceptors.response.use(
       error.code === 'ECONNABORTED' || // Timeout
       !error.response; // Error de red
 
-    // Solo NO reintentar para 403 (sin permisos) y 404 (no encontrado)
+    // Solo NO reintentar para 404 (no encontrado)
+    // Los 403 pueden ser de autenticación y ya se manejan arriba, así que no los excluimos del retry
     const shouldNotRetry = 
-      error.response?.status === 403 || 
       error.response?.status === 404;
 
     if (!shouldNotRetry && shouldRetry && config.retry.count < config.retry.maxRetries) {
@@ -160,10 +237,7 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Para 403, no es crítico, solo rechazar
-    if (error.response?.status === 403) {
-      // Acceso denegado - no reintentar
-    }
+    // Los 403 que no son de autenticación se manejan normalmente arriba
 
     return Promise.reject(error);
   }

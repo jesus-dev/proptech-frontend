@@ -88,7 +88,13 @@ export default function EditAlbumPage() {
     if (!files) return;
 
     const imageFiles = Array.from(files).filter(file => {
-      return file.type.startsWith('image/') || isHeicFile(file);
+      // Aceptar todos los formatos de imagen
+      if (file.type.startsWith('image/')) return true;
+      if (isHeicFile(file)) return true;
+      // Aceptar por extensión si el tipo MIME no está disponible
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.heic', '.heif'];
+      const fileName = file.name.toLowerCase();
+      return imageExtensions.some(ext => fileName.endsWith(ext));
     });
 
     if (imageFiles.length === 0) {

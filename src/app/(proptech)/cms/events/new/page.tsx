@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import EventForm from '../components/EventForm';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import { analytics } from '@/lib/analytics';
 
 export default function NewEventPage() {
@@ -16,30 +16,19 @@ export default function NewEventPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/cms/events'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const response = await apiClient.post('/api/cms/events', formData);
+      analytics.trackEventCreated(response.data.id, {
+        title: formData.title,
+        event_date: formData.eventDate,
+        featured: formData.featured || false,
       });
-
-      if (response.ok) {
-        const eventData = await response.json();
-        analytics.trackEventCreated(eventData.id, {
-          title: formData.title,
-          event_date: formData.eventDate,
-          featured: formData.featured || false,
-        });
-        router.push('/cms/events');
-      } else {
-        setError('Error al crear el evento');
-      }
-    } catch (error) {
+      router.push('/cms/events');
+    } catch (error: any) {
       console.error('Error:', error);
-      setError('Error de conexión');
+      // 401 es manejado automáticamente por el interceptor de apiClient
+      if (error?.response?.status !== 401) {
+        setError(error?.response?.data?.error || 'Error al crear el evento');
+      }
     } finally {
       setIsSubmitting(false);
     }
