@@ -151,13 +151,17 @@ apiClient.interceptors.response.use(
       // Si ya está refrescando, encolar esta petición
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
+          // Guardar el selectedTenant para preservarlo después del refresh
+          const selectedTenant = typeof window !== 'undefined' ? localStorage.getItem('selectedTenant') : null;
+          failedQueue.push({ resolve, reject, selectedTenant } as any);
         })
-          .then(token => {
+          .then((result: any) => {
+            const token = typeof result === 'string' ? result : result?.token;
             if (!config.headers) {
               config.headers = {} as any;
             }
             config.headers.Authorization = `Bearer ${token}`;
+            // El interceptor de request agregará automáticamente X-Selected-Tenant-Id desde localStorage
             return apiClient(config);
           })
           .catch(err => {
@@ -212,6 +216,21 @@ apiClient.interceptors.response.use(
           }
           config.headers.Authorization = `Bearer ${accessToken}`;
           
+          // Preservar X-Selected-Tenant-Id si estaba en la petición original
+          if (typeof window !== 'undefined') {
+            const selectedTenant = localStorage.getItem('selectedTenant');
+            if (selectedTenant) {
+              try {
+                const tenant = JSON.parse(selectedTenant);
+                if (tenant && tenant.id) {
+                  config.headers['X-Selected-Tenant-Id'] = tenant.id.toString();
+                }
+              } catch (e) {
+                // Ignorar si el JSON está corrupto
+              }
+            }
+          }
+          
           // Procesar cola de peticiones pendientes
           processQueue(null, accessToken);
           isRefreshing = false;
@@ -221,6 +240,7 @@ apiClient.interceptors.response.use(
           // Limpiar el flag _retry para permitir reintentos si es necesario
           delete config._retry;
           
+          // El interceptor de request también agregará el header automáticamente, pero ya lo tenemos aquí
           return apiClient(config);
         } catch (refreshError: any) {
           // Si falla el refresh, limpiar y redirigir
