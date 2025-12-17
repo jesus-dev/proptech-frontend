@@ -1,4 +1,5 @@
-import { Inter } from "next/font/google";
+// Usar fuente del sistema para evitar errores durante build sin conexión
+// En producción, Google Fonts se carga desde CDN si está disponible
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import { Providers } from "./providers";
@@ -8,13 +9,12 @@ import { AuthProvider } from "@/context/AuthContext";
 import MobileOptimizer from "@/components/mobile/MobileOptimizer";
 import ClientLayout from "./ClientLayout";
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  display: 'swap',
-  preload: true,
-  fallback: ['system-ui', 'arial'],
-  adjustFontFallback: true
-});
+// Usar fuente del sistema directamente para evitar problemas de build
+// Inter se cargará desde CDN en runtime si está disponible
+const inter = {
+  className: 'font-sans',
+  variable: '--font-inter',
+};
 
 // Schema.org para la organización principal
 const mainOrganizationSchema = {

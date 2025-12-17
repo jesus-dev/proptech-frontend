@@ -81,8 +81,21 @@ apiClient.interceptors.response.use(
     const config = error.config;
     
     // 🚨 PRIORIDAD 1: Errores de autenticación - INTENTAR REFRESCAR TOKEN
-    // También manejar 403 ya que algunos servidores devuelven 403 cuando el token está expirado
-    if ((error.response?.status === 401 || error.response?.status === 403) && !config._retry) {
+    // Manejar 401 siempre, y 403 solo si parece ser un error de token (no un error de permisos real)
+    const errorMessage = (error.response?.data?.error || error.response?.data?.message || '').toLowerCase();
+    const isRealPermissionError = errorMessage.includes('permiso') || 
+                                   errorMessage.includes('permission') || 
+                                   errorMessage.includes('plan free') ||
+                                   errorMessage.includes('límite') ||
+                                   errorMessage.includes('limit') ||
+                                   errorMessage.includes('no tienes permiso');
+    
+    // Solo intentar refresh si es 401, o si es 403 pero NO es un error de permisos real
+    const shouldTryRefresh = (error.response?.status === 401 || 
+                             (error.response?.status === 403 && !isRealPermissionError)) && 
+                             !config._retry;
+    
+    if (shouldTryRefresh) {
       // Si ya está refrescando, encolar esta petición
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -197,9 +210,11 @@ apiClient.interceptors.response.use(
       !error.response; // Error de red
 
     // Solo NO reintentar para 404 (no encontrado)
-    // Los 403 pueden ser de autenticación y ya se manejan arriba, así que no los excluimos del retry
+    // Los 403 y 401 ya se manejan arriba con refresh, así que no los incluimos en retry
     const shouldNotRetry = 
-      error.response?.status === 404;
+      error.response?.status === 404 ||
+      error.response?.status === 401 ||
+      error.response?.status === 403;
 
     if (!shouldNotRetry && shouldRetry && config.retry.count < config.retry.maxRetries) {
       config.retry.count += 1;

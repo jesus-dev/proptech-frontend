@@ -13,11 +13,17 @@ const nextConfig = {
   // 🔥 SOLUCIÓN DE RAÍZ: Output standalone + buildId estable
   output: 'standalone',
   
-  // BuildId basado en timestamp (más simple y efectivo)
+  // BuildId basado en git commit o timestamp (más estable)
   generateBuildId: async () => {
-    // Usar timestamp para tener un ID único por build
-    // Esto se pasa como query param en los chunks
-    return process.env.BUILD_ID || `build-${Date.now()}`
+    // Intentar usar git commit hash primero (más estable)
+    try {
+      const { execSync } = require('child_process');
+      const gitHash = execSync('git rev-parse --short HEAD').toString().trim();
+      return process.env.BUILD_ID || `build-${gitHash}`;
+    } catch (e) {
+      // Si no hay git, usar timestamp
+      return process.env.BUILD_ID || `build-${Date.now()}`;
+    }
   },
   
   // Optimizaciones de producción
@@ -174,10 +180,19 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  webpack(config, { isServer }) {
+  webpack(config, { isServer, dev }) {
+    // En producción, usar nombres de chunks más predecibles para evitar errores de módulos faltantes
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'deterministic',
+        chunkIds: 'deterministic',
+      };
+    }
+    
     // Configuración para SVG
     config.module.rules.push({
-      test: /.svg$/,
+      test: /\.svg$/,
       use: ["@svgr/webpack"],
     });
 
