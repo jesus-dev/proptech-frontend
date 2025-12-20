@@ -98,7 +98,7 @@ export default function ConfirmDialog({
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
         
         {/* Dialog */}
-        <div className="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+        <div className="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 w-[80%] max-w-2xl">
           <div ref={dialogRef} className={`${styles.bg} ${styles.border} border-b`}>
             <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="sm:flex sm:items-start">

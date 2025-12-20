@@ -650,7 +650,7 @@ export default function QuickSearchPage() {
       <Dialog open={sendModalOpen} onClose={() => setSendModalOpen(false)} className="fixed z-[100] inset-0 overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4">
           <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full mx-auto p-8 z-10">
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-[80%] max-w-2xl mx-auto p-8 z-10">
             <Dialog.Title className="text-2xl font-bold mb-4 flex items-center gap-2"><Mail className="w-6 h-6 text-brand-500" />Enviar recomendación</Dialog.Title>
             <div className="flex gap-4 mb-6">
               <button type="button" className={`px-4 py-2 rounded-lg font-medium border ${sendMethod === 'email' ? 'bg-brand-500 text-white border-brand-500' : 'bg-gray-100 text-gray-700 border-gray-200'}`} onClick={() => setSendMethod('email')}>Correo</button>
@@ -721,7 +721,7 @@ export default function QuickSearchPage() {
         title="Consultas guardadas"
         subtitle="Revisa, edita o carga tus consultas previas"
         icon={<BookMarked className="w-6 h-6 text-white" />}
-        maxWidth="max-w-lg"
+        maxWidth="max-w-2xl"
       >
         <div>
           {savedQueries.length === 0 ? (

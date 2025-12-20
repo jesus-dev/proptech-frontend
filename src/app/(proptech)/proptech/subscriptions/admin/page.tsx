@@ -21,7 +21,7 @@ const adminModules = [
     title: 'Planes de Suscripción',
     description: 'Gestionar planes, precios y características',
     icon: <Package className="h-8 w-8 text-blue-600" />,
-    href: '/subscriptions/admin/plans',
+    href: '/proptech/subscriptions/admin/plans',
     color: 'bg-blue-50 border-blue-200',
     stats: {
       label: 'Planes Activos',
@@ -33,7 +33,7 @@ const adminModules = [
     title: 'Suscripciones',
     description: 'Ver y administrar suscripciones de usuarios',
     icon: <Users className="h-8 w-8 text-green-600" />,
-    href: '/subscriptions/admin/subscriptions',
+    href: '/proptech/subscriptions/admin/subscriptions',
     color: 'bg-green-50 border-green-200',
     stats: {
       label: 'Suscripciones Activas',
@@ -45,7 +45,7 @@ const adminModules = [
     title: 'Agentes de Ventas',
     description: 'Gestionar agentes y porcentajes de comisión',
     icon: <TrendingUp className="h-8 w-8 text-purple-600" />,
-    href: '/subscriptions/admin/sales-agents',
+    href: '/proptech/subscriptions/admin/sales-agents',
     color: 'bg-purple-50 border-purple-200',
     stats: {
       label: 'Agentes Activos',
@@ -57,7 +57,7 @@ const adminModules = [
     title: 'Dashboard de Comisiones',
     description: 'Seguimiento de comisiones y pagos',
     icon: <DollarSign className="h-8 w-8 text-orange-600" />,
-    href: '/subscriptions/admin/commissions',
+    href: '/proptech/subscriptions/admin/commissions',
     color: 'bg-orange-50 border-orange-200',
     stats: {
       label: 'Comisiones Pendientes',
@@ -69,7 +69,7 @@ const adminModules = [
     title: 'Reportes y Analytics',
     description: 'Análisis de ventas y rendimiento',
     icon: <BarChart3 className="h-8 w-8 text-indigo-600" />,
-    href: '/subscriptions/admin/reports',
+    href: '/proptech/subscriptions/admin/reports',
     color: 'bg-indigo-50 border-indigo-200',
     stats: {
       label: 'Ingresos Mensuales',
@@ -81,7 +81,7 @@ const adminModules = [
     title: 'Configuración',
     description: 'Configurar parámetros del sistema',
     icon: <Settings className="h-8 w-8 text-gray-600" />,
-    href: '/subscriptions/admin/settings',
+    href: '/proptech/subscriptions/admin/settings',
     color: 'bg-gray-50 border-gray-200',
     stats: {
       label: 'Configuraciones',
@@ -96,28 +96,28 @@ const quickActions = [
     title: 'Crear Nuevo Plan',
     description: 'Agregar un nuevo plan de suscripción',
     icon: <Package className="h-5 w-5" />,
-    href: '/subscriptions/admin/plans',
+    href: '/proptech/subscriptions/admin/plans',
     color: 'bg-blue-500 hover:bg-blue-600'
   },
   {
     title: 'Agregar Agente',
     description: 'Registrar un nuevo agente de ventas',
     icon: <Users className="h-5 w-5" />,
-    href: '/subscriptions/admin/sales-agents',
+    href: '/proptech/subscriptions/admin/sales-agents',
     color: 'bg-green-500 hover:bg-green-600'
   },
   {
     title: 'Ver Comisiones',
     description: 'Revisar estado de comisiones',
     icon: <DollarSign className="h-5 w-5" />,
-    href: '/subscriptions/admin/commissions',
+    href: '/proptech/subscriptions/admin/commissions',
     color: 'bg-orange-500 hover:bg-orange-600'
   },
   {
     title: 'Generar Reporte',
     description: 'Crear reporte de ventas',
     icon: <FileText className="h-5 w-5" />,
-    href: '/subscriptions/admin/reports',
+    href: '/proptech/subscriptions/admin/reports',
     color: 'bg-purple-500 hover:bg-purple-600'
   }
 ];

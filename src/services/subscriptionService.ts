@@ -24,13 +24,21 @@ export interface SubscriptionPlan {
 export interface UserSubscription {
   id: number;
   userId: number;
-  planId: number;
-  planName: string;
+  userName?: string;
+  subscriptionPlanId?: number;
+  subscriptionPlan?: SubscriptionPlan;
+  planId?: number;
+  planName?: string;
   status: string;
   startDate: string;
   endDate: string;
   paymentReference: string;
   salesAgentCode?: string;
+  amountPaid?: number;
+  autoRenew?: boolean;
+  daysRemaining?: number;
+  isExpired?: boolean;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,10 +53,27 @@ export const subscriptionService = {
   // Obtener todos los planes disponibles
   async getAllPlans(): Promise<SubscriptionPlan[]> {
     try {
+      console.log('Calling GET /api/subscriptions/admin/plans');
       const response = await apiClient.get('/api/subscriptions/admin/plans');
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
+      
+      // Asegurar que siempre retornemos un array
+      if (!response.data) {
+        console.warn('Response data is null or undefined');
+        return [];
+      }
+      
+      if (!Array.isArray(response.data)) {
+        console.warn('Response data is not an array:', response.data);
+        return [];
+      }
+      
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching subscription plans:', error);
+      console.error('Error response:', error?.response?.data);
+      console.error('Error status:', error?.response?.status);
       throw error;
     }
   },

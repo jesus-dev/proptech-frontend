@@ -218,19 +218,19 @@ export default function AdminSubscriptionsPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuario
+                  Usuario / Agente
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Plan
+                  Plan de Suscripción
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fechas
+                  Fechas / Vencimiento
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Referencia de Pago
+                  Pago / Referencia
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
@@ -242,16 +242,21 @@ export default function AdminSubscriptionsPage() {
                 <tr key={subscription.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      ID: {subscription.userId}
+                      {subscription.userName || `Usuario ID: ${subscription.userId}`}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {subscription.planName}
+                      ID: {subscription.userId}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {subscription.planName}
+                      {subscription.planName || subscription.subscriptionPlan?.name || 'N/A'}
                     </div>
+                    {subscription.subscriptionPlan && (
+                      <div className="text-xs text-gray-500">
+                        {subscription.subscriptionPlan.tier} - {subscriptionService.getBillingCycleText(subscription.subscriptionPlan.billingCycleDays)}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge className={getStatusColor(subscription.status)}>
@@ -262,12 +267,22 @@ export default function AdminSubscriptionsPage() {
                     <div className="text-sm text-gray-900">
                       <div>Inicio: {formatDate(subscription.startDate)}</div>
                       <div>Fin: {formatDate(subscription.endDate)}</div>
+                      {subscription.daysRemaining !== undefined && (
+                        <div className={`text-xs mt-1 ${subscription.daysRemaining <= 7 ? 'text-red-600 font-semibold' : subscription.daysRemaining <= 30 ? 'text-yellow-600' : 'text-gray-500'}`}>
+                          {subscription.daysRemaining} días restantes
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {subscription.paymentReference}
+                      {subscription.paymentReference || 'N/A'}
                     </div>
+                    {subscription.amountPaid !== undefined && (
+                      <div className="text-xs text-gray-500">
+                        {subscriptionService.formatPrice(subscription.amountPaid)}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

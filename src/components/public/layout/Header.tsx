@@ -196,7 +196,7 @@ const Header = () => {
                 Iniciar Sesión
               </Link>
               <Link
-                href="/register"
+                href="/registrarse"
                 className={`px-4 py-2 rounded-lg transition-all duration-300 font-medium ${
                   shouldUseWhiteText
                     ? 'text-white hover:text-white/90 hover:bg-white/10'
@@ -342,7 +342,7 @@ const Header = () => {
                 🔐 Iniciar Sesión
               </a>
               <a 
-                href="/register" 
+                href="/registrarse" 
                 onClick={() => setIsMenuOpen(false)} 
                 className="block p-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors bg-gray-50"
               >

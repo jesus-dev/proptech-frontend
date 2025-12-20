@@ -16,6 +16,7 @@ import {
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
 import { getPrivateFiles, uploadPrivateFile, deletePrivateFile, PrivateFile } from '../../services/privateFileService';
+import { imageUploadService } from '../../services/imageUploadService';
 import ValidatedInput from "@/components/form/input/ValidatedInput";
 
 interface PrivateFilesStepProps {
@@ -95,19 +96,45 @@ export default function PrivateFilesStep({ formData, handleChange, errors, remov
     }
   }, [propertyId]);
 
+  // Sincronizar archivos del formData cuando no hay propertyId
+  useEffect(() => {
+    if (!propertyId) {
+      const formFiles = formData.privateFiles || [];
+      setPrivateFiles(formFiles.map((file: any, index: number) => ({
+        id: index,
+        propertyId: 0, // Valor temporal cuando no hay propertyId aún
+        fileName: file.fileName || file.name || 'unknown',
+        url: file.url || file,
+        fileType: (file.fileName || file.name || '').split('.').pop()?.toUpperCase() || 'UNKNOWN',
+        fileSize: 0
+      })));
+    }
+  }, [propertyId, formData.privateFiles]);
+
   // Subir archivos
   const handlePrivateFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!propertyId || !e.target.files) return;
+    if (!e.target.files) return;
+    
     setUploading(true);
     try {
       const files = Array.from(e.target.files);
-      for (const file of files) {
-        await uploadPrivateFile(propertyId, file);
+      
+      if (propertyId) {
+        // Si ya existe propertyId, subir directamente al backend
+        for (const file of files) {
+          await uploadPrivateFile(propertyId, file);
+        }
+        const filesList = await getPrivateFiles(propertyId);
+        setPrivateFiles(filesList);
+      } else {
+        // Si no hay propertyId, usar handleChange que maneja la subida automáticamente
+        // handleChange ya sube los archivos y actualiza formData
+        // El useEffect se encargará de actualizar el estado local cuando formData.privateFiles cambie
+        handleChange(e);
       }
-      const filesList = await getPrivateFiles(propertyId);
-      setPrivateFiles(filesList);
     } catch (err) {
       console.error('Error uploading private files:', err);
+      alert('Error al subir archivos. Por favor, intenta nuevamente.');
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -118,10 +145,21 @@ export default function PrivateFilesStep({ formData, handleChange, errors, remov
   const handleRemovePrivateFile = async (fileId: number) => {
     setLoading(true);
     try {
-      await deletePrivateFile(fileId);
-      setPrivateFiles(privateFiles.filter(f => f.id !== fileId));
+      if (propertyId) {
+        // Si hay propertyId, eliminar del backend
+        await deletePrivateFile(fileId);
+        setPrivateFiles(privateFiles.filter(f => f.id !== fileId));
+      } else {
+        // Si no hay propertyId, eliminar del formData
+        const fileIndex = privateFiles.findIndex(f => f.id === fileId);
+        if (fileIndex !== -1) {
+          removePrivateFile(fileIndex);
+          setPrivateFiles(privateFiles.filter(f => f.id !== fileId));
+        }
+      }
     } catch (err) {
       console.error('Error deleting private file:', err);
+      alert('Error al eliminar archivo. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -175,6 +213,14 @@ export default function PrivateFilesStep({ formData, handleChange, errors, remov
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
+          onClick={() => {
+            if (!uploading) {
+              const input = document.getElementById('privateFiles') as HTMLInputElement;
+              if (input) {
+                input.click();
+              }
+            }
+          }}
         >
           <div className="space-y-4">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-full flex items-center justify-center mx-auto">
@@ -198,11 +244,20 @@ export default function PrivateFilesStep({ formData, handleChange, errors, remov
                 onChange={handlePrivateFileChange}
                 multiple={true}
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="hidden"
                 disabled={uploading}
               />
               <button
                 type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!uploading) {
+                    const input = document.getElementById('privateFiles') as HTMLInputElement;
+                    if (input) {
+                      input.click();
+                    }
+                  }
+                }}
                 disabled={uploading}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >

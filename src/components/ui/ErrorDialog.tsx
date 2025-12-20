@@ -62,7 +62,7 @@ export default function ErrorDialog({ isOpen, onClose, title, errors, type = 'va
         />
         
         {/* Dialog */}
-        <div className={`relative w-full max-w-md transform rounded-lg ${getBgColor()} p-6 shadow-xl transition-all`}>
+        <div className={`relative w-[80%] max-w-2xl transform rounded-lg ${getBgColor()} p-6 shadow-xl transition-all`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">

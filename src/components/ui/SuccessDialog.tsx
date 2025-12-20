@@ -31,7 +31,7 @@ export default function SuccessDialog({
         />
         
         {/* Dialog */}
-        <div className="relative w-full max-w-md transform rounded-lg bg-green-50 border border-green-200 p-6 shadow-xl transition-all">
+        <div className="relative w-[80%] max-w-2xl transform rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-6 shadow-xl transition-all">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">

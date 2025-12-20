@@ -93,6 +93,11 @@ export default function MediaStep({
                   src={image}
                   alt={`Imagen ${index + 1}`}
                   className="w-full h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                  onError={(e) => {
+                    // Silenciosamente ocultar imagen si no se puede cargar
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
                 <button
                   type="button"

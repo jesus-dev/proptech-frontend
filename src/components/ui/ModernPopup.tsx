@@ -56,7 +56,7 @@ export default function ModernPopup({
       />
       
       {/* Contenido del popup */}
-      <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl dark:shadow-3xl w-[70%] max-h-[90vh] transform transition-all duration-300 scale-100 animate-in fade-in-0 zoom-in-95 ${maxWidth}`}>
+      <div className={`relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl dark:shadow-3xl w-[80%] max-w-5xl max-h-[90vh] transform transition-all duration-300 scale-100 animate-in fade-in-0 zoom-in-95 ${maxWidth}`}>
         {/* Header con gradiente - sticky */}
         <div className="bg-gradient-to-r from-brand-500 to-brand-600 rounded-t-2xl p-6 sticky top-0 z-10">
           <div className="flex items-center justify-between">

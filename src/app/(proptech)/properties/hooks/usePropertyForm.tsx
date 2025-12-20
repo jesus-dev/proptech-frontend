@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { FloorPlanForm } from "../components/steps/FloorPlansStep";
 import { useAuthContext } from "@/context/AuthContext";
 import { rentalPropertyService } from "@/app/(proptech)/rentals/services/rentalPropertyService";
+import { debug } from "@/lib/logger";
 
 export type PropertyFormData = Omit<Property, "id"> & { 
   propertyStatusId?: number;
@@ -186,7 +187,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         
         try {
           // Preparar datos mínimos - SIN validaciones
-          const { currency, propertyStatusId, ...propertyDataWithoutCurrency } = formData;
+          const { currency, propertyStatusId, additionalPropertyTypes, ...propertyDataWithoutCurrency } = formData;
           const propertyData: any = {
             ...propertyDataWithoutCurrency,
             // El título puede estar vacío (el backend pone "Borrador sin título")
@@ -195,6 +196,18 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             // operacion se enviará con valor por defecto en backend si está vacío
             operacion: formData.operacion || '',
             // NO enviar propertyStatusId para que el backend use DRAFT por defecto
+            // Mapear additionalPropertyTypes a additionalPropertyTypeIds para el backend
+            // Siempre enviar el campo, incluso si está vacío, para que el backend pueda limpiar la lista
+            additionalPropertyTypeIds: additionalPropertyTypes && Array.isArray(additionalPropertyTypes)
+              ? additionalPropertyTypes.map((id: any) => Number(id)).filter((id: number) => !isNaN(id))
+              : [],
+            // Mapear privateFiles al formato esperado por el backend
+            privateFiles: formData.privateFiles && Array.isArray(formData.privateFiles)
+              ? formData.privateFiles.map((file: any) => ({
+                  url: file.url || file,
+                  fileName: file.fileName || file.name || (typeof file === 'string' ? file.split('/').pop() : 'unknown')
+                }))
+              : undefined,
           };
 
           const fallbackFeatured = selectFallbackFeaturedImage();
@@ -252,8 +265,12 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
               agencyId: agent.agencyId || undefined
             }));
           }
-        } catch (error) {
-          console.error('❌ Error obteniendo agente del usuario:', error);
+          // No generar error si no hay agente - es esperado que algunos usuarios no tengan agente asociado
+        } catch (error: any) {
+          // Solo registrar errores que no sean 404 (que es esperado cuando no hay agente)
+          if (error?.response?.status !== 404 && error?.status !== 404) {
+            console.error('❌ Error obteniendo agente del usuario:', error);
+          }
         }
       }
     };
@@ -270,7 +287,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         // Subir cada archivo al backend
         const uploadPromises = Array.from(input.files).map(async (file) => {
           const result = await imageUploadService.uploadImage(file, 'private');
-          return { url: result.url, name: file.name };
+          return { url: result.url, fileName: file.name, name: file.name }; // Asegurar que fileName esté presente
         });
         const uploadedFiles = await Promise.all(uploadPromises);
         setFormData((prev) => ({
@@ -279,6 +296,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             ? [...prev.privateFiles, ...uploadedFiles]
             : uploadedFiles
         }));
+        setHasUnsavedChanges(true);
       }
     } else if (name === "images") {
       const input = e.target as HTMLInputElement;
@@ -309,12 +327,25 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         } else if (arrayFields.includes(name)) {
           // Para campos de array, el value ya viene como array desde el componente
           processedValue = Array.isArray(value) ? value : [];
+          if (name === 'additionalPropertyTypes') {
+            // Asegurar que todos los valores sean números y eliminar duplicados
+            processedValue = processedValue
+              .map((id: any) => Number(id))
+              .filter((id: number) => !isNaN(id) && id > 0);
+            // Eliminar duplicados
+            processedValue = Array.from(new Set(processedValue));
+            debug('🔍 Actualizando additionalPropertyTypes:', processedValue, 'desde value:', value);
+          }
         }
         
         const newData = {
           ...prev,
           [name]: processedValue,
         };
+        
+        if (name === 'additionalPropertyTypes') {
+          debug('🔍 Nuevo formData.additionalPropertyTypes:', newData.additionalPropertyTypes);
+        }
         
         return newData;
       });
@@ -539,12 +570,31 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     if (Object.keys(validationErrors).length === 0) {
       try {
         // Preparar datos de la propiedad sin las imágenes
-        const { currency, ...propertyDataWithoutCurrency } = formData;
+        debug('🔍 formData completo antes de preparar:', formData);
+        debug('🔍 formData.additionalPropertyTypes:', formData.additionalPropertyTypes);
+        const { currency, additionalPropertyTypes, ...propertyDataWithoutCurrency } = formData;
+        debug('🔍 additionalPropertyTypes extraído:', additionalPropertyTypes);
         const propertyData: any = {
           ...propertyDataWithoutCurrency,
           images: [], // Las imágenes se manejarán por separado
           // Enviar currencyId en lugar del código de moneda
           currencyId: formData.currencyId,
+          // Mapear additionalPropertyTypes a additionalPropertyTypeIds para el backend
+          // Siempre enviar el campo, incluso si está vacío, para que el backend pueda limpiar la lista
+          additionalPropertyTypeIds: (() => {
+            const ids = additionalPropertyTypes && Array.isArray(additionalPropertyTypes)
+              ? additionalPropertyTypes.map((id: any) => Number(id)).filter((id: number) => !isNaN(id))
+              : [];
+            debug('🔍 Enviando additionalPropertyTypeIds:', ids, 'desde additionalPropertyTypes:', additionalPropertyTypes);
+            return ids;
+          })(),
+          // Mapear privateFiles al formato esperado por el backend
+          privateFiles: formData.privateFiles && Array.isArray(formData.privateFiles)
+            ? formData.privateFiles.map((file: any) => ({
+                url: file.url || file,
+                fileName: file.fileName || file.name || (typeof file === 'string' ? file.split('/').pop() : 'unknown')
+              }))
+            : undefined,
         };
 
         const fallbackFeatured = selectFallbackFeaturedImage();
@@ -676,14 +726,14 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
         }
 
         // Guardar configuración de alquiler temporal si está habilitada
-        console.log("🔍 Verificando configuración de alquiler temporal...");
+        debug("🔍 Verificando configuración de alquiler temporal...");
         console.log("📦 formData completo:", formData);
         console.log("🏠 rentalConfig:", (formData as any).rentalConfig);
-        console.log("✅ enabled?", (formData as any).rentalConfig?.enabled);
+            debug("✅ enabled?", (formData as any).rentalConfig?.enabled);
         
         if ((formData as any).rentalConfig?.enabled) {
           try {
-            console.log("🏠 ✅ Configuración de alquiler temporal ACTIVADA - Procediendo a guardar para propertyId:", propertyId);
+            debug("🏠 ✅ Configuración de alquiler temporal ACTIVADA - Procediendo a guardar para propertyId:", propertyId);
             const rentalConfig = (formData as any).rentalConfig;
             console.log("📋 Datos del rental config:", rentalConfig);
             
@@ -712,22 +762,22 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
               alwaysAvailable: rentalConfig.alwaysAvailable !== false,
             };
 
-            console.log("📝 Datos a enviar al backend:", rentalData);
+            debug("📝 Datos a enviar al backend:", rentalData);
 
             // Verificar si ya existe una configuración para esta propiedad
-            console.log("🔍 Verificando si ya existe configuración de rental...");
+            debug("🔍 Verificando si ya existe configuración de rental...");
             const existingRental = await rentalPropertyService.getRentalPropertyByPropertyId(parseInt(propertyId));
             
             if (existingRental) {
               // Actualizar existente
-              console.log("📝 Configuración existente encontrada:", existingRental.id);
+              debug("📝 Configuración existente encontrada:", existingRental.id);
               await rentalPropertyService.updateRentalProperty(existingRental.id, rentalData);
-              console.log("✅ Configuración actualizada exitosamente");
+              debug("✅ Configuración actualizada exitosamente");
             } else {
               // Crear nueva
               console.log("✨ No existe configuración - Creando nueva configuración de rental");
               const result = await rentalPropertyService.createRentalProperty(rentalData);
-              console.log("✅ Configuración creada exitosamente:", result);
+              debug("✅ Configuración creada exitosamente:", result);
             }
             
             console.log("🎉 Configuración de alquiler temporal guardada exitosamente");

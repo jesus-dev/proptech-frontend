@@ -9,6 +9,7 @@ import { getAllPropertyStatuses, PropertyStatus } from "@/app/(proptech)/catalog
 import ValidatedInput from "@/components/form/input/ValidatedInput";
 import ValidatedTextArea from "@/components/form/input/ValidatedTextArea";
 import { apiClient } from "@/lib/api";
+import { debug } from "@/lib/logger";
 import { 
   HomeIcon, 
   BuildingOfficeIcon, 
@@ -245,10 +246,10 @@ export default function TypeAndOperationStep({ formData, handleChange, errors, i
             )}
             
             {/* Tipos adicionales */}
-            {(formData as any).additionalPropertyTypes?.length > 0 && (formData as any).additionalPropertyTypes.map((typeId: number, index: number) => {
-              const typeName = propertyTypes.find(t => t.id === typeId)?.name || 'Tipo';
+            {(formData as any).additionalPropertyTypes?.length > 0 && (formData as any).additionalPropertyTypes.map((typeId: any, index: number) => {
+              const typeName = propertyTypes.find(t => Number(t.id) === Number(typeId))?.name || 'Tipo';
               return (
-                <span key={index} className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-500">
+                <span key={`${typeId}-${index}`} className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-500">
                   <BuildingOfficeIcon className="w-4 h-4 mr-1.5" />
                   {typeName}
                   <button
@@ -256,7 +257,9 @@ export default function TypeAndOperationStep({ formData, handleChange, errors, i
                     onClick={e => {
                       e.stopPropagation();
                       const currentAdditional = (formData as any).additionalPropertyTypes || [];
-                      const newAdditional = currentAdditional.filter((_: number, i: number) => i !== index);
+                      // Filtrar por ID en lugar de índice para evitar problemas
+                      const newAdditional = currentAdditional.filter((id: any) => Number(id) !== Number(typeId));
+                      debug('🔍 Eliminando tipo adicional:', typeId, 'Nueva lista:', newAdditional);
                       const additionalIdsEvent = {
                         target: { name: "additionalPropertyTypes", value: newAdditional }
                       } as unknown as React.ChangeEvent<HTMLInputElement>;
@@ -284,8 +287,13 @@ export default function TypeAndOperationStep({ formData, handleChange, errors, i
             <div className="absolute z-20 mt-2 w-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-64 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
               <div className="p-2">
                 {propertyTypes.map((type) => {
-                  const isSelected = Boolean(formData.propertyTypeId === type.id || ((formData as any).additionalPropertyTypes || []).includes(type.id));
-                  const isPrimary = formData.propertyTypeId === type.id;
+                  const currentAdditional = (formData as any).additionalPropertyTypes || [];
+                  // Convertir ambos a números para comparación correcta
+                  const isSelected = Boolean(
+                    Number(formData.propertyTypeId) === Number(type.id) || 
+                    currentAdditional.some((id: any) => Number(id) === Number(type.id))
+                  );
+                  const isPrimary = Number(formData.propertyTypeId) === Number(type.id);
                   
                   return (
                     <div
@@ -298,6 +306,7 @@ export default function TypeAndOperationStep({ formData, handleChange, errors, i
                       onClick={e => {
                         e.stopPropagation();
                         const currentAdditional = (formData as any).additionalPropertyTypes || [];
+                        const typeIdNum = Number(type.id);
                         
                         if (!formData.propertyTypeId) {
                           // No hay tipo principal, seleccionar este como principal
@@ -311,14 +320,15 @@ export default function TypeAndOperationStep({ formData, handleChange, errors, i
                           handleChange(typeNameEvent);
                           
                           // Si estaba en adicionales, quitarlo
-                          if (currentAdditional.includes(type.id)) {
-                            const newAdditional = currentAdditional.filter((n: number) => n !== type.id);
+                          const isInAdditional = currentAdditional.some((id: any) => Number(id) === typeIdNum);
+                          if (isInAdditional) {
+                            const newAdditional = currentAdditional.filter((id: any) => Number(id) !== typeIdNum);
                             const additionalIdsEvent = {
                               target: { name: "additionalPropertyTypes", value: newAdditional }
                             } as unknown as React.ChangeEvent<HTMLInputElement>;
                             handleChange(additionalIdsEvent);
                           }
-                        } else if (formData.propertyTypeId === type.id) {
+                        } else if (Number(formData.propertyTypeId) === typeIdNum) {
                           // Este es el tipo principal, quitarlo
                           const clearIdEvent = {
                             target: { name: "propertyTypeId", value: "" }
@@ -330,16 +340,21 @@ export default function TypeAndOperationStep({ formData, handleChange, errors, i
                           handleChange(clearNameEvent);
                         } else {
                           // Manejar tipos adicionales
-                          if (currentAdditional.includes(type.id)) {
+                          const isInAdditional = currentAdditional.some((id: any) => Number(id) === typeIdNum);
+                          if (isInAdditional) {
                             // Quitar de adicionales
-                            const newAdditional = currentAdditional.filter((n: number) => n !== type.id);
+                            const newAdditional = currentAdditional.filter((id: any) => Number(id) !== typeIdNum);
+                            debug('🔍 Quitando tipo adicional:', type.id, 'Nueva lista:', newAdditional);
                             const additionalIdsEvent = {
                               target: { name: "additionalPropertyTypes", value: newAdditional }
                             } as unknown as React.ChangeEvent<HTMLInputElement>;
                             handleChange(additionalIdsEvent);
                           } else {
-                            // Agregar a adicionales
-                            const newAdditional = [...currentAdditional, type.id];
+                            // Agregar a adicionales - asegurar que no esté duplicado
+                            const newAdditional = currentAdditional.includes(type.id) 
+                              ? currentAdditional 
+                              : [...currentAdditional, type.id];
+                            debug('🔍 Agregando tipo adicional:', type.id, 'Lista anterior:', currentAdditional, 'Nueva lista:', newAdditional);
                             const additionalIdsEvent = {
                               target: { name: "additionalPropertyTypes", value: newAdditional }
                             } as unknown as React.ChangeEvent<HTMLInputElement>;

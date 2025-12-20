@@ -13,7 +13,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const publicRoutes = [
     '/public',
     '/login', 
-    '/register', 
+    '/register',
+    '/registrarse', 
     '/forgot-password',
     '/reset-password',
     '/social',

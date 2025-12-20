@@ -71,9 +71,10 @@ export default function PublicLayout({ children }: any) {
   const isAsesoresPage = pathname === '/asesores' || pathname?.startsWith('/asesores');
   const isContactPage = pathname === '/contact' || pathname === '/contact/';
   const isRegisterPage = pathname === '/register' || pathname === '/register/';
+  const isRegistrarsePage = pathname === '/registrarse' || pathname === '/registrarse/';
   const isProptechPage = pathname === '/proptech' || pathname === '/proptech/';
   const isAgentePage = pathname?.startsWith('/agente/');
-  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isContactPage || isRegisterPage || isProptechPage || isAgentePage;
+  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isContactPage || isRegisterPage || isRegistrarsePage || isProptechPage || isAgentePage;
 
   return (
     <>

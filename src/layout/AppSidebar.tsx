@@ -20,9 +20,10 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe, Building2, Calendar, MessageSquare, AlertTriangle, Shield, QrCode, ClipboardList, BarChart3 } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe, Building2, Calendar, MessageSquare, AlertTriangle, Shield, QrCode, ClipboardList, BarChart3, Rocket } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import Logo from "@/components/common/Logo";
+import { useAuthContext } from "@/context/AuthContext";
 
 // Type assertion to resolve JSX compatibility issues
 const LinkComponent = Link as any;
@@ -31,12 +32,14 @@ interface NavItem {
   name: string;
   path?: string;
   icon?: React.ReactNode;
+  requiredRole?: string | string[]; // Rol requerido para ver este item
   subItems?: {
     name: string;
     path: string;
     pro?: boolean;
     new?: boolean;
     nuevo?: boolean;
+    requiredRole?: string | string[]; // Rol requerido para ver este subitem
   }[];
 }
 
@@ -303,41 +306,6 @@ const navItems: NavItem[] = [
     icon: <CalenderIcon />,
   },
   {
-    name: "Suscripciones",
-    path: "/subscriptions",
-    icon: <Package className="w-5 h-5" />,
-    subItems: [
-      {
-        name: "Ver Planes",
-        path: "/subscriptions",
-      },
-      {
-        name: "Dashboard Admin",
-        path: "/subscriptions/admin",
-      },
-      {
-        name: "Gestionar Planes",
-        path: "/subscriptions/admin/plans",
-      },
-      {
-        name: "Gestionar Suscripciones",
-        path: "/subscriptions/admin/subscriptions",
-      },
-      {
-        name: "Agentes de Ventas",
-        path: "/subscriptions/admin/sales-agents",
-      },
-      {
-        name: "Dashboard Comisiones",
-        path: "/subscriptions/admin/commissions",
-      },
-      {
-        name: "Reportes",
-        path: "/subscriptions/admin/reports",
-      },
-    ],
-  },
-  {
     name: "Autenticación",
     path: "/auth",
     icon: <UserCircleIcon />,
@@ -378,6 +346,45 @@ const othersItems: NavItem[] = [
     ),
   },
 
+];
+
+const proptechItems: NavItem[] = [
+  {
+    name: "Suscripciones",
+    path: "/proptech/subscriptions",
+    icon: <Rocket className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Dashboard Admin",
+        path: "/proptech/subscriptions/admin",
+      },
+      {
+        name: "Gestionar Planes",
+        path: "/proptech/subscriptions/admin/plans",
+      },
+      {
+        name: "Gestionar Suscripciones",
+        path: "/proptech/subscriptions/admin/subscriptions",
+      },
+      {
+        name: "Agentes de Ventas",
+        path: "/proptech/subscriptions/admin/sales-agents",
+      },
+      {
+        name: "Dashboard Comisiones",
+        path: "/proptech/subscriptions/admin/commissions",
+      },
+      {
+        name: "Reportes",
+        path: "/proptech/subscriptions/admin/reports",
+      },
+    ],
+  },
+  {
+    name: "Citas Agendadas",
+    path: "/proptech/appointments",
+    icon: <Calendar className="w-5 h-5" />,
+  },
 ];
 
 const catalogItems: NavItem[] = [
@@ -475,14 +482,33 @@ const catalogItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
+  const { hasRole, hasAnyRole } = useAuthContext();
   const [openSubmenu, setOpenSubmenu] = useState<{
-    type: "main" | "others" | "catalogs";
+    type: "main" | "others" | "catalogs" | "proptech";
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isMobile, setIsMobile] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+
+  // Función para verificar si el usuario puede ver un item del menú
+  const canViewItem = (item: NavItem): boolean => {
+    if (!item.requiredRole) return true;
+    if (Array.isArray(item.requiredRole)) {
+      return hasAnyRole(item.requiredRole);
+    }
+    return hasRole(item.requiredRole);
+  };
+
+  // Función para verificar si el usuario puede ver un subitem del menú
+  const canViewSubItem = (subItem: NonNullable<NavItem['subItems']>[0]): boolean => {
+    if (!subItem.requiredRole) return true;
+    if (Array.isArray(subItem.requiredRole)) {
+      return hasAnyRole(subItem.requiredRole);
+    }
+    return hasRole(subItem.requiredRole);
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -497,7 +523,7 @@ const AppSidebar: React.FC = () => {
 
   const isActive = useCallback((path: string) => path === pathname, [pathname]);
 
-  const handleSubmenuToggle = (index: number, menuType: "main" | "others" | "catalogs") => {
+  const handleSubmenuToggle = (index: number, menuType: "main" | "others" | "catalogs" | "proptech") => {
     const key = `${menuType}-${index}`;
     if (openSubmenu?.type === menuType && openSubmenu?.index === index) {
       setOpenSubmenu(null);
@@ -519,15 +545,15 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     // Check if the current path matches any submenu item
     let submenuMatched = false;
-    ["main", "others", "catalogs"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : menuType === "others" ? othersItems : catalogItems;
+    ["main", "others", "catalogs", "proptech"].forEach((menuType) => {
+      const items = menuType === "main" ? navItems : menuType === "others" ? othersItems : menuType === "proptech" ? proptechItems : catalogItems;
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
             if (isActive(subItem.path)) {
               const key = `${menuType}-${index}`;
               setOpenSubmenu({
-                type: menuType as "main" | "others" | "catalogs",
+                type: menuType as "main" | "others" | "catalogs" | "proptech",
                 index,
               });
               if (subMenuRefs.current[key]) {
@@ -557,10 +583,24 @@ const AppSidebar: React.FC = () => {
 
   const renderMenuItems = (
     navItems: NavItem[],
-    menuType: "main" | "others" | "catalogs"
-  ) => (
+    menuType: "main" | "others" | "catalogs" | "proptech"
+  ) => {
+    // Filtrar items según el rol del usuario
+    const filteredItems = navItems.filter(canViewItem);
+    
+    // Si no hay items después del filtro, no renderizar nada
+    if (filteredItems.length === 0) {
+      return null;
+    }
+    
+    // Debug: log para verificar qué se está renderizando
+    if (menuType === "proptech") {
+      console.log("PropTech items:", filteredItems);
+    }
+    
+    return (
     <ul className="flex flex-col gap-4">
-      {navItems.map((nav, index) => (
+      {filteredItems.map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
@@ -634,7 +674,7 @@ const AppSidebar: React.FC = () => {
               }}
             >
               <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.map((subItem) => (
+                {nav.subItems.filter(canViewSubItem).map((subItem) => (
                   <li key={subItem.name}>
                     <Link
                       href={subItem.path}
@@ -670,7 +710,8 @@ const AppSidebar: React.FC = () => {
         </li>
       ))}
     </ul>
-  );
+    );
+  };
 
   // Debug - removed for production
 
@@ -758,6 +799,25 @@ const AppSidebar: React.FC = () => {
                 {renderMenuItems(navItems, "main")}
               </div>
               
+              <div>
+                <h2
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                    isMobile 
+                      ? "justify-start"
+                      : !isExpanded && !isHovered
+                        ? "lg:justify-center"
+                        : "justify-start"
+                  }`}
+                >
+                  {isMobile || isExpanded || isHovered ? (
+                    "PropTech"
+                  ) : (
+                    "•••"
+                  )}
+                </h2>
+                {renderMenuItems(proptechItems, "proptech")}
+              </div>
+
               <div>
                 <h2
                   className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${

@@ -948,7 +948,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
           <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-brand-900/30 backdrop-blur-sm" onClick={handleRegisterCancel}></div>
           
           {/* Contenido del popup - más compacto */}
-          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-xs mx-auto transform transition-all duration-300 scale-100 animate-in fade-in-0 zoom-in-95 max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-[80%] max-w-md mx-auto transform transition-all duration-300 scale-100 animate-in fade-in-0 zoom-in-95 max-h-[90vh] overflow-y-auto">
             {/* Header con gradiente - más compacto */}
             <div className="bg-gradient-to-r from-brand-500 to-brand-600 rounded-t-xl p-3">
               <div className="flex items-center justify-between">

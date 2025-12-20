@@ -153,10 +153,8 @@ export default function EditPropertyPage({ params }: PageProps) {
           // Cargar configuración de alquiler temporal si existe
           let rentalConfig = null;
           try {
-            console.log("🔍 Verificando si la propiedad tiene configuración de rental...");
             const rentalProperty = await rentalPropertyService.getRentalPropertyByPropertyId(parseInt(propertyId));
             if (rentalProperty) {
-              console.log("✅ Configuración de rental encontrada:", rentalProperty);
               rentalConfig = {
                 enabled: true,
                 pricePerNight: rentalProperty.pricePerNight,
@@ -179,11 +177,10 @@ export default function EditPropertyPage({ params }: PageProps) {
                 cancellationPolicy: rentalProperty.cancellationPolicy,
                 houseRules: rentalProperty.houseRules,
               };
-            } else {
-              console.log("ℹ️ No hay configuración de rental para esta propiedad");
             }
+            // No generar logs si no hay configuración de rental - es esperado
           } catch (error) {
-            console.log("ℹ️ No se encontró configuración de rental (esperado si no está configurada):", error);
+            // Silenciosamente ignorar errores 404 - es esperado que no todas las propiedades tengan rental config
           }
 
           const initialData = {
@@ -193,10 +190,8 @@ export default function EditPropertyPage({ params }: PageProps) {
             type: typeName,
             propertyTypeId: propertyData.propertyTypeId,
             featuredImage: processedFeaturedImage,
-            rentalConfig: rentalConfig, // ← NUEVO
+            rentalConfig: rentalConfig,
           };
-          
-          console.log("📦 InitialData con rentalConfig:", initialData);
           
           setInitialPropertyData(initialData);
         } else {

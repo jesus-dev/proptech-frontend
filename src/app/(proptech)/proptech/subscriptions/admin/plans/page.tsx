@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { subscriptionService, SubscriptionPlan } from '@/services/subscriptionService';
 import DeleteConfirmationDialog from './components/DeleteConfirmationDialog';
 import PlanDetailsDialog from './components/PlanDetailsDialog';
-import { SubscriptionPlansManager } from '@/components/auth/ProtectedRoute';
+import { useAuthContext } from '@/context/AuthContext';
 
 interface PlanFormData {
   name: string;
@@ -31,6 +31,7 @@ interface PlanFormData {
 function AdminPlansPageContent() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const loadingRef = React.useRef(false);
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [formData, setFormData] = useState<PlanFormData>({
@@ -64,13 +65,34 @@ function AdminPlansPageContent() {
   });
 
   useEffect(() => {
-    loadPlans();
+    // Evitar múltiples llamadas simultáneas
+    if (!loadingRef.current) {
+      loadPlans();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadPlans = async () => {
+    // Evitar múltiples llamadas simultáneas
+    if (loadingRef.current) {
+      console.log('Ya hay una carga en progreso, ignorando...');
+      return;
+    }
+    
     try {
+      loadingRef.current = true;
       setLoading(true);
+      console.log('Loading plans from API...');
       const plansData = await subscriptionService.getAllPlans();
+      console.log('Plans received:', plansData);
+      
+      // Verificar que sea un array
+      if (!Array.isArray(plansData)) {
+        console.error('Plans data is not an array:', plansData);
+        toast.error('Error: Los datos recibidos no son válidos');
+        setPlans([]);
+        return;
+      }
       
       // Ordenar por tipo y tier
       const tierOrder = { 'FREE': 0, 'INICIAL': 1, 'INTERMEDIO': 2, 'PREMIUM': 3 };
@@ -89,12 +111,25 @@ function AdminPlansPageContent() {
         return a.billingCycleDays - b.billingCycleDays;
       });
       
+      console.log('Sorted plans:', sortedPlans);
       setPlans(sortedPlans);
-    } catch (error) {
+      
+      if (sortedPlans.length === 0) {
+        toast.info('No se encontraron planes de suscripción');
+      }
+    } catch (error: any) {
       console.error('Error loading plans:', error);
-      toast.error('Error al cargar los planes');
+      console.error('Error details:', {
+        message: error?.message,
+        response: error?.response,
+        status: error?.response?.status,
+        data: error?.response?.data
+      });
+      toast.error(error?.response?.data?.error || error?.message || 'Error al cargar los planes');
+      setPlans([]);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   };
 
@@ -224,6 +259,8 @@ function AdminPlansPageContent() {
       </div>
     );
   }
+
+  console.log('Rendering plans page. Plans count:', plans.length, 'Plans:', plans);
 
   return (
     <div className="container mx-auto px-4 py-4">
@@ -627,9 +664,23 @@ function AdminPlansPageContent() {
 }
 
 export default function AdminPlansPage() {
-  return (
-    <SubscriptionPlansManager>
-      <AdminPlansPageContent />
-    </SubscriptionPlansManager>
-  );
+  const { hasRole } = useAuthContext();
+  
+  // Verificar que el usuario sea SUPER_ADMIN
+  if (!hasRole("SUPER_ADMIN")) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">
+            Acceso Restringido
+          </h2>
+          <p className="text-gray-500">
+            Solo Super Administradores pueden acceder a esta página.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  return <AdminPlansPageContent />;
 }

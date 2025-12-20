@@ -127,6 +127,10 @@ function transformPropertyResponse(backendProperty: any): Property {
     images: mappedImages,
     featuredImage: featuredImage, // Usar el featuredImage procesado
     privateFiles: backendProperty.privateFiles || [],
+    // Mapear additionalPropertyTypeIds del backend a additionalPropertyTypes del frontend
+    additionalPropertyTypes: backendProperty.additionalPropertyTypeIds && Array.isArray(backendProperty.additionalPropertyTypeIds)
+      ? backendProperty.additionalPropertyTypeIds.map((id: number) => id.toString())
+      : [],
     // Mantener el valor original de operacion (SALE, RENT, BOTH)
     operacion: backendProperty.operacion,
     // Asegurar que los campos numéricos sean números

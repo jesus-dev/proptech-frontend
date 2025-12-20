@@ -88,6 +88,41 @@ apiClient.interceptors.response.use(
   async (error) => {
     const config = error.config;
     
+    // Manejar errores de red (ERR_EMPTY_RESPONSE, ERR_NETWORK, etc.)
+    if (error.code === 'ERR_NETWORK' || error.code === 'ERR_EMPTY_RESPONSE' || error.message?.includes('ERR_EMPTY_RESPONSE')) {
+      // No registrar estos errores en la consola si son esperados (servidor no disponible)
+      // El código que llama debe manejar estos casos retornando valores por defecto
+      const networkError = new Error('Network error');
+      (networkError as any).code = error.code;
+      (networkError as any).config = error.config;
+      (networkError as any).isAxiosError = true;
+      return Promise.reject(networkError);
+    }
+    
+    // Suprimir logs de 404 esperados (agentes por email, rental properties por property ID)
+    // Estos son casos normales cuando no hay datos asociados
+    if (error.response?.status === 404) {
+      const url = error.config?.url || '';
+      const isExpected404 = 
+        url.includes('/agents/by-email/') ||
+        url.includes('/rental-properties/by-property/') ||
+        url.includes('/subscriptions/plans/network'); // Plan de Network puede no existir
+      
+      if (isExpected404) {
+        // Crear un error silencioso que no se registre en la consola
+        // pero que permita al código manejar el 404 correctamente
+        // Marcar el error como "handled" para evitar logs adicionales
+        const silentError: any = new Error('Expected 404');
+        silentError.response = error.response;
+        silentError.config = error.config;
+        silentError.isAxiosError = true;
+        silentError.__isExpected404 = true; // Marca para identificar errores esperados
+        // Suprimir el stack trace para estos errores esperados
+        silentError.stack = undefined;
+        return Promise.reject(silentError);
+      }
+    }
+    
     // 🚨 PRIORIDAD 1: Errores de autenticación - INTENTAR REFRESCAR TOKEN
     // Manejar 401 siempre, y 403 solo si parece ser un error de token (no un error de permisos real)
     const errorMessage = (error.response?.data?.error || error.response?.data?.message || String(error.response?.data || '')).toLowerCase();
@@ -313,46 +348,15 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // ♻️ RECUPERACIÓN AUTOMÁTICA SILENCIOSA para errores temporales
-    // Inicializar configuración de retry si no existe
-    if (!config.retry) {
-      config.retry = { count: 0, maxRetries: 5, delay: 300 }; // 5 reintentos más rápidos
-    }
-
-    // Determinar si debe reintentar
-    const shouldRetry = 
-      error.response?.status === 500 || // Error del servidor
-      error.response?.status === 502 || // Bad Gateway
-      error.response?.status === 503 || // Service Unavailable
-      error.response?.status === 504 || // Gateway Timeout
-      error.code === 'ECONNABORTED' || // Timeout
-      !error.response; // Error de red
-
-    // Solo NO reintentar para 404 (no encontrado)
-    // Los 403 y 401 ya se manejan arriba con refresh, así que no los incluimos en retry
-    const shouldNotRetry = 
-      error.response?.status === 404 ||
-      error.response?.status === 401 ||
-      error.response?.status === 403;
-
-    if (!shouldNotRetry && shouldRetry && config.retry.count < config.retry.maxRetries) {
-      config.retry.count += 1;
-      
-      // Retry silencioso - solo errores críticos se loguean
-      if (config.retry.count === 1 && process.env.NODE_ENV === 'development') {
-        // Retry en progreso
-      }
-      
-      // Espera progresiva más rápida: 300ms, 600ms, 900ms, 1200ms, 1500ms
-      const delay = config.retry.delay * config.retry.count;
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
-      // Reintentar el request silenciosamente
-      return apiClient(config);
-    }
-
-    // Si agotó todos los reintentos Y sigue siendo 500, verificar si es auth error
-    if (config.retry.count >= config.retry.maxRetries && error.response?.status === 500) {
+    // Los errores 500 pueden ser errores de validación o lógica de negocio, no necesariamente temporales
+    // Los retries automáticos pueden causar:
+    // - Múltiples efectos secundarios (duplicar registros, transacciones, etc.)
+    // - Exceder rate limits
+    // - Ocultar errores reales que deben ser corregidos
+    // Por lo tanto, NO hacemos retries automáticos. Cada componente debe manejar errores según su contexto.
+    
+    // Si es un error 500, verificar si es auth error
+    if (error.response?.status === 500) {
       // Solo cerrar sesión si el mensaje de error indica específicamente un problema de autenticación
       const errorMessage = error.response?.data?.error || '';
       const isAuthError = 

@@ -89,9 +89,10 @@ function SortableImageItem({
             // Image loaded successfully
           }}
           onError={(e) => {
-            console.error(`❌ Failed to load image ${index + 1}:`, image.url);
+            // Silenciosamente ocultar imagen si no se puede cargar (archivo no existe)
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
+            // No generar error en consola - es esperado que algunas imágenes puedan no existir
           }}
         />
         {/* Placeholder */}
@@ -452,6 +453,11 @@ export default function MultimediaStep({
                   src={image}
                   alt={`Imagen ${index + 1}`}
                   className="w-full h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                  onError={(e) => {
+                    // Silenciosamente ocultar imagen si no se puede cargar
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
                 />
                 <button
                   type="button"

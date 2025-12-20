@@ -14,28 +14,62 @@ const PricingSection = () => {
   useEffect(() => {
     const loadPlans = async () => {
       try {
-        // Traer exactamente lo de la base (PropTech + Network)
+        // ETAPA 1: Traer datos de la API
         let backendPlans: any[] = [];
         const [respAll, respNetwork] = await Promise.allSettled([
           apiClient.get('/api/subscriptions/plans/proptech/all'),
           apiClient.get('/api/subscriptions/plans/network')
         ]);
+        
         if (respAll.status === 'fulfilled') {
           backendPlans = Array.isArray(respAll.value.data) ? respAll.value.data : [];
-        }
-        if (respNetwork.status === 'fulfilled' && respNetwork.value?.data) {
-          const networkPlan = respNetwork.value.data;
-          backendPlans.push(networkPlan);
+          console.log('🔵 ETAPA 1 - API PropTech/all:', backendPlans.map(p => ({ id: p.id, name: p.name, tier: p.tier, type: p.type, billingDays: p.billingCycleDays })));
+        } else {
+          console.error('❌ Error en API PropTech/all:', respAll.reason);
         }
         
-        // Mapear planes del backend a formato del componente
-        const mappedPlans = backendPlans.map((plan: any) => {
+        if (respNetwork.status === 'fulfilled' && respNetwork.value?.data) {
+          const networkPlan = respNetwork.value.data;
+          console.log('🔵 ETAPA 1 - API Network:', { id: networkPlan.id, name: networkPlan.name, tier: networkPlan.tier, type: networkPlan.type });
+          // Solo agregar si no existe ya un plan con el mismo ID o nombre
+          const exists = backendPlans.some((p: any) => p.id === networkPlan.id || p.name === networkPlan.name);
+          if (!exists) {
+            backendPlans.push(networkPlan);
+          } else {
+            console.log('⚠️ Network plan ya existe, no se agrega');
+          }
+        }
+        
+        console.log('🟢 ETAPA 1 - Total backendPlans después de combinar:', backendPlans.length, backendPlans.map(p => ({ id: p.id, name: p.name, tier: p.tier })));
+        
+        // ETAPA 2: Eliminar duplicados por tier (PROPTECH)
+        const seenTiers = new Set<string>();
+        const uniquePlans = backendPlans.filter((plan: any) => {
+          // Si es PROPTECH, solo mostrar un plan por tier
+          if (plan.type === 'PROPTECH') {
+            const tierKey = `PROPTECH-${plan.tier}`;
+            if (seenTiers.has(tierKey)) {
+              console.log('❌ Duplicado filtrado por tier:', { id: plan.id, name: plan.name, tier: plan.tier });
+              return false; // Ya hay un plan con este tier
+            }
+            seenTiers.add(tierKey);
+            return true;
+          }
+          // NETWORK siempre se muestra (ya se filtró arriba por ID/name)
+          return true;
+        });
+        
+        console.log('🟢 ETAPA 2 - Después de filtrar por tier:', uniquePlans.length, uniquePlans.map(p => ({ id: p.id, name: p.name, tier: p.tier, type: p.type })));
+        
+        // ETAPA 3: Mapear a formato del componente
+        const mappedPlans = uniquePlans.map((plan: any) => {
           const tier = plan.tier;
           const price = Number(plan.price) || 0;
           const billingCycleDays = Number(plan.billingCycleDays) || 30;
           const monthlyPrice = billingCycleDays === 30 ? price : Math.round(price / 12);
           const annualPrice = billingCycleDays === 365 ? price : price * 12;
           return {
+            id: plan.id, // Incluir ID para identificar duplicados
             name: plan.name,
             type: tier,
             sourceType: plan.type, // PROPTECH o NETWORK
@@ -52,16 +86,48 @@ const PricingSection = () => {
           };
         });
 
-        // Ordenar: primero NETWORK (Red Social PropTech), luego por tier
+        console.log('🟢 ETAPA 3 - Después de mapear:', mappedPlans.length, mappedPlans.map(p => ({ id: p.id, name: p.name, type: p.type, sourceType: p.sourceType })));
+
+        // ETAPA 4: Eliminar duplicados finales por ID y por combinación de tier+sourceType
+        const seenIds = new Set<number>();
+        const seenTierType = new Set<string>();
+        const finalPlans = mappedPlans.filter((plan: any) => {
+          // Filtrar por ID primero
+          if (plan.id && seenIds.has(plan.id)) {
+            console.log('❌ Duplicado final filtrado por ID:', { id: plan.id, name: plan.name, type: plan.type });
+            return false;
+          }
+          if (plan.id) {
+            seenIds.add(plan.id);
+          }
+          
+          // Filtrar por combinación tier+sourceType (para PROPTECH, solo uno por tier)
+          if (plan.sourceType === 'PROPTECH') {
+            const key = `${plan.type}-${plan.sourceType}`;
+            if (seenTierType.has(key)) {
+              console.log('❌ Duplicado final filtrado por tier+type:', { id: plan.id, name: plan.name, type: plan.type, key });
+              return false;
+            }
+            seenTierType.add(key);
+          }
+          
+          return true;
+        });
+
+        console.log('🟢 ETAPA 4 - Final después de filtrar duplicados:', finalPlans.length, finalPlans.map(p => ({ id: p.id, name: p.name, type: p.type, sourceType: p.sourceType })));
+
+        // ETAPA 5: Ordenar
         const order: Record<string, number> = { INICIAL: 0, INTERMEDIO: 1, PREMIUM: 2, FREE: 3 };
-        mappedPlans.sort((a: any, b: any) => {
+        finalPlans.sort((a: any, b: any) => {
           if (a.sourceType === 'NETWORK' && b.sourceType !== 'NETWORK') return -1;
           if (b.sourceType === 'NETWORK' && a.sourceType !== 'NETWORK') return 1;
           return (order[a.type] ?? 99) - (order[b.type] ?? 99);
         });
 
-        // Mostrar todos los planes (ningún filtro)
-        setPlans(mappedPlans);
+        console.log('🟢 ETAPA 5 - Final ordenado:', finalPlans.length, finalPlans.map(p => ({ id: p.id, name: p.name, type: p.type })));
+
+        // Mostrar todos los planes sin duplicados
+        setPlans(finalPlans);
       } catch (error) {
         console.error('Error cargando planes:', error);
         // Fallback a array vacío si hay error
@@ -243,11 +309,12 @@ const PricingSection = () => {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {plans.map((plan) => (
+          {plans.map((plan, index) => {
+            return (
             <motion.div
-              key={plan.name}
+              key={`plan-${plan.id || plan.name}-${index}`}
               variants={itemVariants}
               className={`relative rounded-3xl p-6 transition-all duration-700 hover:-translate-y-4 flex flex-col group ${
                 plan.popular
@@ -357,108 +424,9 @@ const PricingSection = () => {
                 <span className="ml-2 text-lg">→</span>
               </button>
             </motion.div>
-          ))}
+            );
+          })}
         </motion.div>
-        )}
-
-        {/* Plan Torre/Empresarial - renderizado abajo si existe */}
-        {plans.find((p) => p.type === 'ENTERPRISE' || p.type === 'Empresarial' || p.name?.includes('Torre')) && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
-            {(() => {
-              const plan = plans.find((p) => p.type === 'ENTERPRISE' || p.type === 'Empresarial' || p.name?.includes('Torre'))!;
-              return (
-                <div className="md:col-start-2">
-                  <motion.div
-                    key={plan.name}
-                    variants={itemVariants}
-                    className={`relative rounded-3xl p-6 transition-all duration-700 hover:-translate-y-4 flex flex-col group ${
-                      'bg-white border-2 border-gray-200 shadow-xl hover:shadow-2xl hover:border-blue-300 hover:ring-2 hover:ring-blue-100'
-                    }`}
-                  >
-                  {/* Background Glow */}
-                  <div className={`absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-700 group-hover:opacity-10 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 blur-2xl -z-10`}></div>
-
-                  {/* Plan Header */}
-                  <div className="text-center mb-8">
-                    {/* Icon */}
-                    <div className="text-4xl mb-4">{plan.icon}</div>
-                    
-                    <div className="mb-4">
-                      <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide bg-gradient-to-r from-orange-100 to-red-200 text-orange-700 border border-orange-300`}>
-                        {plan.type}
-                      </span>
-                    </div>
-                    
-                    <h3 className="text-2xl font-extrabold text-gray-900 mb-3">
-                      {plan.name}
-                    </h3>
-                    
-                    <p className="text-gray-600 mb-8 leading-relaxed text-base">
-                      {plan.description}
-                    </p>
-                    
-                    {/* Price Box */}
-                    <div className={`flex flex-col items-center justify-center rounded-2xl p-3 mb-4 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200`}>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-semibold text-gray-600">₲</span>
-                        <span className={`text-3xl font-bold text-gray-900`}>
-                          {(isAnnual ? plan.annualPrice : plan.monthlyPrice).toLocaleString('es-PY')}
-                        </span>
-                      </div>
-                      <span className="text-sm font-medium text-gray-600 mt-1">
-                        /{isAnnual ? 'año' : 'mes'}
-                      </span>
-                      {isAnnual && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          ₲{Math.round(plan.annualPrice / 12).toLocaleString('es-PY')}/mes
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Subtitle */}
-                  {plan.subtitle && (
-                    <div className="mb-8 p-4 bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-2xl border border-blue-200">
-                      <p className="text-sm text-gray-700 text-center font-medium leading-snug">
-                        {plan.subtitle}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Features */}
-                  <div className="space-y-4 mb-8 flex-grow">
-                    <h4 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider flex items-center">
-                      <span className="w-2 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full mr-3"></span>
-                      Incluye:
-                    </h4>
-                    {plan.features.map((feature: string, featureIndex: number) => (
-                      <div key={featureIndex} className="flex items-start gap-4 group/feature">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gradient-to-r from-green-100 to-emerald-100 flex items-center justify-center mt-0.5 group-hover/feature:scale-110 transition-transform duration-300">
-                          <CheckIcon className="w-4 h-4 text-green-600 font-bold" />
-                        </div>
-                        <span className="text-gray-700 text-sm leading-relaxed font-medium">{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* CTA Button */}
-                  <button
-                    className={`w-full py-4 px-6 rounded-2xl font-bold text-base transition-all duration-500 mt-auto shadow-lg hover:shadow-2xl hover:scale-105 bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:from-blue-600 hover:to-purple-700`}
-                  >
-                    {plan.cta}
-                    <span className="ml-2 text-lg">→</span>
-                  </button>
-                </motion.div>
-                </div>
-              );
-            })()}
-          </motion.div>
         )}
 
           {/* Bottom CTA */}

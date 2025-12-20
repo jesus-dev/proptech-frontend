@@ -56,7 +56,7 @@ const DialogContent: React.FC<DialogContentProps> = ({ children, className }) =>
       "bg-black bg-opacity-50",
       className
     )}>
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[80%] max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
         {children}
       </div>
     </div>

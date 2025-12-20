@@ -171,17 +171,29 @@ const loadContactsFromBackend = async (): Promise<any[]> => {
             }
         }
         
-        const response = await apiClient.get('/api/agents');
-        const agents = response.data || [];
-        
-        // Convertir agentes a formato de contacto
-        return agents.map((agent: any) => ({
-            id: agent.id || 'agent-' + agent.id,
-            name: `${agent.firstName || ''} ${agent.lastName || ''}`.trim() || 'Sin nombre',
-            phone: agent.phone || 'Sin teléfono',
-            email: agent.email || 'Sin email',
-            position: agent.position || 'Agente'
-        }));
+        try {
+            const response = await apiClient.get('/api/agents');
+            const agents = response.data || [];
+            
+            // Convertir agentes a formato de contacto
+            return agents.map((agent: any) => ({
+                id: agent.id || 'agent-' + agent.id,
+                name: `${agent.firstName || ''} ${agent.lastName || ''}`.trim() || 'Sin nombre',
+                phone: agent.phone || 'Sin teléfono',
+                email: agent.email || 'Sin email',
+                position: agent.position || 'Agente'
+            }));
+        } catch (requestError: any) {
+            // Manejar ERR_EMPTY_RESPONSE y otros errores de red
+            if (requestError.code === 'ERR_NETWORK' || 
+                requestError.code === 'ERR_EMPTY_RESPONSE' ||
+                requestError.message?.includes('ERR_EMPTY_RESPONSE') ||
+                requestError.message === 'Network error') {
+                // No registrar en consola - es un error esperado cuando el servidor no está disponible
+                return [];
+            }
+            throw requestError;
+        }
     } catch (error) {
         // Silenciar el error 401 (no autenticado) - es esperado para usuarios no logueados
         if (error && typeof error === 'object' && 'response' in error) {

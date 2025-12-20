@@ -17,7 +17,6 @@ import {
   EyeOff,
   Camera,
   Save,
-  Edit,
   X,
   CheckCircle,
   AlertCircle,
@@ -56,6 +55,9 @@ import Avatar from '@/components/ui/avatar/Avatar';
 import AvatarText from '@/components/ui/avatar/AvatarText';
 import Switch from '@/components/form/switch/Switch';
 import { useSpring, animated } from '@react-spring/web';
+import ImageCropModal from '@/components/common/ImageCropModal';
+import { Upload, Edit } from 'lucide-react';
+import { getEndpoint } from '@/lib/api-config';
 
 // Tipo extendido para el perfil del usuario
 interface ProfileUser extends BaseUser {
@@ -73,6 +75,7 @@ interface ProfileUser extends BaseUser {
   language?: string;
   userType?: string;
   status?: string;
+  photoUrl?: string;
   notifications?: {
     email: boolean;
     push: boolean;
@@ -147,6 +150,13 @@ export default function ProfilePage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string>('');
  
   // Form states
   const [profileData, setProfileData] = useState<ProfileFormData>({
@@ -180,9 +190,6 @@ export default function ProfilePage() {
   // Estado para errores de validación
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
-  const [autoSaving, setAutoSaving] = useState(false);
-  const [autoSaved, setAutoSaved] = useState(false);
-  const autoSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Estado para errores de validación de contraseña
   const [passwordErrors, setPasswordErrors] = useState<{ [key: string]: string }>({});
@@ -224,29 +231,6 @@ export default function ProfilePage() {
     setPasswordErrors(validatePassword(securityData));
   }, [securityData, showPasswordDialog]);
 
-  // Guardado automático con debounce
-  useEffect(() => {
-    if (Object.keys(formErrors).length > 0) return;
-    if (autoSaveTimeout.current) clearTimeout(autoSaveTimeout.current);
-    setAutoSaved(false);
-    setAutoSaving(true);
-    autoSaveTimeout.current = setTimeout(async () => {
-      setAutoSaving(true);
-      try {
-        // Simular guardado automático
-        setAutoSaved(true);
-        setFormSuccess('Cambios guardados automáticamente');
-      } catch (error) {
-        setFormSuccess(null);
-      } finally {
-        setAutoSaving(false);
-      }
-    }, 1500);
-    return () => {
-      if (autoSaveTimeout.current) clearTimeout(autoSaveTimeout.current);
-    };
-   
-  }, [profileData, formErrors]);
 
   const [userId, setUserId] = useState<number | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -295,6 +279,8 @@ export default function ProfilePage() {
       };
       setProfileData(profileDataToSet);
       setProfileUser(parsedUser);
+      setAvatarUrl(parsedUser.photoUrl || null);
+      setOriginalPhotoUrl(parsedUser.photoUrl || '');
       setIsLoadingUser(false);
     } else {
       // Si no hay token, redirigir al login
@@ -309,6 +295,189 @@ export default function ProfilePage() {
 
 loadUserData();
 }, []);
+
+  // Manejar selección de archivo para foto de perfil
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Solo se permiten archivos de imagen (JPG, PNG, GIF, WEBP)');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('El archivo es demasiado grande. Máximo 5MB');
+      return;
+    }
+
+    // Leer la imagen y mostrar el modal de edición
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
+
+    // Resetear el input
+    e.target.value = '';
+  };
+
+  // Manejar crop completo
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    try {
+      setShowCropModal(false);
+      setUploadError(null);
+      
+      // Guardar el blob para subirlo después al guardar el formulario
+      setPendingImageBlob(croppedImageBlob);
+      
+      // Crear URL local para previsualización
+      const localUrl = URL.createObjectURL(croppedImageBlob);
+      setPreviewUrl(localUrl);
+      
+      // Guardar la URL original si aún no lo hemos hecho
+      if (!originalPhotoUrl && profileUser?.photoUrl) {
+        setOriginalPhotoUrl(profileUser.photoUrl.split('?')[0]);
+      }
+      
+      // Subir inmediatamente (igual que en agentes)
+      await uploadPhoto(croppedImageBlob);
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Error al procesar la imagen. Por favor intenta nuevamente.');
+    } finally {
+      setSelectedImage(null);
+    }
+  };
+
+  // Subir foto al servidor
+  const uploadPhoto = async (blob: Blob) => {
+    if (!userId) {
+      toast.error('No se pudo identificar el usuario');
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+      
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', blob, 'photo.jpg');
+      uploadFormData.append('fileName', 'photo.jpg');
+      
+      // Enviar URL de foto anterior para que la elimine del servidor
+      if (originalPhotoUrl) {
+        uploadFormData.append('oldPhotoUrl', originalPhotoUrl);
+      }
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(getEndpoint(`/api/auth/users/${userId}/upload-photo`), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: uploadFormData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al subir la foto');
+      }
+
+      const result = await response.json();
+      
+      // Actualizar estado local
+      setAvatarUrl(result.fileUrl);
+      setOriginalPhotoUrl(result.fileUrl);
+      setPreviewUrl(null);
+      setPendingImageBlob(null);
+      
+      // Actualizar profileUser
+      if (profileUser) {
+        setProfileUser({ ...profileUser, photoUrl: result.fileUrl });
+      }
+      
+      // Actualizar localStorage
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        parsedUser.photoUrl = result.fileUrl;
+        localStorage.setItem('user', JSON.stringify(parsedUser));
+      }
+      
+      toast.success('Foto de perfil actualizada exitosamente');
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al subir la foto');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  // Manejar cancelación del crop
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedImage(null);
+  };
+
+  // Eliminar foto
+  const handleDeletePhoto = async () => {
+    // Si hay una imagen pendiente, solo limpiar el estado local
+    if (pendingImageBlob || previewUrl) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPendingImageBlob(null);
+      setPreviewUrl(null);
+      return;
+    }
+    
+    // Si hay una foto guardada en el servidor, eliminarla
+    if (!userId) return;
+    
+    try {
+      setUploadingPhoto(true);
+      
+      // Actualizar usuario sin foto
+      await authService.updateUser(userId, {
+        email: profileData.email,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        phone: profileData.phone,
+        photoUrl: null
+      });
+      
+      setAvatarUrl(null);
+      setOriginalPhotoUrl('');
+      setPreviewUrl(null);
+      setPendingImageBlob(null);
+      
+      if (profileUser) {
+        setProfileUser({ ...profileUser, photoUrl: undefined });
+      }
+      
+      // Actualizar localStorage
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        parsedUser.photoUrl = null;
+        localStorage.setItem('user', JSON.stringify(parsedUser));
+      }
+      
+      toast.success('Foto de perfil eliminada');
+      
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      toast.error('Error al eliminar la foto');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   // Guardar cambios en la API
   const handleProfileUpdate = async () => {
@@ -344,29 +513,6 @@ loadUserData();
     }
   };
 
-  // Guardado automático: igual, pero llama a handleProfileUpdate si no hay errores
-  useEffect(() => {
-    if (Object.keys(formErrors).length > 0) return;
-    if (autoSaveTimeout.current) clearTimeout(autoSaveTimeout.current);
-    setAutoSaved(false);
-    setAutoSaving(true);
-    autoSaveTimeout.current = setTimeout(async () => {
-      setAutoSaving(true);
-      try {
-        await handleProfileUpdate();
-        setAutoSaved(true);
-        setFormSuccess('Cambios guardados automáticamente');
-      } catch (error) {
-        setFormSuccess(null);
-      } finally {
-        setAutoSaving(false);
-      }
-    }, 1500);
-    return () => {
-      if (autoSaveTimeout.current) clearTimeout(autoSaveTimeout.current);
-    };
-   
-  }, [profileData, formErrors]);
 
   const [exportLoading, setExportLoading] = useState(false);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
@@ -479,20 +625,7 @@ loadUserData();
 
 
 
-  // Manejar cambio de imagen de perfil
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setAvatarUrl(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-    // Simular subida (reemplazar por API real si existe)
-    setTimeout(() => {
-      // updateUser({ ...user, avatarUrl: 'url-subida' }); // Aquí iría la URL real
-    }, 1200);
-  };
+  // handleAvatarChange ya no se usa, se usa handleFileSelect en su lugar
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -580,21 +713,57 @@ loadUserData();
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-center gap-8 mb-4 lg:mb-0">
             <div className="relative group">
-              {avatarUrl ? (
-                <Avatar src={avatarUrl} size="xlarge" alt="Foto de perfil" />
+              {(previewUrl || avatarUrl) ? (
+                <div className="relative">
+                  {uploadingPhoto ? (
+                    <div className="h-28 w-28 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-4 border-white">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+                    </div>
+                  ) : (
+                    <Avatar src={(previewUrl || avatarUrl)!} size="xlarge" alt="Foto de perfil" />
+                  )}
+                  <label
+                    htmlFor="avatar-upload"
+                    className="absolute -bottom-2 -right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Editar foto"
+                  >
+                    <Edit className="h-6 w-6" />
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                      disabled={uploadingPhoto}
+                    />
+                  </label>
+                  {avatarUrl && !uploadingPhoto && (
+                    <button
+                      type="button"
+                      onClick={handleDeletePhoto}
+                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-xl transition-all duration-300 opacity-90 hover:opacity-100 border-2 border-white hover:scale-110"
+                      title="Eliminar foto"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               ) : (
-                <AvatarText name={profileUser?.fullName || profileUser?.email || 'Usuario'} className="h-28 w-28 text-4xl" />
+                <div className="relative">
+                  <AvatarText name={profileUser?.fullName || profileUser?.email || 'Usuario'} className="h-28 w-28 text-4xl" />
+                  <label htmlFor="avatar-upload" className="absolute -bottom-2 -right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Camera className="h-6 w-6" />
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                      disabled={uploadingPhoto}
+                    />
+                  </label>
+                </div>
               )}
-              <label htmlFor="avatar-upload" className="absolute -bottom-2 -right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-4 border-white hover:scale-110">
-                <Camera className="h-6 w-6" />
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                />
-              </label>
             </div>
             <div>
               <div className="flex items-center gap-4 mb-3">
@@ -635,20 +804,6 @@ loadUserData();
             </Button>
           </div>
         </div>
-        
-        {/* Indicador de auto-guardado */}
-        {autoSaving && (
-          <div className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-transparent"></div>
-            Guardando automáticamente...
-          </div>
-        )}
-        {autoSaved && (
-          <div className="mt-6 flex items-center justify-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-            <CheckCircle className="h-4 w-4" />
-            Cambios guardados automáticamente
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -964,10 +1119,61 @@ loadUserData();
           {/* Profile Summary */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="text-center mb-6">
-              <div className="h-24 w-24 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl font-bold text-white">
-                  {profileUser.fullName?.charAt(0) || profileUser.email.charAt(0).toUpperCase()}
-                </span>
+              <div className="relative inline-block mb-4">
+                {(previewUrl || avatarUrl || profileUser.photoUrl) ? (
+                  <>
+                    <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                      <img 
+                        src={
+                          previewUrl || 
+                          (avatarUrl || profileUser.photoUrl)?.startsWith('http') 
+                            ? (avatarUrl || profileUser.photoUrl)
+                            : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${avatarUrl || profileUser.photoUrl}`
+                        }
+                        alt="Foto de perfil"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<span class="text-2xl font-bold text-white">${profileUser.fullName?.charAt(0) || profileUser.email.charAt(0).toUpperCase()}</span>`;
+                            parent.className = 'w-24 h-24 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg';
+                          }
+                        }}
+                      />
+                    </div>
+                    <label
+                      htmlFor="user-photo-upload"
+                      className="absolute -bottom-2 -right-2 p-2 bg-indigo-600 text-white rounded-full cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg"
+                      title="Editar foto"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </label>
+                  </>
+                ) : (
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg">
+                      <span className="text-2xl font-bold text-white">
+                        {profileUser.fullName?.charAt(0) || profileUser.email.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <label
+                      htmlFor="user-photo-upload"
+                      className="absolute -bottom-2 -right-2 p-2 bg-indigo-600 text-white rounded-full cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg"
+                      title="Agregar foto"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </label>
+                  </div>
+                )}
+                <input
+                  id="user-photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  disabled={uploadingPhoto}
+                  className="hidden"
+                />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">{profileUser.fullName}</h3>
               <p className="text-gray-600">{profileUser.email}</p>
@@ -1199,6 +1405,16 @@ loadUserData();
         </DialogContent>
       </Dialog>
 
+      {/* Modal de crop de imagen */}
+      {showCropModal && selectedImage && (
+        <ImageCropModal
+          imageSrc={selectedImage}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={1}
+          circularCrop={true}
+        />
+      )}
 
     </div>
   );

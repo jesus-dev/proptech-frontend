@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import PropertiesSection from '@/components/public/sections/PropertiesSection';
+import SearchHeroSection from '@/components/public/sections/SearchHeroSection';
 import Head from 'next/head';
 
 // Mapeo de categorías válidas
@@ -137,6 +138,7 @@ export default function PropiedadesPorCategoria() {
         <h1 className="sr-only">
           {categoriaInfo.h1}
         </h1>
+        <SearchHeroSection />
         <PropertiesSection defaultCategory={categoria} />
       </main>
     </>

@@ -1,4 +1,4 @@
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface Agent {
   id: number;
@@ -25,45 +25,21 @@ export interface Agent {
 }
 
 class AgentService {
-  private baseUrl = getEndpoint('/api/agents');
-
-  private getHeaders(): Record<string, string> {
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-  }
 
   async getAllAgents(): Promise<Agent[]> {
     try {
-      const response = await fetch(this.baseUrl, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) {
-        console.warn(`⚠️ Error al obtener agentes: ${response.status}`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get('/api/agents');
+      return response.data;
     } catch (error) {
       console.error('Error fetching agents:', error);
-      // Retornar array vacío para evitar que la app se rompa
       return [];
     }
   }
 
   async getAgentById(id: number): Promise<Agent> {
     try {
-      const response = await fetch(`${this.baseUrl}/${id}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/agents/${id}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching agent:', error);
       throw error;
@@ -72,14 +48,8 @@ class AgentService {
 
   async getAgentsByAgency(agencyId: number): Promise<Agent[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/agency/${agencyId}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) {
-        console.warn(`⚠️ Error al obtener agentes por agencia: ${response.status}`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/agents/agency/${agencyId}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching agents by agency:', error);
       return [];
@@ -88,14 +58,8 @@ class AgentService {
 
   async getIndependentAgents(): Promise<Agent[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/independent`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) {
-        console.warn(`⚠️ Error al obtener agentes independientes: ${response.status}`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get('/api/agents/independent');
+      return response.data;
     } catch (error) {
       console.error('Error fetching independent agents:', error);
       return [];
@@ -104,18 +68,15 @@ class AgentService {
 
   async getAgentByEmail(email: string): Promise<Agent | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/by-email/${encodeURIComponent(email)}`, {
-        headers: this.getHeaders(),
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const response = await apiClient.get(`/api/agents/by-email/${encodeURIComponent(email)}`);
+      return response.data;
+    } catch (error: any) {
+      // 404 es esperado cuando no hay agente asociado al usuario
+      // El interceptor de apiClient ya suprime estos errores en la consola
+      if (error.response?.status === 404) {
+        return null;
       }
-      return await response.json();
-    } catch (error) {
+      // Solo registrar otros errores
       console.error('Error fetching agent by email:', error);
       return null;
     }
@@ -123,17 +84,12 @@ class AgentService {
 
   async getAgentByUserId(userId: number): Promise<Agent | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/by-user-id/${userId}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const response = await apiClient.get(`/api/agents/by-user-id/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
       }
-      return await response.json();
-    } catch (error) {
       console.error('Error fetching agent by userId:', error);
       return null;
     }
