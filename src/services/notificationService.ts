@@ -38,6 +38,9 @@ class NotificationService {
   async getUserNotifications(userId: number, filters?: NotificationFilters): Promise<UserNotifications> {
     const limit = filters?.limit || 50;
     try {
+      if (!userId || userId <= 0) {
+        return { unreadCount: 0, totalCount: 0, notifications: [] };
+      }
       // Usar el endpoint optimizado que devuelve notificaciones y conteo en una sola consulta
       const response = await apiClient.get(`/api/notifications/user/${userId}/optimized?limit=${limit}`);
       
@@ -47,7 +50,10 @@ class NotificationService {
         notifications: response.data.notifications || []
       };
     } catch (error) {
-      console.error('Error fetching user notifications:', error);
+      // Evitar ruido en consola por casos esperables (ej: sin sesión / userId inválido)
+      if ((error as any)?.response?.status !== 401) {
+        console.error('Error fetching user notifications:', error);
+      }
       return {
         unreadCount: 0,
         totalCount: 0,
@@ -59,13 +65,17 @@ class NotificationService {
   // Obtener notificaciones no leídas del usuario
   async getUnreadNotifications(userId: number, limit: number = 10): Promise<Notification[]> {
     try {
+      if (!userId || userId <= 0) return [];
       // Usar el endpoint optimizado que ya devuelve solo notificaciones no leídas
       const response = await apiClient.get(`/api/notifications/user/${userId}/optimized?limit=${limit}`);
       
       // El backend ya filtra las notificaciones no leídas
       return response.data.notifications || [];
     } catch (error) {
-      console.error('Error fetching unread notifications:', error);
+      // 401 suele ser "no logueado" en páginas públicas; no lo tratamos como error ruidoso
+      if ((error as any)?.response?.status !== 401) {
+        console.error('Error fetching unread notifications:', error);
+      }
       
       // Si es un error de red, verificar si el backend está disponible
       if (error instanceof Error && error.message.includes('Network Error')) {
