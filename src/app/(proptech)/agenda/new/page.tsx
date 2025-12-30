@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Clock, MapPin, User, Building2, ArrowLeft, Save, CalendarDays, ArrowRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { apiClient } from "@/lib/api";
 
 interface AppointmentType {
   value: string;
@@ -83,31 +84,37 @@ export default function NewAppointmentPage() {
 
   const fetchFormData = async () => {
     try {
-      // Aquí deberías hacer las llamadas a tu API para obtener:
-      // - Lista de agentes
-      // - Lista de clientes
-      // - Lista de propiedades
-      
-      // Por ahora usamos datos de ejemplo
-      setAgents([
-        { id: 1, name: "Juan Pérez" },
-        { id: 2, name: "María García" },
-        { id: 3, name: "Carlos López" },
+      // Sin datos ficticios: cargar desde backend (o dejar vacío si falla)
+      const [agentsRes, clientsRes, propertiesRes] = await Promise.allSettled([
+        apiClient.get("/api/sales-agents?size=100"),
+        apiClient.get("/api/clients?size=100"),
+        apiClient.get("/api/properties?size=100"),
       ]);
-      
-      setClients([
-        { id: 1, name: "Ana Rodríguez" },
-        { id: 2, name: "Luis Martínez" },
-        { id: 3, name: "Carmen Silva" },
-      ]);
-      
-      setProperties([
-        { id: 1, title: "Casa en Las Palmas" },
-        { id: 2, title: "Apartamento Centro" },
-        { id: 3, title: "Oficina Comercial" },
-      ]);
+
+      const rawAgents = agentsRes.status === "fulfilled" ? (agentsRes.value.data || []) : [];
+      const rawClients = clientsRes.status === "fulfilled" ? (clientsRes.value.data?.content || clientsRes.value.data || []) : [];
+      const rawProperties = propertiesRes.status === "fulfilled" ? (propertiesRes.value.data?.content || propertiesRes.value.data || []) : [];
+
+      setAgents(
+        Array.isArray(rawAgents)
+          ? rawAgents.map((a: any) => ({ id: Number(a.id), name: `${a.firstName || a.name || ""} ${a.lastName || ""}`.trim() || String(a.email || "Agente") }))
+          : []
+      );
+      setClients(
+        Array.isArray(rawClients)
+          ? rawClients.map((c: any) => ({ id: Number(c.id), name: `${c.firstName || c.nombre || ""} ${c.lastName || c.apellido || ""}`.trim() || String(c.email || "Cliente") }))
+          : []
+      );
+      setProperties(
+        Array.isArray(rawProperties)
+          ? rawProperties.map((p: any) => ({ id: Number(p.id), title: p.title || p.nombre || String(p.id) }))
+          : []
+      );
     } catch (error) {
       console.error('Error fetching form data:', error);
+      setAgents([]);
+      setClients([]);
+      setProperties([]);
     }
   };
 

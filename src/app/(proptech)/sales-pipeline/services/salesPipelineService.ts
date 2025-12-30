@@ -251,25 +251,8 @@ export const salesPipelineService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching agent performance:', error);
-      // Return mock data on error to prevent UI crashes and provide fallback
-      return {
-        "1": {
-          totalLeads: 12,
-          wonLeads: 8,
-          lostLeads: 4,
-          avgProbability: 75,
-          totalValue: 2500000,
-          conversionRate: 66.7
-        },
-        "2": {
-          totalLeads: 8,
-          wonLeads: 5,
-          lostLeads: 3,
-          avgProbability: 68,
-          totalValue: 1800000,
-          conversionRate: 62.5
-        }
-      };
+      // Sin datos ficticios: devolver vacío
+      return {};
     }
   },
 
@@ -283,33 +266,8 @@ export const salesPipelineService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching source analysis:', error);
-      // Return mock data on error to prevent UI crashes and provide fallback
-      return {
-        "website": {
-          totalLeads: 15,
-          wonLeads: 10,
-          lostLeads: 5,
-          avgProbability: 72,
-          totalValue: 3200000,
-          conversionRate: 66.7
-        },
-        "referral": {
-          totalLeads: 8,
-          wonLeads: 6,
-          lostLeads: 2,
-          avgProbability: 78,
-          totalValue: 2100000,
-          conversionRate: 75.0
-        },
-        "social_media": {
-          totalLeads: 12,
-          wonLeads: 7,
-          lostLeads: 5,
-          avgProbability: 65,
-          totalValue: 1800000,
-          conversionRate: 58.3
-        }
-      };
+      // Sin datos ficticios: devolver vacío
+      return {};
     }
   },
 

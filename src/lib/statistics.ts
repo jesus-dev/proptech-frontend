@@ -35,21 +35,21 @@ export interface SiteStatistics {
 // Configuración por defecto de estadísticas
 export const DEFAULT_STATISTICS: SiteStatistics = {
   properties: {
-    total: +150,
+    total: 0,
     forSale: 0,
     forRent: 0,
     featured: 0,
   },
   agents: {
-    total: +5,
-    active: 5,
+    total: 0,
+    active: 0,
   },
   clients: {
-    total: +75,
-    satisfied: 150,
+    total: 0,
+    satisfied: 0,
   },
   locations: {
-    total: 15,
+    total: 0,
   },
   support: {
     availability: "24/7",
@@ -62,9 +62,21 @@ export const DEFAULT_STATISTICS: SiteStatistics = {
 // Función para obtener estadísticas con valores dinámicos
 export const getSiteStatistics = async (): Promise<SiteStatistics> => {
   try {
-    // Aquí puedes hacer llamadas al backend para obtener estadísticas reales
-    // Por ahora usamos las estadísticas por defecto
-    return DEFAULT_STATISTICS;
+    // Estadísticas reales desde backend público
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/properties/stats`);
+    if (!res.ok) return DEFAULT_STATISTICS;
+    const data = await res.json();
+    return {
+      ...DEFAULT_STATISTICS,
+      properties: { ...DEFAULT_STATISTICS.properties, total: Number(data?.totalProperties || 0) },
+      agents: { ...DEFAULT_STATISTICS.agents, total: Number(data?.totalAgents || 0), active: Number(data?.totalAgents || 0) },
+      clients: { ...DEFAULT_STATISTICS.clients, total: Number(data?.totalCustomers || 0) },
+      dynamic: {
+        totalProperties: Number(data?.totalProperties || 0),
+        totalAgents: Number(data?.totalAgents || 0),
+        totalClients: Number(data?.totalCustomers || 0),
+      }
+    };
   } catch (error) {
     console.error('Error loading site statistics:', error);
     return DEFAULT_STATISTICS;

@@ -28,6 +28,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { clientService } from "../../developments/services/clientService";
 import { Client } from "../../developments/components/types";
 import type { Property } from "../../properties/components/types";
+import { apiClient } from "@/lib/api";
 
 interface LeadComboboxProps {
   selectedLead: Client | null;
@@ -201,16 +202,21 @@ export default function NewLeadPage() {
   const loadOptions = async () => {
     try {
       setLoading(true);
-      
-      // Por ahora usamos datos de ejemplo para agentes
-      setAgents([
-        { id: 1, name: 'Ana Martínez' },
-        { id: 2, name: 'Roberto Silva' },
-        { id: 3, name: 'Laura Fernández' }
-      ]);
+      // Sin datos ficticios: cargar agentes desde backend (o vacío)
+      const res = await apiClient.get("/api/sales-agents?size=100");
+      const list = Array.isArray(res.data) ? res.data : (res.data?.content || []);
+      setAgents(
+        Array.isArray(list)
+          ? list.map((a: any) => ({
+              id: Number(a.id),
+              name: `${a.firstName || a.name || ""} ${a.lastName || ""}`.trim() || String(a.email || "Agente"),
+            }))
+          : []
+      );
     } catch (error) {
       console.error('Error loading options:', error);
       setError('Error al cargar las opciones');
+      setAgents([]);
     } finally {
       setLoading(false);
     }

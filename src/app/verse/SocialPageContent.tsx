@@ -658,7 +658,7 @@ export default function SocialPageContent() {
       // Cerrar el menú primero
       setShowShareMenu(prev => ({ ...prev, [postId]: false }));
       
-      const postUrl = `${window.location.origin}/social/posts/${postId}`;
+      const postUrl = `${window.location.origin}/verse/posts/${postId}`;
       const post = posts.find(p => p.id === postId);
       const postText = post?.content ? post.content.substring(0, 100) + '...' : 'Mira este post interesante';
       
@@ -1079,11 +1079,11 @@ export default function SocialPageContent() {
     return `hace ${Math.floor(diffInDays / 365)} año`;
   };
 
-  // Redirigir a la galería existente (/social/gallery/[postId])
+  // Redirigir a la galería existente (/verse/gallery/[postId])
   const openImageGallery = (postId: number, imageIndex: number = 0) => {
     const target = imageIndex > 0 
-      ? `/social/gallery/${postId}?i=${imageIndex}` 
-      : `/social/gallery/${postId}`;
+      ? `/verse/gallery/${postId}?i=${imageIndex}` 
+      : `/verse/gallery/${postId}`;
     if (typeof window !== 'undefined') {
       window.location.href = target;
     }
@@ -1128,24 +1128,37 @@ export default function SocialPageContent() {
 
   return (
     <>
-      {/* Slogan de marca - Premium Minimalista */}
+      {/* Banner de marca Verse - Premium */}
       <div className="relative mb-6 overflow-hidden">
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-xl p-5 sm:p-6 shadow-2xl border border-slate-700/50">
-          {/* Efecto de brillo sutil */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-shimmer"></div>
+        <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl p-8 sm:p-10 md:p-12 border border-blue-100 dark:border-gray-700 shadow-lg">
+          {/* Patrón de fondo decorativo */}
+          <div className="absolute inset-0 opacity-5 dark:opacity-10">
+            <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
+          </div>
           
-          <div className="relative z-10 text-center">
-            <div className="inline-flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/10">
-                <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          <div className="relative text-center">
+            {/* Logo con efecto hover */}
+            <div className="flex justify-center mb-4 sm:mb-6">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
+                <img 
+                  src="/images/logo/ProptechSocial.png" 
+                  alt="Verse Logo" 
+                  className="relative h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain transform group-hover:scale-105 transition-transform duration-300"
+                />
               </div>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg tracking-tight">
-                Verse
-              </h2>
             </div>
-            <p className="text-sm sm:text-base text-white/90 font-normal tracking-wide">
-              La red profesional para agentes Inmobiliarios
-            </p>
+            
+            {/* Tagline mejorado */}
+            <div className="space-y-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent leading-tight">
+                La red profesional para agentes Inmobiliarios
+              </h1>
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 font-medium max-w-2xl mx-auto">
+                Conecta, comparte y crece en la comunidad inmobiliaria más grande
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1175,14 +1188,46 @@ export default function SocialPageContent() {
       
       {/* Campo para crear post */}
       {isAuthenticated && (
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          {/* Botones de prueba temporal */}
-
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white text-lg font-bold">
-                  {user?.fullName?.charAt(0) || 'U'}
+            {/* Avatar del usuario */}
+            {(() => {
+              const userPhoto = (user as any)?.photoUrl || user?.agent?.fotoPerfilUrl;
+              const photoUrl = userPhoto 
+                ? (userPhoto.startsWith('http') ? userPhoto : getEndpoint(userPhoto.startsWith('/') ? userPhoto : `/${userPhoto}`))
+                : null;
+              const initials = user?.fullName 
+                ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                : 'U';
+              
+              return (
+                <div className="flex-shrink-0">
+                  {photoUrl ? (
+                    <img 
+                      src={photoUrl}
+                      alt={user?.fullName || 'Usuario'}
+                      className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const fallback = document.createElement('div');
+                          fallback.className = 'w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-600';
+                          fallback.textContent = initials;
+                          parent.appendChild(fallback);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-600">
+                      {initials}
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1">
+              );
+            })()}
+            <div className="flex-1">
                     <textarea
                       value={newPost}
                       onChange={(e) => {
@@ -1192,28 +1237,28 @@ export default function SocialPageContent() {
                         setDetectedUrls(urls);
                       }}
                       placeholder={`¿Qué quieres compartir, ${user?.fullName || 'Usuario'}?`}
-                      className="w-full p-4 border border-gray-200 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
                       rows={3}
-                                        />
+                    />
                     
                     {/* URLs detectadas en tiempo real */}
                     {detectedUrls.length > 0 && (
-                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center mb-2">
-                          <svg className="w-4 h-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                      <div className="mt-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                        <div className="flex items-center mb-3">
+                          <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
                           </svg>
-                          <span className="text-sm font-medium text-blue-800">Enlaces detectados:</span>
+                          <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">Enlaces detectados:</span>
                         </div>
                         <div className="space-y-3">
                           {detectedUrls.map((url, index) => (
-                            <div key={index} className="bg-white rounded-lg p-3 border border-blue-200">
-                              <div className="flex items-start justify-between">
+                            <div key={index} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700 shadow-sm">
+                              <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">
+                                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
                                     {urlLoadingStates[url] ? (
-                                      <span className="flex items-center text-blue-600">
-                                        <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <span className="flex items-center text-blue-600 dark:text-blue-400">
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
@@ -1223,7 +1268,7 @@ export default function SocialPageContent() {
                                       urlTitles[url] || url
                                     )}
                                   </h4>
-                                  <p className="text-xs text-gray-500 break-all">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 break-all">
                                     {url.startsWith('http') ? url : `https://${url}`}
                                   </p>
                                 </div>
@@ -1231,7 +1276,7 @@ export default function SocialPageContent() {
                                   href={url.startsWith('http') ? url : `https://${url}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="ml-3 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-indigo-700 transition-colors flex-shrink-0"
+                                  className="ml-3 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex-shrink-0 shadow-sm"
                                 >
                                   Abrir
                                 </a>
@@ -1244,10 +1289,10 @@ export default function SocialPageContent() {
 
                     {/* Ubicación detectada */}
                     {userLocation && (
-                      <div className={`mt-3 p-3 border rounded-lg ${
+                      <div className={`mt-3 p-4 border rounded-xl ${
                         userLocation.includes('GPS requerido') 
-                          ? 'bg-blue-50 border-blue-200' 
-                          : 'bg-gray-50 border-gray-200'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
+                          : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
                       }`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -1325,32 +1370,37 @@ export default function SocialPageContent() {
                       </div>
                     )}
                     
-                              {/* Preview de imágenes seleccionadas */}
-                {postImagePreviews.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    {postImagePreviews.map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => removePostImage(index)}
-                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          ×
-                        </button>
+                    {/* Preview de imágenes seleccionadas */}
+                    {postImagePreviews.length > 0 && (
+                      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {postImagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <button
+                              onClick={() => removePostImage(index)}
+                              className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-110"
+                              title="Eliminar imagen"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
 
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors cursor-pointer">
-                      <Camera className="w-5 h-5" />
-                      <span className="text-sm">Fotos (máx. 5)</span>
+                    <label className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer group">
+                      <Camera className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      <span className="text-sm font-medium">Fotos (máx. 5)</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -1361,11 +1411,11 @@ export default function SocialPageContent() {
                     </label>
                     <button
                       onClick={openLocationPicker}
-                      className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors"
+                      className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors group"
                       title="Seleccionar ubicación en mapa"
                     >
-                      <MapPin className="w-5 h-5" />
-                      <span className="text-sm">
+                      <MapPin className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      <span className="text-sm font-medium">
                         {userLocation ? userLocation : 'Seleccionar ubicación'}
                       </span>
                     </button>
@@ -1373,7 +1423,7 @@ export default function SocialPageContent() {
                   <button
                     onClick={handleCreatePost}
                     disabled={!newPost.trim()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                   >
                     Publicar
                   </button>
@@ -1413,7 +1463,7 @@ export default function SocialPageContent() {
                 Empezar ahora
               </button>
               <button
-                onClick={() => { if (typeof window !== 'undefined') window.location.href = '/register'; }}
+                onClick={() => { if (typeof window !== 'undefined') window.location.href = '/registrarse'; }}
                 className="px-2.5 sm:px-3 py-1 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 text-[11px] sm:text-xs"
               >
                 Crear cuenta
@@ -1452,7 +1502,7 @@ export default function SocialPageContent() {
               onClick={() => {
                 // Redirigir a la página de propshots
                 if (typeof window !== 'undefined') {
-                  window.location.href = '/social/propshots';
+                  window.location.href = '/verse/propshots';
                 }
               }}
               disabled={propShotsLoading || propShots.length === 0}
@@ -1733,7 +1783,7 @@ export default function SocialPageContent() {
                           {/* Otras opciones futuras pueden ir aquí */}
                           <button
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/social/posts/${post.id}`);
+                              navigator.clipboard.writeText(`${window.location.origin}/verse/posts/${post.id}`);
                               setOpenDropdown(null);
                               alert('Enlace copiado al portapapeles');
                             }}

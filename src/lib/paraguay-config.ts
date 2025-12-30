@@ -359,11 +359,8 @@ export const paraguayUtils = {
   
   // Generar teléfono de ejemplo
   generateExamplePhone: (): string => {
-    const prefixes = ['981', '982', '983', '984', '985', '986', '987', '988', '989'];
-    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const number1 = Math.floor(Math.random() * 900) + 100;
-    const number2 = Math.floor(Math.random() * 900) + 100;
-    return `+595 ${prefix} ${number1} ${number2}`;
+    // Sin datos ficticios: no generar teléfonos "de ejemplo" en runtime
+    return '';
   },
   
   // Obtener ciudades por estado
@@ -378,12 +375,7 @@ export const paraguayUtils = {
   
   // Generar nombre completo paraguayo
   generateFullName: (): { firstName: string; lastName: string } => {
-    const firstName = paraguayConfig.commonNames.male.concat(paraguayConfig.commonNames.female)[
-      Math.floor(Math.random() * (paraguayConfig.commonNames.male.length + paraguayConfig.commonNames.female.length))
-    ];
-    const lastName = paraguayConfig.commonSurnames[
-      Math.floor(Math.random() * paraguayConfig.commonSurnames.length)
-    ];
-    return { firstName, lastName };
+    // Sin datos ficticios: no generar nombres "de ejemplo" en runtime
+    return { firstName: '', lastName: '' };
   }
 }; 

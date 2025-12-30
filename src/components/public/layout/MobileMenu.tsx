@@ -27,6 +27,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, activeSubmenu,
       ]
     },
     { name: 'Asesores', href: '/asesores' },
+    { name: 'Profesionales', href: '/profesionales' },
     { name: 'Contacto', href: '/contact' },
   ];
 

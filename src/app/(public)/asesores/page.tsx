@@ -45,28 +45,36 @@ export default function AsesoresPage() {
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState('rating');
+  const [sortBy, setSortBy] = useState<'properties' | 'rating' | 'experience'>('properties');
   const [asesores, setAsesores] = useState<Asesor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
-  const cities = [
-    { value: '', label: 'Todas las ciudades' },
-    { value: 'asuncion', label: 'Asunción' },
-    { value: 'ciudad-del-este', label: 'Ciudad del Este' },
-    { value: 'encarnacion', label: 'Encarnación' },
-    { value: 'san-lorenzo', label: 'San Lorenzo' },
-    { value: 'fernando-de-la-mora', label: 'Fernando de la Mora' }
-  ];
+  // Función para normalizar nombres de ciudades
+  const normalizeCityName = (cityName: string) => {
+    return cityName
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/ó/g, 'o')
+      .replace(/ñ/g, 'n')
+      .replace(/á/g, 'a')
+      .replace(/é/g, 'e')
+      .replace(/í/g, 'i')
+      .replace(/ú/g, 'u');
+  };
 
-  const specialties = [
-    { value: '', label: 'Todas las especialidades' },
-    { value: 'residencial', label: 'Residencial' },
-    { value: 'comercial', label: 'Comercial' },
-    { value: 'terrenos', label: 'Terrenos' },
-    { value: 'lujo', label: 'Propiedades de lujo' },
-    { value: 'inversion', label: 'Inversión' }
-  ];
+  // Filtros dinámicos basados en datos reales (sin catálogos hardcodeados)
+  const cities = React.useMemo(() => {
+    const unique = Array.from(new Set(asesores.map(a => (a.city || '').trim()).filter(Boolean)));
+    unique.sort((a, b) => a.localeCompare(b, 'es'));
+    return [{ value: '', label: 'Todas las ciudades' }, ...unique.map(c => ({ value: normalizeCityName(c), label: c }))];
+  }, [asesores]);
+
+  const specialties = React.useMemo(() => {
+    const unique = Array.from(new Set(asesores.map(a => (a.specialty || '').trim()).filter(Boolean)));
+    unique.sort((a, b) => a.localeCompare(b, 'es'));
+    return [{ value: '', label: 'Todas las especialidades' }, ...unique.map(s => ({ value: s.toLowerCase(), label: s }))];
+  }, [asesores]);
 
   // Cargar agentes reales desde la API
   useEffect(() => {
@@ -84,46 +92,48 @@ export default function AsesoresPage() {
           return;
         }
 
-        // Mapear agentes de la API al formato del componente
-        const mappedAsesores: Asesor[] = agents.map((agent, index) => {
+        // Filtrar solo agentes activos (mostrar todos los agentes activos, no solo los que tienen propiedades)
+        const activeAgents = agents.filter(a => a.isActive !== false && a.active !== false);
+        if (activeAgents.length === 0) {
+          setError('No se encontraron agentes activos disponibles');
+          setAsesores([]);
+          return;
+        }
+
+        // Mapear agentes de la API al formato del componente (sin datos inventados)
+        const mappedAsesores: Asesor[] = activeAgents.map((agent) => {
           const fullName = `${agent.firstName || ''} ${agent.lastName || ''}`.trim() || 'Agente';
-          const cityName = (agent as any).cityName || 'Paraguay';
-          const position = agent.position || 'Agente Inmobiliario';
-          
-          // ⭐ Aleatorizar rating y reviews para dar variedad
-          const baseRating = 4.5 + (Math.random() * 0.5); // Entre 4.5 y 5.0
-          const reviews = Math.floor(20 + Math.random() * 200); // Entre 20 y 220
+          const cityName = (agent.zonaOperacion || (agent as any).cityName || '').toString().trim() || 'Paraguay';
+          const position = (agent.position || '').toString().trim() || 'Agente Inmobiliario';
+          const propertiesCount = agent.propertiesCount ?? 0;
           
           return {
             id: agent.id,
             name: fullName,
             company: agent.agencyName || 'Independiente',
             city: cityName,
-            specialty: position.includes('Residencial') ? 'Residencial' : 
-                      position.includes('Comercial') ? 'Comercial' :
-                      position.includes('Terreno') ? 'Terrenos' :
-                      position.includes('Lujo') ? 'Lujo' : 'Residencial',
-            rating: Math.round(baseRating * 10) / 10,
-            reviews: reviews,
-            experience: `${Math.floor(2 + Math.random() * 15)} años`,
-            phone: agent.phone || '+595 981 000-000',
-            email: agent.email || 'agente@proptech.com.py',
+            specialty: position,
+            rating: 0,
+            reviews: 0,
+            experience: '',
+            phone: agent.phone || '',
+            email: agent.email || '',
             image: agent.photo || undefined,
-      verified: true,
-            properties: Math.floor(10 + Math.random() * 80),
+            verified: Boolean(agent.isActive ?? agent.active ?? true),
+            properties: propertiesCount,
             description: agent.bio || `${fullName} es un profesional inmobiliario con experiencia en el mercado paraguayo. Especializado en ${position}.`
           };
         });
 
-        // ⭐ Aleatorizar agentes (Fisher-Yates shuffle)
-        const shuffled = [...mappedAsesores];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-
-        setAsesores(shuffled);
-        logger.debug(`Agentes cargados y aleatorizados: ${shuffled.length}`);
+        // Ordenar por número de propiedades (los que tienen más propiedades primero), luego por nombre
+        mappedAsesores.sort((a, b) => {
+          if (b.properties !== a.properties) {
+            return b.properties - a.properties;
+          }
+          return a.name.localeCompare(b.name, 'es');
+        });
+        setAsesores(mappedAsesores);
+        logger.debug(`Agentes cargados (activos): ${mappedAsesores.length}`);
       } catch (err: any) {
         logger.error('Error cargando agentes:', err);
         setError('Error al cargar los agentes. Por favor, intenta recargar la página.');
@@ -135,19 +145,6 @@ export default function AsesoresPage() {
 
     loadAgents();
   }, []);
-
-  // Función para normalizar nombres de ciudades
-  const normalizeCityName = (cityName: string) => {
-    return cityName
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/ó/g, 'o')
-      .replace(/ñ/g, 'n')
-      .replace(/á/g, 'a')
-      .replace(/é/g, 'e')
-      .replace(/í/g, 'i')
-      .replace(/ú/g, 'u');
-  };
 
   const filteredAsesores = asesores.filter(asesor => {
     const matchesSearch = !searchTerm || 
@@ -310,12 +307,12 @@ export default function AsesoresPage() {
               <div className="flex items-center justify-between">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => setSortBy(e.target.value as any)}
                   className="flex-1 px-3 py-3 border border-white/30 rounded-xl appearance-none bg-white/95 backdrop-blur-sm shadow-lg text-gray-900 focus:ring-2 focus:ring-cyan-400 focus:border-transparent mr-3"
                 >
+                  <option value="properties">Más propiedades</option>
                   <option value="rating">Mejor calificados</option>
                   <option value="experience">Más experiencia</option>
-                  <option value="properties">Más propiedades</option>
                 </select>
 
                 {/* View Toggle Mobile */}
@@ -362,7 +359,7 @@ export default function AsesoresPage() {
                     setSearchTerm('');
                     setSelectedCity('');
                     setSelectedSpecialty('');
-                    setSortBy('rating');
+                    setSortBy('properties');
                   }}
                   className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-gray-600 hover:text-gray-800 rounded-xl text-sm font-medium transition-all duration-300 hover:scale-105"
                 >
@@ -431,12 +428,12 @@ export default function AsesoresPage() {
                   <div className="relative">
                     <select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
+                      onChange={(e) => setSortBy(e.target.value as any)}
                       className="w-full px-4 py-3 border border-white/30 rounded-xl appearance-none bg-white/95 backdrop-blur-sm shadow-lg text-gray-900 focus:ring-2 focus:ring-cyan-400 focus:border-transparent cursor-pointer"
                     >
+                      <option value="properties">Más propiedades</option>
                       <option value="rating">Mejor calificados</option>
                       <option value="experience">Más experiencia</option>
-                      <option value="properties">Más propiedades</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                       <StarIcon className="h-5 w-5 text-yellow-500" />
@@ -581,9 +578,11 @@ export default function AsesoresPage() {
                           ))}
                         </div>
                         <div className="text-lg font-bold bg-gradient-to-r from-cyan-700 to-blue-700 bg-clip-text text-transparent">
-                          {asesor.rating}
+                          {asesor.rating > 0 ? asesor.rating : '—'}
                         </div>
-                        <div className="text-xs text-gray-500">{asesor.reviews} reseñas</div>
+                        {asesor.reviews > 0 && (
+                          <div className="text-xs text-gray-500">{asesor.reviews} reseñas</div>
+                        )}
                       </div>
                     </div>
 
@@ -612,13 +611,8 @@ export default function AsesoresPage() {
 
                     <p className="text-sm text-gray-700 mb-4 line-clamp-2 font-medium leading-relaxed">{asesor.description}</p>
 
-                    {/* Stats mejoradas */}
-                    <div className="flex items-center justify-between text-sm text-gray-600 mb-6 bg-gray-50 rounded-xl p-3">
-                      <div className="text-center">
-                        <div className="font-bold text-cyan-700">{asesor.experience}</div>
-                        <div className="text-xs">Experiencia</div>
-                      </div>
-                      <div className="w-px h-8 bg-gray-200"></div>
+                    {/* Stats */}
+                    <div className="flex items-center justify-center text-sm text-gray-600 mb-6 bg-gray-50 rounded-xl p-3">
                       <div className="text-center">
                         <div className="font-bold text-blue-700">{asesor.properties}</div>
                         <div className="text-xs">Propiedades</div>
@@ -627,22 +621,46 @@ export default function AsesoresPage() {
 
                     {/* Acciones con estilo premium */}
                     <div className="flex space-x-3">
-                      <a
-                        href={`tel:${asesor.phone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-xl text-center text-sm font-bold transition-all duration-300 hover:shadow-lg hover:shadow-green-500/25 transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
-                      >
-                        <PhoneIcon className="w-4 h-4" />
-                        <span>Llamar</span>
-                      </a>
-                      <a
-                        href={`mailto:${asesor.email}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-xl text-center text-sm font-bold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
-                      >
-                        <EnvelopeIcon className="w-4 h-4" />
-                        <span>Email</span>
-                      </a>
+                      {asesor.phone ? (
+                        <a
+                          href={`tel:${asesor.phone}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-xl text-center text-sm font-bold transition-all duration-300 hover:shadow-lg hover:shadow-green-500/25 transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                        >
+                          <PhoneIcon className="w-4 h-4" />
+                          <span>Llamar</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          disabled
+                          className="flex-1 bg-gray-200 text-gray-500 py-3 px-4 rounded-xl text-center text-sm font-bold cursor-not-allowed flex items-center justify-center space-x-2"
+                        >
+                          <PhoneIcon className="w-4 h-4" />
+                          <span>Sin teléfono</span>
+                        </button>
+                      )}
+                      {asesor.email ? (
+                        <a
+                          href={`mailto:${asesor.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 px-4 rounded-xl text-center text-sm font-bold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                        >
+                          <EnvelopeIcon className="w-4 h-4" />
+                          <span>Email</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          disabled
+                          className="flex-1 bg-gray-200 text-gray-500 py-3 px-4 rounded-xl text-center text-sm font-bold cursor-not-allowed flex items-center justify-center space-x-2"
+                        >
+                          <EnvelopeIcon className="w-4 h-4" />
+                          <span>Sin email</span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Indicador de clic */}
@@ -711,10 +729,10 @@ export default function AsesoresPage() {
                         </div>
                         <div className="flex items-center text-sm text-gray-600">
                           <StarSolidIcon className="w-4 h-4 mr-2 text-yellow-400" />
-                          {asesor.rating} ({asesor.reviews})
+                          {asesor.rating > 0 ? `${asesor.rating} (${asesor.reviews})` : '—'}
                         </div>
                         <div className="text-sm text-gray-600">
-                          {asesor.experience} • {asesor.properties} propiedades
+                          {asesor.properties} propiedades
                         </div>
                       </div>
                       
@@ -722,18 +740,38 @@ export default function AsesoresPage() {
                     </div>
                     
                     <div className="flex flex-col space-y-2">
-                      <a
-                        href={`tel:${asesor.phone}`}
-                        className="bg-brand-600 text-white py-2 px-4 rounded-lg text-center text-sm font-medium hover:bg-brand-700 transition-colors"
-                      >
-                        Llamar
-                      </a>
-                      <a
-                        href={`mailto:${asesor.email}`}
-                        className="border border-brand-600 text-brand-600 py-2 px-4 rounded-lg text-center text-sm font-medium hover:bg-brand-50 transition-colors"
-                      >
-                        Email
-                      </a>
+                      {asesor.phone ? (
+                        <a
+                          href={`tel:${asesor.phone}`}
+                          className="bg-brand-600 text-white py-2 px-4 rounded-lg text-center text-sm font-medium hover:bg-brand-700 transition-colors"
+                        >
+                          Llamar
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="bg-gray-200 text-gray-500 py-2 px-4 rounded-lg text-center text-sm font-medium cursor-not-allowed"
+                        >
+                          Sin teléfono
+                        </button>
+                      )}
+                      {asesor.email ? (
+                        <a
+                          href={`mailto:${asesor.email}`}
+                          className="border border-brand-600 text-brand-600 py-2 px-4 rounded-lg text-center text-sm font-medium hover:bg-brand-50 transition-colors"
+                        >
+                          Email
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="bg-gray-200 text-gray-500 py-2 px-4 rounded-lg text-center text-sm font-medium cursor-not-allowed"
+                        >
+                          Sin email
+                        </button>
+                      )}
                     </div>
                   </div>
                 </motion.div>

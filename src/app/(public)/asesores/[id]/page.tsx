@@ -1,142 +1,24 @@
+// Ruta legacy: antes se renderizaba con datos ficticios.
+// Para evitar mantener datos ficticios, redirigimos a la ruta pública real del agente.
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  MapPinIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  BuildingOfficeIcon,
-  StarIcon,
-  CheckBadgeIcon,
-  ArrowLeftIcon,
-  HeartIcon,
-  ShareIcon,
-  EyeIcon,
-  CameraIcon
-} from '@heroicons/react/24/outline';
-import { StarIcon as StarSolidIcon, HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
-
-interface Property {
-  id: number;
-  title: string;
-  price: number;
-  currency: string;
-  type: 'venta' | 'alquiler';
-  pricePeriod?: string;
-  location: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  images: string[];
-  description: string;
-  featured?: boolean;
-}
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AsesorDetailPage({ params }: { params: { id: string } }) {
-  const [selectedTab, setSelectedTab] = useState<'propiedades' | 'reseñas' | 'contacto'>('propiedades');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const router = useRouter();
 
-  // Mock data - en producción vendría de una API
-  const asesor = {
-    id: parseInt(params?.id as string),
-    name: 'María González',
-    company: 'Inmobiliaria del Sol',
-    city: 'Asunción',
-    specialty: 'Residencial',
-    rating: 4.9,
-    reviews: 127,
-    experience: '8 años',
-    phone: '+595 981 123-456',
-    email: 'maria@inmobiliariadelsol.com',
-    whatsapp: '+595981123456',
-    image: '/images/asesor1.jpg',
-    verified: true,
-    properties: 45,
-    description: 'Especialista en propiedades residenciales de alto valor en Asunción. Con más de 8 años de experiencia ayudando a familias a encontrar su hogar ideal. Certificada en evaluación inmobiliaria y con amplio conocimiento del mercado local.',
-    bio: 'María González es una profesional inmobiliaria con más de 8 años de experiencia en el mercado paraguayo. Se especializa en propiedades residenciales de alto valor y ha ayudado a más de 200 familias a encontrar su hogar ideal. Con formación en arquitectura y certificaciones en evaluación inmobiliaria, María combina conocimiento técnico con un servicio personalizado que la distingue en el mercado.',
-    achievements: [
-      'Top 5 agentes inmobiliarios 2023',
-      'Certificación en evaluación inmobiliaria',
-      'Más de 200 familias satisfechas',
-      'Especialista en propiedades de lujo'
-    ],
-    languages: ['Español', 'Inglés', 'Guaraní'],
-    social: {
-      linkedin: 'https://linkedin.com/in/mariagonzalez',
-      facebook: 'https://facebook.com/mariagonzalez.inmobiliaria'
+  useEffect(() => {
+    const id = params?.id;
+    if (id) {
+      router.replace(`/agente/${id}`);
+    } else {
+      router.replace('/asesores');
     }
-  };
+  }, [params?.id, router]);
 
-  const properties: Property[] = [
-    {
-      id: 1,
-      title: 'Casa moderna en Barrio Villa Morra',
-      price: 450000,
-      currency: 'USD',
-      type: 'venta',
-      location: 'Villa Morra, Asunción',
-      bedrooms: 4,
-      bathrooms: 3,
-      area: 280,
-      images: ['/images/property1.jpg', '/images/property1-2.jpg'],
-      description: 'Hermosa casa moderna con acabados de primera calidad, ubicada en el exclusivo barrio Villa Morra.',
-      featured: true
-    },
-    {
-      id: 2,
-      title: 'Departamento en Las Mercedes',
-      price: 1200,
-      currency: 'USD',
-      type: 'alquiler',
-      pricePeriod: 'mes',
-      location: 'Las Mercedes, Asunción',
-      bedrooms: 2,
-      bathrooms: 2,
-      area: 85,
-      images: ['/images/property2.jpg'],
-      description: 'Moderno departamento con excelente ubicación y todas las comodidades.'
-    },
-    {
-      id: 3,
-      title: 'Casa familiar en San Lorenzo',
-      price: 180000,
-      currency: 'USD',
-      type: 'venta',
-      location: 'San Lorenzo',
-      bedrooms: 3,
-      bathrooms: 2,
-      area: 150,
-      images: ['/images/property3.jpg'],
-      description: 'Casa familiar ideal para primeros compradores, en zona tranquila y segura.'
-    }
-  ];
-
-  const formatPrice = (price: number, currency: string, period?: string) => {
-    const formattedPrice = new Intl.NumberFormat('es-PY', {
-      style: 'currency',
-      currency: currency === 'USD' ? 'USD' : 'PYG',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
-    
-    return period ? `${formattedPrice}/${period}` : formattedPrice;
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section con perfil del asesor */}
-      <section className="relative -mt-[3.5rem] sm:-mt-16 bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 pt-12 sm:pt-16 pb-12 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] px-0">
-        {/* Botón de volver */}
-        <div className="absolute top-20 left-4 sm:left-8 z-20">
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center space-x-2 bg-white/10 backdrop-blur-md text-white px-4 py-2 rounded-xl hover:bg-white/20 transition-all duration-300"
-          >
-            <ArrowLeftIcon className="w-5 h-5" />
-            <span>Volver</span>
-          </button>
-        </div>
+  return null;
+}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-8 lg:space-y-0 lg:space-x-12">

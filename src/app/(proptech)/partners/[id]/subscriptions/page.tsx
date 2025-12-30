@@ -90,20 +90,8 @@ export default function PartnerSubscriptionsPage() {
         nextDueDate = new Date(lastPayment.dueDate);
       }
 
-      // Calcular la siguiente fecha según la frecuencia
-      switch (partner.paymentFrequency) {
-        case 'MONTHLY':
-          nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-          break;
-        case 'QUARTERLY':
-          nextDueDate.setMonth(nextDueDate.getMonth() + 3);
-          break;
-        case 'YEARLY':
-          nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
-          break;
-        default:
-          nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-      }
+      // Calcular la siguiente fecha - por defecto mensual
+      nextDueDate.setMonth(nextDueDate.getMonth() + 1);
 
       const newPayment = await partnerPaymentService.createPayment({
         partnerId: partner.id,
@@ -111,7 +99,7 @@ export default function PartnerSubscriptionsPage() {
         currency: currency,
         paymentType: 'QUOTA',
         dueDate: nextDueDate.toISOString(),
-        description: `Suscripción ${partner.paymentFrequency?.toLowerCase()} - ${partner.firstName} ${partner.lastName}`,
+        description: `Suscripción mensual - ${partner.firstName} ${partner.lastName}`,
         status: 'PENDING'
       });
 
@@ -134,7 +122,7 @@ export default function PartnerSubscriptionsPage() {
         currency: currency,
         paymentType: 'QUOTA',
         dueDate: nextDueDate.toISOString(),
-        description: `Suscripción ${partner.paymentFrequency?.toLowerCase()} - ${partner.firstName} ${partner.lastName}`,
+        description: `Suscripción mensual - ${partner.firstName} ${partner.lastName}`,
         status: 'PENDING'
       });
 
@@ -235,25 +223,11 @@ export default function PartnerSubscriptionsPage() {
               <div className="space-y-3">
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Frecuencia de Pago
+                    Socio
                   </label>
                   <p className="text-gray-900 dark:text-white">
-                    {partner.paymentFrequency === 'MONTHLY' ? 'Mensual' : 
-                     partner.paymentFrequency === 'QUARTERLY' ? 'Trimestral' : 
-                     partner.paymentFrequency === 'YEARLY' ? 'Anual' : 'No configurada'}
+                    {partner.firstName} {partner.lastName}
                   </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Moneda
-                  </label>
-                  <p className="text-gray-900 dark:text-white">{partner.currency || 'USD'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Tasa de Comisión
-                  </label>
-                  <p className="text-gray-900 dark:text-white">{partner.commissionRate || 0}%</p>
                 </div>
               </div>
             </div>
@@ -294,7 +268,7 @@ export default function PartnerSubscriptionsPage() {
                     Total Generado
                   </label>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {partnerPaymentService.formatCurrency(stats.totalAmount, partner.currency || 'USD')}
+                    {partnerPaymentService.formatCurrency(stats.totalAmount, 'USD')}
                   </p>
                 </div>
                 <div>
@@ -302,7 +276,7 @@ export default function PartnerSubscriptionsPage() {
                     Total Pagado
                   </label>
                   <p className="text-2xl font-bold text-green-600">
-                    {partnerPaymentService.formatCurrency(stats.paidAmount, partner.currency || 'USD')}
+                    {partnerPaymentService.formatCurrency(stats.paidAmount, 'USD')}
                   </p>
                 </div>
                 <div>
@@ -310,7 +284,7 @@ export default function PartnerSubscriptionsPage() {
                     Pendiente
                   </label>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {partnerPaymentService.formatCurrency(stats.pendingAmount, partner.currency || 'USD')}
+                    {partnerPaymentService.formatCurrency(stats.pendingAmount, 'USD')}
                   </p>
                 </div>
               </div>

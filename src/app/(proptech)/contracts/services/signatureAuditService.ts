@@ -86,7 +86,11 @@ export interface SignatureAuditLogEntry {
 
 export class SignatureAuditService {
   private static generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const suffix =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? (crypto as any).randomUUID()
+        : String(Date.now());
+    return `session_${Date.now()}_${suffix}`;
   }
 
   private static async getIPAddress(): Promise<string | undefined> {
@@ -303,18 +307,18 @@ export class SignatureAuditService {
   }
 
   private static detectVPN(): boolean {
-    // Detección básica de VPN (simulada)
-    return Math.random() < 0.1; // 10% de probabilidad de detectar VPN
+    // Sin simulación: solo backend puede determinar esto
+    return false;
   }
 
   private static detectProxy(): boolean {
-    // Detección básica de proxy (simulada)
-    return Math.random() < 0.05; // 5% de probabilidad de detectar proxy
+    // Sin simulación: solo backend puede determinar esto
+    return false;
   }
 
   private static detectTor(): boolean {
-    // Detección básica de Tor (simulada)
-    return Math.random() < 0.02; // 2% de probabilidad de detectar Tor
+    // Sin simulación: solo backend puede determinar esto
+    return false;
   }
 
   private static detectWebGLSupport(): boolean {
@@ -442,12 +446,13 @@ export class SignatureAuditService {
     const signatureHash = this.generateSignatureHash(signatureDataUrl);
     const signatureLength = signatureDataUrl.length;
 
-    // Métricas específicas de la firma (simuladas para demostración)
+    // Métricas específicas de la firma
+    // Sin simulación: si no se capturan métricas reales (presión/velocidad) en el cliente, se envían vacías.
     const signatureMetrics = {
-      strokeCount: Math.floor(Math.random() * 20) + 5, // 5-25 trazos
-      durationMs: Math.floor(Math.random() * 10000) + 2000, // 2-12 segundos
-      pressureData: Array.from({length: 10}, () => Math.random()), // Datos de presión simulados
-      velocityData: Array.from({length: 10}, () => Math.random() * 100), // Datos de velocidad simulados
+      strokeCount: 0,
+      durationMs: 0,
+      pressureData: [],
+      velocityData: [],
       penType: this.detectPenType(),
       deviceType: this.detectDeviceType()
     };

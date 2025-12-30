@@ -19,7 +19,7 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail, Globe, Rocket, Calendar } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Globe, Rocket, Calendar, Wrench } from "lucide-react";
 import { useAuthContext } from "@/context/AuthContext";
 
 interface NavItem {
@@ -208,6 +208,21 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    name: "Profesionales",
+    path: "/professionals",
+    icon: <Wrench className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Todos los Profesionales",
+        path: "/professionals",
+      },
+      {
+        name: "Tipos de Servicio",
+        path: "/professionals/service-types",
+      },
+    ],
+  },
+  {
     name: "Desarrollos",
     path: "/developments",
     icon: <BoxCubeIcon />,
@@ -284,7 +299,7 @@ const othersItems: NavItem[] = [
   },
   {
     name: "Red Social",
-    path: "/social",
+    path: "/verse",
     icon: (
       <div className="relative">
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

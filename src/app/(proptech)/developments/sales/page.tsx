@@ -144,62 +144,6 @@ export default function SalesPage() {
     };
   }, [filteredSales]);
 
-  const generateSampleSales = async () => {
-    try {
-      // Obtener lotes vendidos y clientes
-      const developments = await developmentService.getAllDevelopments();
-      const clients = await clientService.getAllClients();
-      
-      const soldLots: unknown[] = [];
-      (developments as any).forEach((dev: any) => {
-        if (dev.type === 'loteamiento' && dev.lots) {
-          dev.lots.forEach((lot: any) => {
-            if (lot.status === 'sold') {
-              soldLots.push({
-                ...lot,
-                developmentTitle: dev.title,
-                developmentId: dev.id
-              });
-            }
-          });
-        }
-      });
-
-      if (soldLots.length === 0) {
-        alert('No hay lotes vendidos. Primero vende algunos lotes desde la página de desarrollos.');
-        return;
-      }
-
-      if (clients.length === 0) {
-        alert('No hay clientes registrados. Primero agrega algunos clientes.');
-        return;
-      }
-
-      // Generar ventas para los lotes vendidos
-      for (const lot of soldLots.slice(0, 3)) { // Solo los primeros 3 lotes
-        const client = clients[Math.floor(Math.random() * clients.length)];
-        const downPayment = (lot as any).price * 0.3; // 30% de cuota inicial
-        const totalPayments = 12 + Math.floor(Math.random() * 24); // 12-36 cuotas
-        
-        await saleService.createSale({
-          clientId: client.id,
-          lotId: (lot as any).id,
-          totalPrice: (lot as any).price,
-          downPayment,
-          totalPayments,
-          startDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(), // Últimos 90 días
-        });
-      }
-
-      // Recargar datos
-      await loadData();
-      alert('Ventas de muestra generadas correctamente!');
-    } catch (error) {
-      console.error('Error generating sample sales:', error);
-      alert('Error generando ventas de muestra');
-    }
-  };
-
   const clearAndReloadAll = async () => {
     try {
       // Limpiar localStorage
@@ -218,113 +162,6 @@ export default function SalesPage() {
     } catch (error) {
       console.error('Error clearing and reloading data:', error);
       alert('Error limpiando y recargando datos');
-    }
-  };
-
-  const generateSampleData = async () => {
-    try {
-      // Limpiar datos existentes
-      localStorage.removeItem('sales');
-      localStorage.removeItem('developments');
-      localStorage.removeItem('clients');
-      
-      // Generar desarrollos de prueba
-      const sampleDevelopments = [
-        {
-          type: "loteamiento",
-          title: "Residencial Los Pinos",
-          description: "Hermoso loteamiento con lotes desde 300m² hasta 800m², con todos los servicios incluidos.",
-          address: "Ruta 2 Km 15",
-          city: "San Lorenzo",
-          state: "Central",
-          zip: "2160",
-          images: ["/images/placeholder.jpg"],
-          status: "available",
-          privateFiles: [],
-          coordinates: { lat: -25.3400, lng: -57.5200 },
-          numberOfLots: 20,
-          totalArea: 15000,
-          availableLots: 15,
-          lotSizes: "300m² - 800m²",
-          services: ["Agua", "Electricidad", "Gas", "Calles asfaltadas"],
-        },
-        {
-          type: "loteamiento",
-          title: "Country Club San Martín",
-          description: "Exclusivo loteamiento con seguridad 24/7 y amenidades premium.",
-          address: "Ruta 1 Km 25",
-          city: "Luque",
-          state: "Central",
-          zip: "2060",
-          images: ["/images/placeholder.jpg"],
-          status: "available",
-          privateFiles: [],
-          coordinates: { lat: -25.2700, lng: -57.4800 },
-          numberOfLots: 15,
-          totalArea: 12000,
-          availableLots: 10,
-          lotSizes: "500m² - 1000m²",
-          services: ["Agua", "Electricidad", "Gas", "Calles asfaltadas", "Seguridad 24/7"],
-        }
-      ];
-
-      // Crear desarrollos
-      for (const devData of sampleDevelopments) {
-        await developmentService.createDevelopment(devData as any);
-      }
-
-      // Generar clientes de prueba
-      const sampleClients = [
-        {
-          firstName: "Juan",
-          lastName: "Pérez",
-          dni: "12345678",
-          email: "juan.perez@email.com",
-          phone: "351-123-4567",
-          address: "Av. Colón 123",
-          city: "Córdoba",
-          state: "Córdoba",
-          zip: "5000",
-        },
-        {
-          firstName: "María",
-          lastName: "González",
-          dni: "87654321",
-          email: "maria.gonzalez@email.com",
-          phone: "351-987-6543",
-          address: "Belgrano 456",
-          city: "Córdoba",
-          state: "Córdoba",
-          zip: "5000",
-        },
-        {
-          firstName: "Carlos",
-          lastName: "Rodríguez",
-          dni: "11223344",
-          email: "carlos.rodriguez@email.com",
-          phone: "351-555-1234",
-          address: "San Martín 789",
-          city: "Córdoba",
-          state: "Córdoba",
-          zip: "5000",
-        }
-      ];
-
-      // Crear clientes
-      for (const clientData of sampleClients) {
-        await clientService.createClient(clientData);
-      }
-
-      // Recargar datos
-      await loadData();
-
-      // Generar ventas de muestra
-      await generateSampleSales();
-
-      alert('Datos de prueba generados correctamente!');
-    } catch (error) {
-      console.error('Error generating sample data:', error);
-      alert('Error generando datos de prueba');
     }
   };
 
@@ -643,28 +480,7 @@ export default function SalesPage() {
               </span>
             )}
           </h2>
-          {sales.length === 0 && process.env.NODE_ENV === 'development' && (
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={generateSampleData}
-                className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-              >
-                [DEV] Generar Datos de Prueba
-              </button>
-              <button
-                onClick={generateSampleSales}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              >
-                [DEV] Solo Generar Ventas
-              </button>
-              <button
-                onClick={clearAndReloadAll}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                [DEV] Limpiar y Recargar
-              </button>
-            </div>
-          )}
+          {/* Sin herramientas de datos ficticios */}
         </div>
 
         {filteredSales.length > 0 ? (
@@ -790,33 +606,7 @@ export default function SalesPage() {
                 : "No hay ventas registradas."
               }
             </p>
-            {selectedDevelopment === "all" && filterStatus === "all" && process.env.NODE_ENV === 'development' && (
-              <>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  [DESARROLLO] Herramientas para generar datos de prueba.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <button
-                    onClick={generateSampleData}
-                    className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-                  >
-                    [DEV] Generar Datos de Prueba
-                  </button>
-                  <button
-                    onClick={generateSampleSales}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                  >
-                    [DEV] Solo Generar Ventas
-                  </button>
-                  <button
-                    onClick={clearAndReloadAll}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    [DEV] Limpiar y Recargar
-                  </button>
-                </div>
-              </>
-            )}
+            {/* Sin herramientas en UI */}
           </div>
         )}
       </div>

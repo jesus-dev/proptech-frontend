@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import React from 'react';
 import PropertiesSection from '@/components/public/sections/PropertiesSection';
 import StatsSection from '@/components/public/sections/StatsSection';
+import ProfessionalsBanner from '@/components/public/sections/ProfessionalsBanner';
 import FeaturesSection from '@/components/public/sections/FeaturesSection';
 
 export const metadata: Metadata = {
@@ -88,6 +89,9 @@ export default function PublicHome() {
         
         {/* Sección de Estadísticas del Mercado */}
         <StatsSection />
+        
+        {/* Banner de Profesionales */}
+        <ProfessionalsBanner />
         
         {/* Sección de Características de la Plataforma */}
         <FeaturesSection />

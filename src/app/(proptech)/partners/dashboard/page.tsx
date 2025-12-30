@@ -121,16 +121,9 @@ export default function PartnersDashboardPage() {
       const totalCommission = allPartners.content.reduce((sum, partner) => sum + (partner.commissionRate || 0), 0);
       const averageCommission = allPartners.content.length > 0 ? totalCommission / allPartners.content.length : 0;
 
-      // Simular crecimiento mensual (en un caso real vendría de datos históricos)
-      const monthlyGrowth = 12.5; // Porcentaje de crecimiento
-
-      // Actividad reciente simulada
-      const recentActivity = [
-        { type: 'new_partner', message: 'Nuevo socio registrado: María García', time: '2 horas atrás' },
-        { type: 'payment', message: 'Pago recibido: Juan Pérez - $150', time: '4 horas atrás' },
-        { type: 'verification', message: 'Socio verificado: Carlos López', time: '1 día atrás' },
-        { type: 'commission', message: 'Comisión generada: Ana Rodríguez - $75', time: '2 días atrás' }
-      ];
+      // Sin datos ficticios: si no hay histórico/actividad real, dejar en 0/vacío
+      const monthlyGrowth = 0;
+      const recentActivity: any[] = [];
 
       setStats({
         total: allPartners.totalElements,

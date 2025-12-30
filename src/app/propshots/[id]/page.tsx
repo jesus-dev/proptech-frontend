@@ -156,7 +156,7 @@ export default function PropShotReelPage() {
           <h2 className="text-2xl font-bold mb-4">😕 Oops!</h2>
           <p className="text-gray-300 mb-6">{error || 'PropShot no encontrado'}</p>
           <a 
-            href="/social/propshots"
+            href="/verse/propshots"
             className="inline-block px-6 py-3 bg-orange-500 hover:bg-orange-600 rounded-lg font-medium transition-colors"
           >
             Volver a PropShots

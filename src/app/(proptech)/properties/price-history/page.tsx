@@ -50,7 +50,7 @@ export default function PriceHistoryPage() {
       console.error('Error loading data:', error);
       toast.error('Error al cargar los datos. Por favor, intenta nuevamente.');
       
-      // En producción, no usar fallback a datos mock
+      // En producción, no usar fallback a datos ficticios
       setPriceHistory([]);
       setProperties([]);
     } finally {

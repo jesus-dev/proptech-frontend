@@ -79,25 +79,8 @@ export default function NewPropertyPage() {
   } = usePropertyForm();
 
   useEffect(() => {
-    // Initialize sample data when component mounts
-    const initializeData = async () => {
-      try {
-        const { catalogService } = await import("@/app/(proptech)/catalogs/services/catalogService");
-        await catalogService.initializeSampleData();
-        // --- Monedas ---
-        const currencies = await currencyService.getActive();
-        if (!currencies.length) {
-          await currencyService.create({ code: 'USD', name: 'Dólar Americano', symbol: '$', active: true });
-          await currencyService.create({ code: 'PYG', name: 'Guaraní Paraguayo', symbol: 'Gs.', active: true });
-        }
-      } catch (error) {
-        console.error("Error initializing sample data:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-
-    initializeData();
+    // No inicializar/sembrear datos ficticios
+    setIsInitializing(false);
   }, []);
 
   // Advertir al usuario si intenta salir con cambios sin guardar

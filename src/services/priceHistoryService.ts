@@ -88,7 +88,6 @@ class PriceHistoryService {
       return filteredHistory;
     } catch (error) {
       console.error('Error fetching price history:', error);
-      // En producción, retornar array vacío en lugar de datos mock
       throw error;
     }
   }
@@ -124,20 +123,9 @@ class PriceHistoryService {
       return frontendProperties;
     } catch (error) {
       console.error('Error fetching properties:', error);
-      // Fallback a datos mock si hay error
-      return this.getMockProperties();
+      // Sin datos ficticios: retornar vacío
+      return [];
     }
-  }
-  
-  // Método auxiliar para generar datos mock como fallback
-  private getMockProperties(): Property[] {
-    return [
-      { id: '1', title: 'Casa en Villa Morra', type: 'Casa', city: 'Asunción', currentPrice: 150000000, operation: 'SALE' },
-      { id: '2', title: 'Departamento en Centro', type: 'Departamento', city: 'Asunción', currentPrice: 80000000, operation: 'RENT' },
-      { id: '3', title: 'Casa en San Lorenzo', type: 'Casa', city: 'San Lorenzo', currentPrice: 120000000, operation: 'SALE' },
-      { id: '4', title: 'Oficina en Asunción', type: 'Oficina', city: 'Asunción', currentPrice: 200000000, operation: 'SALE' },
-      { id: '5', title: 'Terreno en Luque', type: 'Terreno', city: 'Luque', currentPrice: 50000000, operation: 'SALE' }
-    ];
   }
 
   // Crear nuevo registro de historial de precios
@@ -174,21 +162,8 @@ class PriceHistoryService {
   // Actualizar registro de historial de precios
   async updatePriceHistory(id: string, data: Partial<PriceHistory>): Promise<PriceHistory> {
     try {
-      // TEMPORAL: Simular actualización hasta que se implemente el endpoint
-      const updatedRecord: PriceHistory = {
-        id,
-        propertyId: data.propertyId || '',
-        propertyTitle: data.propertyTitle || '',
-        date: data.date || '',
-        price: data.price || 0,
-        change: data.change || 0,
-        changePercent: data.changePercent || 0,
-        operation: data.operation || 'SALE',
-        source: data.source || ''
-      };
-      
-      console.log('Simulando actualización de registro:', updatedRecord);
-      return updatedRecord;
+      // Sin simulación: si no existe endpoint backend, fallar explícitamente
+      throw new Error('UPDATE_NOT_IMPLEMENTED');
     } catch (error) {
       console.error('Error updating price history:', error);
       throw new Error('Error al actualizar el registro de historial');
@@ -198,8 +173,8 @@ class PriceHistoryService {
   // Eliminar registro de historial de precios
   async deletePriceHistory(id: string): Promise<void> {
     try {
-      // TEMPORAL: Simular eliminación hasta que se implemente el endpoint
-      console.log('Simulando eliminación de registro:', id);
+      // Sin simulación: si no existe endpoint backend, fallar explícitamente
+      throw new Error('DELETE_NOT_IMPLEMENTED');
     } catch (error) {
       console.error('Error deleting price history:', error);
       throw new Error('Error al eliminar el registro de historial');

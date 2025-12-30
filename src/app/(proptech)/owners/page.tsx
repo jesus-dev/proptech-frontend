@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { ownerService } from "@/services/ownerService";
 
 interface Owner {
   id: number;
@@ -71,96 +72,27 @@ export default function OwnersPage() {
   const [ownerReports, setOwnerReports] = useState<OwnerReport[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Mock data para desarrollo
   useEffect(() => {
-    const mockOwners: Owner[] = [
-      {
-        id: 1,
-        name: "María González",
-        email: "maria.gonzalez@email.com",
-        phone: "+595 981 123 456",
-        avatar: "/images/user/user-01.jpg",
-        propertiesCount: 3,
-        totalValue: 450000,
-        lastContact: "2024-01-15T10:30:00Z",
-        status: 'active'
-      },
-      {
-        id: 2,
-        name: "Carlos Mendoza",
-        email: "carlos.mendoza@email.com",
-        phone: "+595 982 234 567",
-        avatar: "/images/user/user-02.jpg",
-        propertiesCount: 2,
-        totalValue: 320000,
-        lastContact: "2024-01-14T15:45:00Z",
-        status: 'active'
-      },
-      {
-        id: 3,
-        name: "Ana Rodríguez",
-        email: "ana.rodriguez@email.com",
-        phone: "+595 983 345 678",
-        avatar: "/images/user/user-03.jpg",
-        propertiesCount: 1,
-        totalValue: 180000,
-        lastContact: "2024-01-13T09:20:00Z",
-        status: 'pending'
+    const loadOwners = async () => {
+      try {
+        setLoading(true);
+        const ownersData = await ownerService.getAllOwners();
+        setOwners(ownersData);
+        setSelectedOwner(null);
+        setOwnerProperties([]);
+        setOwnerReports([]);
+      } catch (e) {
+        // Sin datos ficticios: estado vacío
+        setOwners([]);
+        setSelectedOwner(null);
+        setOwnerProperties([]);
+        setOwnerReports([]);
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    const mockProperties: PropertyMetrics[] = [
-      {
-        id: 1,
-        title: "Casa Moderna en Las Mercedes",
-        address: "Las Mercedes 1234, Asunción",
-        price: 250000,
-        currency: "USD",
-        views: 245,
-        favorites: 18,
-        comments: 5,
-        shares: 12,
-        lastActivity: "2024-01-15T14:30:00Z",
-        status: 'active'
-      },
-      {
-        id: 2,
-        title: "Apartamento Premium Centro",
-        address: "Palma 567, Asunción",
-        price: 180000,
-        currency: "USD",
-        views: 189,
-        favorites: 12,
-        comments: 3,
-        shares: 8,
-        lastActivity: "2024-01-14T16:20:00Z",
-        status: 'active'
-      }
-    ];
-
-    const mockReports: OwnerReport[] = [
-      {
-        id: 1,
-        ownerId: 1,
-        period: "Enero 2024",
-        generatedAt: "2024-01-15T10:00:00Z",
-        propertiesCount: 3,
-        totalViews: 434,
-        totalFavorites: 30,
-        totalComments: 8,
-        recommendations: [
-          "Considerar reducir el precio de la casa en Las Mercedes",
-          "Agregar más fotos del apartamento premium",
-          "Responder a los comentarios pendientes"
-        ],
-        status: 'sent'
-      }
-    ];
-
-    setOwners(mockOwners);
-    setOwnerProperties(mockProperties);
-    setOwnerReports(mockReports);
-    setLoading(false);
+    loadOwners();
   }, []);
 
   const formatCurrency = (amount: number, currency: string) => {

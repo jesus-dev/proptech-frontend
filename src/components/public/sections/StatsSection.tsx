@@ -27,48 +27,37 @@ const StatsSection = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Cargar solo la primera página para obtener total y calcular estadísticas básicas
-        const response = await publicPropertyService.getPropertiesPaginated({
-          page: 1,
-          limit: 12 // Solo cargar las primeras 12 para calcular estadísticas básicas
-        });
+        // Totales reales desde el backend
+        const [publicStats, allSample, saleStats, rentStats] = await Promise.all([
+          publicPropertyService.getPublicStats(),
+          publicPropertyService.getPropertiesPaginated({ page: 1, limit: 12 }),
+          publicPropertyService.getPropertiesPaginated({ page: 1, limit: 1, filters: { operacion: 'SALE' } }),
+          publicPropertyService.getPropertiesPaginated({ page: 1, limit: 1, filters: { operacion: 'RENT' } }),
+        ]);
 
-        const properties = response.properties || [];
-        const totalProps = response.pagination?.totalProperties || properties.length;
-        
-        // Calcular estadísticas de la muestra
-        const cities = new Set(properties.map((p: any) => p.cityName).filter(Boolean));
-        const forSale = properties.filter((p: any) => p.operacion === 'SALE').length;
-        const forRent = properties.filter((p: any) => p.operacion === 'RENT').length;
-        const featured = properties.filter((p: any) => p.featured).length;
-        
-        const prices = properties
-          .map((p: any) => p.price)
-          .filter((p: number) => p && p > 0);
-        const avgPrice = prices.length > 0 
-          ? Math.round(prices.reduce((a: number, b: number) => a + b, 0) / prices.length)
-          : 0;
+        const properties = allSample.properties || [];
+        const totalProps = publicStats.totalProperties || allSample.pagination?.totalProperties || properties.length;
 
-        // Estimar totales basados en la muestra (si hay datos)
-        const saleRatio = properties.length > 0 ? forSale / properties.length : 0.5;
-        const rentRatio = properties.length > 0 ? forRent / properties.length : 0.5;
+        // Ciudades y precio promedio: basado en muestra (no inventado)
+        const cities = new Set(properties.map((p: any) => (p.cityName || p.city || '').toString()).filter(Boolean));
+        const prices = properties.map((p: any) => Number(p.price || 0)).filter((p: number) => p > 0);
+        const avgPrice = prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
 
         setStats({
           totalProperties: totalProps,
-          totalAgents: 50, // Valor por defecto
-          totalCities: Math.max(cities.size, 5), // Mínimo 5 ciudades
-          featuredProperties: featured,
+          totalAgents: publicStats.totalAgents,
+          totalCities: cities.size,
+          featuredProperties: 0,
           averagePrice: avgPrice,
-          propertiesForSale: Math.round(totalProps * saleRatio),
-          propertiesForRent: Math.round(totalProps * rentRatio)
+          propertiesForSale: Number(saleStats.pagination?.totalProperties || 0),
+          propertiesForRent: Number(rentStats.pagination?.totalProperties || 0),
         });
       } catch (error) {
         console.error('Error loading stats:', error);
-        // Valores por defecto en caso de error
         setStats({
           totalProperties: 0,
-          totalAgents: 50,
-          totalCities: 10,
+          totalAgents: 0,
+          totalCities: 0,
           featuredProperties: 0,
           averagePrice: 0,
           propertiesForSale: 0,

@@ -152,7 +152,7 @@ export default function PartnerDetailPage() {
 
   const formatCurrency = (amount: number | undefined) => {
     if (!amount) return "$0";
-    return formatPrice(amount, (partner?.currency as "USD" | "ARS" | "EUR" | "PYG" | "MXN") || "USD");
+    return formatPrice(amount, "USD");
   };
 
   const formatDate = (dateString: string | undefined) => {
@@ -483,14 +483,6 @@ export default function PartnerDetailPage() {
               </h3>
               
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Tasa de Comisión
-                  </label>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {partner.commissionRate}%
-                  </p>
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
@@ -512,29 +504,6 @@ export default function PartnerDetailPage() {
                   </div>
                 )}
 
-                {partner.contractValue && partner.contractValue > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Valor del Contrato
-                    </label>
-                    <p className="text-lg text-gray-900 dark:text-white">
-                      {formatCurrency(partner.contractValue)}
-                    </p>
-                  </div>
-                )}
-
-                {partner.paymentFrequency && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                      Frecuencia de Pago
-                    </label>
-                    <p className="text-gray-900 dark:text-white">
-                      {partner.paymentFrequency === "MONTHLY" && "Mensual"}
-                      {partner.paymentFrequency === "QUARTERLY" && "Trimestral"}
-                      {partner.paymentFrequency === "YEARLY" && "Anual"}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -593,14 +562,6 @@ export default function PartnerDetailPage() {
               </div>
             </div>
 
-            {/* Suscripciones */}
-            <div className="col-span-full">
-              <PartnerSubscriptionsSection 
-                partnerId={partner.id} 
-                partnerName={`${partner.firstName} ${partner.lastName}`}
-              />
-            </div>
-
             {/* Fechas */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -655,6 +616,14 @@ export default function PartnerDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Sección de Suscripciones - Full Width */}
+        <div className="mt-8">
+          <PartnerSubscriptionsSection 
+            partnerId={partner.id} 
+            partnerName={`${partner.firstName} ${partner.lastName}`}
+          />
+        </div>
       </div>
 
       {/* Modal del Carnet Digital */}
@@ -673,7 +642,6 @@ export default function PartnerDetailPage() {
               )}
               <div className="text-lg font-semibold">{partner.firstName} {partner.lastName}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">{partner.type}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Membresía: {partner.paymentFrequency || 'N/A'}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Vencimiento: {partner.nextPaymentDate || 'N/A'}</div>
               <div className="mt-4">
                 <QRCode value={`${window.location.origin}/validar-socio/${partner.id}`} size={128} />

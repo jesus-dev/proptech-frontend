@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { SubscriptionProduct } from '../types/subscription';
+import { SubscriptionPlan } from '../types/subscription';
 import { subscriptionService } from '../services/subscriptionService';
 import { 
   Plus, 
@@ -23,17 +23,17 @@ import { toast } from 'sonner';
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 export default function SubscriptionProductsManager() {
-  const [products, setProducts] = useState<SubscriptionProduct[]>([]);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<SubscriptionProduct | null>(null);
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: 0,
     currency: 'USD',
     billingCycle: 'MONTHLY' as 'MONTHLY' | 'QUARTERLY' | 'YEARLY',
-    category: 'BASIC' as 'BASIC' | 'PROFESSIONAL' | 'ENTERPRISE' | 'CUSTOM' | 'TECHNOLOGY' | 'SERVICES' | 'TRAINING' | 'NETWORKING' | 'OTHER',
+    category: 'SOCIAL_DUES' as 'SOCIAL_DUES' | 'PROPTECH',
     maxUsers: 0,
     maxProperties: 0,
     maxContacts: 0,
@@ -42,17 +42,17 @@ export default function SubscriptionProductsManager() {
   });
 
   useEffect(() => {
-    loadProducts();
+    loadPlans();
   }, []);
 
-  const loadProducts = async () => {
+  const loadPlans = async () => {
     try {
       setLoading(true);
       const data = await subscriptionService.getAllProducts();
-      setProducts(data);
+      setPlans(data);
     } catch (error) {
-      console.error('Error loading products:', error);
-      toast.error('Error al cargar productos');
+      console.error('Error loading plans:', error);
+      toast.error('Error al cargar planes');
     } finally {
       setLoading(false);
     }
@@ -62,56 +62,56 @@ export default function SubscriptionProductsManager() {
     e.preventDefault();
     
     try {
-      if (editingProduct) {
-        // Update existing product
-        // await subscriptionService.updateProduct(editingProduct.id, formData);
-        toast.success('Producto actualizado exitosamente');
+      if (editingPlan) {
+        // Update existing plan
+        // await subscriptionService.updateProduct(editingPlan.id, formData);
+        toast.success('Plan actualizado exitosamente');
       } else {
-        // Create new product
+        // Create new plan
         // await subscriptionService.createProduct(formData);
-        toast.success('Producto creado exitosamente');
+        toast.success('Plan creado exitosamente');
       }
       
       setShowAddModal(false);
-      setEditingProduct(null);
+      setEditingPlan(null);
       resetForm();
-      loadProducts();
+      loadPlans();
     } catch (error) {
-      console.error('Error saving product:', error);
-      toast.error('Error al guardar producto');
+      console.error('Error saving plan:', error);
+      toast.error('Error al guardar plan');
     }
   };
 
-  const handleEdit = (product: SubscriptionProduct) => {
-    setEditingProduct(product);
+  const handleEdit = (plan: SubscriptionPlan) => {
+    setEditingPlan(plan);
     setFormData({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      currency: product.currency,
-      billingCycle: product.billingCycle,
-      category: product.category,
-      maxUsers: product.maxUsers || 0,
-      maxProperties: product.maxProperties || 0,
-      maxContacts: product.maxContacts || 0,
-      features: product.features,
-      isActive: product.isActive
+      name: plan.name,
+      description: plan.description,
+      price: plan.price,
+      currency: plan.currency,
+      billingCycle: plan.billingCycle,
+      category: plan.category,
+      maxUsers: plan.maxUsers || 0,
+      maxProperties: plan.maxProperties || 0,
+      maxContacts: plan.maxContacts || 0,
+      features: plan.features,
+      isActive: plan.isActive
     });
     setShowAddModal(true);
   };
 
-  const handleDelete = async (productId: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+  const handleDelete = async (planId: number) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este plan?')) {
       return;
     }
 
     try {
-      // await subscriptionService.deleteProduct(productId);
-      toast.success('Producto eliminado exitosamente');
-      loadProducts();
+      // await subscriptionService.deleteProduct(planId);
+      toast.success('Plan eliminado exitosamente');
+      loadPlans();
     } catch (error) {
-      console.error('Error deleting product:', error);
-      toast.error('Error al eliminar producto');
+      console.error('Error deleting plan:', error);
+      toast.error('Error al eliminar plan');
     }
   };
 
@@ -122,7 +122,7 @@ export default function SubscriptionProductsManager() {
       price: 0,
       currency: 'USD',
       billingCycle: 'MONTHLY',
-      category: 'BASIC',
+      category: 'SOCIAL_DUES',
       maxUsers: 0,
       maxProperties: 0,
       maxContacts: 0,
@@ -133,30 +133,16 @@ export default function SubscriptionProductsManager() {
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case 'BASIC': return 'Básico';
-      case 'PROFESSIONAL': return 'Profesional';
-      case 'ENTERPRISE': return 'Empresarial';
-      case 'CUSTOM': return 'Personalizado';
-      case 'TECHNOLOGY': return 'Tecnología';
-      case 'SERVICES': return 'Servicios';
-      case 'TRAINING': return 'Capacitación';
-      case 'NETWORKING': return 'Networking';
-      case 'OTHER': return 'Otros';
+      case 'SOCIAL_DUES': return 'Cuota Social';
+      case 'PROPTECH': return 'Suscripción PropTech';
       default: return category;
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'BASIC': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'PROFESSIONAL': return 'bg-green-100 text-green-800 border-green-200';
-      case 'ENTERPRISE': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'CUSTOM': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'TECHNOLOGY': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'SERVICES': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'TRAINING': return 'bg-pink-100 text-pink-800 border-pink-200';
-      case 'NETWORKING': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'OTHER': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'SOCIAL_DUES': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'PROPTECH': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -165,7 +151,7 @@ export default function SubscriptionProductsManager() {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-center py-8">
-          <LoadingSpinner message="Cargando productos" />
+          <LoadingSpinner message="Cargando planes" />
         </div>
       </div>
     );
@@ -176,28 +162,28 @@ export default function SubscriptionProductsManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Productos de Suscripción</h2>
-          <p className="text-gray-600">Gestiona los productos disponibles para suscripción</p>
+          <h2 className="text-2xl font-bold text-gray-900">Planes de Suscripción</h2>
+          <p className="text-gray-600">Gestiona los planes disponibles para suscripción</p>
         </div>
         <Button onClick={() => setShowAddModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Nuevo Producto
+          Nuevo Plan
         </Button>
       </div>
 
-      {/* Lista de Productos */}
+      {/* Lista de Planes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => (
-          <div key={product.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        {plans.map((plan) => (
+          <div key={plan.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Package className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
-                  <Badge className={getCategoryColor(product.category)}>
-                    {getCategoryLabel(product.category)}
+                  <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                  <Badge className={getCategoryColor(plan.category)}>
+                    {getCategoryLabel(plan.category)}
                   </Badge>
                 </div>
               </div>
@@ -205,79 +191,79 @@ export default function SubscriptionProductsManager() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleEdit(product)}
+                  onClick={() => handleEdit(plan)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(product.id)}
+                  onClick={() => handleDelete(plan.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            <p className="text-gray-600 mb-4">{product.description}</p>
+            <p className="text-gray-600 mb-4">{plan.description}</p>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Precio</span>
                 <span className="font-semibold text-gray-900">
-                  {subscriptionService.formatCurrency(product.price, product.currency)}
+                  {subscriptionService.formatCurrency(plan.price, plan.currency)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Ciclo</span>
                 <span className="text-sm text-gray-900">
-                  {subscriptionService.getBillingCycleLabel(product.billingCycle)}
+                  {subscriptionService.getBillingCycleLabel(plan.billingCycle)}
                 </span>
               </div>
 
-              {product.maxUsers && (
+              {plan.maxUsers && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Usuarios máx.</span>
-                  <span className="text-sm text-gray-900">{product.maxUsers}</span>
+                  <span className="text-sm text-gray-900">{plan.maxUsers}</span>
                 </div>
               )}
 
-              {product.maxProperties && (
+              {plan.maxProperties && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Propiedades máx.</span>
-                  <span className="text-sm text-gray-900">{product.maxProperties}</span>
+                  <span className="text-sm text-gray-900">{plan.maxProperties}</span>
                 </div>
               )}
 
-              {product.maxContacts && (
+              {plan.maxContacts && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Contactos máx.</span>
-                  <span className="text-sm text-gray-900">{product.maxContacts}</span>
+                  <span className="text-sm text-gray-900">{plan.maxContacts}</span>
                 </div>
               )}
 
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Estado</span>
-                <Badge className={product.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}>
-                  {product.isActive ? 'Activo' : 'Inactivo'}
+                <Badge className={plan.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}>
+                  {plan.isActive ? 'Activo' : 'Inactivo'}
                 </Badge>
               </div>
             </div>
 
-            {product.features.length > 0 && (
+            {plan.features.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Características</h4>
                 <ul className="space-y-1">
-                  {product.features.slice(0, 3).map((feature, index) => (
+                  {plan.features.slice(0, 3).map((feature, index) => (
                     <li key={index} className="flex items-center text-sm text-gray-600">
                       <CheckCircle className="h-3 w-3 text-green-500 mr-2" />
                       {feature}
                     </li>
                   ))}
-                  {product.features.length > 3 && (
+                  {plan.features.length > 3 && (
                     <li className="text-sm text-gray-500">
-                      +{product.features.length - 3} más...
+                      +{plan.features.length - 3} más...
                     </li>
                   )}
                 </ul>
@@ -287,26 +273,26 @@ export default function SubscriptionProductsManager() {
         ))}
       </div>
 
-      {products.length === 0 && (
+      {plans.length === 0 && (
         <div className="text-center py-12">
           <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No hay productos</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No hay planes</h3>
           <p className="text-gray-600 mb-4">
-            Crea el primer producto de suscripción para comenzar.
+            Crea el primer plan de suscripción para comenzar.
           </p>
           <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Crear Producto
+            Crear Plan
           </Button>
         </div>
       )}
 
-      {/* Modal para agregar/editar producto */}
+      {/* Modal para agregar/editar plan */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+              {editingPlan ? 'Editar Plan' : 'Nuevo Plan'}
             </h3>
             
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -333,15 +319,8 @@ export default function SubscriptionProductsManager() {
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as any }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="BASIC">Básico</option>
-                    <option value="PROFESSIONAL">Profesional</option>
-                    <option value="ENTERPRISE">Empresarial</option>
-                    <option value="CUSTOM">Personalizado</option>
-                    <option value="TECHNOLOGY">Tecnología</option>
-                    <option value="SERVICES">Servicios</option>
-                    <option value="TRAINING">Capacitación</option>
-                    <option value="NETWORKING">Networking</option>
-                    <option value="OTHER">Otros</option>
+                    <option value="SOCIAL_DUES">Cuota Social</option>
+                    <option value="PROPTECH">Suscripción PropTech</option>
                   </select>
                 </div>
 
@@ -458,14 +437,14 @@ export default function SubscriptionProductsManager() {
                   variant="outline"
                   onClick={() => {
                     setShowAddModal(false);
-                    setEditingProduct(null);
+                    setEditingPlan(null);
                     resetForm();
                   }}
                 >
                   Cancelar
                 </Button>
                 <Button type="submit">
-                  {editingProduct ? 'Actualizar' : 'Crear'} Producto
+                  {editingPlan ? 'Actualizar' : 'Crear'} Plan
                 </Button>
               </div>
             </form>

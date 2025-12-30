@@ -1,32 +1,19 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { 
-  SubscriptionProduct, 
+  SubscriptionPlan, 
   PartnerSubscription, 
-  SubscriptionUsage,
   CreateSubscriptionRequest 
 } from '../types/subscription';
 import { subscriptionService } from '../services/subscriptionService';
 import { 
   Plus, 
-  Calendar, 
-  Users, 
-  Building, 
-  Database, 
   Activity,
   CheckCircle,
   XCircle,
-  AlertCircle,
-  Clock,
-  Star,
-  TrendingUp,
   Package,
-  Settings,
-  Download,
   Eye,
-  Edit,
-  Trash2,
-  RefreshCw
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,15 +27,35 @@ interface PartnerSubscriptionsSectionProps {
 
 export default function PartnerSubscriptionsSection({ partnerId, partnerName }: PartnerSubscriptionsSectionProps) {
   const [subscriptions, setSubscriptions] = useState<PartnerSubscription[]>([]);
-  const [products, setProducts] = useState<SubscriptionProduct[]>([]);
-  const [usage, setUsage] = useState<SubscriptionUsage[]>([]);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingUsage, setLoadingUsage] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<SubscriptionProduct | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'QUARTERLY' | 'YEARLY'>('MONTHLY');
   const [autoRenew, setAutoRenew] = useState(true);
   const [creating, setCreating] = useState(false);
+  
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'bg-green-100 text-green-800';
+      case 'INACTIVE': return 'bg-gray-100 text-gray-800';
+      case 'SUSPENDED': return 'bg-yellow-100 text-yellow-800';
+      case 'CANCELLED': return 'bg-red-100 text-red-800';
+      case 'PENDING': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+  
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'Activa';
+      case 'INACTIVE': return 'Inactiva';
+      case 'SUSPENDED': return 'Suspendida';
+      case 'CANCELLED': return 'Cancelada';
+      case 'PENDING': return 'Pendiente';
+      default: return status;
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -57,15 +64,14 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [subscriptionsData, productsData, usageData] = await Promise.all([
+      const [subscriptionsData, plansData] = await Promise.all([
         subscriptionService.getPartnerSubscriptions(partnerId),
-        subscriptionService.getAllProducts(),
-        subscriptionService.getCurrentUsage(partnerId)
+        subscriptionService.getAllProducts()
       ]);
       
       setSubscriptions(subscriptionsData);
-      setProducts(productsData);
-      setUsage(usageData);
+      setPlans(plansData);
+      // setUsage([]); // TODO: Implementar si es necesario
     } catch {
       console.error('Error loading subscription data:');
       toast.error('Error al cargar datos de suscripciones');
@@ -75,8 +81,8 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
   };
 
   const handleAddSubscription = async () => {
-    if (!selectedProduct) {
-      toast.error('Selecciona un producto');
+    if (!selectedPlan) {
+      toast.error('Selecciona un plan');
       return;
     }
 
@@ -84,7 +90,7 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
       setCreating(true);
       const data: CreateSubscriptionRequest = {
         partnerId,
-        productId: selectedProduct.id,
+        planId: selectedPlan.id,
         billingCycle,
         autoRenew,
         startDate: new Date().toISOString().split('T')[0]
@@ -93,8 +99,10 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
       const newSubscription = await subscriptionService.createSubscription(data);
       setSubscriptions(prev => [...prev, newSubscription]);
       setShowAddModal(false);
-      setSelectedProduct(null);
+      setSelectedPlan(null);
+      setBillingCycle('MONTHLY');
       toast.success('Suscripción creada exitosamente');
+      loadData(); // Recargar para obtener las suscripciones actualizadas
     } catch (error) {
       console.error('Error creating subscription:', error);
       toast.error('Error al crear suscripción');
@@ -141,21 +149,22 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
     }
   };
 
-  const getUsageForMetric = (metric: string) => {
-    return usage.find(u => u.metric === metric) || { currentUsage: 0, limit: 0 };
-  };
+  // Funciones de uso comentadas por ahora - se pueden implementar después si es necesario
+  // const getUsageForMetric = (metric: string) => {
+  //   return usage.find(u => u.metric === metric) || { currentUsage: 0, limit: 0 };
+  // };
 
-  const getUsagePercentage = (metric: string) => {
-    const usageData = getUsageForMetric(metric);
-    if (usageData.limit === 0) return 0;
-    return Math.round((usageData.currentUsage / usageData.limit) * 100);
-  };
+  // const getUsagePercentage = (metric: string) => {
+  //   const usageData = getUsageForMetric(metric);
+  //   if (usageData.limit === 0) return 0;
+  //   return Math.round((usageData.currentUsage / usageData.limit) * 100);
+  // };
 
-  const getUsageColor = (percentage: number) => {
-    if (percentage >= 90) return 'bg-red-500';
-    if (percentage >= 75) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
+  // const getUsageColor = (percentage: number) => {
+  //   if (percentage >= 90) return 'bg-red-500';
+  //   if (percentage >= 75) return 'bg-yellow-500';
+  //   return 'bg-green-500';
+  // };
 
   if (loading) {
     return (
@@ -176,14 +185,6 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
           <p className="text-gray-600">Gestiona las suscripciones de {partnerName}</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            onClick={() => setLoadingUsage(true)}
-            disabled={loadingUsage}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loadingUsage ? 'animate-spin' : ''}`} />
-            Actualizar Uso
-          </Button>
           <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nueva Suscripción
@@ -191,95 +192,21 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
         </div>
       </div>
 
-      {/* Estadísticas de Uso */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Usuarios</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {getUsageForMetric('USERS').currentUsage}
-              </p>
-            </div>
-            <Users className="h-8 w-8 text-blue-500" />
-          </div>
-          <div className="mt-2">
-            <div className="flex justify-between text-sm text-gray-500 mb-1">
-              <span>Uso</span>
-              <span>{getUsagePercentage('USERS')}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${getUsageColor(getUsagePercentage('USERS'))}`}
-                style={{ width: `${Math.min(getUsagePercentage('USERS'), 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Propiedades</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {getUsageForMetric('PROPERTIES').currentUsage}
-              </p>
-            </div>
-            <Building className="h-8 w-8 text-green-500" />
-          </div>
-          <div className="mt-2">
-            <div className="flex justify-between text-sm text-gray-500 mb-1">
-              <span>Uso</span>
-              <span>{getUsagePercentage('PROPERTIES')}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${getUsageColor(getUsagePercentage('PROPERTIES'))}`}
-                style={{ width: `${Math.min(getUsagePercentage('PROPERTIES'), 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Contactos</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {getUsageForMetric('CONTACTS').currentUsage}
-              </p>
-            </div>
-            <Database className="h-8 w-8 text-purple-500" />
-          </div>
-          <div className="mt-2">
-            <div className="flex justify-between text-sm text-gray-500 mb-1">
-              <span>Uso</span>
-              <span>{getUsagePercentage('CONTACTS')}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${getUsageColor(getUsagePercentage('CONTACTS'))}`}
-                style={{ width: `${Math.min(getUsagePercentage('CONTACTS'), 100)}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Suscripciones Activas</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {subscriptions.filter(s => s.status === 'ACTIVE').length}
-              </p>
-            </div>
-            <Activity className="h-8 w-8 text-orange-500" />
-          </div>
-          <div className="mt-2">
-            <p className="text-sm text-gray-500">
-              Total: {subscriptions.length}
+      {/* Estadísticas */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">Suscripciones Activas</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {subscriptions.filter(s => s.status === 'ACTIVE').length}
             </p>
           </div>
+          <Activity className="h-8 w-8 text-orange-500" />
+        </div>
+        <div className="mt-2">
+          <p className="text-sm text-gray-500">
+            Total: {subscriptions.length}
+          </p>
         </div>
       </div>
 
@@ -312,21 +239,28 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
                     </div>
                     <div>
                       <h4 className="text-lg font-medium text-gray-900">
-                        {subscription.product.name}
+                        {subscription.plan?.name || 'Plan no disponible'}
                       </h4>
                       <p className="text-sm text-gray-600">
-                        {subscription.product.description}
+                        {subscription.plan?.description || ''}
                       </p>
                       <div className="flex items-center space-x-2 mt-1">
-                        <Badge className={subscriptionService.getStatusColor(subscription.status)}>
-                          {subscriptionService.getStatusLabel(subscription.status)}
+                        <Badge className={getStatusBadgeClass(subscription.status)}>
+                          {getStatusLabel(subscription.status)}
                         </Badge>
                         <span className="text-sm text-gray-500">
-                          {subscriptionService.getBillingCycleLabel(subscription.billingCycle)}
+                          {subscription.plan?.billingCycle === 'MONTHLY' ? 'Mensual' : 
+                           subscription.plan?.billingCycle === 'QUARTERLY' ? 'Trimestral' : 
+                           subscription.plan?.billingCycle === 'YEARLY' ? 'Anual' : subscription.plan?.billingCycle}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {subscriptionService.formatCurrency(subscription.amount, subscription.currency)}
-                        </span>
+                        {subscription.plan && (
+                          <span className="text-sm font-medium text-gray-900">
+                            {subscriptionService.formatCurrency(
+                              subscription.plan.price, 
+                              subscription.plan.currencyCode || 'USD'
+                            )}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -360,12 +294,14 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
                 </div>
                 
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Próxima facturación:</span>
-                    <p className="font-medium">
-                      {new Date(subscription.nextBillingDate).toLocaleDateString('es-PY')}
-                    </p>
-                  </div>
+                  {subscription.nextBillingDate && (
+                    <div>
+                      <span className="text-gray-500">Próxima facturación:</span>
+                      <p className="font-medium">
+                        {new Date(subscription.nextBillingDate).toLocaleDateString('es-PY')}
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <span className="text-gray-500">Renovación automática:</span>
                     <p className="font-medium">
@@ -387,9 +323,18 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
 
       {/* Modal para agregar suscripción */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Nueva Suscripción</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Nueva Suscripción</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={creating}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             
             <div className="space-y-4">
               <div>
@@ -397,17 +342,17 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
                   Producto
                 </label>
                 <select
-                  value={selectedProduct?.id || ''}
+                  value={selectedPlan?.id || ''}
                   onChange={(e) => {
-                    const product = products.find(p => p.id === Number(e.target.value));
-                    setSelectedProduct(product || null);
+                    const plan = plans.find(p => p.id === Number(e.target.value));
+                    setSelectedPlan(plan || null);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="">Selecciona un producto</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name} - {subscriptionService.formatCurrency(product.price, product.currency)}
+                  <option value="">Selecciona un plan</option>
+                  {plans.filter(p => p.category === 'PROPTECH' && p.isActive).map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} - {subscriptionService.formatCurrency(plan.price, plan.currencyCode || 'USD')}
                     </option>
                   ))}
                 </select>
@@ -415,11 +360,11 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ciclo de facturación
+                  Ciclo de Facturación
                 </label>
                 <select
                   value={billingCycle}
-                  onChange={(e) => setBillingCycle(e.target.value as any)}
+                  onChange={(e) => setBillingCycle(e.target.value as 'MONTHLY' | 'QUARTERLY' | 'YEARLY')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="MONTHLY">Mensual</option>
@@ -452,7 +397,7 @@ export default function PartnerSubscriptionsSection({ partnerId, partnerName }: 
               </Button>
               <Button
                 onClick={handleAddSubscription}
-                disabled={!selectedProduct || creating}
+                disabled={!selectedPlan || creating}
               >
                 {creating ? 'Creando...' : 'Crear Suscripción'}
               </Button>

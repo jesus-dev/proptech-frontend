@@ -1,13 +1,14 @@
-export interface SubscriptionProduct {
+export interface SubscriptionPlan {
   id: number;
   name: string;
   description: string;
   price: number;
-  currency: string;
+  currencyId?: number;
+  currencyCode?: string;
   billingCycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
   features: string[];
   isActive: boolean;
-  category: 'BASIC' | 'PROFESSIONAL' | 'ENTERPRISE' | 'CUSTOM' | 'TECHNOLOGY' | 'SERVICES' | 'TRAINING' | 'NETWORKING' | 'OTHER';
+  category: 'SOCIAL_DUES' | 'PROPTECH';
   maxUsers?: number;
   maxProperties?: number;
   maxContacts?: number;
@@ -20,16 +21,13 @@ export interface SubscriptionProduct {
 export interface PartnerSubscription {
   id: number;
   partnerId: number;
-  productId: number;
-  product: SubscriptionProduct;
+  planId: number;
+  plan: SubscriptionPlan;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'CANCELLED' | 'PENDING';
   startDate: string;
   endDate?: string;
-  nextBillingDate: string;
+  nextBillingDate?: string;
   lastBillingDate?: string;
-  amount: number;
-  currency: string;
-  billingCycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
   autoRenew: boolean;
   notes?: string;
   createdAt: string;
@@ -76,7 +74,7 @@ export interface SubscriptionUsage {
 
 export interface CreateSubscriptionRequest {
   partnerId: number;
-  productId: number;
+  planId: number;
   billingCycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
   autoRenew: boolean;
   startDate?: string;

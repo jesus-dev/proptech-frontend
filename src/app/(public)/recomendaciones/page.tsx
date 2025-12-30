@@ -4,6 +4,7 @@ import { BuildingOfficeIcon, CurrencyDollarIcon, EyeIcon, FireIcon, FunnelIcon, 
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { publicPropertyService } from "@/services/publicPropertyService";
 
 // Tipos locales para evitar dependencias de (proptech)
 interface Property {
@@ -50,43 +51,46 @@ export default function PublicRecommendationsPage() {
   const loadRecommendations = async () => {
     try {
       setLoading(true);
-      
-      // Datos de ejemplo para evitar dependencias de (proptech)
-      const mockProperties: Property[] = [
-        {
-          id: '1',
-          title: 'Casa moderna en Asunción',
-          address: 'Av. Mariscal López 1234',
-          city: 'Asunción',
-          price: 150000,
-          type: 'Casa',
-          bedrooms: 3,
-          bathrooms: 2,
-          area: 120,
-          images: ['/images/property1.jpg']
+      // Sin datos ficticios: por ahora mostramos "recomendaciones" como propiedades destacadas/premium reales
+      const [featured, premium] = await Promise.all([
+        publicPropertyService.getFeaturedProperties(),
+        publicPropertyService.getPropertiesPaginated({ page: 1, limit: 12 }).then(r => r.properties || []),
+      ]);
+
+      const uniqueById = new Map<string, any>();
+      for (const p of [...featured, ...premium]) {
+        const id = String(p.id ?? p.slug ?? '');
+        if (!id) continue;
+        uniqueById.set(id, p);
+      }
+
+      const realProperties = Array.from(uniqueById.values()).slice(0, 20);
+      const mapped: PropertyRecommendation[] = realProperties.map((p: any) => ({
+        property: {
+          id: String(p.id ?? ''),
+          title: p.title || '',
+          address: p.address || '',
+          city: p.cityName || p.city || '',
+          price: Number(p.price || 0),
+          type: p.type || p.propertyTypeName || '',
+          description: p.description,
+          featuredImage: p.featuredImage,
+          currency: p.currencyCode || p.currency || 'USD',
+          bedrooms: p.bedrooms,
+          bathrooms: p.bathrooms,
+          area: p.area,
+          images: Array.isArray(p.images) ? p.images : [],
         },
-        {
-          id: '2',
-          title: 'Apartamento en Ciudad del Este',
-          address: 'Av. San Blas 567',
-          city: 'Ciudad del Este',
-          price: 80000,
-          type: 'Apartamento',
-          bedrooms: 2,
-          bathrooms: 1,
-          area: 80,
-          images: ['/images/property2.jpg']
-        }
-      ];
-      
-      // Generar recomendaciones simples
-      const recommendations: PropertyRecommendation[] = mockProperties.map(property => ({
-        property,
-        score: Math.random() * 100,
-        reasons: ['Ubicación estratégica', 'Precio competitivo', 'Características ideales']
+        // Score determinístico (no random): usamos featured/premium como proxy simple
+        score: p.premium ? 90 : p.featured ? 80 : 60,
+        reasons: p.premium
+          ? ['Propiedad premium']
+          : p.featured
+            ? ['Propiedad destacada']
+            : ['Propiedad recomendada'],
       }));
-      
-      setRecommendations(recommendations);
+
+      setRecommendations(mapped);
     } catch (error) {
       console.error('Error loading recommendations:', error);
       setError('Error al cargar las recomendaciones');

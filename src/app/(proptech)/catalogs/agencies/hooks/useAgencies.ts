@@ -9,7 +9,6 @@ import {
   deleteAgency,
   searchAgencies,
   getAgencyStats,
-  initializeSampleAgencies,
   clearAllAgencies,
 } from '../services/agencyService';
 
@@ -128,26 +127,6 @@ export function useAgencies() {
     return agencies.find(agency => agency.id === id) || null;
   }, [agencies]);
 
-  // Initialize sample data
-  const initializeSampleData = useCallback(async () => {
-    try {
-      setError(null);
-      await initializeSampleAgencies();
-      // Recargar agencias después de inicializar
-      const updatedData = await getAllAgencies();
-      setAgencies(updatedData);
-      
-      // Actualizar stats
-      const statsData = await getAgencyStats();
-      setStats(statsData);
-      return true;
-    } catch (err) {
-      setError('Error al inicializar datos de ejemplo');
-      console.error('Error initializing sample data:', err);
-      return false;
-    }
-  }, []);
-
   // Clear all data
   const clearAllData = useCallback(async () => {
     try {
@@ -193,7 +172,6 @@ export function useAgencies() {
     deleteExistingAgency,
     filterAgencies,
     getAgencyById,
-    initializeSampleData,
     clearAllData,
     
     // Utilities

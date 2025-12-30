@@ -45,14 +45,14 @@ export default function InboxPage() {
         if (Array.isArray(data) && data.length > 0) {
           setInquiries(data);
         } else {
-          // MOCK DE DATOS DE PRUEBA
-          setInquiries([]); // No hay datos, no usar mock
+          // Sin datos: dejar vacío
+          setInquiries([]);
         }
       })
       .catch(error => {
         console.error('❌ InboxPage: Error fetching inquiries:', error);
-        // En caso de error, mostrar datos de prueba
-        setInquiries([]); // No hay datos, no usar mock
+        // En caso de error, dejar vacío
+        setInquiries([]);
       })
       .finally(() => {
         setLoading(false);

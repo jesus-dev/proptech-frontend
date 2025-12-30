@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Partner, partnerService } from "../services/partnerService";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, XMarkIcon, CheckCircleIcon, BriefcaseIcon, BanknotesIcon } from "@heroicons/react/24/outline";
+import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, XMarkIcon, CheckCircleIcon, BriefcaseIcon } from "@heroicons/react/24/outline";
 import QRCode from 'react-qr-code';
 import { Dialog } from '@headlessui/react';
 
@@ -37,12 +37,6 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
     country: "Paraguay",
     website: "",
     socialMedia: [],
-    bankAccount: "",
-    bankName: "",
-    commissionRate: 15,
-    contractValue: 0,
-    currency: "USD",
-    paymentFrequency: "MONTHLY",
     notes: "",
     specializations: [],
     territories: [],
@@ -140,7 +134,7 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
       COMPANY: BuildingOfficeIcon,
       AGENCY: BuildingOfficeIcon,
       BROKER: BriefcaseIcon,
-      INVESTOR: BanknotesIcon
+      INVESTOR: BriefcaseIcon
     };
     return icons[type as keyof typeof icons] || UserIcon;
   };
@@ -448,103 +442,6 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
           </div>
         </div>
 
-        {/* Información Financiera */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-            Información Financiera
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Tasa de Comisión (%)
-              </label>
-              <input
-                type="number"
-                name="commissionRate"
-                value={formData.commissionRate || 15}
-                onChange={handleInputChange}
-                min="0"
-                max="100"
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Valor del Arancel de Membresía
-              </label>
-              <input
-                type="number"
-                name="contractValue"
-                value={formData.contractValue || 0}
-                onChange={handleInputChange}
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Moneda
-              </label>
-              <select
-                name="currency"
-                value={formData.currency || "PYG"}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="PYG">Guaraníes (PYG)</option>
-                <option value="USD">Dólares (USD)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Frecuencia de Arancel de Membresía
-              </label>
-              <select
-                name="paymentFrequency"
-                value={formData.paymentFrequency || "MONTHLY"}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="MONTHLY">Mensual</option>
-                <option value="QUARTERLY">Trimestral</option>
-                <option value="YEARLY">Anual</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Banco
-              </label>
-              <input
-                type="text"
-                name="bankName"
-                value={formData.bankName || ""}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Número de Cuenta
-              </label>
-              <input
-                type="text"
-                name="bankAccount"
-                value={formData.bankAccount || ""}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Especializaciones y Territorios */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
@@ -722,7 +619,6 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
               )}
               <div className="text-lg font-semibold">{formData.firstName} {formData.lastName}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">{formData.type}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-300">Membresía: {formData.paymentFrequency || 'N/A'}</div>
               <div className="text-sm text-gray-600 dark:text-gray-300">Vencimiento: {formData.nextPaymentDate || 'N/A'}</div>
               <div className="mt-4">
                 <QRCode value={partner?.id ? `${window.location.origin}/validar-socio/${partner.id}` : 'Socio'} size={128} />

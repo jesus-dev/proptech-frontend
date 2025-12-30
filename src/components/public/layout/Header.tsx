@@ -17,8 +17,9 @@ const Header = () => {
   const isPropiedadesPage = pathname === '/propiedades' || pathname === '/propiedades/';
   const isContactPage = pathname === '/contact' || pathname === '/contact/';
   const isAsesoresPage = pathname === '/asesores' || pathname?.startsWith('/asesores');
+  const isProfesionalesPage = pathname === '/profesionales' || pathname?.startsWith('/profesionales');
   const isHomePage = pathname === '/';
-  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage || isAsesoresPage;
+  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage || isAsesoresPage || isProfesionalesPage;
   
   
   // Determinar el color del texto basado en si no hay scroll
@@ -66,7 +67,6 @@ const Header = () => {
   }, [isMenuOpen]);
 
   const navigation = [
-    { name: 'Inicio', href: '/' },
     {
       name: 'Propiedades',
       href: '/propiedades',
@@ -81,6 +81,7 @@ const Header = () => {
       ]
     },
     { name: 'Asesores', href: '/asesores' },
+    { name: 'Profesionales', href: '/profesionales' },
     { name: 'Contacto', href: '/contact' },
   ];
 

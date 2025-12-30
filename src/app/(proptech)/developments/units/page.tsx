@@ -38,60 +38,8 @@ export default function DevelopmentUnitsPage() {
       setUnits(data);
     } catch (error) {
       console.error("Error loading units:", error);
-      // Fallback a datos mock si la API no está disponible
-      setUnits([
-        {
-          id: 1,
-          developmentId: 1,
-          unitNumber: "L-001",
-          unitName: "Lote Premium",
-          type: "LOT",
-          status: "AVAILABLE",
-          price: 50000,
-          area: 500,
-          areaUnit: "m²",
-          featured: true,
-          premium: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 2,
-          developmentId: 1,
-          unitNumber: "D-101",
-          unitName: "Departamento 2 Dormitorios",
-          type: "DEPARTAMENTO",
-          status: "RESERVED",
-          price: 80000,
-          area: 85,
-          areaUnit: "m²",
-          bedrooms: 2,
-          bathrooms: 1,
-          floor: "1",
-          featured: false,
-          premium: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 3,
-          developmentId: 2,
-          unitNumber: "H-201",
-          unitName: "Casa Familiar",
-          type: "HOUSE",
-          status: "SOLD",
-          price: 120000,
-          area: 150,
-          areaUnit: "m²",
-          bedrooms: 3,
-          bathrooms: 2,
-          floor: "1",
-          featured: true,
-          premium: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ]);
+      // Sin datos ficticios: dejar vacío
+      setUnits([]);
     } finally {
       setLoading(false);
     }

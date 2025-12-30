@@ -392,8 +392,9 @@ class RecommendationService {
       score.explanations.push("🔥 Propiedad destacada");
     }
 
-    // Factor de popularidad (simulado)
-    score.popularity = Math.random() * 0.5 + 0.3;
+    // Factor de popularidad (sin simulación)
+    // Si no hay señales reales disponibles, mantener neutral.
+    score.popularity = 0.5;
 
     // Factor de potencial de inversión
     const pricePerM2 = property.price && property.area ? property.price / property.area : 0;
@@ -404,8 +405,9 @@ class RecommendationService {
       score.explanations.push("📈 Excelente potencial de inversión");
     }
 
-    // Factor de tendencia del mercado (simulado)
-    score.marketTrend = Math.random() * 0.4 + 0.6;
+    // Factor de tendencia del mercado (sin simulación)
+    // Solo backend/serie histórica puede determinar esto. Neutral por defecto.
+    score.marketTrend = 0.5;
 
     // Calcular score total
     score.totalScore = 

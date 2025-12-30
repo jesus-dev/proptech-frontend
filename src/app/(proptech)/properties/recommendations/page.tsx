@@ -110,9 +110,6 @@ export default function PropertyRecommendationsPage() {
         const response = await propertyService.getAllProperties();
         clearTimeout(timeoutId);
         setAllProperties(Array.isArray(response) ? response : response.data || []);
-        
-        // Simular comportamiento del usuario (en producción vendría de analytics)
-        simulateUserBehavior();
       } catch (error) {
         clearTimeout(timeoutId);
         console.error('Error loading properties:', error);
@@ -128,24 +125,34 @@ export default function PropertyRecommendationsPage() {
     };
   }, []);
 
-  // Simular comportamiento del usuario
-  const simulateUserBehavior = () => {
-    const mockBehavior: UserBehavior = {
-      viewedProperties: ['1', '3', '5', '7'],
-      favoritedProperties: ['3', '7'],
-      contactedProperties: ['3'],
-      searchHistory: ['casa villa morra', 'apartamento centro', 'quinta san bernardino'],
-      preferences: {
-        priceRange: [50000, 300000],
-        location: ['Villa Morra', 'Centro'],
-        propertyType: ['Casa', 'Apartamento'],
-        bedrooms: [2, 3, 4],
-        bathrooms: [2, 3],
-        area: [100, 300]
-      }
-    };
-    setUserBehavior(mockBehavior);
-  };
+  // Cargar comportamiento real (si existe) desde storage (sin datos ficticios)
+  useEffect(() => {
+    try {
+      const parseArray = (key: string) => {
+        const raw = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.map(String) : [];
+      };
+
+      const behavior: UserBehavior = {
+        viewedProperties: parseArray('viewedProperties'),
+        favoritedProperties: parseArray('propertyFavorites'),
+        contactedProperties: parseArray('contactedProperties'),
+        searchHistory: parseArray('searchHistory'),
+        preferences: {},
+      };
+      setUserBehavior(behavior);
+    } catch {
+      setUserBehavior({
+        viewedProperties: [],
+        favoritedProperties: [],
+        contactedProperties: [],
+        searchHistory: [],
+        preferences: {},
+      });
+    }
+  }, []);
 
   // Calcular factores de recomendación
   const calculateRecommendationFactors = (
@@ -222,8 +229,9 @@ export default function PropertyRecommendationsPage() {
     const avgPricePerM2 = 1500; // Precio promedio por m² en Paraguay
     factors.investmentPotential = pricePerM2 < avgPricePerM2 ? 0.8 : 0.4;
 
-    // Factor de tendencia del mercado (simulado)
-    factors.marketTrend = Math.random() * 0.4 + 0.6; // Entre 0.6 y 1.0
+    // Factor de tendencia del mercado (sin simulación)
+    // Solo se puede estimar con data real (histórico/mercado). Neutral por defecto.
+    factors.marketTrend = 0.5;
 
     return factors;
   };

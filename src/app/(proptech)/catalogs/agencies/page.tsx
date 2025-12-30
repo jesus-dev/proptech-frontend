@@ -18,7 +18,6 @@ export default function AgenciesPage() {
     stats,
     loading,
     error,
-    initializeSampleData,
     clearAllData,
     deleteExistingAgency,
     filterAgencies,
@@ -125,7 +124,6 @@ export default function AgenciesPage() {
         filters={filters}
         onFiltersChange={setFilters}
         onCreateNew={() => router.push('/catalogs/agencies/new')}
-        onGenerateSample={initializeSampleData}
         onClearData={clearAllData}
         hasData={agencies.length > 0}
       />

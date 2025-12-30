@@ -104,50 +104,9 @@ export const getAgencyStats = async () => {
 
 // Initialize sample agencies
 export const initializeSampleAgencies = async (): Promise<void> => {
-  try {
-    const agencies = await getAllAgencies();
-    if (agencies.length > 0) return; // Already has data
-    
-    const sampleAgencies: AgencyFormData[] = [
-      {
-        name: "Inmobiliaria Paraguay",
-        description: "Agencia líder en el mercado inmobiliario de Paraguay",
-        address: "Av. España 123, Asunción",
-        email: "info@inmobiliariaparaguay.com",
-        phone: "+595 21 123-456",
-        website: "https://inmobiliariaparaguay.com",
-        logoUrl: "",
-        active: true,
-      },
-      {
-        name: "Propiedades del Sur",
-        description: "Especialistas en propiedades residenciales y comerciales",
-        address: "Calle Palma 456, Asunción",
-        email: "contacto@propiedadesdelsur.com",
-        phone: "+595 21 987-654",
-        website: "https://propiedadesdelsur.com",
-        logoUrl: "",
-        active: true,
-      },
-      {
-        name: "Real Estate Paraguay",
-        description: "Agencia internacional con presencia en Paraguay",
-        address: "Av. Mcal. López 789, Asunción",
-        email: "info@realestateparaguay.com",
-        phone: "+595 21 555-123",
-        website: "https://realestateparaguay.com",
-        logoUrl: "",
-        active: false,
-      },
-    ];
-    
-    for (const agencyData of sampleAgencies) {
-      await createAgency(agencyData);
-    }
-  } catch (error) {
-    console.error('Error initializing sample agencies:', error);
-    throw new Error('Failed to initialize sample agencies');
-  }
+  // No generar datos ficticios en el sistema.
+  // Mantener función como NO-OP para compatibilidad con la UI.
+  return;
 };
 
 // Clear all agencies (for testing purposes)

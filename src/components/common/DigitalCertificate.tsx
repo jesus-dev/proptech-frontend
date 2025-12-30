@@ -19,8 +19,18 @@ const DigitalCertificate: React.FC<DigitalCertificateProps> = ({
   contractType,
   signedDate
 }) => {
-  const certificateId = Math.random().toString(36).substr(2, 12).toUpperCase();
-  const verificationHash = Math.random().toString(36).substr(2, 16).toUpperCase();
+  // Sin datos ficticios: generar identificadores determinísticos a partir de datos reales del contrato.
+  const stableHash = (input: string) => {
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) {
+      hash = ((hash << 5) - hash) + input.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(36).toUpperCase();
+  };
+
+  const certificateId = `CERT-${stableHash(`${contractId}|${signedDate}`).slice(0, 10)}`;
+  const verificationHash = stableHash(`${contractId}|${clientName}|${brokerName}|${contractType}|${signedDate}`);
 
   return (
     <div className="bg-white border-4 border-green-600 rounded-lg p-8 shadow-2xl max-w-4xl mx-auto">

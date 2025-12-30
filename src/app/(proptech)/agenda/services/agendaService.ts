@@ -196,88 +196,12 @@ export const agendaService = {
         }));
       }
       
-      // Si no hay agentes en el backend, usar datos simulados
-      console.log('No agents found in backend, using simulated data');
-      return [
-        {
-          id: 1,
-          firstName: "María",
-          lastName: "González",
-          email: "maria.gonzalez@proptech.com",
-          phone: "+595-21-123-456",
-          photo: "/images/agents/agent1.jpg",
-          rating: 4.8,
-          specialties: ["Residencial", "Lujo"],
-          isActive: true,
-          agency: { name: "ON PropTech" }
-        },
-        {
-          id: 2,
-          firstName: "Carlos",
-          lastName: "Rodríguez",
-          email: "carlos.rodriguez@proptech.com",
-          phone: "+595-21-123-457",
-          photo: "/images/agents/agent2.jpg",
-          rating: 4.6,
-          specialties: ["Comercial", "Terrenos"],
-          isActive: true,
-          agency: { name: "ON PropTech" }
-        },
-        {
-          id: 3,
-          firstName: "Ana",
-          lastName: "Martínez",
-          email: "ana.martinez@proptech.com",
-          phone: "+595-21-123-458",
-          photo: "/images/agents/agent3.jpg",
-          rating: 4.9,
-          specialties: ["Residencial", "Condominios"],
-          isActive: true,
-          agency: { name: "ON PropTech" }
-        }
-      ];
+      // Sin datos ficticios: si backend no retorna agentes, devolver vacío
+      return [];
     } catch (error) {
       console.error('Error fetching agents:', error);
-      // Fallback a datos simulados
-      console.log('Using fallback simulated agents data');
-      return [
-        {
-          id: 1,
-          firstName: "María",
-          lastName: "González",
-          email: "maria.gonzalez@proptech.com",
-          phone: "+595-21-123-456",
-          photo: "/images/agents/agent1.jpg",
-          rating: 4.8,
-          specialties: ["Residencial", "Lujo"],
-          isActive: true,
-          agency: { name: "ON PropTech" }
-        },
-        {
-          id: 2,
-          firstName: "Carlos",
-          lastName: "Rodríguez",
-          email: "carlos.rodriguez@proptech.com",
-          phone: "+595-21-123-457",
-          photo: "/images/agents/agent2.jpg",
-          rating: 4.6,
-          specialties: ["Comercial", "Terrenos"],
-          isActive: true,
-          agency: { name: "ON PropTech" }
-        },
-        {
-          id: 3,
-          firstName: "Ana",
-          lastName: "Martínez",
-          email: "ana.martinez@proptech.com",
-          phone: "+595-21-123-458",
-          photo: "/images/agents/agent3.jpg",
-          rating: 4.9,
-          specialties: ["Residencial", "Condominios"],
-          isActive: true,
-          agency: { name: "ON PropTech" }
-        }
-      ];
+      // Sin datos ficticios: devolver vacío
+      return [];
     }
   },
 
@@ -288,20 +212,8 @@ export const agendaService = {
       return response.data || [];
     } catch (error) {
       console.error('Error fetching available slots:', error);
-      // Fallback a slots simulados
-      const slots: TimeSlot[] = [];
-      for (let hour = 9; hour < 18; hour++) {
-        const time = `${hour.toString().padStart(2, '0')}:00`;
-        const available = Math.random() > 0.3;
-        const agentId = Math.floor(Math.random() * 5) + 1;
-        
-        slots.push({
-          time,
-          available,
-          agentId
-        });
-      }
-      return slots;
+      // Sin datos ficticios: devolver vacío
+      return [];
     }
   },
 

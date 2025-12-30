@@ -57,52 +57,7 @@ function AdminSalesAgentsPageContent() {
     } catch (error) {
       console.error('Error loading agents:', error);
       toast.error('Error al cargar los agentes');
-      // Fallback a datos mock si la API falla
-      const mockAgents: SalesAgent[] = [
-        {
-          id: 1,
-          agentCode: 'AGENT001',
-          fullName: 'María González',
-          email: 'maria.gonzalez@proptech.com',
-          phone: '+595 981 123456',
-          commissionPercentage: 15,
-          status: 'ACTIVE',
-          totalSales: 25000000,
-          totalCommissions: 3750000,
-          pendingCommissions: 500000,
-          hireDate: '2024-01-15',
-          notes: 'Agente senior con excelente rendimiento'
-        },
-        {
-          id: 2,
-          agentCode: 'AGENT002',
-          fullName: 'Carlos Mendoza',
-          email: 'carlos.mendoza@proptech.com',
-          phone: '+595 981 654321',
-          commissionPercentage: 10,
-          status: 'ACTIVE',
-          totalSales: 15000000,
-          totalCommissions: 1500000,
-          pendingCommissions: 200000,
-          hireDate: '2024-03-20',
-          notes: 'Agente junior en crecimiento'
-        },
-        {
-          id: 3,
-          agentCode: 'AGENT003',
-          fullName: 'Ana Patricia Silva',
-          email: 'ana.silva@proptech.com',
-          phone: '+595 981 789012',
-          commissionPercentage: 20,
-          status: 'ACTIVE',
-          totalSales: 35000000,
-          totalCommissions: 7000000,
-          pendingCommissions: 800000,
-          hireDate: '2023-11-10',
-          notes: 'Agente top performer'
-        }
-      ];
-      setAgents(mockAgents);
+      setAgents([]);
     } finally {
       setLoading(false);
     }

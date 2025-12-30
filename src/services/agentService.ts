@@ -18,9 +18,12 @@ export interface Agent {
   photo?: string;
   agencyId?: string;
   agencyName?: string;
+  slug?: string;
+  zonaOperacion?: string;
   active?: boolean;
   isActive?: boolean;
   role?: string;
+  propertiesCount?: number;
 }
 
 export class AgentService {

@@ -423,12 +423,8 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
 
       const newProperties = Array.isArray(response.properties) ? response.properties : [];
       
-      // ⭐ Aleatorizar propiedades (Fisher-Yates shuffle)
+      // Sin aleatoriedad (sin datos ficticios): mantener el orden provisto por el backend
       const shuffledProperties = [...newProperties];
-      for (let i = shuffledProperties.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledProperties[i], shuffledProperties[j]] = [shuffledProperties[j], shuffledProperties[i]];
-      }
       
       const pagination = response.pagination || { currentPage: page, totalPages: 0, totalProperties: shuffledProperties.length, propertiesPerPage: PAGE_SIZE };
 
@@ -1270,7 +1266,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
               }
               
               return (
-              <Link href={`/propiedad/${property.slug || property.id}`} key={property.id || property.slug || Math.random()} className="block h-full">
+              <Link href={`/propiedad/${property.slug || property.id}`} key={property.id || property.slug || String(index)} className="block h-full">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}

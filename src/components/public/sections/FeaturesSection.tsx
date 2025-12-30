@@ -267,12 +267,19 @@ const FeaturesSection = () => {
                 ))}
               </div>
               
-              <div className="flex justify-center mb-10">
+              <div className="flex flex-col sm:flex-row justify-center gap-4 mb-10">
                 <a
                   href="/proptech"
                   className="inline-flex items-center justify-center px-10 py-5 bg-white text-gray-900 rounded-2xl hover:bg-gray-100 transition-all duration-300 font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105"
                 >
                   Descubre PropTech
+                  <ArrowRightIcon className="w-5 h-5 ml-2" />
+                </a>
+                <a
+                  href="/profesionales"
+                  className="inline-flex items-center justify-center px-10 py-5 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 transition-all duration-300 font-bold text-lg shadow-xl hover:shadow-2xl hover:scale-105"
+                >
+                  Servicios del Hogar
                   <ArrowRightIcon className="w-5 h-5 ml-2" />
                 </a>
               </div>

@@ -73,7 +73,7 @@ export default function ReportsPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      // En producción, mostrar estado vacío en lugar de fallback a mock
+      // En producción, mostrar estado vacío (sin datos ficticios)
       setOwners([]);
       setOwnerProperties([]);
       setReports([]);

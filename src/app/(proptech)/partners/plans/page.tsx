@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { SubscriptionProduct } from '../types/subscription';
+import { SubscriptionPlan } from '../types/subscription';
 import { subscriptionService } from '../services/subscriptionService';
+import { currencyService } from '@/app/(proptech)/catalogs/currencies/services/currencyService';
+import { Currency } from '@/app/(proptech)/catalogs/currencies/services/types';
 import { 
   Plus, 
   Edit, 
@@ -49,9 +51,9 @@ interface PlanFormData {
   name: string;
   description: string;
   price: number;
-  currency: string;
+  currencyId?: number;
   billingCycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
-  category: 'BASIC' | 'PROFESSIONAL' | 'ENTERPRISE' | 'CUSTOM';
+  category: 'SOCIAL_DUES' | 'PROPTECH';
   maxUsers: number;
   maxProperties: number;
   maxContacts: number;
@@ -66,7 +68,8 @@ interface PlanFormData {
 // En el formulario, el admin puede escribir las features que quiera, no seleccionar de una lista fija
 
 export default function PlansAndProductsPage() {
-  const [products, setProducts] = useState<SubscriptionProduct[]>([]);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -74,7 +77,7 @@ export default function PlansAndProductsPage() {
   const [sortBy, setSortBy] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<SubscriptionProduct | null>(null);
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
@@ -82,9 +85,9 @@ export default function PlansAndProductsPage() {
     name: '',
     description: '',
     price: 0,
-    currency: 'USD',
+    currencyId: undefined,
     billingCycle: 'MONTHLY',
-    category: 'BASIC',
+    category: 'SOCIAL_DUES',
     maxUsers: 1,
     maxProperties: 10,
     maxContacts: 100,
@@ -94,80 +97,90 @@ export default function PlansAndProductsPage() {
     isRecommended: false
   });
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  const loadCurrencies = async () => {
+    try {
+      const activeCurrencies = await currencyService.getActive();
+      setCurrencies(activeCurrencies || []);
+    } catch (error) {
+      console.error('Error loading currencies:', error);
+    }
+  };
 
-  const loadProducts = async () => {
+  const loadPlans = async () => {
     try {
       setLoading(true);
       const data = await subscriptionService.getAllProducts();
-      setProducts(data);
+      setPlans(data);
     } catch (error) {
-      console.error('Error loading products:', error);
-      toast.error('Error al cargar planes y productos');
+      console.error('Error loading plans:', error);
+      toast.error('Error al cargar planes');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadCurrencies();
+    loadPlans();
+  }, []);
+
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       
-      if (editingProduct) {
-        // Update existing product
-        await subscriptionService.updateProduct(editingProduct.id, formData);
+      if (editingPlan) {
+        // Update existing plan
+        await subscriptionService.updateProduct(editingPlan.id, formData);
         toast.success('Plan actualizado exitosamente');
       } else {
-        // Create new product
+        // Create new plan
         await subscriptionService.createProduct(formData);
         toast.success('Plan creado exitosamente');
       }
       
       setShowAddModal(false);
-      setEditingProduct(null);
+      setEditingPlan(null);
       resetForm();
-      loadProducts();
+      loadPlans();
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error('Error saving plan:', error);
       toast.error('Error al guardar plan');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEdit = (product: SubscriptionProduct) => {
-    setEditingProduct(product);
+  const handleEdit = (plan: SubscriptionPlan) => {
+    setEditingPlan(plan);
     setFormData({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      currency: product.currency,
-      billingCycle: product.billingCycle,
-      category: product.category as any,
-      maxUsers: product.maxUsers || 1,
-      maxProperties: product.maxProperties || 10,
-      maxContacts: product.maxContacts || 100,
-      features: product.features,
-      isActive: product.isActive,
-      isPopular: product.isPopular || false,
-      isRecommended: product.isRecommended || false
+      name: plan.name,
+      description: plan.description,
+      price: plan.price,
+      currencyId: plan.currencyId,
+      billingCycle: plan.billingCycle,
+      category: plan.category as any,
+      maxUsers: plan.maxUsers || 1,
+      maxProperties: plan.maxProperties || 10,
+      maxContacts: plan.maxContacts || 100,
+      features: plan.features,
+      isActive: plan.isActive,
+      isPopular: plan.isPopular || false,
+      isRecommended: plan.isRecommended || false
     });
     setShowAddModal(true);
   };
 
-  const handleDelete = async (productId: number) => {
+  const handleDelete = async (planId: number) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este plan?')) {
       return;
     }
 
     try {
-      await subscriptionService.deleteProduct(productId);
+      await subscriptionService.deleteProduct(planId);
       toast.success('Plan eliminado exitosamente');
-      loadProducts();
+      loadPlans();
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('Error deleting plan:', error);
       toast.error('Error al eliminar plan');
     }
   };
@@ -177,9 +190,9 @@ export default function PlansAndProductsPage() {
       name: '',
       description: '',
       price: 0,
-      currency: 'USD',
+      currencyId: undefined,
       billingCycle: 'MONTHLY',
-      category: 'BASIC',
+      category: 'SOCIAL_DUES',
       maxUsers: 1,
       maxProperties: 10,
       maxContacts: 100,
@@ -193,12 +206,12 @@ export default function PlansAndProductsPage() {
   // ELIMINADO: handleFeatureToggle - Ya no se usa
   // Las features ahora son de texto libre, no checkboxes
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+  const filteredPlans = plans.filter(plan => {
+    const matchesSearch = plan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         plan.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || plan.category === categoryFilter;
     const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'active' ? product.isActive : !product.isActive);
+                         (statusFilter === 'active' ? plan.isActive : !plan.isActive);
     return matchesSearch && matchesCategory && matchesStatus;
   }).sort((a, b) => {
     let aValue: any, bValue: any;
@@ -230,15 +243,8 @@ export default function PlansAndProductsPage() {
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case 'BASIC': return 'Básico';
-      case 'PROFESSIONAL': return 'Profesional';
-      case 'ENTERPRISE': return 'Empresarial';
-      case 'CUSTOM': return 'Personalizado';
-      case 'TECHNOLOGY': return 'Tecnología';
-      case 'SERVICES': return 'Servicios';
-      case 'TRAINING': return 'Capacitación';
-      case 'NETWORKING': return 'Networking';
-      case 'OTHER': return 'Otros';
+      case 'SOCIAL_DUES': return 'Cuota Social';
+      case 'PROPTECH': return 'Suscripción PropTech';
       default: return category;
     }
   };
@@ -260,25 +266,18 @@ export default function PlansAndProductsPage() {
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'BASIC': return Package;
-      case 'PROFESSIONAL': return Building;
-      case 'ENTERPRISE': return Crown;
-      case 'CUSTOM': return Settings;
-      case 'TECHNOLOGY': return Zap;
-      case 'SERVICES': return Shield;
-      case 'TRAINING': return Users;
-      case 'NETWORKING': return TrendingUp;
-      case 'OTHER': return Package;
+      case 'SOCIAL_DUES': return Users;
+      case 'PROPTECH': return Zap;
       default: return Package;
     }
   };
 
   const getStats = () => {
-    const total = products.length;
-    const active = products.filter(p => p.isActive).length;
-    const popular = products.filter(p => p.isPopular).length;
-    const recommended = products.filter(p => p.isRecommended).length;
-    const totalRevenue = products.reduce((sum, p) => sum + p.price, 0);
+    const total = plans.length;
+    const active = plans.filter(p => p.isActive).length;
+    const popular = plans.filter(p => p.isPopular).length;
+    const recommended = plans.filter(p => p.isRecommended).length;
+    const totalRevenue = plans.reduce((sum, p) => sum + p.price, 0);
     
     return { total, active, popular, recommended, totalRevenue };
   };
@@ -310,7 +309,7 @@ export default function PlansAndProductsPage() {
           <div className="flex flex-wrap gap-3">
             <Button
               variant="outline"
-              onClick={loadProducts}
+              onClick={loadPlans}
               className="flex items-center gap-2 border-gray-200 hover:bg-gray-50"
             >
               <RefreshCw className="h-4 w-4" />
@@ -412,10 +411,8 @@ export default function PlansAndProductsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las categorías</SelectItem>
-              <SelectItem value="BASIC">Básico</SelectItem>
-              <SelectItem value="PROFESSIONAL">Profesional</SelectItem>
-              <SelectItem value="ENTERPRISE">Empresarial</SelectItem>
-              <SelectItem value="CUSTOM">Personalizado</SelectItem>
+              <SelectItem value="SOCIAL_DUES">Cuota Social</SelectItem>
+              <SelectItem value="PROPTECH">Suscripción PropTech</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -449,7 +446,7 @@ export default function PlansAndProductsPage() {
 
       {/* Enhanced Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.length === 0 ? (
+        {filteredPlans.length === 0 ? (
           <div className="col-span-full">
             <div className="text-center max-w-md mx-auto py-12">
               <div className="bg-gray-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -472,29 +469,29 @@ export default function PlansAndProductsPage() {
             </div>
           </div>
         ) : (
-          filteredProducts.map((product) => {
-            const CategoryIcon = getCategoryIcon(product.category);
+          filteredPlans.map((plan) => {
+            const CategoryIcon = getCategoryIcon(plan.category);
             return (
-              <div key={product.id} className={`bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 ${product.isPopular ? 'ring-2 ring-yellow-400' : ''} ${product.isRecommended ? 'ring-2 ring-purple-400' : ''}`}>
+              <div key={plan.id} className={`bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 ${plan.isPopular ? 'ring-2 ring-yellow-400' : ''} ${plan.isRecommended ? 'ring-2 ring-purple-400' : ''}`}>
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-3 rounded-lg ${getCategoryColor(product.category).replace('border-', 'bg-').replace('text-', '').replace('bg-', 'bg-').replace('border-', '')}`}>
+                    <div className={`p-3 rounded-lg ${getCategoryColor(plan.category).replace('border-', 'bg-').replace('text-', '').replace('bg-', 'bg-').replace('border-', '')}`}>
                       <CategoryIcon className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge className={getCategoryColor(product.category)}>
-                          {getCategoryLabel(product.category)}
+                        <Badge className={getCategoryColor(plan.category)}>
+                          {getCategoryLabel(plan.category)}
                         </Badge>
-                        {product.isPopular && (
+                        {plan.isPopular && (
                           <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
                             <Star className="h-3 w-3 mr-1" />
                             Popular
                           </Badge>
                         )}
-                        {product.isRecommended && (
+                        {plan.isRecommended && (
                           <Badge className="bg-purple-100 text-purple-800 border-purple-200">
                             <TrendingUp className="h-3 w-3 mr-1" />
                             Recomendado
@@ -507,7 +504,7 @@ export default function PlansAndProductsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleEdit(product)}
+                      onClick={() => handleEdit(plan)}
                       className="hover:bg-gray-100"
                     >
                       <Edit className="h-4 w-4" />
@@ -515,7 +512,7 @@ export default function PlansAndProductsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => handleDelete(plan.id)}
                       className="hover:bg-red-50 text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -524,49 +521,49 @@ export default function PlansAndProductsPage() {
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
+                <p className="text-gray-600 mb-4 line-clamp-2">{plan.description}</p>
 
                 {/* Price */}
                 <div className="mb-4">
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-bold text-gray-900">
-                      {subscriptionService.formatCurrency(product.price, product.currency)}
+                      {subscriptionService.formatCurrency(plan.price, plan.currencyCode || 'USD')}
                     </span>
                     <span className="text-sm text-gray-500">
-                      / {subscriptionService.getBillingCycleLabel(product.billingCycle)}
+                      / {subscriptionService.getBillingCycleLabel(plan.billingCycle)}
                     </span>
                   </div>
                 </div>
 
                 {/* Features */}
                 <div className="space-y-3 mb-4">
-                  {product.maxUsers && (
+                  {plan.maxUsers && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Usuarios máx.</span>
-                      <span className="font-medium text-gray-900">{product.maxUsers}</span>
+                      <span className="font-medium text-gray-900">{plan.maxUsers}</span>
                     </div>
                   )}
-                  {product.maxProperties && (
+                  {plan.maxProperties && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Propiedades máx.</span>
-                      <span className="font-medium text-gray-900">{product.maxProperties}</span>
+                      <span className="font-medium text-gray-900">{plan.maxProperties}</span>
                     </div>
                   )}
-                  {product.maxContacts && (
+                  {plan.maxContacts && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Contactos máx.</span>
-                      <span className="font-medium text-gray-900">{product.maxContacts}</span>
+                      <span className="font-medium text-gray-900">{plan.maxContacts}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Status */}
                 <div className="flex items-center justify-between">
-                  <Badge variant={product.isActive ? "default" : "destructive"}>
-                    {product.isActive ? "Activo" : "Inactivo"}
+                  <Badge variant={plan.isActive ? "default" : "destructive"}>
+                    {plan.isActive ? "Activo" : "Inactivo"}
                   </Badge>
                   <span className="text-xs text-gray-400">
-                    ID: {product.id}
+                    ID: {plan.id}
                   </span>
                 </div>
               </div>
@@ -579,9 +576,9 @@ export default function PlansAndProductsPage() {
       <ModernPopup
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title={editingProduct ? 'Editar Plan' : 'Nuevo Plan'}
-        subtitle={editingProduct ? 'Modifica la información del plan de suscripción' : 'Crea un nuevo plan de suscripción para los socios'}
-        icon={editingProduct ? <Edit className="w-6 h-6 text-white" /> : <PlusCircle className="w-6 h-6 text-white" />}
+        title={editingPlan ? 'Editar Plan' : 'Nuevo Plan'}
+        subtitle={editingPlan ? 'Modifica la información del plan de suscripción' : 'Crea un nuevo plan de suscripción para los socios'}
+        icon={editingPlan ? <Edit className="w-6 h-6 text-white" /> : <PlusCircle className="w-6 h-6 text-white" />}
         maxWidth="max-w-4xl"
       >
         <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
@@ -609,10 +606,8 @@ export default function PlansAndProductsPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
                 required
               >
-                <option value="BASIC">Básico</option>
-                <option value="PROFESSIONAL">Profesional</option>
-                <option value="ENTERPRISE">Empresarial</option>
-                <option value="CUSTOM">Personalizado</option>
+                <option value="SOCIAL_DUES">Cuota Social</option>
+                <option value="PROPTECH">Suscripción PropTech</option>
               </select>
             </div>
           </div>
@@ -651,14 +646,17 @@ export default function PlansAndProductsPage() {
                 Moneda *
               </label>
               <select
-                value={formData.currency}
-                onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
+                value={formData.currencyId || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, currencyId: e.target.value ? parseInt(e.target.value) : undefined }))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
                 required
               >
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="PYG">PYG</option>
+                <option value="">Seleccione una moneda</option>
+                {currencies.map((currency) => (
+                  <option key={currency.id} value={currency.id}>
+                    {currency.code} - {currency.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -797,7 +795,7 @@ export default function PlansAndProductsPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <span>✅</span>
-                  {editingProduct ? 'Actualizar' : 'Crear'}
+                  {editingPlan ? 'Actualizar' : 'Crear'}
                 </div>
               )}
             </button>

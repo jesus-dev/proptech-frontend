@@ -84,6 +84,12 @@ export default function AgentProfilePage() {
           rating: agentData.rating,
           slug: agentData.slug
         };
+
+        // Si el agente no tiene propiedades públicas, no mostrar su perfil en el sitio
+        if ((normalizedAgent.propertiesCount ?? 0) <= 0) {
+          router.replace('/asesores');
+          return;
+        }
         
         console.log('✅ Normalized agent:', normalizedAgent);
         setAgent(normalizedAgent);

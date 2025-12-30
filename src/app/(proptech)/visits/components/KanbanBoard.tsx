@@ -238,7 +238,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       const visits = await visitService.getAllVisits();
       
       if (!visits || visits.length === 0) {
-        // Usar datos de prueba si no hay visitas
+        // Sin visitas: dejar columnas vacías
         const newColumns = COLUMN_DEFS.map(col => ({
           id: col.id as any,
           title: col.title,
@@ -259,7 +259,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
       setError(null);
     } catch (err) {
       console.error("Error reloading visits:", err);
-      // Si hay error, usar datos de prueba como fallback
+      // Si hay error, dejar vacío
       const newColumns = COLUMN_DEFS.map(col => ({
         id: col.id as any,
         title: col.title,

@@ -17,6 +17,8 @@ export default function EdificioSpecificStep({ formData, handleChange, errors, s
     unitPrefix: "A",
     basePrice: 50000,
     baseArea: 80,
+    bedrooms: 2,
+    bathrooms: 1,
   });
 
   const generateUnits = () => {
@@ -30,9 +32,9 @@ export default function EdificioSpecificStep({ formData, handleChange, errors, s
       
       for (let i = 0; i < unitsOnThisFloor && units.length < formData.numberOfUnits; i++) {
         const unitNumber = `${floor}${unitConfig.unitPrefix}${i + 1}`;
-        const bedrooms = Math.floor(Math.random() * 3) + 1; // 1-3 bedrooms
-        const bathrooms = Math.floor(Math.random() * 2) + 1; // 1-2 bathrooms
-        const area = unitConfig.baseArea + Math.floor(Math.random() * 40); // ±20m² variation
+        const bedrooms = unitConfig.bedrooms;
+        const bathrooms = unitConfig.bathrooms;
+        const area = unitConfig.baseArea;
         const price = unitConfig.basePrice + (floor * 5000) + (bedrooms * 10000); // Price increases with floor and bedrooms
 
         units.push({

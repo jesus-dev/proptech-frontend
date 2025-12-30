@@ -60,7 +60,7 @@ export default function OwnersPropertyDashboard() {
       setOwnerReports(allReports);
     } catch (error) {
       console.error('Error cargando datos del dashboard:', error);
-      // En producción, mostrar estado vacío en lugar de datos mock
+      // En producción, mostrar estado vacío (sin datos ficticios)
       setOwners([]);
       setOwnerProperties([]);
       setOwnerReports([]);
@@ -74,8 +74,8 @@ export default function OwnersPropertyDashboard() {
   const activeOwners = owners.filter(o => o.status === 'ACTIVE').length;
   const totalProperties = ownerProperties.length;
   const totalValue = ownerProperties.reduce((sum, op) => sum + (op.property?.price || 0), 0);
-  const totalViews = ownerProperties.reduce((sum, op) => sum + 150, 0); // Mock data
-  const totalFavorites = ownerProperties.reduce((sum, op) => sum + 12, 0); // Mock data
+  const totalViews = ownerProperties.reduce((sum, op) => sum + (op.property?.views || 0), 0);
+  const totalFavorites = ownerProperties.reduce((sum, op) => sum + (op.property?.favorites || 0), 0);
   const totalReports = ownerReports.length;
   const sentReports = ownerReports.filter(r => r.status === 'SENT').length;
 

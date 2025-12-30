@@ -35,67 +35,8 @@ export default function DevelopmentQuotasPage() {
       setQuotas(data);
     } catch (error) {
       console.error("Error loading quotas:", error);
-      // Fallback a datos mock si la API no está disponible
-      setQuotas([
-        {
-          id: 1,
-          developmentId: 1,
-          quotaNumber: "Q-001",
-          quotaName: "Cuota Inicial",
-          type: "INITIAL",
-          status: "PAID",
-          amount: 10000,
-          paidAmount: 10000,
-          dueDate: "2024-01-15",
-          paidDate: "2024-01-10",
-          installmentNumber: 1,
-          totalInstallments: 12,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 2,
-          developmentId: 1,
-          quotaNumber: "Q-002",
-          quotaName: "Cuota Mensual 1",
-          type: "MONTHLY",
-          status: "PENDING",
-          amount: 5000,
-          dueDate: "2024-02-15",
-          installmentNumber: 2,
-          totalInstallments: 12,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 3,
-          developmentId: 1,
-          quotaNumber: "Q-003",
-          quotaName: "Cuota Mensual 2",
-          type: "MONTHLY",
-          status: "OVERDUE",
-          amount: 5000,
-          dueDate: "2024-03-15",
-          installmentNumber: 3,
-          totalInstallments: 12,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 4,
-          developmentId: 2,
-          quotaNumber: "Q-101",
-          quotaName: "Cuota Inicial Desarrollo 2",
-          type: "INITIAL",
-          status: "PENDING",
-          amount: 15000,
-          dueDate: "2024-04-15",
-          installmentNumber: 1,
-          totalInstallments: 24,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ]);
+      // Sin datos ficticios: dejar vacío
+      setQuotas([]);
     } finally {
       setLoading(false);
     }

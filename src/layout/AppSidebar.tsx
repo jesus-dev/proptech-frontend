@@ -20,7 +20,7 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe, Building2, Calendar, MessageSquare, AlertTriangle, Shield, QrCode, ClipboardList, BarChart3, Rocket } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe, Building2, Calendar, MessageSquare, AlertTriangle, Shield, QrCode, ClipboardList, BarChart3, Rocket, Wrench } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import Logo from "@/components/common/Logo";
 import { useAuthContext } from "@/context/AuthContext";
@@ -220,26 +220,29 @@ const navItems: NavItem[] = [
       {
         name: "Planes y Productos",
         path: "/partners/plans",
-        nuevo: true,
       },
       {
         name: "Suscripciones",
         path: "/partners/subscriptions",
-        nuevo: true,
       },
       {
-        name: "Facturas de Suscripción",
-        path: "/partners/subscription-invoices",
-        nuevo: true,
-      },
-      {
-        name: "Notificaciones",
-        path: "/partners/subscription-notifications",
-        nuevo: true,
-      },
-      {
-        name: "Registro de Pagos",
+        name: "Pagos",
         path: "/partners/payments",
+      },
+    ],
+  },
+  {
+    name: "Profesionales",
+    path: "/professionals",
+    icon: <Wrench className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Todos los Profesionales",
+        path: "/professionals",
+      },
+      {
+        name: "Tipos de Servicio",
+        path: "/professionals/service-types",
       },
     ],
   },
@@ -335,7 +338,7 @@ const othersItems: NavItem[] = [
   },
   {
     name: "Red Social",
-    path: "/social",
+    path: "/verse",
     icon: (
       <div className="relative">
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

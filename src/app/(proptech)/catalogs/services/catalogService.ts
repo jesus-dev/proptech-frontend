@@ -277,25 +277,7 @@ export const catalogService = {
     // }
   },
   
-  // Initialize with sample data
-  initializeSampleData: async () => {
-    // Check if data already exists
-    const countries = await countryService.getAll();
-    if (countries.length > 0) return; // Data already exists
-    
-    // Create sample countries - only Paraguay
-    const paraguay = await countryService.create({
-      name: "Paraguay", 
-      code: "PY",
-      active: true,
-    });
-    
-    // Create sample cities - only Paraguayan cities
-    // const asuncion = await cityService.create({
-    //   name: "Asunción",
-    //   departmentId: "11",
-    //   active: true,
-    // });
+  // (sin inicialización automática de catálogos)
     
     // const sanLorenzo = await cityService.create({
     //   name: "San Lorenzo",

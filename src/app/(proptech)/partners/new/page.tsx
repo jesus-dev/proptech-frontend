@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CreditCardIcon, ArrowLeftIcon, UserPlusIcon } from "@heroicons/react/24/outline";
 import { Package } from "lucide-react";
 import PartnerForm from "../components/PartnerForm";
-import { SubscriptionProduct } from "../types/subscription";
+import { SubscriptionPlan } from "../types/subscription";
 import { subscriptionService } from "../services/subscriptionService";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +21,8 @@ interface RegistrationStep {
 export default function NewPartnerPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedProduct, setSelectedProduct] = useState<SubscriptionProduct | null>(null);
-  const [products, setProducts] = useState<SubscriptionProduct[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   const steps: RegistrationStep[] = [
@@ -53,17 +53,17 @@ export default function NewPartnerPage() {
   ];
 
   React.useEffect(() => {
-    loadSubscriptionProducts();
+    loadSubscriptionPlans();
   }, []);
 
-  const loadSubscriptionProducts = async () => {
+  const loadSubscriptionPlans = async () => {
     try {
       setLoadingProducts(true);
-      const productsData = await subscriptionService.getAllProducts();
-      setProducts(productsData.filter(p => p.isActive));
+      const plansData = await subscriptionService.getAllProducts();
+      setPlans(plansData.filter(p => p.isActive));
     } catch (error) {
-      console.error('Error loading products:', error);
-      toast.error('Error al cargar productos de suscripción');
+      console.error('Error loading plans:', error);
+      toast.error('Error al cargar planes de suscripción');
     } finally {
       setLoadingProducts(false);
     }
@@ -81,8 +81,8 @@ export default function NewPartnerPage() {
     }
   };
 
-  const handleProductSelect = (product: SubscriptionProduct) => {
-    setSelectedProduct(product);
+  const handlePlanSelect = (plan: SubscriptionPlan) => {
+    setSelectedPlan(plan);
   };
 
   const renderStepContent = () => {
@@ -121,31 +121,31 @@ export default function NewPartnerPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product) => (
+                  {plans.map((plan) => (
                     <div
-                      key={product.id}
+                      key={plan.id}
                       className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                        selectedProduct?.id === product.id
+                        selectedPlan?.id === plan.id
                           ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
-                      onClick={() => handleProductSelect(product)}
+                      onClick={() => handlePlanSelect(plan)}
                     >
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {product.name}
+                          {plan.name}
                         </h3>
                         <Badge variant="secondary" className="text-xs">
-                          {product.category}
+                          {plan.category}
                         </Badge>
                       </div>
                       
                       <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                        {product.description}
+                        {plan.description}
                       </p>
                       
                       <div className="space-y-2 mb-4">
-                        {product.features.map((feature, index) => (
+                        {plan.features.map((feature, index) => (
                           <div key={index} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                             <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                             {feature}
@@ -155,10 +155,10 @@ export default function NewPartnerPage() {
                       
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                         <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                          {subscriptionService.formatCurrency(product.price, product.currency)}
+                          {subscriptionService.formatCurrency(plan.price, plan.currency)}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
-                          por {product.billingCycle.toLowerCase()}
+                          por {plan.billingCycle.toLowerCase()}
                         </div>
                       </div>
                     </div>
@@ -172,7 +172,7 @@ export default function NewPartnerPage() {
                 </Button>
                 <Button 
                   onClick={handleNextStep}
-                  disabled={!selectedProduct}
+                  disabled={!selectedPlan}
                 >
                   Continuar
                 </Button>
@@ -200,17 +200,17 @@ export default function NewPartnerPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Plan:</span>
-                    <span className="font-medium">{selectedProduct?.name}</span>
+                    <span className="font-medium">{selectedPlan?.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Precio:</span>
                     <span className="font-medium">
-                      {selectedProduct ? subscriptionService.formatCurrency(selectedProduct.price, selectedProduct.currency) : ''}
+                      {selectedPlan ? subscriptionService.formatCurrency(selectedPlan.price, selectedPlan.currency) : ''}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Ciclo de facturación:</span>
-                    <span className="font-medium capitalize">{selectedProduct?.billingCycle}</span>
+                    <span className="font-medium capitalize">{selectedPlan?.billingCycle}</span>
                   </div>
                 </div>
               </div>
@@ -282,10 +282,10 @@ export default function NewPartnerPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-green-800 dark:text-green-200">
-                      Plan Seleccionado: {selectedProduct?.name}
+                      Plan Seleccionado: {selectedPlan?.name}
                     </h3>
                     <p className="text-green-700 dark:text-green-300 text-sm">
-                      {selectedProduct ? subscriptionService.formatCurrency(selectedProduct.price, selectedProduct.currency) : ''} por {selectedProduct?.billingCycle}
+                      {selectedPlan ? subscriptionService.formatCurrency(selectedPlan.price, selectedPlan.currency) : ''} por {selectedPlan?.billingCycle}
                     </p>
                   </div>
                 </div>

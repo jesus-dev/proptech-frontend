@@ -147,29 +147,11 @@ export default function PublicAgendaPage() {
       
     } catch (error) {
       console.error('Error fetching data:', error);
-      // Fallback a datos de ejemplo si hay error
-      setProperties([
-        { 
-          id: "1", 
-          title: "Casa Moderna en Las Palmas", 
-          address: "Av. Principal 123, Las Palmas, Asunción",
-          city: "Asunción",
-          state: "Central",
-          zip: "0000",
-          price: 150000,
-          currency: "USD",
-          images: [],
-          description: "Hermosa casa de 3 habitaciones con jardín y garaje para 2 autos",
-          bedrooms: 3,
-          bathrooms: 2,
-          area: 180,
-          type: "Casa",
-          status: "active",
-          privateFiles: [],
-          amenities: [],
-          services: []
-        } as Property
-      ]);
+      // Sin datos ficticios: dejar vacío
+      setProperties([]);
+      setTotalProperties(0);
+      setTotalPages(0);
+      setCurrentPage(0);
     } finally {
       setLoading(false);
     }
@@ -292,20 +274,8 @@ export default function PublicAgendaPage() {
       setAvailableSlots(slots);
     } catch (error) {
       console.error('Error fetching available slots:', error);
-      // Fallback a slots simulados
-      const slots: TimeSlot[] = [];
-      for (let hour = 9; hour < 18; hour++) {
-        const time = `${hour.toString().padStart(2, '0')}:00`;
-        const available = Math.random() > 0.3;
-        const agentId = Math.floor(Math.random() * agents.length) + 1;
-        
-        slots.push({
-          time,
-          available,
-          agentId
-        });
-      }
-      setAvailableSlots(slots);
+      // Sin datos ficticios: dejar vacío
+      setAvailableSlots([]);
     }
   };
 

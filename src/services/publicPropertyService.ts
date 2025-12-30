@@ -74,6 +74,22 @@ if (typeof window !== 'undefined') {
 
 class PublicPropertyService {
   /**
+   * Estadísticas públicas (reales) desde el backend
+   */
+  async getPublicStats(): Promise<{ totalProperties: number; totalAgents: number; totalCustomers: number }> {
+    try {
+      const response = await apiClient.get(`/api/public/properties/stats`);
+      return {
+        totalProperties: Number(response.data?.totalProperties || 0),
+        totalAgents: Number(response.data?.totalAgents || 0),
+        totalCustomers: Number(response.data?.totalCustomers || 0),
+      };
+    } catch (error) {
+      return { totalProperties: 0, totalAgents: 0, totalCustomers: 0 };
+    }
+  }
+
+  /**
    * Obtener propiedades paginadas con caché
    */
   async getPropertiesPaginated({ page = 1, limit = 6, filters }: { page?: number; limit?: number; filters?: PublicPropertyFilters }) {
