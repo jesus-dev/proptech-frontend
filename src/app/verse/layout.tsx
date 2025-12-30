@@ -322,9 +322,9 @@ export default function SocialLayout({ children }: any) {
       </aside>
 
       <aside 
-        className="lg:hidden flex flex-col w-16 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black fixed left-0 top-0 h-screen z-[99999]"
+        className="lg:hidden flex flex-col w-14 sm:w-16 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black fixed left-0 top-0 h-screen z-[99999]"
       >
-        <div className="px-2 py-4 flex items-center justify-center">
+        <div className="px-1.5 sm:px-2 py-3 sm:py-4 flex items-center justify-center">
           <button
             onClick={() => window.location.href = '/verse'}
             className="flex items-center justify-center focus:outline-none hover:opacity-80 transition-opacity w-full"
@@ -335,63 +335,63 @@ export default function SocialLayout({ children }: any) {
               alt="PropTech Social Logo" 
               className="object-contain max-w-full"
               style={{
-                height: 'auto',
+                height: '32px',
                 width: 'auto'
               }}
             />
           </button>
         </div>
 
-        <nav className="flex-1 px-3 py-2 flex flex-col min-h-0 overflow-y-auto">
-          <div className="space-y-1 flex-1">
+        <nav className="flex-1 px-2 sm:px-3 py-2 flex flex-col min-h-0">
+          <div className="space-y-1 flex-1 overflow-y-auto min-h-0">
             <button 
               onClick={() => window.location.href = '/verse'}
-              className={`w-full flex items-center justify-center p-2 rounded-full transition-all duration-200 ${
+              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 ${
                 pathname === '/verse' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
               title="Inicio"
             >
-              <Home className="w-12 h-12" />
+              <Home className="w-10 h-10 sm:w-12 sm:h-12" />
             </button>
             
             <button 
               onClick={() => window.location.href = '/verse/propshots'}
-              className={`w-full flex items-center justify-center p-2 rounded-full transition-all duration-200 relative ${
+              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 relative ${
                 pathname === '/verse/propshots' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
               title="PropShots"
             >
-              <PlayCircle className="w-12 h-12" />
+              <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12" />
             </button>
             
             <button 
               onClick={() => window.location.href = '/verse/asesores'}
-              className={`w-full flex items-center justify-center p-2 rounded-full transition-all duration-200 ${
+              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 ${
                 pathname === '/verse/asesores' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
               title="Asesores"
             >
-              <Users className="w-12 h-12" />
+              <Users className="w-10 h-10 sm:w-12 sm:h-12" />
             </button>
             
             <button 
               onClick={() => window.location.href = '/verse/messages'}
-              className={`w-full flex items-center justify-center p-2 rounded-full transition-all duration-200 relative ${
+              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 relative ${
                 pathname === '/verse/messages' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
               title="Mensajes"
             >
-              <MessageSquare className="w-12 h-12" />
+              <MessageSquare className="w-10 h-10 sm:w-12 sm:h-12" />
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center">
+                <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-blue-500 text-white text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded-full min-w-[14px] sm:min-w-[16px] text-center">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -399,7 +399,7 @@ export default function SocialLayout({ children }: any) {
           </div>
 
           {!isAuthenticated && (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
+            <div className="pt-2 sm:pt-3 md:pt-4 border-t border-gray-200 dark:border-gray-800 flex-shrink-0 mt-auto">
               <button
                 ref={authButtonRef}
                 onClick={(e) => {
@@ -413,15 +413,15 @@ export default function SocialLayout({ children }: any) {
                   }
                   setShowAuthMenu(!showAuthMenu);
                 }}
-                className={`w-full flex items-center justify-center p-2 rounded-full transition-all duration-200 group ${
+                className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 group ${
                   showAuthMenu 
                     ? 'bg-gray-200 dark:bg-gray-700' 
                     : 'hover:bg-gray-100 dark:hover:bg-gray-900'
                 }`}
                 title="Únete a la red"
               >
-                <div className="relative w-12 h-12 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-200">
-                  <UserPlus className="w-6 h-6 text-blue-600 dark:text-blue-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                  <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
                 </div>
               </button>
 
@@ -494,7 +494,7 @@ export default function SocialLayout({ children }: any) {
           )}
 
           {isAuthenticated && (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-800 relative flex-shrink-0" ref={userMenuRef}>
+            <div className="pt-2 sm:pt-3 md:pt-4 border-t border-gray-200 dark:border-gray-800 relative flex-shrink-0 mt-auto" ref={userMenuRef}>
               <button 
                 ref={userButtonRef}
                 onClick={(e) => {
@@ -508,28 +508,28 @@ export default function SocialLayout({ children }: any) {
                   }
                   setShowUserMenu(!showUserMenu);
                 }}
-                className="w-full flex items-center justify-center p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-all duration-200"
+                className="w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-all duration-200"
                 title={user?.fullName || 'Perfil'}
               >
                 {getUserPhoto() ? (
                   <img 
                     src={getPhotoUrl(getUserPhoto()) || ''}
                     alt={user?.fullName || 'Usuario'}
-                    className="w-12 h-12 rounded-full object-cover"
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       const parent = target.parentElement;
                       if (parent) {
                         const fallback = document.createElement('div');
-                        fallback.className = 'w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-base font-semibold';
+                        fallback.className = 'w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm sm:text-base font-semibold';
                         fallback.textContent = getInitials(user?.fullName);
                         parent.appendChild(fallback);
                       }
                     }}
                   />
                 ) : (
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-base font-semibold">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm sm:text-base font-semibold">
                     {getInitials(user?.fullName)}
                   </div>
                 )}
@@ -592,8 +592,8 @@ export default function SocialLayout({ children }: any) {
         </nav>
       </aside>
 
-      <div className="pl-16 lg:pl-0 lg:ml-[275px] min-w-0" style={{ height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
-        <main className="min-h-screen bg-white dark:bg-black w-full">
+      <div className="pl-14 sm:pl-16 lg:pl-0 lg:ml-[275px] min-w-0" style={{ height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
+        <main className="min-h-screen bg-white dark:bg-black w-full px-2 sm:px-4 md:px-6 lg:px-8">
           {children}
         </main>
       </div>

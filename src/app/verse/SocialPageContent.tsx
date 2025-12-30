@@ -1130,7 +1130,7 @@ export default function SocialPageContent() {
     <>
       {/* Banner de marca Verse - Premium */}
       <div className="relative mb-6 overflow-hidden">
-        <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl p-8 sm:p-10 md:p-12 border border-blue-100 dark:border-gray-700 shadow-lg">
+        <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl p-4 sm:p-8 md:p-12 border border-blue-100 dark:border-gray-700 shadow-lg">
           {/* Patrón de fondo decorativo */}
           <div className="absolute inset-0 opacity-5 dark:opacity-10">
             <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500 rounded-full blur-3xl"></div>
@@ -1139,23 +1139,23 @@ export default function SocialPageContent() {
           
           <div className="relative text-center">
             {/* Logo con efecto hover */}
-            <div className="flex justify-center mb-4 sm:mb-6">
+            <div className="flex justify-center mb-3 sm:mb-4 md:mb-6">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
                 <img 
                   src="/images/logo/ProptechSocial.png" 
                   alt="Verse Logo" 
-                  className="relative h-16 sm:h-20 md:h-24 lg:h-28 w-auto object-contain transform group-hover:scale-105 transition-transform duration-300"
+                  className="relative h-12 sm:h-16 md:h-24 lg:h-28 w-auto object-contain transform group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
             </div>
             
             {/* Tagline mejorado */}
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent leading-tight">
+            <div className="space-y-1.5 sm:space-y-2">
+              <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent leading-tight px-2">
                 La red profesional para agentes Inmobiliarios
               </h1>
-              <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 font-medium max-w-2xl mx-auto">
+              <p className="text-xs sm:text-sm md:text-lg text-gray-600 dark:text-gray-300 font-medium max-w-2xl mx-auto px-2">
                 Conecta, comparte y crece en la comunidad inmobiliaria más grande
               </p>
             </div>
@@ -1166,7 +1166,7 @@ export default function SocialPageContent() {
       {/* Notificación de éxito */}
       {showSuccess && (
         <div className="fixed top-4 right-4 z-50 animate-slide-down">
-          <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px]">
+          <div className="bg-green-500 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg shadow-lg flex items-center gap-2 sm:gap-3 min-w-[280px] sm:min-w-[300px]">
             <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -1474,7 +1474,7 @@ export default function SocialPageContent() {
       )}
 
       {/* PropShots */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6 mb-4 sm:mb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
@@ -1688,15 +1688,15 @@ export default function SocialPageContent() {
 
       {/* Posts en dos columnas - Mejorado */}
             {!loading && !error && posts.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
                 {posts.map((post) => (
-            <div key={post.id} className="group bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden relative z-0">
+            <div key={post.id} className="group bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden relative z-0">
               {/* Header del Post - Mejorado */}
-              <div className="p-4 sm:p-5 bg-gradient-to-r from-blue-50/30 to-transparent">
+              <div className="p-3 sm:p-4 md:p-5 bg-gradient-to-r from-blue-50/30 to-transparent">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="relative">
-                      <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md ring-2 ring-blue-100">
+                      <div className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shadow-md ring-2 ring-blue-100">
                         {post.user?.firstName?.charAt(0) || post.user?.lastName?.charAt(0) || 'U'}
                       </div>
                       {/* Indicador de verificación */}
