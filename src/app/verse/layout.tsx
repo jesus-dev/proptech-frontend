@@ -322,76 +322,87 @@ export default function SocialLayout({ children }: any) {
       </aside>
 
       <aside 
-        className="lg:hidden flex flex-col w-14 sm:w-16 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black fixed left-0 top-0 h-screen z-[99999]"
+        className="lg:hidden flex flex-col w-20 sm:w-24 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black fixed left-0 top-0 z-[99999]"
+        style={{ 
+          height: '100dvh',
+          maxHeight: '100dvh',
+          paddingTop: 'env(safe-area-inset-top, 0)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0)'
+        }}
       >
-        <div className="px-1.5 sm:px-2 py-3 sm:py-4 flex items-center justify-center">
+        <div className="px-2 py-4 flex items-center justify-center flex-shrink-0" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0))' }}>
           <button
             onClick={() => window.location.href = '/verse'}
-            className="flex items-center justify-center focus:outline-none hover:opacity-80 transition-opacity w-full"
+            className="flex items-center justify-center focus:outline-none hover:opacity-80 active:opacity-70 transition-opacity w-full touch-manipulation"
             aria-label="PropTech Social - Inicio"
+            style={{ minHeight: '48px', minWidth: '48px' }}
           >
             <img 
               src="/images/logo/ProptechSocial.png" 
               alt="PropTech Social Logo" 
               className="object-contain max-w-full"
               style={{
-                height: '32px',
+                height: '36px',
                 width: 'auto'
               }}
             />
           </button>
         </div>
 
-        <nav className="flex-1 px-2 sm:px-3 py-2 flex flex-col min-h-0">
-          <div className="space-y-1 flex-1 overflow-y-auto min-h-0">
+        <nav className="flex-1 px-2 sm:px-3 py-2 sm:py-3 flex flex-col min-h-0 justify-between">
+          <div className="space-y-2 sm:space-y-1.5 flex-shrink-0">
             <button 
               onClick={() => window.location.href = '/verse'}
-              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 ${
+              className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 touch-manipulation ${
                 pathname === '/verse' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
               title="Inicio"
+              style={{ minHeight: '48px', minWidth: '48px' }}
             >
-              <Home className="w-10 h-10 sm:w-12 sm:h-12" />
+              <Home className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
             
             <button 
               onClick={() => window.location.href = '/verse/propshots'}
-              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 relative ${
+              className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 relative touch-manipulation ${
                 pathname === '/verse/propshots' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
               title="PropShots"
+              style={{ minHeight: '48px', minWidth: '48px' }}
             >
-              <PlayCircle className="w-10 h-10 sm:w-12 sm:h-12" />
+              <PlayCircle className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
             
             <button 
               onClick={() => window.location.href = '/verse/asesores'}
-              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 ${
+              className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 touch-manipulation ${
                 pathname === '/verse/asesores' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
               title="Asesores"
+              style={{ minHeight: '48px', minWidth: '48px' }}
             >
-              <Users className="w-10 h-10 sm:w-12 sm:h-12" />
+              <Users className="w-6 h-6 sm:w-7 sm:h-7" />
             </button>
             
             <button 
               onClick={() => window.location.href = '/verse/messages'}
-              className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 relative ${
+              className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 relative touch-manipulation ${
                 pathname === '/verse/messages' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
               title="Mensajes"
+              style={{ minHeight: '48px', minWidth: '48px' }}
             >
-              <MessageSquare className="w-10 h-10 sm:w-12 sm:h-12" />
+              <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7" />
               {unreadCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 bg-blue-500 text-white text-[9px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.5 rounded-full min-w-[14px] sm:min-w-[16px] text-center">
+                <span className="absolute top-1 right-1 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -399,28 +410,34 @@ export default function SocialLayout({ children }: any) {
           </div>
 
           {!isAuthenticated && (
-            <div className="pt-2 sm:pt-3 md:pt-4 border-t border-gray-200 dark:border-gray-800 flex-shrink-0 mt-auto">
+            <div 
+              className="pt-4 sm:pt-3 md:pt-4 border-t-2 border-gray-300 dark:border-gray-700 flex-shrink-0 mt-auto"
+              style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0))' }}
+            >
               <button
                 ref={authButtonRef}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (authButtonRef.current) {
                     const rect = authButtonRef.current.getBoundingClientRect();
+                    // Posicionar el menú arriba del botón en lugar de abajo
+                    const menuHeight = 150; // Altura aproximada del menú
                     setAuthMenuPosition({
-                      top: rect.top - 100,
+                      top: Math.max(10, rect.top - menuHeight - 10), // Posicionar arriba con margen mínimo
                       left: rect.left + rect.width + 8
                     });
                   }
                   setShowAuthMenu(!showAuthMenu);
                 }}
-                className={`w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full transition-all duration-200 group ${
+                className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 group touch-manipulation ${
                   showAuthMenu 
                     ? 'bg-gray-200 dark:bg-gray-700' 
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-900'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800'
                 }`}
                 title="Únete a la red"
+                style={{ minHeight: '48px', minWidth: '48px' }}
               >
-                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center group-hover:scale-110 group-active:scale-95 transition-all duration-200">
                   <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
                 </div>
               </button>
@@ -428,7 +445,7 @@ export default function SocialLayout({ children }: any) {
               {showAuthMenu && typeof window !== 'undefined' && window.innerWidth < 1024 && createPortal(
                 <>
                   <div 
-                    className="fixed inset-0 z-[999998]"
+                    className="fixed inset-0 z-[9999998]"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAuthMenu(false);
@@ -436,7 +453,7 @@ export default function SocialLayout({ children }: any) {
                   />
                   <div 
                     ref={authMenuRef}
-                    className="fixed w-56 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-[999999]"
+                    className="fixed w-56 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-[9999999]"
                     style={{ 
                       top: `${authMenuPosition.top}px`,
                       left: `${authMenuPosition.left}px`
@@ -494,42 +511,49 @@ export default function SocialLayout({ children }: any) {
           )}
 
           {isAuthenticated && (
-            <div className="pt-2 sm:pt-3 md:pt-4 border-t border-gray-200 dark:border-gray-800 relative flex-shrink-0 mt-auto" ref={userMenuRef}>
+            <div 
+              className="pt-4 sm:pt-3 md:pt-4 border-t-2 border-gray-300 dark:border-gray-700 relative flex-shrink-0 mt-auto" 
+              ref={userMenuRef}
+              style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0))' }}
+            >
               <button 
                 ref={userButtonRef}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (userButtonRef.current) {
                     const rect = userButtonRef.current.getBoundingClientRect();
+                    // Posicionar el menú arriba del botón en lugar de abajo
+                    const menuHeight = 120; // Altura aproximada del menú
                     setMenuPosition({
-                      top: rect.top - 100,
+                      top: Math.max(10, rect.top - menuHeight - 40), // Posicionar arriba con margen mínimo
                       left: rect.left + rect.width + 8
                     });
                   }
                   setShowUserMenu(!showUserMenu);
                 }}
-                className="w-full flex items-center justify-center p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-all duration-200"
+                className="w-full flex items-center justify-center p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 transition-all duration-200 touch-manipulation"
                 title={user?.fullName || 'Perfil'}
+                style={{ minHeight: '48px', minWidth: '48px' }}
               >
                 {getUserPhoto() ? (
                   <img 
                     src={getPhotoUrl(getUserPhoto()) || ''}
                     alt={user?.fullName || 'Usuario'}
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       const parent = target.parentElement;
                       if (parent) {
                         const fallback = document.createElement('div');
-                        fallback.className = 'w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm sm:text-base font-semibold';
+                        fallback.className = 'w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-semibold';
                         fallback.textContent = getInitials(user?.fullName);
                         parent.appendChild(fallback);
                       }
                     }}
                   />
                 ) : (
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm sm:text-base font-semibold">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-semibold">
                     {getInitials(user?.fullName)}
                   </div>
                 )}
@@ -538,7 +562,7 @@ export default function SocialLayout({ children }: any) {
               {showUserMenu && typeof window !== 'undefined' && window.innerWidth < 1024 && createPortal(
                 <>
                   <div 
-                    className="fixed inset-0 z-[999998]" 
+                    className="fixed inset-0 z-[9999998]" 
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowUserMenu(false);
@@ -546,7 +570,7 @@ export default function SocialLayout({ children }: any) {
                   />
                   <div 
                     ref={mobileMenuRef}
-                    className="fixed w-48 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-[999999]"
+                    className="fixed w-48 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-[9999999]"
                     style={{ 
                       top: `${menuPosition.top}px`,
                       left: `${menuPosition.left}px`
@@ -592,8 +616,20 @@ export default function SocialLayout({ children }: any) {
         </nav>
       </aside>
 
-      <div className="pl-14 sm:pl-16 lg:pl-0 lg:ml-[275px] min-w-0" style={{ height: '100vh', overflowY: 'auto', overflowX: 'hidden' }}>
-        <main className="min-h-screen bg-white dark:bg-black w-full px-2 sm:px-4 md:px-6 lg:px-8">
+      <div 
+        className="pl-20 sm:pl-24 lg:pl-0 lg:ml-[275px] min-w-0" 
+        style={{ 
+          height: '100dvh', 
+          maxHeight: '100dvh',
+          overflowY: 'auto', 
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
+        <main 
+          className="min-h-screen bg-white dark:bg-black w-full px-2 sm:px-3 md:px-6 lg:px-8"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}
+        >
           {children}
         </main>
       </div>
