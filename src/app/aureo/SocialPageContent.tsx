@@ -658,7 +658,7 @@ export default function SocialPageContent() {
       // Cerrar el menú primero
       setShowShareMenu(prev => ({ ...prev, [postId]: false }));
       
-      const postUrl = `${window.location.origin}/verse/posts/${postId}`;
+      const postUrl = `${window.location.origin}/aureo/posts/${postId}`;
       const post = posts.find(p => p.id === postId);
       const postText = post?.content ? post.content.substring(0, 100) + '...' : 'Mira este post interesante';
       
@@ -1079,11 +1079,11 @@ export default function SocialPageContent() {
     return `hace ${Math.floor(diffInDays / 365)} año`;
   };
 
-  // Redirigir a la galería existente (/verse/gallery/[postId])
+  // Redirigir a la galería existente (/aureo/gallery/[postId])
   const openImageGallery = (postId: number, imageIndex: number = 0) => {
     const target = imageIndex > 0 
-      ? `/verse/gallery/${postId}?i=${imageIndex}` 
-      : `/verse/gallery/${postId}`;
+      ? `/aureo/gallery/${postId}?i=${imageIndex}` 
+      : `/aureo/gallery/${postId}`;
     if (typeof window !== 'undefined') {
       window.location.href = target;
     }
@@ -1099,7 +1099,7 @@ export default function SocialPageContent() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-        <p className="ml-4 text-gray-600">Cargando Verse...</p>
+        <p className="ml-4 text-gray-600">Cargando Áureo...</p>
       </div>
     );
   }
@@ -1128,7 +1128,7 @@ export default function SocialPageContent() {
 
   return (
     <>
-      {/* Banner de marca Verse - Premium */}
+      {/* Banner de marca Áureo - Premium */}
       <div className="relative mb-6 overflow-hidden">
         <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl p-4 sm:p-8 md:p-12 border border-blue-100 dark:border-gray-700 shadow-lg">
           {/* Patrón de fondo decorativo */}
@@ -1143,8 +1143,8 @@ export default function SocialPageContent() {
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
                 <img 
-                  src="/images/logo/ProptechSocial.png" 
-                  alt="Verse Logo" 
+                  src="/images/logo/aureo.png" 
+                  alt="Áureo Logo" 
                   className="relative h-12 sm:h-16 md:h-24 lg:h-28 w-auto object-contain transform group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
@@ -1502,7 +1502,7 @@ export default function SocialPageContent() {
               onClick={() => {
                 // Redirigir a la página de propshots
                 if (typeof window !== 'undefined') {
-                  window.location.href = '/verse/propshots';
+                  window.location.href = '/aureo/propshots';
                 }
               }}
               disabled={propShotsLoading || propShots.length === 0}
@@ -1783,7 +1783,7 @@ export default function SocialPageContent() {
                           {/* Otras opciones futuras pueden ir aquí */}
                           <button
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/verse/posts/${post.id}`);
+                              navigator.clipboard.writeText(`${window.location.origin}/aureo/posts/${post.id}`);
                               setOpenDropdown(null);
                               alert('Enlace copiado al portapapeles');
                             }}

@@ -1,20 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Partner, partnerService } from "../services/partnerService";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, XMarkIcon, CheckCircleIcon, BriefcaseIcon } from "@heroicons/react/24/outline";
+import { Camera, Edit, X } from "lucide-react";
 import QRCode from 'react-qr-code';
 import { Dialog } from '@headlessui/react';
+import ImageCropModal from '@/components/common/ImageCropModal';
+import { getEndpoint } from '@/lib/api-config';
+import { toast } from 'sonner';
 
 interface PartnerFormProps {
   partner?: Partner;
   isEditing?: boolean;
+  onPartnerUpdated?: (updatedPartner: Partner) => void;
 }
 
-export default function PartnerForm({ partner, isEditing = false }: PartnerFormProps) {
+export default function PartnerForm({ partner, isEditing = false, onPartnerUpdated }: PartnerFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -48,6 +53,14 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
     isVerified: false
   });
   const [showCard, setShowCard] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (partner) {
@@ -69,6 +82,16 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
         certifications: Array.isArray(partner.certifications) ? partner.certifications : []
       };
       setFormData(processedPartner);
+      if (processedPartner.photo) {
+        const photoUrl = processedPartner.photo.startsWith('http') 
+          ? processedPartner.photo 
+          : getEndpoint(processedPartner.photo.startsWith('/') ? processedPartner.photo : `/${processedPartner.photo}`);
+        setPreviewUrl(photoUrl);
+        setOriginalPhotoUrl(processedPartner.photo.split('?')[0]);
+      } else {
+        setPreviewUrl(null);
+        setOriginalPhotoUrl('');
+      }
     }
   }, [partner]);
 
@@ -100,24 +123,71 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
+    
     try {
+      setLoading(true);
+      setUploadError(null);
+
+      // Si estamos editando y hay una imagen pendiente, subirla primero
+      if (isEditing && partner && pendingImageBlob) {
+        const newPhotoUrl = await uploadPendingImage();
+        if (newPhotoUrl) {
+          setFormData(prev => ({ ...prev, photo: newPhotoUrl }));
+          
+          // Esperar un momento para que el estado se actualice
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Limpiar el estado local
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        setPendingImageBlob(null);
+        setPreviewUrl(null);
+        setOriginalPhotoUrl('');
+      } 
+      // Si se eliminó la foto pero había una original, eliminarla del servidor
+      else if (isEditing && partner && !formData.photo && originalPhotoUrl) {
+        await deletePhotoFromServer();
+        setOriginalPhotoUrl('');
+      }
+
+      // Guardar el partner
       if (isEditing && partner) {
-        await partnerService.updatePartner(partner.id, formData);
+        const updatedPartner = await partnerService.updatePartner(partner.id, formData);
         toast({
           title: "Socio actualizado",
           description: "El socio ha sido actualizado exitosamente.",
         });
+        
+        // Recargar el partner actualizado para mostrar la foto
+        if (updatedPartner.photo) {
+          const photoUrl = updatedPartner.photo.startsWith('http') 
+            ? updatedPartner.photo 
+            : getEndpoint(updatedPartner.photo.startsWith('/') ? updatedPartner.photo : `/${updatedPartner.photo}`);
+          setPreviewUrl(photoUrl);
+          setFormData(prev => ({ ...prev, photo: updatedPartner.photo }));
+          setOriginalPhotoUrl(updatedPartner.photo.split('?')[0]);
+        }
+        
+        // Notificar al componente padre si existe el callback
+        if (onPartnerUpdated) {
+          onPartnerUpdated(updatedPartner);
+        } else {
+          // Si no hay callback, redirigir a la página de detalle
+          router.push(`/partners/${partner.id}`);
+        }
       } else {
-        await partnerService.createPartner(formData as Omit<Partner, 'id'>);
+        const newPartner = await partnerService.createPartner(formData as Omit<Partner, 'id'>);
         toast({
           title: "Socio creado",
           description: "El socio ha sido creado exitosamente.",
         });
+        router.push("/partners");
       }
-      router.push("/partners");
     } catch (error) {
+      console.error('Error in form submit:', error);
+      setUploadError('Error al procesar la imagen. Por favor intenta nuevamente.');
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error desconocido",
@@ -139,6 +209,128 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
     return icons[type as keyof typeof icons] || UserIcon;
   };
 
+  // Manejar selección de imagen
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Solo se permiten archivos de imagen (JPG, PNG, GIF, WEBP)');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo es demasiado grande. Máximo 5MB');
+      return;
+    }
+
+    // Leer la imagen y mostrar el modal de edición
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropModal(true);
+      setUploadError(null);
+    };
+    reader.readAsDataURL(file);
+
+    // Resetear el input
+    e.target.value = '';
+  };
+
+  // Manejar crop de imagen
+  const handleCropComplete = (croppedBlob: Blob) => {
+    try {
+      setShowCropModal(false);
+      setUploadError(null);
+
+      // Guardar el blob para subirlo después al guardar el formulario
+      setPendingImageBlob(croppedBlob);
+      
+      // Crear URL local para previsualización
+      const localUrl = URL.createObjectURL(croppedBlob);
+      setPreviewUrl(localUrl);
+      
+      // Guardar la URL original si aún no lo hemos hecho
+      if (!originalPhotoUrl && formData.photo) {
+        setOriginalPhotoUrl(formData.photo.split('?')[0]);
+      }
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setUploadError('Error al procesar la imagen. Por favor intenta nuevamente.');
+    } finally {
+      setSelectedImage(null);
+    }
+  };
+
+  // Manejar cancelación del crop
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Eliminar foto (solo marca para eliminar, no elimina inmediatamente)
+  const handleDeletePhoto = () => {
+    // Si hay una imagen pendiente, solo limpiar el estado local
+    if (pendingImageBlob || previewUrl) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPendingImageBlob(null);
+      setPreviewUrl(null);
+      setUploadError(null);
+      return;
+    }
+    
+    // Si hay una foto guardada en el servidor, marcarla para eliminar al guardar
+    if (formData.photo) {
+      if (!originalPhotoUrl) {
+        setOriginalPhotoUrl(formData.photo.split('?')[0]);
+      }
+      setFormData(prev => ({ ...prev, photo: undefined }));
+      setPreviewUrl(null);
+    }
+  };
+
+  // Subir foto pendiente al servidor
+  const uploadPendingImage = async (): Promise<string | null> => {
+    if (!pendingImageBlob || !partner?.id) return null;
+
+    try {
+      const file = new File([pendingImageBlob], 'partner-photo.jpg', { type: 'image/jpeg' });
+      
+      const result = await partnerService.uploadPartnerPhoto(
+        partner.id,
+        file,
+        originalPhotoUrl || undefined
+      );
+      
+      return result.fileUrl;
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  };
+
+  // Eliminar foto del servidor
+  const deletePhotoFromServer = async () => {
+    if (!originalPhotoUrl || !partner?.id) return;
+    
+    try {
+      await partnerService.deletePartnerPhoto(partner.id, originalPhotoUrl);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -151,6 +343,79 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Foto de Perfil */}
+        {isEditing && partner && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+              Foto de Perfil
+            </h2>
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              {/* Preview de la foto */}
+              <div className="flex-shrink-0 relative">
+                {(previewUrl || formData.photo) ? (
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+                    <img 
+                      src={previewUrl || (formData.photo?.startsWith('http') ? formData.photo : getEndpoint(formData.photo?.startsWith('/') ? formData.photo : `/${formData.photo}`))}
+                      alt="Foto de perfil"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ccircle fill="%23ddd" cx="50" cy="50" r="50"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EFoto%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                    {pendingImageBlob && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <span className="text-white text-xs">Pendiente</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
+                    <UserIcon className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex flex-col gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  id="partner-photo-upload"
+                />
+                <label
+                  htmlFor="partner-photo-upload"
+                  className="inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors cursor-pointer"
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  {previewUrl || formData.photo ? 'Cambiar Foto' : 'Subir Foto'}
+                </label>
+                {(previewUrl || formData.photo) && (
+                  <button
+                    type="button"
+                    onClick={handleDeletePhoto}
+                    disabled={uploadingPhoto}
+                    className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Eliminar Foto
+                  </button>
+                )}
+                {uploadError && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{uploadError}</p>
+                )}
+                {pendingImageBlob && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    Foto pendiente de guardar. Se subirá al guardar el formulario.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Información Personal */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
@@ -634,6 +899,16 @@ export default function PartnerForm({ partner, isEditing = false }: PartnerFormP
           </div>
         </div>
       </Dialog>
+
+      {/* Modal de Crop de Imagen */}
+      {showCropModal && selectedImage && (
+        <ImageCropModal
+          imageSrc={selectedImage!}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={1}
+        />
+      )}
     </div>
   );
 } 

@@ -11,7 +11,7 @@ import { getEndpoint } from '@/lib/api-config';
 export default function SocialLayout({ children }: any) {
   const { user, isAuthenticated, logout } = useAuth();
   const pathname = usePathname();
-  const isGalleryRoute = pathname?.startsWith('/verse/gallery');
+  const isGalleryRoute = pathname?.startsWith('/aureo/gallery');
   const [unreadCount, setUnreadCount] = useState(0);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthMenu, setShowAuthMenu] = useState(false);
@@ -122,13 +122,13 @@ export default function SocialLayout({ children }: any) {
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[275px] border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
         <div className="px-4 py-6">
           <button
-            onClick={() => window.location.href = '/verse'}
+            onClick={() => window.location.href = '/aureo'}
             className="flex items-center focus:outline-none hover:opacity-80 transition-opacity"
-            aria-label="PropTech Social - Inicio"
+            aria-label="Áureo - Inicio"
           >
             <img 
-              src="/images/logo/ProptechSocial.png" 
-              alt="PropTech Social Logo" 
+              src="/images/logo/aureo.png" 
+              alt="Áureo Logo" 
               className="object-contain"
               style={{
                 height: '40px',
@@ -141,50 +141,50 @@ export default function SocialLayout({ children }: any) {
         <nav className="flex-1 px-3 py-2">
           <div className="space-y-1">
             <button 
-              onClick={() => window.location.href = '/verse'}
+              onClick={() => window.location.href = '/aureo'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group ${
-                pathname === '/verse' 
+                pathname === '/aureo' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <Home className={`w-6 h-6 ${pathname === '/verse' ? '' : 'group-hover:scale-110'}`} />
+              <Home className={`w-6 h-6 ${pathname === '/aureo' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">Inicio</span>
             </button>
             
             <button 
-              onClick={() => window.location.href = '/verse/propshots'}
+              onClick={() => window.location.href = '/aureo/propshots'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group ${
-                pathname === '/verse/propshots' 
+                pathname === '/aureo/propshots' 
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <PlayCircle className={`w-6 h-6 ${pathname === '/verse/propshots' ? '' : 'group-hover:scale-110'}`} />
+              <PlayCircle className={`w-6 h-6 ${pathname === '/aureo/propshots' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">PropShots</span>
             </button>
             
             <button 
-              onClick={() => window.location.href = '/verse/asesores'}
+              onClick={() => window.location.href = '/aureo/asesores'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group ${
-                pathname === '/verse/asesores' 
+                pathname === '/aureo/asesores' 
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <Users className={`w-6 h-6 ${pathname === '/verse/asesores' ? '' : 'group-hover:scale-110'}`} />
+              <Users className={`w-6 h-6 ${pathname === '/aureo/asesores' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">Asesores</span>
             </button>
             
             <button 
-              onClick={() => window.location.href = '/verse/messages'}
+              onClick={() => window.location.href = '/aureo/messages'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group relative ${
-                pathname === '/verse/messages' 
+                pathname === '/aureo/messages' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <MessageSquare className={`w-6 h-6 ${pathname === '/verse/messages' ? '' : 'group-hover:scale-110'}`} />
+              <MessageSquare className={`w-6 h-6 ${pathname === '/aureo/messages' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">Mensajes</span>
               {unreadCount > 0 && (
                 <span className="ml-auto bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
@@ -332,14 +332,14 @@ export default function SocialLayout({ children }: any) {
       >
         <div className="px-2 py-4 flex items-center justify-center flex-shrink-0" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0))' }}>
           <button
-            onClick={() => window.location.href = '/verse'}
+            onClick={() => window.location.href = '/aureo'}
             className="flex items-center justify-center focus:outline-none hover:opacity-80 active:opacity-70 transition-opacity w-full touch-manipulation"
-            aria-label="PropTech Social - Inicio"
+            aria-label="Áureo - Inicio"
             style={{ minHeight: '48px', minWidth: '48px' }}
           >
             <img 
-              src="/images/logo/ProptechSocial.png" 
-              alt="PropTech Social Logo" 
+              src="/images/logo/aureo.png" 
+              alt="Áureo Logo" 
               className="object-contain max-w-full"
               style={{
                 height: '36px',
@@ -352,9 +352,9 @@ export default function SocialLayout({ children }: any) {
         <nav className="flex-1 px-2 sm:px-3 py-2 sm:py-3 flex flex-col min-h-0 justify-between">
           <div className="space-y-2 sm:space-y-1.5 flex-shrink-0">
             <button 
-              onClick={() => window.location.href = '/verse'}
+              onClick={() => window.location.href = '/aureo'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 touch-manipulation ${
-                pathname === '/verse' 
+                pathname === '/aureo' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
@@ -365,9 +365,9 @@ export default function SocialLayout({ children }: any) {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/verse/propshots'}
+              onClick={() => window.location.href = '/aureo/propshots'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 relative touch-manipulation ${
-                pathname === '/verse/propshots' 
+                pathname === '/aureo/propshots' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
@@ -378,9 +378,9 @@ export default function SocialLayout({ children }: any) {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/verse/asesores'}
+              onClick={() => window.location.href = '/aureo/asesores'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 touch-manipulation ${
-                pathname === '/verse/asesores' 
+                pathname === '/aureo/asesores' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
@@ -391,9 +391,9 @@ export default function SocialLayout({ children }: any) {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/verse/messages'}
+              onClick={() => window.location.href = '/aureo/messages'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 relative touch-manipulation ${
-                pathname === '/verse/messages' 
+                pathname === '/aureo/messages' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}

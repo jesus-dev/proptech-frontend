@@ -187,21 +187,6 @@ const navItems: NavItem[] = [
         nuevo: true,
       },
       {
-        name: "Suscripciones",
-        path: "/partners/subscriptions",
-        nuevo: true,
-      },
-      {
-        name: "Facturas de Suscripción",
-        path: "/partners/subscription-invoices",
-        nuevo: true,
-      },
-      {
-        name: "Notificaciones",
-        path: "/partners/subscription-notifications",
-        nuevo: true,
-      },
-      {
         name: "Registro de Pagos",
         path: "/partners/payments",
       },
@@ -299,7 +284,7 @@ const othersItems: NavItem[] = [
   },
   {
     name: "Red Social",
-    path: "/verse",
+    path: "/aureo",
     icon: (
       <div className="relative">
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -312,37 +297,6 @@ const othersItems: NavItem[] = [
 ];
 
 const proptechItems: NavItem[] = [
-  {
-    name: "Suscripciones",
-    path: "/proptech/subscriptions",
-    icon: <Rocket className="w-5 h-5" />,
-    subItems: [
-      {
-        name: "Dashboard Admin",
-        path: "/proptech/subscriptions/admin",
-      },
-      {
-        name: "Gestionar Planes",
-        path: "/proptech/subscriptions/admin/plans",
-      },
-      {
-        name: "Gestionar Suscripciones",
-        path: "/proptech/subscriptions/admin/subscriptions",
-      },
-      {
-        name: "Agentes de Ventas",
-        path: "/proptech/subscriptions/admin/sales-agents",
-      },
-      {
-        name: "Dashboard Comisiones",
-        path: "/proptech/subscriptions/admin/commissions",
-      },
-      {
-        name: "Reportes",
-        path: "/proptech/subscriptions/admin/reports",
-      },
-    ],
-  },
   {
     name: "Citas Agendadas",
     path: "/proptech/appointments",

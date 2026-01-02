@@ -22,7 +22,7 @@ export interface PartnerSubscription {
   id: number;
   partnerId: number;
   planId: number;
-  plan: SubscriptionPlan;
+  plan?: SubscriptionPlan | null;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'CANCELLED' | 'PENDING';
   startDate: string;
   endDate?: string;

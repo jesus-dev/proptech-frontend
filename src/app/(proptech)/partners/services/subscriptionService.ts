@@ -95,6 +95,20 @@ export const subscriptionService = {
   },
 
   // Suscripciones de socios
+  async getAllSubscriptions(): Promise<PartnerSubscription[]> {
+    try {
+      const response = await fetch(getEndpoint('/api/subscriptions'));
+      if (!response.ok) {
+        console.warn('No se pudieron obtener suscripciones (response not ok)');
+        return [];
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      return [];
+    }
+  },
+
   async getPartnerSubscriptions(partnerId: number): Promise<PartnerSubscription[]> {
     try {
       const response = await fetch(getEndpoint(`/api/partners/${partnerId}/subscriptions`));
@@ -123,6 +137,7 @@ export const subscriptionService = {
 
   async createSubscription(data: CreateSubscriptionRequest): Promise<PartnerSubscription> {
     try {
+      console.log('Creating subscription with data:', data);
       const response = await fetch(getEndpoint('/api/subscriptions'), {
         method: 'POST',
         headers: {
@@ -132,10 +147,21 @@ export const subscriptionService = {
       });
       
       if (!response.ok) {
-        throw new Error('Error al crear suscripción');
+        const errorText = await response.text();
+        console.error('Error response:', response.status, errorText);
+        let errorMessage = 'Error al crear suscripción';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
       
-      return await response.json();
+      const result = await response.json();
+      console.log('Subscription created successfully:', result);
+      return result;
     } catch (error) {
       console.error('Error creating subscription:', error);
       throw error;

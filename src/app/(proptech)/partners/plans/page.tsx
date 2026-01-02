@@ -30,7 +30,8 @@ import {
   Shield,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -79,6 +80,8 @@ export default function PlansAndProductsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState<SubscriptionPlan | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<PlanFormData>({
@@ -170,18 +173,24 @@ export default function PlansAndProductsPage() {
     setShowAddModal(true);
   };
 
-  const handleDelete = async (planId: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este plan?')) {
-      return;
-    }
+  const handleDelete = (plan: SubscriptionPlan) => {
+    setPlanToDelete(plan);
+  };
+
+  const confirmDelete = async () => {
+    if (!planToDelete) return;
 
     try {
-      await subscriptionService.deleteProduct(planId);
+      setIsDeleting(true);
+      await subscriptionService.deleteProduct(planToDelete.id);
       toast.success('Plan eliminado exitosamente');
+      setPlanToDelete(null);
       loadPlans();
     } catch (error) {
       console.error('Error deleting plan:', error);
-      toast.error('Error al eliminar plan');
+      toast.error('Error al eliminar plan. Asegúrate de que no tenga suscripciones activas.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -251,6 +260,8 @@ export default function PlansAndProductsPage() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
+      case 'SOCIAL_DUES': return 'bg-gray-100 !text-black border-gray-300 dark:bg-gray-700 dark:!text-white dark:border-gray-600';
+      case 'PROPTECH': return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700';
       case 'BASIC': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'PROFESSIONAL': return 'bg-green-100 text-green-800 border-green-200';
       case 'ENTERPRISE': return 'bg-purple-100 text-purple-800 border-purple-200';
@@ -260,7 +271,7 @@ export default function PlansAndProductsPage() {
       case 'TRAINING': return 'bg-pink-100 text-pink-800 border-pink-200';
       case 'NETWORKING': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'OTHER': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600';
     }
   };
 
@@ -407,7 +418,12 @@ export default function PlansAndProductsPage() {
           </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-              <SelectValue placeholder="Filtrar por categoría" />
+              <SelectValue placeholder="Filtrar por categoría">
+                {categoryFilter === 'all' ? 'Todas las categorías' :
+                 categoryFilter === 'SOCIAL_DUES' ? 'Cuota Social' :
+                 categoryFilter === 'PROPTECH' ? 'Suscripción PropTech' :
+                 'Filtrar por categoría'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las categorías</SelectItem>
@@ -417,7 +433,12 @@ export default function PlansAndProductsPage() {
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-              <SelectValue placeholder="Filtrar por estado" />
+              <SelectValue placeholder="Filtrar por estado">
+                {statusFilter === 'all' ? 'Todos los estados' : 
+                 statusFilter === 'active' ? 'Activos' : 
+                 statusFilter === 'inactive' ? 'Inactivos' : 
+                 'Filtrar por estado'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los estados</SelectItem>
@@ -431,7 +452,14 @@ export default function PlansAndProductsPage() {
             setSortOrder(order as 'asc' | 'desc');
           }}>
             <SelectTrigger className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500">
-              <SelectValue placeholder="Ordenar por" />
+              <SelectValue placeholder="Ordenar por">
+                {sortBy === 'name' && sortOrder === 'asc' ? 'Nombre (A-Z)' :
+                 sortBy === 'name' && sortOrder === 'desc' ? 'Nombre (Z-A)' :
+                 sortBy === 'price' && sortOrder === 'asc' ? 'Precio (Menor)' :
+                 sortBy === 'price' && sortOrder === 'desc' ? 'Precio (Mayor)' :
+                 sortBy === 'category' && sortOrder === 'asc' ? 'Categoría (A-Z)' :
+                 'Ordenar por'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="name-asc">Nombre (A-Z)</SelectItem>
@@ -471,33 +499,33 @@ export default function PlansAndProductsPage() {
         ) : (
           filteredPlans.map((plan) => {
             const CategoryIcon = getCategoryIcon(plan.category);
+            const isPopular = plan.isPopular;
+            const isRecommended = plan.isRecommended;
+            
             return (
-              <div key={plan.id} className={`bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 ${plan.isPopular ? 'ring-2 ring-yellow-400' : ''} ${plan.isRecommended ? 'ring-2 ring-purple-400' : ''}`}>
+              <div 
+                key={plan.id} 
+                className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-lg transition-all ${
+                  isPopular ? 'ring-2 ring-yellow-400' : '' 
+                } ${isRecommended ? 'ring-2 ring-purple-400' : ''}`}
+              >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-3 rounded-lg ${getCategoryColor(plan.category).replace('border-', 'bg-').replace('text-', '').replace('bg-', 'bg-').replace('border-', '')}`}>
-                      <CategoryIcon className="h-6 w-6" />
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className={`p-3 rounded-lg ${
+                      plan.category === 'PROPTECH'
+                        ? 'bg-blue-500'
+                        : 'bg-gray-600'
+                    }`}>
+                      <CategoryIcon className="h-6 w-6 text-white" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className={getCategoryColor(plan.category)}>
-                          {getCategoryLabel(plan.category)}
-                        </Badge>
-                        {plan.isPopular && (
-                          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                            <Star className="h-3 w-3 mr-1" />
-                            Popular
-                          </Badge>
-                        )}
-                        {plan.isRecommended && (
-                          <Badge className="bg-purple-100 text-purple-800 border-purple-200">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Recomendado
-                          </Badge>
-                        )}
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        {plan.name}
+                      </h3>
+                      <Badge className={`${getCategoryColor(plan.category)} text-xs`}>
+                        {getCategoryLabel(plan.category)}
+                      </Badge>
                     </div>
                   </div>
                   <div className="flex items-center space-x-1">
@@ -512,7 +540,7 @@ export default function PlansAndProductsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(plan.id)}
+                      onClick={() => handleDelete(plan)}
                       className="hover:bg-red-50 text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -521,48 +549,46 @@ export default function PlansAndProductsPage() {
                 </div>
 
                 {/* Description */}
-                <p className="text-gray-600 mb-4 line-clamp-2">{plan.description}</p>
+                {plan.description && (
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+                    {plan.description}
+                  </p>
+                )}
 
                 {/* Price */}
-                <div className="mb-4">
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-gray-900">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">
                       {subscriptionService.formatCurrency(plan.price, plan.currencyCode || 'USD')}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       / {subscriptionService.getBillingCycleLabel(plan.billingCycle)}
                     </span>
                   </div>
                 </div>
 
-                {/* Features */}
-                <div className="space-y-3 mb-4">
-                  {plan.maxUsers && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Usuarios máx.</span>
-                      <span className="font-medium text-gray-900">{plan.maxUsers}</span>
-                    </div>
-                  )}
-                  {plan.maxProperties && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Propiedades máx.</span>
-                      <span className="font-medium text-gray-900">{plan.maxProperties}</span>
-                    </div>
-                  )}
-                  {plan.maxContacts && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Contactos máx.</span>
-                      <span className="font-medium text-gray-900">{plan.maxContacts}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Status */}
-                <div className="flex items-center justify-between">
-                  <Badge variant={plan.isActive ? "default" : "destructive"}>
-                    {plan.isActive ? "Activo" : "Inactivo"}
+                {/* Status Footer */}
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Badge 
+                    className={`text-xs px-2 py-1 ${
+                      plan.isActive 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-red-500 text-white'
+                    }`}
+                  >
+                    {plan.isActive ? (
+                      <>
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Activo
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Inactivo
+                      </>
+                    )}
                   </Badge>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
                     ID: {plan.id}
                   </span>
                 </div>
@@ -676,45 +702,6 @@ export default function PlansAndProductsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Usuarios Máximos
-              </label>
-              <input
-                type="number"
-                value={formData.maxUsers}
-                onChange={(e) => setFormData(prev => ({ ...prev, maxUsers: parseInt(e.target.value) || 0 }))}
-                placeholder="1"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Propiedades Máximas
-              </label>
-              <input
-                type="number"
-                value={formData.maxProperties}
-                onChange={(e) => setFormData(prev => ({ ...prev, maxProperties: parseInt(e.target.value) || 0 }))}
-                placeholder="10"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Contactos Máximos
-              </label>
-              <input
-                type="number"
-                value={formData.maxContacts}
-                onChange={(e) => setFormData(prev => ({ ...prev, maxContacts: parseInt(e.target.value) || 0 }))}
-                placeholder="100"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-              />
-            </div>
-          </div>
-
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
               Características del Plan (una por línea)
@@ -801,6 +788,68 @@ export default function PlansAndProductsPage() {
             </button>
           </div>
         </form>
+      </ModernPopup>
+
+      {/* Modal de Confirmación de Eliminación */}
+      <ModernPopup
+        isOpen={!!planToDelete}
+        onClose={() => !isDeleting && setPlanToDelete(null)}
+        title="Eliminar Plan de Suscripción"
+        subtitle="Esta acción no se puede deshacer"
+        icon={<AlertTriangle className="w-6 h-6 text-white" />}
+        maxWidth="max-w-md"
+        closeOnBackdropClick={!isDeleting}
+      >
+        <div className="space-y-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="flex">
+              <AlertTriangle className="w-5 h-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                  ¿Estás seguro de que quieres eliminar este plan?
+                </h3>
+                {planToDelete && (
+                  <div className="text-sm text-red-700 dark:text-red-300 space-y-1">
+                    <p><strong>Plan:</strong> {planToDelete.name}</p>
+                    <p><strong>Categoría:</strong> {planToDelete.category === 'PROPTECH' ? 'Proptech' : 'Cuotas Sociales'}</p>
+                    <p className="mt-2">
+                      Esta acción eliminará permanentemente el plan de suscripción. Si hay suscripciones activas asociadas, no podrás eliminarlo.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={() => setPlanToDelete(null)}
+              disabled={isDeleting}
+              className="px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 border border-transparent rounded-xl hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              {isDeleting ? (
+                <div className="flex items-center">
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Eliminando...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Trash2 className="w-4 h-4" />
+                  Eliminar Plan
+                </div>
+              )}
+            </button>
+          </div>
+        </div>
       </ModernPopup>
     </div>
   );

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Partner, partnerService, PaginatedPartnersResponse } from "./services/partnerService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { formatPrice } from "@/lib/utils";
+import { getEndpoint } from "@/lib/api-config";
 
 export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -201,7 +202,7 @@ export default function PartnersPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Link href="/partners/payments">
                 <button className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-500/30">
                   <CreditCardIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
@@ -333,6 +334,9 @@ export default function PartnersPage() {
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Foto
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Socio
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -340,9 +344,6 @@ export default function PartnersPage() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Estado
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Comisión
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Ganancias
@@ -359,12 +360,39 @@ export default function PartnersPage() {
                     {(partners || []).map((partner) => (
                       <tr key={partner.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            {partner.photo ? (
+                              <img
+                                src={
+                                  partner.photo.startsWith('http') 
+                                    ? partner.photo 
+                                    : partner.photo.startsWith('/uploads/')
+                                    ? getEndpoint(partner.photo)
+                                    : getEndpoint(`/uploads/partners/${partner.photo}`)
+                                }
+                                alt={`${partner.firstName} ${partner.lastName}`}
+                                className="h-10 w-10 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    const fallback = document.createElement('div');
+                                    fallback.className = 'h-10 w-10 rounded-full bg-brand-100 dark:bg-brand-900/20 flex items-center justify-center';
+                                    fallback.innerHTML = '<svg class="h-6 w-6 text-brand-600 dark:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>';
+                                    parent.appendChild(fallback);
+                                  }
+                                }}
+                              />
+                            ) : (
                               <div className="h-10 w-10 rounded-full bg-brand-100 dark:bg-brand-900/20 flex items-center justify-center">
                                 <UserIcon className="h-6 w-6 text-brand-600 dark:text-brand-400" />
                               </div>
-                            </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900 dark:text-white">
                                 {partner.firstName} {partner.lastName}
@@ -383,9 +411,6 @@ export default function PartnersPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(partner.status || "")}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {partner.commissionRate}%
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-white">

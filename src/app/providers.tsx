@@ -17,7 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     '/registrarse', 
     '/forgot-password',
     '/reset-password',
-    '/verse',
+    '/aureo',
     '/propshots',
     '/propiedad', // ⭐ Páginas de propiedades públicas
     '/propiedades' // ⭐ Listado público

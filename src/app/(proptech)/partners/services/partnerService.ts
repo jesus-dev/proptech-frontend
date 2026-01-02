@@ -323,6 +323,54 @@ class PartnerApiService {
     }
   }
 
+  async uploadPartnerPhoto(id: number, file: File, oldPhotoUrl?: string): Promise<{ fileUrl: string; success: boolean; message: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+      if (oldPhotoUrl) {
+        formData.append('oldPhotoUrl', oldPhotoUrl);
+      }
+
+      const response = await fetch(getEndpoint(`/api/partners/${id}/upload-photo`), {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error uploading partner photo:', error);
+      throw new Error(`Error al subir la foto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  }
+
+  async deletePartnerPhoto(id: number, photoUrl?: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(getEndpoint(`/api/partners/${id}/delete-photo`), {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ photoUrl }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting partner photo:', error);
+      throw new Error(`Error al eliminar la foto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  }
+
   // Métodos comentados porque los endpoints no existen en el backend
   /*
   async updateEarnings(id: number, amount: number): Promise<Partner> {

@@ -51,5 +51,7 @@ export default function EditPartnerPage() {
     );
   }
 
-  return <PartnerForm partner={partner} isEditing={true} />;
+  return <PartnerForm partner={partner} isEditing={true} onPartnerUpdated={(updatedPartner) => {
+    setPartner(updatedPartner);
+  }} />;
 } 
