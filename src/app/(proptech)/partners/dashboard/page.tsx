@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Partner, partnerService } from "../services/partnerService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { formatPrice } from "@/lib/utils";
+import { getEndpoint } from "@/lib/api-config";
 import { 
   PlusIcon, 
   UserIcon, 
@@ -117,9 +118,8 @@ export default function PartnersDashboardPage() {
       const totalEarnings = activePartners.reduce((sum, partner) => sum + (partner.totalEarnings || 0), 0);
       const totalPendingPayments = pendingPayments.reduce((sum, partner) => sum + (partner.pendingEarnings || 0), 0);
       
-      // Calcular comisión promedio
-      const totalCommission = allPartners.content.reduce((sum, partner) => sum + (partner.commissionRate || 0), 0);
-      const averageCommission = allPartners.content.length > 0 ? totalCommission / allPartners.content.length : 0;
+      // Calcular comisión promedio (no disponible en el modelo actual)
+      const averageCommission = 0;
 
       // Sin datos ficticios: si no hay histórico/actividad real, dejar en 0/vacío
       const monthlyGrowth = 0;
@@ -581,18 +581,38 @@ export default function PartnersDashboardPage() {
                     <tr key={partner.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
+                          <div className="flex-shrink-0 h-10 w-10 relative">
                             {partner.photo ? (
                               <img 
-                                src={partner.photo} 
-                                alt="Foto socio" 
-                                className="h-10 w-10 rounded-full object-cover"
+                                src={
+                                  partner.photo.startsWith('http') 
+                                    ? partner.photo 
+                                    : partner.photo.startsWith('/uploads/')
+                                    ? getEndpoint(partner.photo)
+                                    : getEndpoint(`/uploads/partners/${partner.photo}`)
+                                }
+                                alt={`${partner.firstName} ${partner.lastName}`}
+                                className="h-10 w-10 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    const fallback = parent.querySelector('.photo-fallback') as HTMLElement;
+                                    if (fallback) {
+                                      fallback.style.display = 'flex';
+                                    }
+                                  }
+                                }}
                               />
-                            ) : (
-                            <div className="h-10 w-10 rounded-full bg-brand-100 dark:bg-brand-900/20 flex items-center justify-center">
-                              <UserIcon className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+                            ) : null}
+                            <div 
+                              className={`photo-fallback h-10 w-10 rounded-full bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/30 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 ${partner.photo ? 'hidden' : 'flex'}`}
+                            >
+                              <span className="text-brand-600 dark:text-brand-400 font-bold text-sm">
+                                {partner.firstName?.charAt(0)?.toUpperCase() || partner.lastName?.charAt(0)?.toUpperCase() || '?'}
+                              </span>
                             </div>
-                            )}
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -634,7 +654,7 @@ export default function PartnersDashboardPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        <span className="font-medium">{partner.commissionRate}%</span>
+                        <span className="font-medium text-gray-400">-</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                         <span className="font-medium text-green-600 dark:text-green-400">

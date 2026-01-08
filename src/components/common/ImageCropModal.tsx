@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
-import Cropper from 'react-easy-crop';
+import dynamic from 'next/dynamic';
 import { X, ZoomIn, ZoomOut, RotateCw, Check } from 'lucide-react';
+
+const Cropper = dynamic(
+  () => import('react-easy-crop').then((mod) => mod.default || mod),
+  { 
+    ssr: false,
+    loading: () => <div className="w-full h-96 flex items-center justify-center text-white">Cargando...</div>
+  }
+) as React.ComponentType<any>;
 
 interface ImageCropModalProps {
   imageSrc: string;

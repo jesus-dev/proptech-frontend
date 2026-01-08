@@ -9,7 +9,7 @@ export interface PartnerPayment {
   dueDate: string;
   amount: number;
   currency: string;
-  paymentType: 'FEE' | 'QUOTA' | 'COMMISSION' | 'BONUS' | 'ADVANCE' | 'REFUND' | 'PENALTY';
+  paymentType: 'SOCIAL_DUES' | 'PROPTECH' | 'FEE' | 'QUOTA' | 'COMMISSION' | 'BONUS' | 'ADVANCE' | 'REFUND' | 'PENALTY';
   status: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED' | 'PARTIAL';
   paymentMethod?: string;
   referenceNumber?: string;
@@ -31,6 +31,7 @@ export interface PaymentSummary {
 
 export interface CreatePaymentData {
   partnerId: number;
+  partnerName?: string;
   paymentDate?: string;
   dueDate: string;
   amount: number;
@@ -48,12 +49,13 @@ class PartnerPaymentService {
     try {
       const response = await fetch(getEndpoint('/api/partner-payments'));
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        console.warn(`No se pudieron obtener pagos (status ${response.status})`);
+        return [];
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching payments:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -77,12 +79,27 @@ class PartnerPaymentService {
     try {
       const response = await fetch(getEndpoint(`/api/partner-payments/partner/${partnerId}`));
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        console.warn(`No se pudieron obtener pagos del socio ${partnerId} (status ${response.status})`);
+        return [];
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching partner payments:', error);
-      throw error;
+      return [];
+    }
+  }
+
+  async getPendingQuotasByPartner(partnerId: number): Promise<PartnerPayment[]> {
+    try {
+      const response = await fetch(getEndpoint(`/api/partner-payments/partner/${partnerId}/pending-quotas`));
+      if (!response.ok) {
+        console.warn(`No se pudieron obtener cuotas pendientes del socio ${partnerId} (status ${response.status})`);
+        return [];
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching pending quotas:', error);
+      return [];
     }
   }
 
@@ -90,12 +107,13 @@ class PartnerPaymentService {
     try {
       const response = await fetch(getEndpoint(`/api/partner-payments/status/${status}`));
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        console.warn(`No se pudieron obtener pagos por status ${status} (status ${response.status})`);
+        return [];
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching payments by status:', error);
-      throw error;
+      return [];
     }
   }
 
@@ -103,22 +121,23 @@ class PartnerPaymentService {
     try {
       const response = await fetch(getEndpoint('/api/partner-payments/overdue'));
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        console.warn(`No se pudieron obtener pagos vencidos (status ${response.status})`);
+        return [];
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching overdue payments:', error);
-      throw error;
+      return [];
     }
   }
 
   async createPayment(paymentData: CreatePaymentData): Promise<PartnerPayment> {
     try {
-      // Formatear las fechas para el backend
+      // Backend usa LocalDate (yyyy-MM-dd). No enviar "T00:00:00" porque rompe el parseo.
       const formattedData = {
         ...paymentData,
-        dueDate: paymentData.dueDate ? `${paymentData.dueDate}T00:00:00` : undefined,
-        paymentDate: paymentData.paymentDate ? `${paymentData.paymentDate}T00:00:00` : undefined
+        dueDate: paymentData.dueDate || undefined,
+        paymentDate: paymentData.paymentDate || undefined
       };
       
       const response = await fetch(getEndpoint('/api/partner-payments'), {
@@ -227,12 +246,25 @@ class PartnerPaymentService {
     try {
       const response = await fetch(getEndpoint(`/api/partner-payments/partner/${partnerId}/summary`));
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        console.warn(`No se pudo obtener resumen de pagos del socio ${partnerId} (status ${response.status})`);
+        return {
+          totalPaid: 0,
+          totalPending: 0,
+          totalOverdue: 0,
+          pendingCount: 0,
+          overdueCount: 0,
+        };
       }
       return await response.json();
     } catch (error) {
       console.error('Error fetching payment summary:', error);
-      throw error;
+      return {
+        totalPaid: 0,
+        totalPending: 0,
+        totalOverdue: 0,
+        pendingCount: 0,
+        overdueCount: 0,
+      };
     }
   }
 
@@ -283,6 +315,10 @@ class PartnerPaymentService {
 
   getPaymentTypeLabel(type: string): string {
     switch (type) {
+      case 'SOCIAL_DUES':
+        return 'Cuota Social';
+      case 'PROPTECH':
+        return 'Proptech';
       case 'FEE':
         return 'Membresía';
       case 'QUOTA':

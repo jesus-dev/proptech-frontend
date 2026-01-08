@@ -4,10 +4,13 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Partner, partnerService } from "../services/partnerService";
+import { AgentService, Agent } from "@/services/agentService";
+import { subscriptionService } from "../services/subscriptionService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useToast } from "@/components/ui/use-toast";
 import { formatPrice } from "@/lib/utils";
 import { getEndpoint } from "@/lib/api-config";
+import ModernPopup from "@/components/ui/ModernPopup";
 import { 
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -26,7 +29,8 @@ import {
   StarIcon,
   PencilIcon,
   TrashIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  HomeIcon
 } from "@heroicons/react/24/outline";
 import QRCode from 'react-qr-code';
 import { Dialog } from '@headlessui/react';
@@ -40,6 +44,15 @@ export default function PartnerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showCard, setShowCard] = useState(false);
+  const [relatedAgent, setRelatedAgent] = useState<Agent | null>(null);
+  const [loadingAgent, setLoadingAgent] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [showAssignAgentPopup, setShowAssignAgentPopup] = useState(false);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [assigningAgent, setAssigningAgent] = useState(false);
+  const [removingAgent, setRemovingAgent] = useState(false);
 
   const partnerId = Number(params?.id);
 
@@ -73,6 +86,14 @@ export default function PartnerDetailPage() {
       };
       
       setPartner(processedPartner);
+      
+      // Cargar agente relacionado si tiene agentId
+      if (processedPartner.agentId) {
+        loadRelatedAgent(processedPartner.agentId);
+      }
+      
+      // Verificar suscripciones activas
+      checkActiveSubscriptions(partnerId);
     } catch (error) {
       toast({
         title: "Error",
@@ -84,6 +105,125 @@ export default function PartnerDetailPage() {
       setLoading(false);
     }
   };
+  
+  const loadRelatedAgent = async (agentId: number) => {
+    try {
+      setLoadingAgent(true);
+      const agent = await AgentService.getAgentById(String(agentId));
+      setRelatedAgent(agent);
+    } catch (error) {
+      console.error('Error loading related agent:', error);
+      setRelatedAgent(null);
+    } finally {
+      setLoadingAgent(false);
+    }
+  };
+  
+  const checkActiveSubscriptions = async (partnerId: number) => {
+    try {
+      const subscriptions = await subscriptionService.getPartnerSubscriptions(partnerId);
+      // Verificar si hay una suscripción activa de tipo PROPTECH
+      const hasActiveProptech = subscriptions.some(sub => 
+        sub.status === 'ACTIVE' && sub.plan?.category === 'PROPTECH'
+      );
+      setHasActiveSubscription(hasActiveProptech);
+    } catch (error) {
+      console.error('Error checking subscriptions:', error);
+      setHasActiveSubscription(false);
+    }
+  };
+
+  const loadAgents = async () => {
+    try {
+      setLoadingAgents(true);
+      const agentsList = await AgentService.getAllAgents();
+      setAgents(agentsList);
+    } catch (error) {
+      console.error('Error loading agents:', error);
+      toast({
+        title: "Error",
+        description: "Error al cargar la lista de agentes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  const handleAssignAgent = async (agentId: string) => {
+    if (!partner) return;
+
+    try {
+      setAssigningAgent(true);
+      await partnerService.updatePartner(partner.id, { agentId: Number(agentId) });
+      
+      toast({
+        title: "Agente asignado",
+        description: "El agente ha sido asignado exitosamente al socio",
+      });
+      
+      setShowAssignAgentPopup(false);
+      setSearchTerm("");
+      
+      // Recargar datos del partner
+      await loadPartner();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al asignar el agente",
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningAgent(false);
+    }
+  };
+
+  const handleRemoveAgent = async () => {
+    if (!partner) return;
+
+    if (!confirm("¿Estás seguro de que quieres eliminar la relación con este agente?")) {
+      return;
+    }
+
+    try {
+      setRemovingAgent(true);
+      // Enviar null explícitamente para eliminar la relación
+      const updateData: any = { agentId: null };
+      await partnerService.updatePartner(partner.id, updateData);
+      
+      toast({
+        title: "Relación eliminada",
+        description: "La relación con el agente ha sido eliminada exitosamente",
+      });
+      
+      // Recargar datos del partner
+      await loadPartner();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al eliminar la relación con el agente",
+        variant: "destructive",
+      });
+    } finally {
+      setRemovingAgent(false);
+    }
+  };
+
+  const handleOpenAssignAgentPopup = () => {
+    setShowAssignAgentPopup(true);
+    if (agents.length === 0) {
+      loadAgents();
+    }
+  };
+
+  const filteredAgents = agents.filter(agent => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    const fullName = `${agent.firstName || ''} ${agent.lastName || ''}`.toLowerCase();
+    const email = (agent.email || '').toLowerCase();
+    const phone = (agent.phone || '').toLowerCase();
+    return fullName.includes(search) || email.includes(search) || phone.includes(search);
+  });
 
   const handleDelete = async () => {
     if (!partner) return;
@@ -561,6 +701,147 @@ export default function PartnerDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Relacionamiento con Agente */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+                  <UserIcon className="w-5 h-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+                  Relacionamiento con Agente
+                </h2>
+              </div>
+              <div className="p-6">
+                {loadingAgent ? (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner size="sm" />
+                    <span className="ml-3 text-gray-600 dark:text-gray-400">Cargando información del agente...</span>
+                  </div>
+                ) : partner.agentId && relatedAgent ? (
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                      <div className="flex-shrink-0">
+                        {relatedAgent.photo ? (
+                          <img
+                            src={relatedAgent.photo.startsWith('http') ? relatedAgent.photo : getEndpoint(relatedAgent.photo)}
+                            alt={`${relatedAgent.firstName} ${relatedAgent.lastName}`}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-indigo-300 dark:border-indigo-700"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                const fallback = document.createElement('div');
+                                fallback.className = 'w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border-2 border-indigo-300 dark:border-indigo-700';
+                                fallback.innerHTML = '<svg class="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>';
+                                parent.appendChild(fallback);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border-2 border-indigo-300 dark:border-indigo-700">
+                            <UserIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                            {relatedAgent.firstName} {relatedAgent.lastName}
+                          </h3>
+                          <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                          Agente relacionado con este socio
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {relatedAgent.email && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <EnvelopeIcon className="w-4 h-4 text-gray-500" />
+                              <span className="text-gray-700 dark:text-gray-300">{relatedAgent.email}</span>
+                            </div>
+                          )}
+                          {relatedAgent.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <PhoneIcon className="w-4 h-4 text-gray-500" />
+                              <span className="text-gray-700 dark:text-gray-300">{relatedAgent.phone}</span>
+                            </div>
+                          )}
+                          {relatedAgent.propertiesCount !== undefined && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <HomeIcon className="w-4 h-4 text-gray-500" />
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {relatedAgent.propertiesCount} propiedades
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          <Link
+                            href={`/agente/${relatedAgent.id}`}
+                            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                          >
+                            Ver Perfil del Agente
+                          </Link>
+                          <button
+                            onClick={handleRemoveAgent}
+                            disabled={removingAgent}
+                            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                          >
+                            {removingAgent ? (
+                              <>
+                                <LoadingSpinner size="sm" />
+                                <span className="ml-2">Eliminando...</span>
+                              </>
+                            ) : (
+                              <>
+                                <TrashIcon className="w-4 h-4 mr-2" />
+                                Eliminar Relación
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : hasActiveSubscription ? (
+                  <div className="p-6 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border-2 border-yellow-200 dark:border-yellow-800">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <ExclamationTriangleIcon className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-yellow-900 dark:text-yellow-200 mb-2">
+                          Sin Relacionamiento con Agente
+                        </h3>
+                        <p className="text-yellow-800 dark:text-yellow-300 mb-4">
+                          Este socio tiene una suscripción Proptech activa pero aún no tiene un agente relacionado. 
+                          Para que pueda gestionar propiedades, es necesario asignarle un agente.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleOpenAssignAgentPopup}
+                            className="inline-flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                          >
+                            Asignar Agente
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <UserIcon className="w-6 h-6 text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          Este socio no tiene un agente relacionado.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Sidebar */}
@@ -754,6 +1035,144 @@ export default function PartnerDetailPage() {
           </div>
         </div>
       </Dialog>
+
+      {/* Popup para Asignar Agente */}
+      <ModernPopup
+        isOpen={showAssignAgentPopup}
+        onClose={() => {
+          setShowAssignAgentPopup(false);
+          setSearchTerm("");
+        }}
+        title="Asignar Agente"
+        subtitle="Selecciona un agente para relacionarlo con este socio"
+        maxWidth="max-w-3xl"
+        icon={<UserIcon className="w-6 h-6" />}
+      >
+        <div className="space-y-4">
+          {/* Búsqueda */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar agente por nombre, email o teléfono..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Lista de Agentes */}
+          <div className="max-h-96 overflow-y-auto space-y-2">
+            {loadingAgents ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner size="sm" />
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Cargando agentes...</span>
+              </div>
+            ) : filteredAgents.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                {searchTerm ? "No se encontraron agentes con ese criterio de búsqueda" : "No hay agentes disponibles"}
+              </div>
+            ) : (
+              filteredAgents.map((agent) => {
+                const agentPhoto = agent.photo 
+                  ? (agent.photo.startsWith('http') ? agent.photo : getEndpoint(agent.photo))
+                  : null;
+                
+                return (
+                  <button
+                    key={agent.id}
+                    onClick={() => handleAssignAgent(agent.id)}
+                    disabled={assigningAgent}
+                    className="w-full p-4 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-indigo-500 hover:shadow-md transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Foto del Agente */}
+                      <div className="flex-shrink-0">
+                        {agentPhoto ? (
+                          <img
+                            src={agentPhoto}
+                            alt={`${agent.firstName} ${agent.lastName}`}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                const fallback = document.createElement('div');
+                                fallback.className = 'w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600';
+                                fallback.innerHTML = '<svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>';
+                                parent.appendChild(fallback);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
+                            <UserIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Información del Agente */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                            {agent.firstName} {agent.lastName}
+                          </h3>
+                          {agent.active !== false && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                              Activo
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          {agent.email && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <EnvelopeIcon className="w-4 h-4" />
+                              <span className="truncate">{agent.email}</span>
+                            </div>
+                          )}
+                          {agent.phone && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <PhoneIcon className="w-4 h-4" />
+                              <span>{agent.phone}</span>
+                            </div>
+                          )}
+                          {agent.propertiesCount !== undefined && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                              <HomeIcon className="w-4 h-4" />
+                              <span>{agent.propertiesCount} propiedades</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Icono de selección */}
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* Información adicional */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {filteredAgents.length} {filteredAgents.length === 1 ? 'agente encontrado' : 'agentes encontrados'}
+            </p>
+          </div>
+        </div>
+      </ModernPopup>
     </div>
   );
 } 

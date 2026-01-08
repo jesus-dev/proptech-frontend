@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, CalendarIcon, CheckCircleIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, CurrencyDollarIcon, DocumentArrowDownIcon, ExclamationTriangleIcon, EyeIcon, FunnelIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, CalendarIcon, CheckCircleIcon, ChevronDownIcon, ChevronUpIcon, ClockIcon, CurrencyDollarIcon, DocumentArrowDownIcon, ExclamationTriangleIcon, EyeIcon, FunnelIcon, MagnifyingGlassIcon, XMarkIcon, CreditCardIcon } from "@heroicons/react/24/outline";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -38,6 +38,14 @@ export default function PartnerPaymentsPage() {
     dateTo: "",
     amountMin: "",
     amountMax: ""
+  });
+  const [selectedPayments, setSelectedPayments] = useState<Set<number>>(new Set());
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [processingPayments, setProcessingPayments] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    paymentMethod: "TRANSFER",
+    referenceNumber: "",
+    processedBy: "Admin"
   });
 
   const partnerId = Number(params?.id);
@@ -133,6 +141,11 @@ export default function PartnerPaymentsPage() {
         "Admin"
       );
       setPayments(payments.map(p => p.id === payment.id ? updatedPayment : p));
+      setSelectedPayments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(payment.id);
+        return newSet;
+      });
       toast({
         title: "Éxito",
         description: "Pago marcado como pagado",
@@ -145,6 +158,120 @@ export default function PartnerPaymentsPage() {
       });
     }
   };
+
+  const handleSelectPayment = (paymentId: number) => {
+    setSelectedPayments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(paymentId)) {
+        newSet.delete(paymentId);
+      } else {
+        newSet.add(paymentId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const pendingPayments = filteredPayments.filter(p => p.status === 'PENDING').map(p => p.id);
+    if (pendingPayments.every(id => selectedPayments.has(id))) {
+      // Deseleccionar todos
+      setSelectedPayments(prev => {
+        const newSet = new Set(prev);
+        pendingPayments.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    } else {
+      // Seleccionar todos
+      setSelectedPayments(prev => {
+        const newSet = new Set(prev);
+        pendingPayments.forEach(id => newSet.add(id));
+        return newSet;
+      });
+    }
+  };
+
+  const handleSelectOverdue = () => {
+    const overduePayments = filteredPayments
+      .filter(p => p.status === 'PENDING' && isBefore(new Date(p.dueDate), new Date()))
+      .map(p => p.id);
+    
+    setSelectedPayments(prev => {
+      const newSet = new Set(prev);
+      overduePayments.forEach(id => newSet.add(id));
+      return newSet;
+    });
+  };
+
+  const handleProcessPayments = async () => {
+    if (selectedPayments.size === 0) {
+      toast({
+        title: "Error",
+        description: "Selecciona al menos un pago para procesar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setProcessingPayments(true);
+      const paymentIds = Array.from(selectedPayments);
+      
+      // Procesar pagos uno por uno
+      const results = await Promise.allSettled(
+        paymentIds.map(id => 
+          partnerPaymentService.markAsPaid(
+            id,
+            paymentData.paymentMethod,
+            paymentData.referenceNumber || `REF-${Date.now()}-${id}`,
+            paymentData.processedBy
+          )
+        )
+      );
+
+      // Actualizar pagos procesados exitosamente
+      const successfulIds: number[] = [];
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          successfulIds.push(paymentIds[index]);
+          const updatedPayment = result.value;
+          setPayments(payments.map(p => p.id === updatedPayment.id ? updatedPayment : p));
+        }
+      });
+
+      // Limpiar selección
+      setSelectedPayments(new Set());
+      setShowPaymentModal(false);
+      
+      toast({
+        title: "Éxito",
+        description: `${successfulIds.length} pago(s) procesado(s) correctamente`,
+      });
+
+      // Recargar datos para asegurar consistencia
+      await loadData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Error al procesar los pagos",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingPayments(false);
+    }
+  };
+
+  // Calcular total de pagos seleccionados
+  const selectedPaymentsTotal = useMemo(() => {
+    return filteredPayments
+      .filter(p => selectedPayments.has(p.id))
+      .reduce((sum, p) => sum + p.amount, 0);
+  }, [filteredPayments, selectedPayments]);
+
+  // Obtener moneda de los pagos seleccionados (tomar la del primero, o USD por defecto)
+  const selectedPaymentsCurrency = useMemo(() => {
+    const firstSelected = filteredPayments.find(p => selectedPayments.has(p.id));
+    return firstSelected?.currency || 'USD';
+  }, [filteredPayments, selectedPayments]);
 
   const handleDeletePayment = async (id: number) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este pago?")) {
@@ -221,6 +348,8 @@ export default function PartnerPaymentsPage() {
 
   const getPaymentTypeLabel = (type: string) => {
     const labels = {
+      'SOCIAL_DUES': 'Cuota Social',
+      'PROPTECH': 'Proptech',
       'FEE': 'Membresía',
       'QUOTA': 'Cuota',
       'COMMISSION': 'Comisión',
@@ -282,6 +411,25 @@ export default function PartnerPaymentsPage() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {selectedPayments.size > 0 && (
+                <div className="flex items-center space-x-2 px-4 py-2 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-lg">
+                  <span className="text-sm font-medium text-brand-700 dark:text-brand-300">
+                    {selectedPayments.size} pago(s) seleccionado(s)
+                  </span>
+                  <span className="text-sm font-bold text-brand-900 dark:text-brand-100">
+                    Total: {formatCurrency(selectedPaymentsTotal, selectedPaymentsCurrency)}
+                  </span>
+                </div>
+              )}
+              {selectedPayments.size > 0 && (
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+                >
+                  <CreditCardIcon className="w-4 h-4 mr-2" />
+                  Procesar Pagos ({selectedPayments.size})
+                </button>
+              )}
               <button
                 onClick={exportToCSV}
                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -424,10 +572,8 @@ export default function PartnerPaymentsPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
                 >
                   <option value="all">Todos</option>
-                  <option value="FEE">Membresía</option>
-                  <option value="QUOTA">Cuota</option>
-                  <option value="COMMISSION">Comisión</option>
-                  <option value="BONUS">Bono</option>
+                  <option value="SOCIAL_DUES">Cuota Social</option>
+                  <option value="PROPTECH">Proptech</option>
                 </select>
               </div>
 
@@ -484,9 +630,51 @@ export default function PartnerPaymentsPage() {
           )}
         </div>
 
+        {/* Acciones de selección masiva */}
+        {filteredPayments.some(p => p.status === 'PENDING') && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleSelectAll}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  {filteredPayments.filter(p => p.status === 'PENDING').every(p => selectedPayments.has(p.id)) 
+                    ? "Deseleccionar Todos" 
+                    : "Seleccionar Todos Pendientes"}
+                </button>
+                <button
+                  onClick={handleSelectOverdue}
+                  className="px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/20 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
+                >
+                  Seleccionar Cuotas Atrasadas
+                </button>
+                {selectedPayments.size > 0 && (
+                  <button
+                    onClick={() => setSelectedPayments(new Set())}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Limpiar Selección
+                  </button>
+                )}
+              </div>
+              {selectedPayments.size > 0 && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Total Seleccionado:
+                  </span>
+                  <span className="text-lg font-bold text-brand-600 dark:text-brand-400">
+                    {formatCurrency(selectedPaymentsTotal, selectedPaymentsCurrency)}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Tabla de Pagos */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Historial de Transacciones ({filteredPayments.length})
             </h3>
@@ -496,6 +684,15 @@ export default function PartnerPaymentsPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                    <input
+                      type="checkbox"
+                      checked={filteredPayments.filter(p => p.status === 'PENDING').length > 0 && 
+                               filteredPayments.filter(p => p.status === 'PENDING').every(p => selectedPayments.has(p.id))}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Descripción
                   </th>
@@ -522,7 +719,22 @@ export default function PartnerPaymentsPage() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredPayments.length > 0 ? (
                   filteredPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr 
+                      key={payment.id} 
+                      className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedPayments.has(payment.id) ? 'bg-brand-50 dark:bg-brand-900/20' : ''}`}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {payment.status === 'PENDING' ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedPayments.has(payment.id)}
+                            onChange={() => handleSelectPayment(payment.id)}
+                            className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -576,7 +788,7 @@ export default function PartnerPaymentsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                       <div className="flex flex-col items-center">
                         <CurrencyDollarIcon className="w-12 h-12 text-gray-300 mb-4" />
                         <p className="text-lg font-medium">No se encontraron pagos</p>
@@ -590,6 +802,138 @@ export default function PartnerPaymentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Procesar Pagos */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Procesar {selectedPayments.size} Pago(s)
+              </h2>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Resumen de pagos seleccionados */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Resumen de Pagos
+                </h3>
+                <div className="space-y-1">
+                  {filteredPayments
+                    .filter(p => selectedPayments.has(p.id))
+                    .slice(0, 5)
+                    .map(payment => (
+                      <div key={payment.id} className="flex justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {payment.description || `#${payment.paymentNumber}`}
+                        </span>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {formatCurrency(payment.amount, payment.currency)}
+                        </span>
+                      </div>
+                    ))}
+                  {selectedPayments.size > 5 && (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 pt-2">
+                      ...y {selectedPayments.size - 5} más
+                    </div>
+                  )}
+                  <div className="border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                    <div className="flex justify-between font-bold text-lg">
+                      <span className="text-gray-900 dark:text-white">Total:</span>
+                      <span className="text-brand-600 dark:text-brand-400">
+                        {formatCurrency(selectedPaymentsTotal, selectedPaymentsCurrency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Método de pago */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Método de Pago <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={paymentData.paymentMethod}
+                  onChange={(e) => setPaymentData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="TRANSFER">Transferencia</option>
+                  <option value="CASH">Efectivo</option>
+                  <option value="CHECK">Cheque</option>
+                  <option value="CREDIT_CARD">Tarjeta de Crédito</option>
+                  <option value="DEBIT_CARD">Tarjeta de Débito</option>
+                  <option value="BANK_DEPOSIT">Depósito Bancario</option>
+                </select>
+              </div>
+
+              {/* Número de referencia */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Número de Referencia
+                </label>
+                <input
+                  type="text"
+                  value={paymentData.referenceNumber}
+                  onChange={(e) => setPaymentData(prev => ({ ...prev, referenceNumber: e.target.value }))}
+                  placeholder="Ej: TRANS-12345"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              {/* Procesado por */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Procesado Por <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={paymentData.processedBy}
+                  onChange={(e) => setPaymentData(prev => ({ ...prev, processedBy: e.target.value }))}
+                  placeholder="Nombre del procesador"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setShowPaymentModal(false)}
+                  disabled={processingPayments}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleProcessPayments}
+                  disabled={processingPayments || !paymentData.processedBy}
+                  className="flex-1 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {processingPayments ? (
+                    <>
+                      <LoadingSpinner size="sm" className="mr-2" />
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="w-4 h-4 mr-2" />
+                      Procesar Pagos
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

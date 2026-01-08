@@ -18,6 +18,7 @@ export default function PartnersPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [showDebtorsOnly, setShowDebtorsOnly] = useState(false);
 
   const [stats, setStats] = useState({
     total: 0,
@@ -39,7 +40,7 @@ export default function PartnersPage() {
   // Cargar partners cuando cambien los filtros
   useEffect(() => {
     loadPartners();
-  }, [currentPage, searchTerm, selectedType, selectedStatus]);
+  }, [currentPage, searchTerm, selectedType, selectedStatus, showDebtorsOnly]);
 
   // Cargar estadísticas cuando cambien los partners
   useEffect(() => {
@@ -51,18 +52,28 @@ export default function PartnersPage() {
   const loadPartners = async () => {
     try {
       setLoading(true);
-      const response: PaginatedPartnersResponse = await partnerService.getAllPartners({
-        page: currentPage,
-        size: 20,
-        search: searchTerm || undefined,
-        type: selectedType || undefined,
-        status: selectedStatus || undefined
-      });
-      
-      // Asegurar que content siempre sea un array
-      setPartners(response.content || []);
-      setTotalPages(response.totalPages || 1);
-      setTotalElements(response.totalElements || 0);
+      if (showDebtorsOnly) {
+        // Morosos del mes actual (Cuota Social mensual)
+        const now = new Date();
+        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const debtors = await partnerService.getDebtorPartners({ month, category: 'SOCIAL_DUES' });
+        setPartners(debtors);
+        setTotalPages(1);
+        setTotalElements(debtors.length);
+      } else {
+        const response: PaginatedPartnersResponse = await partnerService.getAllPartners({
+          page: currentPage,
+          size: 20,
+          search: searchTerm || undefined,
+          type: selectedType || undefined,
+          status: selectedStatus || undefined
+        });
+        
+        // Asegurar que content siempre sea un array
+        setPartners(response.content || []);
+        setTotalPages(response.totalPages || 1);
+        setTotalElements(response.totalElements || 0);
+      }
     } catch (error) {
       console.error("Error loading partners:", error);
       // En caso de error, establecer arrays vacíos
@@ -132,6 +143,7 @@ export default function PartnersPage() {
     setSearchTerm("");
     setSelectedType("");
     setSelectedStatus("");
+    setShowDebtorsOnly(false);
     setCurrentPage(1);
   };
 
@@ -272,9 +284,22 @@ export default function PartnersPage() {
                 </div>
                 
                 <div className="flex gap-2">
+                  <label className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200">
+                    <input
+                      type="checkbox"
+                      checked={showDebtorsOnly}
+                      onChange={(e) => {
+                        setCurrentPage(1);
+                        setShowDebtorsOnly(e.target.checked);
+                      }}
+                      className="h-4 w-4"
+                    />
+                    Morosos (mes actual)
+                  </label>
                   <select
                     value={selectedType}
                     onChange={(e) => handleFilterChange("type", e.target.value)}
+                    disabled={showDebtorsOnly}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">Todos los tipos</option>
@@ -288,6 +313,7 @@ export default function PartnersPage() {
                   <select
                     value={selectedStatus}
                     onChange={(e) => handleFilterChange("status", e.target.value)}
+                    disabled={showDebtorsOnly}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">Todos los estados</option>
@@ -346,9 +372,6 @@ export default function PartnersPage() {
                         Estado
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Ganancias
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Propiedades
                       </th>
                       <th className="px-3 py-3 w-20 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -392,18 +415,11 @@ export default function PartnersPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                {partner.firstName} {partner.lastName}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {partner.email}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {partner.phone}
-                              </div>
-                            </div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {partner.firstName || partner.lastName 
+                              ? `${partner.firstName || ''} ${partner.lastName || ''}`.trim()
+                              : `Socio #${partner.id}`
+                            }
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -411,16 +427,6 @@ export default function PartnersPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {getStatusBadge(partner.status || "")}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {formatCurrency(partner.totalEarnings)}
-                          </div>
-                          {partner.pendingEarnings && partner.pendingEarnings > 0 && (
-                            <div className="text-sm text-yellow-600 dark:text-yellow-400">
-                              Pendiente: {formatCurrency(partner.pendingEarnings)}
-                            </div>
-                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           <div className="flex items-center">

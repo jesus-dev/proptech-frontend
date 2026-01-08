@@ -1,414 +1,727 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CreditCardIcon, ArrowLeftIcon, UserPlusIcon } from "@heroicons/react/24/outline";
-import { Package } from "lucide-react";
-import PartnerForm from "../components/PartnerForm";
-import { SubscriptionPlan } from "../types/subscription";
-import { subscriptionService } from "../services/subscriptionService";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { Partner, partnerService } from "../services/partnerService";
+import { useToast } from "@/components/ui/use-toast";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import ImageCropModal from '@/components/common/ImageCropModal';
+import { getEndpoint } from '@/lib/api-config';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle,
+  User,
+  Building2,
+  MapPin,
+  FileText,
+  Save,
+  Camera,
+  X
+} from "lucide-react";
 
-interface RegistrationStep {
-  id: string;
+interface StepInfo {
+  id: number;
   title: string;
   description: string;
-  completed: boolean;
+  icon: React.ReactNode;
 }
 
 export default function NewPartnerPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [formData, setFormData] = useState<Partial<Partner>>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    documentNumber: "",
+    documentType: "CI",
+    type: "INDIVIDUAL",
+    status: "PENDING",
+    companyName: "",
+    companyRegistration: "",
+    position: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "Paraguay",
+    website: "",
+    socialMedia: [],
+    notes: "",
+    specializations: [],
+    territories: [],
+    languages: ["Español"],
+    certifications: [],
+    experienceYears: 0,
+    propertiesManaged: 0,
+    successfulDeals: 0,
+    isVerified: false
+  });
 
-  const steps: RegistrationStep[] = [
+  const steps: StepInfo[] = [
     {
-      id: "partner-info",
-      title: "Información del Socio",
-      description: "Datos básicos del socio",
-      completed: currentStep > 1
+      id: 1,
+      title: "Tipo de Socio",
+      description: "Selecciona el tipo de socio comercial",
+      icon: <User className="h-5 w-5" />
     },
     {
-      id: "subscription-plan",
-      title: "Plan de Suscripción",
-      description: "Seleccionar plan y configuración",
-      completed: currentStep > 2
+      id: 2,
+      title: "Información Básica",
+      description: "Datos personales o empresariales",
+      icon: <Building2 className="h-5 w-5" />
     },
     {
-      id: "payment-setup",
-      title: "Configuración de Pago",
-      description: "Configurar método de pago",
-      completed: currentStep > 3
+      id: 3,
+      title: "Contacto y Ubicación",
+      description: "Dirección y medios de contacto",
+      icon: <MapPin className="h-5 w-5" />
     },
     {
-      id: "confirmation",
-      title: "Confirmación",
-      description: "Revisar y confirmar registro",
-      completed: currentStep > 4
+      id: 4,
+      title: "Información Adicional",
+      description: "Detalles profesionales y especializaciones",
+      icon: <FileText className="h-5 w-5" />
     }
   ];
 
-  React.useEffect(() => {
-    loadSubscriptionPlans();
-  }, []);
-
-  const loadSubscriptionPlans = async () => {
-    try {
-      setLoadingProducts(true);
-      const plansData = await subscriptionService.getAllProducts();
-      setPlans(plansData.filter(p => p.isActive));
-    } catch (error) {
-      console.error('Error loading plans:', error);
-      toast.error('Error al cargar planes de suscripción');
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
-
-  const handleNextStep = () => {
+  const handleNext = () => {
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
   };
 
-  const handlePreviousStep = () => {
+  const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
   };
 
-  const handlePlanSelect = (plan: SubscriptionPlan) => {
-    setSelectedPlan(plan);
+  const handleStepClick = (stepIndex: number) => {
+    setCurrentStep(stepIndex + 1);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Solo se permiten archivos de imagen (JPG, PNG, GIF, WEBP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo es demasiado grande. Máximo 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropModal(true);
+      setUploadError(null);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    try {
+      setShowCropModal(false);
+      setUploadError(null);
+      setPendingImageBlob(croppedBlob);
+      const localUrl = URL.createObjectURL(croppedBlob);
+      setPreviewUrl(localUrl);
+      if (!originalPhotoUrl && formData.photo) {
+        setOriginalPhotoUrl(formData.photo.split('?')[0]);
+      }
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setUploadError('Error al procesar la imagen. Por favor intenta nuevamente.');
+    } finally {
+      setSelectedImage(null);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeletePhoto = () => {
+    if (pendingImageBlob || previewUrl) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPendingImageBlob(null);
+      setPreviewUrl(null);
+      setUploadError(null);
+      return;
+    }
+    
+    if (formData.photo) {
+      if (!originalPhotoUrl) {
+        setOriginalPhotoUrl(formData.photo.split('?')[0]);
+      }
+      setFormData(prev => ({ ...prev, photo: undefined }));
+      setPreviewUrl(null);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      setUploadError(null);
+
+      // Crear el socio primero
+      const newPartner = await partnerService.createPartner(formData as Omit<Partner, 'id'>);
+      
+      // Si hay una imagen pendiente, subirla después de crear el socio
+      if (pendingImageBlob && newPartner.id) {
+        try {
+          const file = new File([pendingImageBlob], 'partner-photo.jpg', { type: 'image/jpeg' });
+          const result = await partnerService.uploadPartnerPhoto(newPartner.id, file);
+          if (result.fileUrl) {
+            await partnerService.updatePartner(newPartner.id, { photo: result.fileUrl });
+          }
+        } catch (photoError) {
+          console.error('Error uploading photo:', photoError);
+          setUploadError('El socio se creó pero hubo un error al subir la foto. Puedes editarla después.');
+        }
+      }
+
+      toast({
+        title: "Socio creado",
+        description: uploadError ? "El socio ha sido creado pero la foto no se pudo subir. Puedes editarla después." : "El socio ha sido creado exitosamente.",
+      });
+      router.push("/partners");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Información del Socio
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Completa los datos básicos del nuevo socio
-              </p>
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Selecciona el tipo de socio
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {['INDIVIDUAL', 'COMPANY', 'AGENT'].map(type => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, type }))}
+                  className={`p-6 border-2 rounded-lg text-center transition-colors ${
+                    formData.type === type
+                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <User className={`w-8 h-8 mx-auto mb-2 ${formData.type === type ? 'text-brand-600' : 'text-gray-400'}`} />
+                  <span className="block text-sm font-medium text-gray-900 dark:text-white">
+                    {type === 'INDIVIDUAL' ? 'Individual' : type === 'COMPANY' ? 'Empresa' : 'Agente'}
+                  </span>
+                </button>
+              ))}
             </div>
-            <PartnerForm />
           </div>
         );
-      
       case 2:
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Seleccionar Plan de Suscripción
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Elige el plan que mejor se adapte a las necesidades del socio
-              </p>
-            </div>
-            <div className="p-6">
-              {loadingProducts ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600 mx-auto"></div>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">Cargando planes...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {plans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                        selectedPlan?.id === plan.id
-                          ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                      }`}
-                      onClick={() => handlePlanSelect(plan)}
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {plan.name}
-                        </h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {plan.category}
-                        </Badge>
-                      </div>
-                      
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                        {plan.description}
-                      </p>
-                      
-                      <div className="space-y-2 mb-4">
-                        {plan.features.map((feature, index) => (
-                          <div key={index} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                            {feature}
-                          </div>
-                        ))}
-                      </div>
-                      
-                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                          {subscriptionService.formatCurrency(plan.price, plan.currency)}
+          <div className="space-y-6">
+            {/* Foto de Perfil */}
+            <div className="border-b border-gray-200 dark:border-gray-700 pb-6">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                Foto de Perfil
+              </h3>
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="flex-shrink-0 relative">
+                  {(previewUrl || formData.photo) ? (
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700">
+                      <img 
+                        src={previewUrl || (formData.photo?.startsWith('http') ? formData.photo : getEndpoint(formData.photo?.startsWith('/') ? formData.photo : `/${formData.photo}`))}
+                        alt="Foto de perfil"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ccircle fill="%23ddd" cx="50" cy="50" r="50"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EFoto%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                      {pendingImageBlob && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                          <span className="text-white text-xs">Pendiente</span>
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          por {plan.billingCycle.toLowerCase()}
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
+                      <User className="w-16 h-16 text-gray-400" />
+                    </div>
+                  )}
                 </div>
-              )}
-              
-              <div className="flex justify-between mt-8">
-                <Button variant="outline" onClick={handlePreviousStep}>
-                  Anterior
-                </Button>
-                <Button 
-                  onClick={handleNextStep}
-                  disabled={!selectedPlan}
+                <div className="flex flex-col gap-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    id="partner-photo-upload"
+                  />
+                  <label
+                    htmlFor="partner-photo-upload"
+                    className="inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors cursor-pointer"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    {previewUrl || formData.photo ? 'Cambiar Foto' : 'Subir Foto'}
+                  </label>
+                  {(previewUrl || formData.photo) && (
+                    <button
+                      type="button"
+                      onClick={handleDeletePhoto}
+                      className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Eliminar Foto
+                    </button>
+                  )}
+                  {uploadError && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{uploadError}</p>
+                  )}
+                  {pendingImageBlob && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      Foto pendiente de guardar. Se subirá al guardar el formulario.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {formData.type !== 'COMPANY' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nombre(s) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName || ""}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Apellido(s) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName || ""}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </>
+            )}
+            {formData.type === 'COMPANY' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nombre de la Empresa <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName || ""}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    RUC/Registro <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="companyRegistration"
+                    value={formData.companyRegistration || ""}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cargo/Posición
+                  </label>
+                  <input
+                    type="text"
+                    name="position"
+                    value={formData.position || ""}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email || ""}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Teléfono <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone || ""}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo de Documento <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="documentType"
+                  value={formData.documentType || "CI"}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
                 >
-                  Continuar
-                </Button>
+                  <option value="CI">Cédula de Identidad</option>
+                  <option value="RUC">RUC</option>
+                  <option value="PASSPORT">Pasaporte</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Número de Documento <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="documentNumber"
+                  value={formData.documentNumber || ""}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                />
               </div>
             </div>
           </div>
         );
-      
       case 3:
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Configuración de Pago
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Configura el método de pago para la suscripción
-              </p>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Dirección
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address || ""}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
-            <div className="p-6">
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  Resumen del Plan Seleccionado
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Plan:</span>
-                    <span className="font-medium">{selectedPlan?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Precio:</span>
-                    <span className="font-medium">
-                      {selectedPlan ? subscriptionService.formatCurrency(selectedPlan.price, selectedPlan.currency) : ''}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Ciclo de facturación:</span>
-                    <span className="font-medium capitalize">{selectedPlan?.billingCycle}</span>
-                  </div>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Ciudad
+                </label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                />
               </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Método de Pago
-                  </label>
-                  <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white">
-                    <option value="credit_card">Tarjeta de Crédito</option>
-                    <option value="bank_transfer">Transferencia Bancaria</option>
-                    <option value="cash">Efectivo</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fecha de Inicio
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-                    defaultValue={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="autoRenew"
-                    className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-                    defaultChecked
-                  />
-                  <label htmlFor="autoRenew" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Renovación automática
-                  </label>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Departamento/Estado
+                </label>
+                <input
+                  type="text"
+                  name="state"
+                  value={formData.state || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                />
               </div>
-              
-              <div className="flex justify-between mt-8">
-                <Button variant="outline" onClick={handlePreviousStep}>
-                  Anterior
-                </Button>
-                <Button onClick={handleNextStep}>
-                  Continuar
-                </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Código Postal
+                </label>
+                <input
+                  type="text"
+                  name="zipCode"
+                  value={formData.zipCode || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  País
+                </label>
+                <input
+                  type="text"
+                  name="country"
+                  value={formData.country || ""}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Sitio Web
+              </label>
+              <input
+                type="url"
+                name="website"
+                value={formData.website || ""}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
           </div>
         );
-      
       case 4:
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Confirmación Final
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Revisa toda la información antes de crear el socio
-              </p>
-            </div>
-            <div className="p-6">
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center mr-3">
-                    <Package className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-green-800 dark:text-green-200">
-                      Plan Seleccionado: {selectedPlan?.name}
-                    </h3>
-                    <p className="text-green-700 dark:text-green-300 text-sm">
-                      {selectedPlan ? subscriptionService.formatCurrency(selectedPlan.price, selectedPlan.currency) : ''} por {selectedPlan?.billingCycle}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <span className="text-gray-600 dark:text-gray-400">Estado del registro:</span>
-                  <Badge className="bg-green-100 text-green-800 border-green-200">
-                    Listo para crear
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <span className="text-gray-600 dark:text-gray-400">Suscripción:</span>
-                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                    Se creará automáticamente
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <span className="text-gray-600 dark:text-gray-400">Primer pago:</span>
-                  <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                    Pendiente de configuración
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="flex justify-between mt-8">
-                <Button variant="outline" onClick={handlePreviousStep}>
-                  Anterior
-                </Button>
-                <Button 
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={() => {
-                    toast.success('Socio creado exitosamente con suscripción');
-                    router.push('/partners');
-                  }}
-                >
-                  <CreditCardIcon className="w-4 h-4 mr-2" />
-                  Crear Socio y Suscripción
-                </Button>
-              </div>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Notas
+              </label>
+              <textarea
+                name="notes"
+                value={formData.notes || ""}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+                placeholder="Información adicional sobre el socio..."
+              />
             </div>
           </div>
         );
-      
       default:
         return null;
     }
   };
 
+  const progressPercentage = (currentStep / steps.length) * 100;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={() => router.back()}
-              className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-            >
-              <ArrowLeftIcon className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center">
-                <UserPlusIcon className="w-6 h-6 text-white" />
-              </div>
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => router.push('/partners')}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Nuevo Socio
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Registro completo con suscripción
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Paso {currentStep} de {steps.length} • {progressPercentage.toFixed(0)}% completado
                 </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Crear Socio
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-500 ease-out"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar with steps */}
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 sticky top-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Progreso del Formulario
+              </h3>
+              
+              <nav className="space-y-2">
+                {steps.map((step, index) => (
+                  <button
+                    key={step.id}
+                    onClick={() => handleStepClick(index)}
+                    className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all duration-200 cursor-pointer ${
+                      currentStep === index + 1
+                        ? 'bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-300'
+                        : index + 1 < currentStep
+                        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30'
+                        : 'bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    <div className="flex-shrink-0">
+                      {index + 1 < currentStep ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <div className="h-5 w-5 rounded-full border-2 border-current flex items-center justify-center text-xs font-medium">
+                          {index + 1}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{step.title}</p>
+                      <p className="text-xs opacity-75 truncate">{step.description}</p>
+                    </div>
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          {/* Main content */}
+          <div className="lg:col-span-3">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+              {/* Step header */}
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {steps[currentStep - 1]?.title}
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {steps[currentStep - 1]?.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step content */}
+              <div className="p-6">
+                {renderStepContent()}
+              </div>
+
+              {/* Navigation buttons */}
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={currentStep === 1}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  Anterior
+                </button>
+                
+                {currentStep < steps.length && (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
+                  >
+                    Siguiente
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
-
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                  currentStep > index + 1
-                    ? 'bg-green-500 border-green-500 text-white'
-                    : currentStep === index + 1
-                    ? 'bg-brand-500 border-brand-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500'
-                }`}>
-                  {currentStep > index + 1 ? (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                <div className="ml-3">
-                  <p className={`text-sm font-medium ${
-                    currentStep >= index + 1 ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                    {step.title}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {step.description}
-                  </p>
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-16 h-0.5 mx-4 ${
-                    currentStep > index + 1 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Step Content */}
-        {renderStepContent()}
       </div>
+
+      {/* Image Crop Modal */}
+      {showCropModal && selectedImage && (
+        <ImageCropModal
+          imageSrc={selectedImage}
+          onComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={1}
+        />
+      )}
     </div>
   );
-} 
+}

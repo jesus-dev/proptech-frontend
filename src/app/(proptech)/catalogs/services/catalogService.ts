@@ -278,7 +278,7 @@ export const catalogService = {
   },
   
   // (sin inicialización automática de catálogos)
-    
+  // initializeCatalogs: async () => {
     // const sanLorenzo = await cityService.create({
     //   name: "San Lorenzo",
     //   departmentId: "11",
@@ -583,5 +583,5 @@ export const catalogService = {
     //   agencyName: agency2.name,
     //   active: true,
     // });
-  }
+  // }
 }; 

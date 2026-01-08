@@ -29,6 +29,7 @@ export interface Partner {
   lastPaymentDate?: string;
   lastPaymentAmount?: number;
   assignedAgentId?: number;
+  agentId?: number;
   assignedAgencyId?: number;
   notes?: string;
   specializations?: string[];
@@ -45,6 +46,7 @@ export interface Partner {
   createdAt?: string;
   updatedAt?: string;
   photo?: string;
+  slug?: string;
 }
 
 export interface PaginatedPartnersResponse {
@@ -258,6 +260,24 @@ class PartnerApiService {
     } catch (error) {
       console.error('Error fetching active partners:', error);
       throw new Error(`Error al cargar socios activos: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
+  }
+
+  async getDebtorPartners(params?: { month?: string; category?: 'SOCIAL_DUES' | 'PROPTECH' }): Promise<Partner[]> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.month) searchParams.append('month', params.month);
+      if (params?.category) searchParams.append('category', params.category);
+      const url = getEndpoint(`/api/partners/debtors?${searchParams.toString()}`);
+      const response = await fetch(url);
+      if (!response.ok) {
+        console.warn(`No se pudieron obtener morosos (status ${response.status})`);
+        return [];
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching debtor partners:', error);
+      return [];
     }
   }
 
