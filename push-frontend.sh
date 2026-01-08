@@ -22,7 +22,7 @@ echo "✅ Archivos de versiones creados: .node-version y .npm-version"
 
 # Congelar dependencias en package-lock.json (respeta lock actual)
 echo "📦 Asegurando dependencias..."
-npm install
+npm install --legacy-peer-deps
 
 echo "✅ Dependencias aseguradas en package-lock.json"
 
