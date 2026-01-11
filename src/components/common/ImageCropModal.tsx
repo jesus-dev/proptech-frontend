@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { X, ZoomIn, ZoomOut, RotateCw, Check } from 'lucide-react';
 
+// Importar react-easy-crop dinámicamente
+// react-easy-crop exporta Cropper como default export
 const Cropper = dynamic(
   () => import('react-easy-crop').then((mod) => mod.default || mod),
   { 
     ssr: false,
-    loading: () => <div className="w-full h-96 flex items-center justify-center text-white">Cargando...</div>
+    loading: () => null // No mostrar loading aquí, lo manejamos en el componente
   }
 ) as React.ComponentType<any>;
 
@@ -39,6 +41,39 @@ export default function ImageCropModal({
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [cropperLoaded, setCropperLoaded] = useState(false);
+
+  // Verificar que la imagen se carga correctamente
+  useEffect(() => {
+    if (imageSrc) {
+      setImageLoaded(false);
+      setImageError(false);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        setImageLoaded(true);
+        setImageError(false);
+      };
+      img.onerror = () => {
+        console.error('Error loading image in crop modal:', imageSrc);
+        setImageError(true);
+        setImageLoaded(false);
+      };
+      img.src = imageSrc;
+    }
+  }, [imageSrc]);
+
+  // Verificar que el componente Cropper se carga
+  useEffect(() => {
+    import('react-easy-crop').then(() => {
+      setCropperLoaded(true);
+    }).catch((error) => {
+      console.error('Error loading react-easy-crop:', error);
+      setImageError(true);
+    });
+  }, []);
 
   const onCropComplete = useCallback((_: CropArea, croppedAreaPixels: CropArea) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -136,19 +171,36 @@ export default function ImageCropModal({
         </div>
 
         {/* Crop Area */}
-        <div className="relative h-96 bg-gray-900">
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            rotation={rotation}
-            aspect={aspectRatio}
-            onCropChange={setCrop}
-            onCropComplete={onCropComplete}
-            onZoomChange={setZoom}
-            cropShape={circularCrop ? 'round' : 'rect'}
-            showGrid={true}
-          />
+        <div className="relative w-full" style={{ height: '400px', backgroundColor: '#000' }}>
+          {imageError ? (
+            <div className="w-full h-full flex items-center justify-center text-white">
+              <p className="text-red-400">Error al cargar la imagen</p>
+            </div>
+          ) : !imageSrc ? (
+            <div className="w-full h-full flex items-center justify-center text-white">
+              <p>No hay imagen seleccionada</p>
+            </div>
+          ) : !imageLoaded || !cropperLoaded ? (
+            <div className="w-full h-full flex items-center justify-center text-white">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p>Cargando...</p>
+              </div>
+            </div>
+          ) : (
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={aspectRatio}
+              onCropChange={setCrop}
+              onCropComplete={onCropComplete}
+              onZoomChange={setZoom}
+              cropShape={circularCrop ? 'round' : 'rect'}
+              showGrid={true}
+            />
+          )}
         </div>
 
         {/* Controls */}

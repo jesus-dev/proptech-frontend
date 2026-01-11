@@ -3,6 +3,7 @@ import Image from 'next/image';import React from "react";
 import { Contract } from "./types";
 import { formatDateLatino, formatDateTimeLatino } from "../utils/dateUtils";
 import ContractImmutabilityStatus from './ContractImmutabilityStatus';
+import { formatPrice } from "@/lib/utils";
 
 interface ContractPreviewProps {
   contract: Partial<Contract>;
@@ -11,12 +12,11 @@ interface ContractPreviewProps {
 }
 
 function formatCurrency(amount: number, currency: string = "USD") {
-  return new Intl.NumberFormat('es-PY', {
-    style: 'currency',
-    currency,
+  // Usar la función centralizada de utils que ya maneja todas las monedas
+  return formatPrice(amount || 0, currency as any, {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount || 0);
+    maximumFractionDigits: 0
+  });
 }
 
 function getContractTypeText(type?: string) {

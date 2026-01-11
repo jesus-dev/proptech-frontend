@@ -3,6 +3,7 @@
 import React from "react";
 import { DevelopmentFormData } from "../../hooks/useDevelopmentForm";
 import CurrencySelector from "@/components/ui/CurrencySelector";
+import CurrencySymbol from "@/components/ui/CurrencySymbol";
 
 interface GeneralInfoStepProps {
   formData: DevelopmentFormData;
@@ -42,7 +43,7 @@ export default function GeneralInfoStep({ formData, handleChange, errors }: Gene
             </label>
             <div className="relative">
               <span className="absolute left-3 top-3 text-gray-500 dark:text-gray-400">
-                {formData.currency === 'USD' ? '$' : formData.currency === 'PYG' ? 'Gs.' : '$'}
+                <CurrencySymbol currencyCode={formData.currency} />
               </span>
               <input
                 type="number"

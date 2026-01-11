@@ -7,6 +7,8 @@ import { partnerService, Partner } from "../../services/partnerService";
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import PartnerCombobox from "@/components/ui/PartnerCombobox";
+import CurrencyCodeSelector from "@/components/ui/CurrencyCodeSelector";
+import { formatAmountWithCurrencySync, useCurrencySymbol } from "@/lib/currency-helpers";
 import { 
   PlusIcon,
   BanknotesIcon,
@@ -38,6 +40,8 @@ export default function NewPaymentPage() {
     notes: "",
     selectedQuotaId: "" // ID de la cuota pendiente seleccionada
   });
+
+  const currencySymbol = useCurrencySymbol(formData.currency);
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [pendingQuotas, setPendingQuotas] = useState<PartnerPayment[]>([]);
   const [loadingQuotas, setLoadingQuotas] = useState(false);
@@ -421,7 +425,7 @@ export default function NewPaymentPage() {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500 text-sm">{formData.currency === 'USD' ? '$' : '₲'}</span>
+                      <span className="text-gray-500 text-sm">{currencySymbol}</span>
                     </div>
                     <input
                       type="number"
@@ -437,9 +441,11 @@ export default function NewPaymentPage() {
                   </div>
                   {formData.amount && (
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      {formData.currency === 'USD' 
-                        ? `$${parseFloat(formData.amount || '0').toLocaleString('es-PY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : `₲${parseFloat(formData.amount || '0').toLocaleString('es-PY')}`}
+                      {formatAmountWithCurrencySync(
+                        parseFloat(formData.amount || '0'),
+                        formData.currency,
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      )}
                     </p>
                   )}
                 </div>
@@ -448,16 +454,12 @@ export default function NewPaymentPage() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Moneda <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleInputChange}
+                  <CurrencyCodeSelector
+                    selectedCurrencyCode={formData.currency}
+                    onCurrencyChange={(currencyCode) => setFormData({ ...formData, currency: currencyCode })}
+                    className="w-full"
                     required
-                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white transition-all"
-                  >
-                    <option value="USD">USD - Dólares</option>
-                    <option value="PYG">PYG - Guaraníes</option>
-                  </select>
+                  />
                 </div>
 
                 <div className="md:col-span-3">
@@ -557,9 +559,11 @@ export default function NewPaymentPage() {
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Monto:</span>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {formData.currency === 'USD' 
-                        ? `$${parseFloat(formData.amount).toLocaleString('es-PY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        : `₲${parseFloat(formData.amount).toLocaleString('es-PY')}`}
+                      {formatAmountWithCurrencySync(
+                        parseFloat(formData.amount),
+                        formData.currency,
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      )}
                     </p>
                   </div>
                   <div>

@@ -7,6 +7,7 @@ import { Country, City, Neighborhood } from "../../settings/types";
 import { getAllPropertyTypes, PropertyType } from "../../catalogs/property-types/services/propertyTypeService";
 import MultiSelect from "./MultiSelect";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import CurrencyCodeSelector from "@/components/ui/CurrencyCodeSelector";
 
 interface ContactFormProps {
   initialData?: ContactFormData;
@@ -472,16 +473,11 @@ export default function ContactForm({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Moneda
             </label>
-            <select
-              name="budgetCurrency"
-              value={formData.budget?.currency || "USD"}
-              onChange={(e) => handleBudgetChange("currency", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="USD">USD</option>
-              <option value="PYG">PYG</option>
-              <option value="EUR">EUR</option>
-            </select>
+            <CurrencyCodeSelector
+              selectedCurrencyCode={formData.budget?.currency || "USD"}
+              onCurrencyChange={(currencyCode) => handleBudgetChange("currency", currencyCode)}
+              className="w-full"
+            />
           </div>
         </div>
       </div>

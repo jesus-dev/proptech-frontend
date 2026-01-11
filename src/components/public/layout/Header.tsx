@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { XMarkIcon, Bars3Icon } from "@heroicons/react/24/outline";
+import { XMarkIcon, Bars3Icon, BoltIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = () => {
@@ -208,13 +208,19 @@ const Header = () => {
               </Link>
               <Link
                 href="/proptech"
-                className={`px-6 py-2.5 rounded-lg transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 ${
+                className={`group relative px-6 py-2.5 rounded-xl transition-all duration-300 font-semibold overflow-hidden ${
                   isScrolled
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800'
-                    : 'bg-white/20 backdrop-blur-sm text-white border border-white/30 hover:bg-white/30'
+                    ? 'bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 text-white hover:from-blue-700 hover:via-blue-700 hover:to-blue-800 shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 transform hover:scale-105'
+                    : 'bg-white/20 backdrop-blur-md text-white border-2 border-white/40 hover:bg-white/30 hover:border-white/60 shadow-lg hover:shadow-xl hover:shadow-white/20'
                 }`}
               >
-                Descubrir PropTech
+                <span className="relative z-10 flex items-center gap-2">
+                  <BoltIcon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                  <span>Descubrir PropTech</span>
+                </span>
+                {isScrolled && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                )}
               </Link>
             </div>
 
@@ -352,9 +358,11 @@ const Header = () => {
               <a 
                 href="/proptech" 
                 onClick={() => setIsMenuOpen(false)} 
-                className="block p-3 text-white bg-blue-600 hover:bg-blue-700 rounded-lg text-center font-bold transition-colors"
+                className="group relative flex items-center justify-center gap-2 p-4 text-white bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 hover:from-blue-700 hover:via-blue-700 hover:to-blue-800 rounded-xl text-center font-bold shadow-lg hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105 overflow-hidden"
               >
-                🚀 Descubrir PropTech
+                <BoltIcon className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="relative z-10">Descubrir PropTech</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
               </a>
             </div>
           </div>

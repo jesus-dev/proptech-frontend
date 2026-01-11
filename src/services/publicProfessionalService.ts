@@ -6,7 +6,10 @@ export interface PublicProfessional {
   lastName: string;
   email: string;
   phone: string;
-  serviceType: string;
+  serviceType?: string; // código (para compatibilidad)
+  serviceTypeCode?: string;
+  serviceTypeName?: string;
+  serviceTypeId?: number;
   status: string;
   companyName?: string;
   address?: string;
@@ -31,6 +34,7 @@ export interface PublicProfessional {
   skills?: string[];
   certifications?: string[];
   portfolioImages?: string[];
+  responseTimeHours?: number;
 }
 
 class PublicProfessionalService {
@@ -110,6 +114,30 @@ class PublicProfessionalService {
     } catch (error: any) {
       console.error('Error updating additional info:', error);
       throw new Error(error.response?.data?.error || 'Error al actualizar la información');
+    }
+  }
+
+  async voteProfessional(id: number, data: {
+    rating: number;
+    voterName?: string;
+    voterEmail?: string;
+    comment?: string;
+  }): Promise<{
+    id: number;
+    professionalId: number;
+    rating: number;
+    voterName?: string;
+    comment?: string;
+    createdAt: string;
+    averageRating: number;
+    totalReviews: number;
+  }> {
+    try {
+      const response = await apiClient.post(`/api/public/professionals/${id}/vote`, data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error voting for professional:', error);
+      throw new Error(error.response?.data?.error || 'Error al procesar la votación');
     }
   }
 }

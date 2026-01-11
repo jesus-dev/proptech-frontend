@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import CurrencySelector from "@/components/ui/CurrencySelector";
+import CurrencySymbol from "@/components/ui/CurrencySymbol";
 import { CurrencyCode } from "@/lib/utils";
 import FloorPlansStep, { FloorPlanForm } from "./steps/FloorPlansStep";
 
@@ -55,9 +56,7 @@ export default function PropertyFormDemo() {
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2 text-gray-500">
-                {formData.currency === 'USD' ? '$' : 
-                 formData.currency === 'EUR' ? '€' : 
-                 formData.currency === 'PYG' ? '₲' : '$'}
+                <CurrencySymbol currencyCode={formData.currency} />
               </span>
               <input
                 type="number"

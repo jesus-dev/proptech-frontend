@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Professional, professionalService } from "../services/professionalService";
@@ -9,6 +9,8 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useToast } from "@/components/ui/use-toast";
 import { formatPrice } from "@/lib/utils";
 import { SERVICE_STATUS } from "../types";
+import ImageCropModal from '@/components/common/ImageCropModal';
+import { getEndpoint } from '@/lib/api-config';
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -28,7 +30,9 @@ import {
   BriefcaseIcon,
   CalendarIcon,
   PhotoIcon,
-  ShareIcon
+  ShareIcon,
+  CameraIcon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
 
 export default function ProfessionalDetailPage() {
@@ -39,6 +43,14 @@ export default function ProfessionalDetailPage() {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [pendingImageBlob, setPendingImageBlob] = useState<Blob | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const professionalId = Number(params?.id);
 
@@ -63,6 +75,9 @@ export default function ProfessionalDetailPage() {
       setLoading(true);
       const data = await professionalService.getProfessionalById(professionalId);
       setProfessional(data);
+      if (data?.photo) {
+        setOriginalPhotoUrl(data.photo.split('?')[0]);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -72,6 +87,134 @@ export default function ProfessionalDetailPage() {
       router.push("/professionals");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Por favor selecciona un archivo de imagen');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('El archivo es demasiado grande. Máximo 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropModal(true);
+      setUploadError(null);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    try {
+      setShowCropModal(false);
+      setUploadError(null);
+      setPendingImageBlob(croppedBlob);
+      const localUrl = URL.createObjectURL(croppedBlob);
+      setPreviewUrl(localUrl);
+      if (!originalPhotoUrl && professional?.photo) {
+        setOriginalPhotoUrl(professional.photo.split('?')[0]);
+      }
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setUploadError('Error al procesar la imagen. Por favor intenta nuevamente.');
+    } finally {
+      setSelectedImage(null);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!pendingImageBlob || !professional) return;
+
+    try {
+      setUploadingPhoto(true);
+      setUploadError(null);
+      const file = new File([pendingImageBlob], 'professional-photo.jpg', { type: 'image/jpeg' });
+      const result = await professionalService.uploadProfessionalPhoto(professional.id, file, originalPhotoUrl || undefined);
+      
+      if (result.fileUrl) {
+        setProfessional(prev => prev ? { ...prev, photo: result.fileUrl } : null);
+        setOriginalPhotoUrl(result.fileUrl.split('?')[0]);
+        
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+        setPendingImageBlob(null);
+        setPreviewUrl(null);
+        
+        toast({
+          title: "Foto actualizada",
+          description: "La foto de perfil ha sido actualizada exitosamente.",
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      setUploadError(error instanceof Error ? error.message : 'Error al subir la foto');
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al subir la foto",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    if (!professional) return;
+
+    if (pendingImageBlob || previewUrl) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPendingImageBlob(null);
+      setPreviewUrl(null);
+      setUploadError(null);
+      return;
+    }
+    
+    if (professional.photo) {
+      if (!confirm("¿Estás seguro de que quieres eliminar la foto de perfil?")) {
+        return;
+      }
+
+      try {
+        setUploadingPhoto(true);
+        await professionalService.deleteProfessionalPhoto(professional.id, professional.photo);
+        setProfessional(prev => prev ? { ...prev, photo: undefined } : null);
+        setOriginalPhotoUrl('');
+        
+        toast({
+          title: "Foto eliminada",
+          description: "La foto de perfil ha sido eliminada exitosamente.",
+        });
+      } catch (error) {
+        console.error('Error deleting photo:', error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Error al eliminar la foto",
+          variant: "destructive",
+        });
+      } finally {
+        setUploadingPhoto(false);
+      }
     }
   };
 
@@ -246,18 +389,76 @@ export default function ProfessionalDetailPage() {
             {/* Foto y Descripción */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <div className="flex items-start gap-6">
-                {professional.photo ? (
-                  <img
-                    src={professional.photo}
-                    alt={`${professional.firstName} ${professional.lastName}`}
-                    className="w-32 h-32 rounded-full object-cover border-4 border-blue-500"
-                  />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center border-4 border-blue-500">
-                    <UserIcon className="w-16 h-16 text-blue-600 dark:text-blue-400" />
-                  </div>
-                )}
+                <div className="flex-shrink-0 relative">
+                  {(previewUrl || professional.photo) ? (
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-blue-500 bg-white dark:bg-gray-700">
+                      <img
+                        src={previewUrl || (professional.photo?.startsWith('http') ? professional.photo : getEndpoint(professional.photo?.startsWith('/') ? professional.photo : `/${professional.photo}`))}
+                        alt={`${professional.firstName} ${professional.lastName}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Ccircle fill="%23ddd" cx="50" cy="50" r="50"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EFoto%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                      {pendingImageBlob && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                          <span className="text-white text-xs">Pendiente</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center border-4 border-blue-500">
+                      <UserIcon className="w-16 h-16 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="professional-photo-upload"
+                    />
+                    <label
+                      htmlFor="professional-photo-upload"
+                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-sm"
+                    >
+                      <CameraIcon className="w-4 h-4 mr-2" />
+                      {previewUrl || professional.photo ? 'Cambiar Foto' : 'Subir Foto'}
+                    </label>
+                    {(previewUrl || professional.photo) && (
+                      <button
+                        type="button"
+                        onClick={handleDeletePhoto}
+                        disabled={uploadingPhoto}
+                        className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors text-sm"
+                      >
+                        <XMarkIcon className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </button>
+                    )}
+                    {pendingImageBlob && (
+                      <button
+                        type="button"
+                        onClick={handleUploadPhoto}
+                        disabled={uploadingPhoto}
+                        className="inline-flex items-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors text-sm"
+                      >
+                        {uploadingPhoto ? 'Subiendo...' : 'Guardar Foto'}
+                      </button>
+                    )}
+                  </div>
+                  {uploadError && (
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-2">{uploadError}</p>
+                  )}
+                  {pendingImageBlob && (
+                    <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
+                      Foto pendiente de guardar. Haz clic en "Guardar Foto" para subirla.
+                    </p>
+                  )}
                   <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
                     {professional.firstName} {professional.lastName}
                   </h2>
@@ -593,6 +794,17 @@ export default function ProfessionalDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de recorte de imagen */}
+      {showCropModal && selectedImage && (
+        <ImageCropModal
+          image={selectedImage}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          aspectRatio={1}
+          cropShape="round"
+        />
+      )}
     </div>
   );
 }

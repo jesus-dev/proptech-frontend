@@ -9,6 +9,7 @@ import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
 import type { PublicPropertyFilters } from '@/services/publicPropertyService';
 import { logger } from '@/lib/logger';
+import { formatPrice } from '@/lib/utils';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -488,10 +489,13 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
     await fetchProperties(currentPage + 1, true);
   }, [fetchProperties, currentPage, hasMore, loadingMore]);
 
-  const formatPrice = (price: number, currency: string, period?: string) => {
-    const currencySymbol = currency === 'PYG' ? 'Gs.' : '$';
-    const formattedPrice = new Intl.NumberFormat('es-PY').format(price);
-    return `${currencySymbol} ${formattedPrice}${period ? `/${period}` : ''}`;
+  // Usar la función centralizada de utils para formatear precios
+  const formatPriceLocal = (price: number, currency: string, period?: string) => {
+    const formatted = formatPrice(price, currency as any, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+    return `${formatted}${period ? `/${period}` : ''}`;
   };
 
   const getPropertyCategory = (property: any) => {
@@ -1609,7 +1613,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                 {/* Precio */}
                 <div className="text-center mb-2">
                   <div className="text-lg font-bold text-gray-900">
-                    {formatPrice(property.price || 0, property.currencyCode || 'PYG')}
+                    {formatPriceLocal(property.price || 0, property.currencyCode || 'PYG')}
                   </div>
                   {property.operacion === 'RENT' && (
                     <div className="text-xs text-gray-500">por mes</div>

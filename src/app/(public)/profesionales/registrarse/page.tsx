@@ -69,7 +69,7 @@ export default function RegistroProfesionalPage() {
       setShowServiceTypeError(true);
       return;
     }
-    if (!registerFormData.firstName || !registerFormData.lastName || !registerFormData.phone) {
+    if (!registerFormData.firstName || !registerFormData.lastName || !registerFormData.phone || !registerFormData.documentNumber) {
       alert('Por favor completa todos los campos obligatorios');
       return;
     }
@@ -95,7 +95,9 @@ export default function RegistroProfesionalPage() {
         firstName: registerFormData.firstName.trim(),
         lastName: registerFormData.lastName.trim(),
         phone: phoneWithCountryCode,
-        serviceTypeId: serviceTypeId
+        serviceTypeId: serviceTypeId,
+        documentNumber: registerFormData.documentNumber.trim(),
+        documentType: registerFormData.documentType
       };
       
       console.log('Enviando datos de registro:', registrationData);
@@ -127,8 +129,6 @@ export default function RegistroProfesionalPage() {
       setRegisterLoading(true);
       await publicProfessionalService.updateAdditionalInfo(professionalId, {
         email: registerFormData.email || undefined,
-        documentNumber: registerFormData.documentNumber || undefined,
-        documentType: registerFormData.documentType || undefined,
         companyName: registerFormData.companyName || undefined,
         address: registerFormData.address || undefined,
         city: registerFormData.city || undefined,
@@ -330,6 +330,38 @@ export default function RegistroProfesionalPage() {
                   </p>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tipo de Documento <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      required
+                      value={registerFormData.documentType}
+                      onChange={(e) => setRegisterFormData({ ...registerFormData, documentType: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="CEDULA">Cédula</option>
+                      <option value="RUC">RUC</option>
+                      <option value="PASSPORT">Pasaporte</option>
+                      <option value="OTHER">Otro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número de Documento <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={registerFormData.documentNumber}
+                      onChange={(e) => setRegisterFormData({ ...registerFormData, documentNumber: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      placeholder="1234567"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tipo de Servicio <span className="text-red-500">*</span>
@@ -443,36 +475,6 @@ export default function RegistroProfesionalPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     placeholder="juan@ejemplo.com (opcional)"
                   />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Documento
-                    </label>
-                    <select
-                      value={registerFormData.documentType}
-                      onChange={(e) => setRegisterFormData({ ...registerFormData, documentType: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    >
-                      <option value="CEDULA">Cédula</option>
-                      <option value="RUC">RUC</option>
-                      <option value="PASSPORT">Pasaporte</option>
-                      <option value="OTHER">Otro</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Número de Documento
-                    </label>
-                    <input
-                      type="text"
-                      value={registerFormData.documentNumber}
-                      onChange={(e) => setRegisterFormData({ ...registerFormData, documentNumber: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      placeholder="1234567"
-                    />
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -9,6 +9,7 @@ import type { Client } from "../../developments/components/types";
 import { Combobox, Listbox } from '@headlessui/react';
 import { BuildingIcon, UserCircleIcon, CheckCircleIcon } from "@/icons";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
+import CurrencySymbol from "@/components/ui/CurrencySymbol";
 export default function NewPropertySalePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -302,7 +303,7 @@ export default function NewPropertySalePage() {
               <label className="block text-sm font-medium mb-1">Precio Total <span className="text-red-500">*</span></label>
               <div className="relative">
                 <span className="absolute left-3 top-3 text-gray-500">
-                  {selectedProperty?.currency === 'USD' ? '$' : selectedProperty?.currency === 'PYG' ? 'Gs.' : '$'}
+                  <CurrencySymbol currencyCode={selectedProperty?.currency} />
                 </span>
                 <input
                   type="number"
@@ -319,7 +320,7 @@ export default function NewPropertySalePage() {
               <label className="block text-sm font-medium mb-1">Pago Inicial</label>
               <div className="relative">
                 <span className="absolute left-3 top-3 text-gray-500">
-                  {selectedProperty?.currency === 'USD' ? '$' : selectedProperty?.currency === 'PYG' ? 'Gs.' : '$'}
+                  <CurrencySymbol currencyCode={selectedProperty?.currency} />
                 </span>
                 <input
                   type="number"

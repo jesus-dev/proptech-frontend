@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import OptimizedImage from './OptimizedImage';
+import { formatPrice } from "@/lib/utils";
 
 interface PropertyCardProps {
   property: {
@@ -52,10 +53,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   viewMode = 'grid',
   index = 0,
 }) => {
-  const formatPrice = (price: number, currency: string) => {
-    const currencySymbol = currency === 'PYG' ? 'Gs.' : '$';
-    const formattedPrice = new Intl.NumberFormat('es-PY').format(price);
-    return `${currencySymbol} ${formattedPrice}`;
+  // Usar la función centralizada de utils para formatear precios
+  const formatPriceLocal = (price: number, currency: string) => {
+    return formatPrice(price, currency as any, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
   };
 
   const propertyUrl = property.slug 
@@ -145,7 +148,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             </div>
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <div className="text-2xl font-bold text-blue-600">
-                {formatPrice(property.price, property.currencyCode || 'PYG')}
+                {formatPriceLocal(property.price, property.currencyCode || 'PYG')}
               </div>
               {property.views !== undefined && (
                 <div className="flex items-center text-gray-500 text-sm">

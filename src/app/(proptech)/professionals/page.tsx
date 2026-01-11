@@ -13,24 +13,37 @@ import {
   UserIcon,
   StarIcon,
   MapPinIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  EllipsisVerticalIcon,
+  TrashIcon,
+  DocumentDuplicateIcon,
+  LinkIcon
 } from "@heroicons/react/24/outline";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Professional, professionalService } from "./services/professionalService";
 import { ServiceType, serviceTypeService } from "./service-types/services/serviceTypeService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, createProfessionalSlug } from "@/lib/utils";
 import { SERVICE_STATUS } from "./types";
+import { useToast } from "@/components/ui/use-toast";
+import ModernPopup from "@/components/ui/ModernPopup";
 
 export default function ProfessionalsPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const menuRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   const [stats, setStats] = useState({
     total: 0,
@@ -124,6 +137,81 @@ export default function ProfessionalsPage() {
     setSearchTerm("");
     setSelectedServiceType("");
     setSelectedStatus("");
+  };
+
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMenuId !== null) {
+        const menuElement = menuRefs.current[openMenuId];
+        if (menuElement && !menuElement.contains(event.target as Node)) {
+          setOpenMenuId(null);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenuId]);
+
+  const handleDeleteProfessional = async (id: number) => {
+    try {
+      setDeleting(true);
+      await professionalService.deleteProfessional(id);
+      toast({
+        title: "Éxito",
+        description: "Profesional eliminado exitosamente",
+      });
+      setDeleteConfirmId(null);
+      loadProfessionals();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al eliminar el profesional",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDuplicateProfessional = async (id: number) => {
+    try {
+      const professional = await professionalService.getProfessionalById(id);
+      if (!professional) {
+        toast({
+          title: "Error",
+          description: "No se pudo encontrar el profesional",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Crear una copia sin el ID y con un nombre modificado
+      const { id: _, ...professionalData } = professional;
+      const duplicatedData = {
+        ...professionalData,
+        firstName: `${professional.firstName} (Copia)`,
+        email: `copy_${Date.now()}_${professional.email}`,
+        status: 'PENDING' as const,
+      };
+
+      await professionalService.createProfessional(duplicatedData);
+      toast({
+        title: "Éxito",
+        description: "Profesional duplicado exitosamente",
+      });
+      setOpenMenuId(null);
+      loadProfessionals();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Error al duplicar el profesional",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -313,8 +401,64 @@ export default function ProfessionalsPage() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {professionals.map((professional) => (
-                  <div key={professional.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-shadow">
-                    <div className="flex items-start justify-between mb-4">
+                  <div key={professional.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-shadow relative">
+                    {/* Menú de opciones */}
+                    <div className="absolute top-4 right-4" ref={(el) => { menuRefs.current[professional.id] = el; }}>
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === professional.id ? null : professional.id)}
+                        className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                        aria-label="Más opciones"
+                      >
+                        <EllipsisVerticalIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      </button>
+                      
+                      {openMenuId === professional.id && (
+                        <div className="absolute right-0 top-10 z-50 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                          <Link
+                            href={`/professionals/${professional.id}`}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            onClick={() => setOpenMenuId(null)}
+                          >
+                            <EyeIcon className="w-4 h-4" />
+                            Ver Perfil
+                          </Link>
+                          <Link
+                            href={`/professionals/${professional.id}/edit`}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            onClick={() => setOpenMenuId(null)}
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                            Editar
+                          </Link>
+                          <Link
+                            href={`/profesionales/${createProfessionalSlug(professional)}`}
+                            target="_blank"
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            onClick={() => setOpenMenuId(null)}
+                          >
+                            <LinkIcon className="w-4 h-4" />
+                            Ver Público
+                          </Link>
+                          <button
+                            onClick={() => handleDuplicateProfessional(professional.id)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <DocumentDuplicateIcon className="w-4 h-4" />
+                            Duplicar
+                          </button>
+                          <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                          <button
+                            onClick={() => setDeleteConfirmId(professional.id)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-start justify-between mb-4 pr-8">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
                           <UserIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -372,17 +516,11 @@ export default function ProfessionalsPage() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
                       <Link
-                        href={`/professionals/${professional.id}`}
+                        href={`/professionals/${professional.id}/edit`}
                         className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all text-sm font-medium shadow-md hover:shadow-lg"
                       >
-                        <EyeIcon className="w-4 h-4 mr-2" />
-                        Ver Perfil
-                      </Link>
-                      <Link
-                        href={`/professionals/${professional.id}/edit`}
-                        className="ml-2 inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-                      >
-                        <PencilIcon className="w-4 h-4" />
+                        <PencilIcon className="w-4 h-4 mr-2" />
+                        Editar
                       </Link>
                     </div>
                   </div>
@@ -415,7 +553,38 @@ export default function ProfessionalsPage() {
         </div>
 
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      <ModernPopup
+        isOpen={deleteConfirmId !== null}
+        onClose={() => setDeleteConfirmId(null)}
+        title="Confirmar Eliminación"
+      >
+        <div className="p-6">
+          <p className="text-gray-700 dark:text-gray-300 mb-6">
+            ¿Estás seguro de que deseas eliminar este profesional? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setDeleteConfirmId(null)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              disabled={deleting}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => deleteConfirmId && handleDeleteProfessional(deleteConfirmId)}
+              disabled={deleting}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              {deleting && <LoadingSpinner size="sm" />}
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
+        </div>
+      </ModernPopup>
     </div>
   );
 }
+
 

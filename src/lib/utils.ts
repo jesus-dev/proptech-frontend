@@ -196,4 +196,25 @@ import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// Función para generar slug a partir de texto (para URLs)
+export function createSlug(text: string): string {
+  if (!text) return '';
+  
+  return text
+    .toLowerCase()
+    .normalize('NFD') // Normalizar caracteres unicode (separar acentos)
+    .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+    .replace(/[^a-z0-9\s-]/g, '') // Solo letras, números, espacios y guiones
+    .replace(/\s+/g, '-') // Espacios a guiones
+    .replace(/-+/g, '-') // Múltiples guiones a uno
+    .replace(/^-|-$/g, '') // Remover guiones al inicio y final
+    .trim();
+}
+
+// Función para generar slug de profesional (nombre + apellido + ID para unicidad)
+export function createProfessionalSlug(professional: { firstName: string; lastName: string; id: number }): string {
+  const nameSlug = createSlug(`${professional.firstName} ${professional.lastName}`);
+  return `${nameSlug}-${professional.id}`;
 } 

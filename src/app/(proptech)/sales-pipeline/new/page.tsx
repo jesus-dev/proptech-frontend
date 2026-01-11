@@ -25,6 +25,7 @@ import { salesPipelineService } from "../services/salesPipelineService";
 import PropertyCombobox from "@/components/ui/PropertyCombobox";
 import Select from "@/components/form/Select";
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import CurrencyCodeSelector from "@/components/ui/CurrencyCodeSelector";
 import { clientService } from "../../developments/services/clientService";
 import { Client } from "../../developments/components/types";
 import type { Property } from "../../properties/components/types";
@@ -537,15 +538,10 @@ export default function NewLeadPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Moneda
                 </label>
-                <Select
-                  options={[
-                    { value: 'USD', label: 'USD - Dólar Estadounidense' },
-                    { value: 'PYG', label: 'PYG - Guaraní Paraguayo' },
-                    { value: 'EUR', label: 'EUR - Euro' }
-                  ]}
-                  defaultValue={formData.currency}
-                  onChange={(value) => handleInputChange('currency', value)}
-                  placeholder="Seleccionar moneda"
+                <CurrencyCodeSelector
+                  selectedCurrencyCode={formData.currency}
+                  onCurrencyChange={(currencyCode) => handleInputChange('currency', currencyCode)}
+                  className="w-full"
                 />
               </div>
             </div>

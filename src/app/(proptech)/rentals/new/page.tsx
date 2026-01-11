@@ -24,6 +24,7 @@ import { temporalRentalService, CreateRentalDTO } from "../services/temporalRent
 import { rentalPropertyService, RentalProperty } from "../services/rentalPropertyService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useToast } from "@/components/ui/use-toast";
+import CurrencyCodeSelector from "@/components/ui/CurrencyCodeSelector";
 
 export default function NewRentalPage() {
   const router = useRouter();
@@ -765,16 +766,11 @@ export default function NewRentalPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Moneda
               </label>
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full md:w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="PYG">PYG - Guaraní</option>
-                <option value="USD">USD - Dólar</option>
-                <option value="ARS">ARS - Peso Argentino</option>
-                <option value="EUR">EUR - Euro</option>
-              </select>
+              <CurrencyCodeSelector
+                selectedCurrencyCode={currency}
+                onCurrencyChange={(currencyCode) => setCurrency(currencyCode)}
+                className="w-full md:w-48"
+              />
             </div>
 
             {/* Resumen de precio */}

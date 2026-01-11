@@ -6,7 +6,6 @@ import {
   HomeIcon,
   BuildingOfficeIcon,
   MapPinIcon,
-  CurrencyDollarIcon,
   ChartBarIcon,
   UserGroupIcon
 } from '@heroicons/react/24/outline';
@@ -38,17 +37,15 @@ const StatsSection = () => {
         const properties = allSample.properties || [];
         const totalProps = publicStats.totalProperties || allSample.pagination?.totalProperties || properties.length;
 
-        // Ciudades y precio promedio: basado en muestra (no inventado)
+        // Ciudades: basado en muestra (no inventado)
         const cities = new Set(properties.map((p: any) => (p.cityName || p.city || '').toString()).filter(Boolean));
-        const prices = properties.map((p: any) => Number(p.price || 0)).filter((p: number) => p > 0);
-        const avgPrice = prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
 
         setStats({
           totalProperties: totalProps,
           totalAgents: publicStats.totalAgents,
           totalCities: cities.size,
           featuredProperties: 0,
-          averagePrice: avgPrice,
+          averagePrice: 0,
           propertiesForSale: Number(saleStats.pagination?.totalProperties || 0),
           propertiesForRent: Number(rentStats.pagination?.totalProperties || 0),
         });
@@ -70,13 +67,6 @@ const StatsSection = () => {
 
     loadStats();
   }, []);
-
-  const formatPrice = (price: number) => {
-    if (price >= 1000000) {
-      return `₲${(price / 1000000).toFixed(1)}M`;
-    }
-    return `₲${new Intl.NumberFormat('es-PY').format(price)}`;
-  };
 
   const statCards = [
     {
@@ -101,25 +91,18 @@ const StatsSection = () => {
       delay: 0.3
     },
     {
-      icon: CurrencyDollarIcon,
-      value: formatPrice(stats.averagePrice),
-      label: 'Precio Promedio',
-      gradient: 'from-orange-500 to-red-500',
-      delay: 0.4
-    },
-    {
       icon: BuildingOfficeIcon,
       value: stats.propertiesForSale.toLocaleString(),
       label: 'En Venta',
       gradient: 'from-indigo-500 to-blue-500',
-      delay: 0.5
+      delay: 0.4
     },
     {
       icon: ChartBarIcon,
       value: stats.propertiesForRent.toLocaleString(),
       label: 'En Alquiler',
       gradient: 'from-teal-500 to-cyan-500',
-      delay: 0.6
+      delay: 0.5
     }
   ];
 
@@ -127,8 +110,8 @@ const StatsSection = () => {
     return (
       <section className="py-16 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded-xl animate-pulse" />
             ))}
           </div>
@@ -155,7 +138,7 @@ const StatsSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
           {statCards.map((stat, index) => (
             <motion.div
               key={index}

@@ -5,6 +5,7 @@ import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyFor
 import { getActivePropertyTypes } from "@/services/publicPropertyTypeService";
 import dynamic from "next/dynamic";
 import CurrencySelector from "@/components/ui/CurrencySelector";
+import CurrencySymbol from "@/components/ui/CurrencySymbol";
 import { getAllPropertyStatuses, PropertyStatus } from "@/app/(proptech)/catalogs/property-status/services/propertyStatusService";
 import ValidatedInput from "@/components/form/input/ValidatedInput";
 import ValidatedTextArea from "@/components/form/input/ValidatedTextArea";
@@ -417,7 +418,7 @@ export default function TypeAndOperationStep({ formData, handleChange, errors, i
             </label>
             <div className="relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 pointer-events-none">
-                {formData.currency === 'USD' ? '$' : formData.currency === 'PYG' ? 'Gs.' : '$'}
+                <CurrencySymbol currencyCode={formData.currency} />
               </div>
               <input
                 type="text"

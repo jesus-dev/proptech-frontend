@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import CurrencyCodeSelector from "@/components/ui/CurrencyCodeSelector";
 
 export default function SubscriptionProductsManager() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -342,15 +343,12 @@ export default function SubscriptionProductsManager() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Moneda *
                   </label>
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="PYG">PYG</option>
-                    <option value="EUR">EUR</option>
-                  </select>
+                  <CurrencyCodeSelector
+                    selectedCurrencyCode={formData.currency}
+                    onCurrencyChange={(currencyCode) => setFormData(prev => ({ ...prev, currency: currencyCode }))}
+                    className="w-full"
+                    required
+                  />
                 </div>
 
                 <div>

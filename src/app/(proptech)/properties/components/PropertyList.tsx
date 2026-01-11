@@ -11,23 +11,9 @@ import { propertyService } from "../services/propertyService";
 import { resolvePropertyStatus } from "../utils/status";
 import { GlassWater, ParkingSquare, Wifi, Dumbbell, HelpCircle, MoveUpRight, Home, Shield, Leaf, Snowflake, Flame, PawPrint, Car, Star, Heart, MapPin, Building, Sun, Moon, Cloud, Droplets, Utensils, Phone, Mail, Globe, Download, Eye as EyeIcon, Clock, Award, Zap, Wrench, Bell, Pencil, Trash2 } from "lucide-react";
 import { formatPrice, formatCurrency } from "@/lib/utils";
+import { formatAmountWithCurrencySync } from "@/lib/currency-helpers";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import { getImageBaseUrl } from '@/config/environment';
-
-function getCurrencySymbolAndCode(currency: string) {
-  switch ((currency || '').toUpperCase()) {
-    case 'USD':
-      return { symbol: '$', code: 'USD' };
-    case 'PYG':
-      return { symbol: '₲', code: 'PYG' };
-    case 'ARS':
-      return { symbol: '$', code: 'ARS' };
-    case 'BRL':
-      return { symbol: 'R$', code: 'BRL' };
-    default:
-      return { symbol: '', code: currency };
-  }
-}
 
 interface PropertyListProps {
   properties: Property[];
