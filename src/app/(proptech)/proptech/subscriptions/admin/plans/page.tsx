@@ -260,7 +260,41 @@ function AdminPlansPageContent() {
     );
   }
 
-  console.log('Rendering plans page. Plans count:', plans.length, 'Plans:', plans);
+  // Filtrar planes
+  const filteredPlans = plans.filter((plan) => {
+    // Filtro de búsqueda
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        plan.name.toLowerCase().includes(search) ||
+        plan.description.toLowerCase().includes(search) ||
+        plan.tier.toLowerCase().includes(search) ||
+        plan.type.toLowerCase().includes(search);
+      if (!matchesSearch) return false;
+    }
+
+    // Filtro de tipo
+    if (typeFilter && typeFilter !== '') {
+      if (typeFilter === 'PROPTECH' && plan.type !== 'PROPTECH') return false;
+      if (typeFilter === 'NETWORK' && plan.type !== 'NETWORK') return false;
+    }
+
+    // Filtro de tier
+    if (tierFilter && tierFilter !== '') {
+      const tierUpper = tierFilter.toUpperCase();
+      if (plan.tier !== tierUpper) return false;
+    }
+
+    // Filtro de estado
+    if (statusFilter && statusFilter !== '') {
+      if (statusFilter === 'active' && !plan.isActive) return false;
+      if (statusFilter === 'inactive' && plan.isActive) return false;
+    }
+
+    return true;
+  });
+
+  console.log('Rendering plans page. Plans count:', plans.length, 'Filtered:', filteredPlans.length, 'Plans:', plans);
 
   return (
     <div className="container mx-auto px-4 py-4">
@@ -293,9 +327,8 @@ function AdminPlansPageContent() {
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
           >
             <option value="">Todos los tipos</option>
-            <option value="mensual">Mensual</option>
-            <option value="anual">Anual</option>
-            <option value="semestral">Semestral</option>
+            <option value="PROPTECH">PropTech</option>
+            <option value="NETWORK">Network</option>
           </select>
           <select
             value={tierFilter}
@@ -303,10 +336,10 @@ function AdminPlansPageContent() {
             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
           >
             <option value="">Todos los niveles</option>
-            <option value="gratuito">Gratuito</option>
-            <option value="inicial">Inicial</option>
-            <option value="intermedio">Intermedio</option>
-            <option value="premium">Premium</option>
+            <option value="FREE">Gratuito</option>
+            <option value="INICIAL">Inicial</option>
+            <option value="INTERMEDIO">Intermedio</option>
+            <option value="PREMIUM">Premium</option>
           </select>
           <select
             value={statusFilter}
@@ -319,13 +352,17 @@ function AdminPlansPageContent() {
           </select>
           <Button
             onClick={() => {
-              toast.info('Filtros aplicados');
+              setSearchTerm('');
+              setTypeFilter('');
+              setTierFilter('');
+              setStatusFilter('');
+              toast.success('Filtros limpiados');
             }}
             variant="outline"
-            className="border-blue-600 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtrar
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Limpiar
           </Button>
         </div>
       </div>
@@ -561,8 +598,21 @@ function AdminPlansPageContent() {
 
       {/* Lista de Planes */}
       <div className="bg-white rounded-lg shadow">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Planes Existentes</h3>
+        <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900">
+            Planes Existentes {filteredPlans.length !== plans.length && `(${filteredPlans.length} de ${plans.length})`}
+          </h3>
+          {plans.length > 0 && (
+            <Button
+              onClick={loadPlans}
+              variant="outline"
+              size="sm"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualizar
+            </Button>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -586,7 +636,16 @@ function AdminPlansPageContent() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {plans.map((plan) => (
+              {filteredPlans.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-8 text-center text-gray-500">
+                    {plans.length === 0 
+                      ? 'No hay planes de suscripción. Crea uno nuevo para comenzar.'
+                      : 'No se encontraron planes que coincidan con los filtros aplicados.'}
+                  </td>
+                </tr>
+              ) : (
+                filteredPlans.map((plan) => (
                 <tr key={plan.id} className="hover:bg-gray-50">
                   <td className="px-3 py-3 whitespace-nowrap">
                     <div>
@@ -639,7 +698,8 @@ function AdminPlansPageContent() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

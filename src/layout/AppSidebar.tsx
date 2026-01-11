@@ -20,7 +20,7 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe, Building2, Calendar, MessageSquare, AlertTriangle, Shield, QrCode, ClipboardList, BarChart3, Rocket, Wrench } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Wallet, Globe, Building2, Calendar, MessageSquare, AlertTriangle, Shield, QrCode, ClipboardList, BarChart3, Rocket, Wrench, CreditCard } from "lucide-react";
 import SidebarWidget from "./SidebarWidget";
 import Logo from "@/components/common/Logo";
 import { useAuthContext } from "@/context/AuthContext";
@@ -352,6 +352,33 @@ const proptechItems: NavItem[] = [
     name: "Citas Agendadas",
     path: "/proptech/appointments",
     icon: <Calendar className="w-5 h-5" />,
+  },
+  {
+    name: "Suscripciones",
+    path: "/proptech/subscriptions/admin",
+    icon: <CreditCard className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Dashboard",
+        path: "/proptech/subscriptions/admin",
+      },
+      {
+        name: "Planes de Suscripción",
+        path: "/proptech/subscriptions/admin/plans",
+      },
+      {
+        name: "Suscripciones",
+        path: "/proptech/subscriptions/admin/subscriptions",
+      },
+      {
+        name: "Agentes de Ventas",
+        path: "/proptech/subscriptions/admin/sales-agents",
+      },
+      {
+        name: "Comisiones",
+        path: "/proptech/subscriptions/admin/commissions",
+      },
+    ],
   },
 ];
 
