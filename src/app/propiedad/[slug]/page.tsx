@@ -7,6 +7,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { publicPropertyService } from "@/services/publicPropertyService";
 import { getImageBaseUrl } from "@/config/environment";
+import { createAgentSlug } from "@/lib/utils";
 import { generatePropertyStructuredData } from "@/lib/seo";
 import { CommentList } from "@/components/comments/CommentList";
 import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, StarIcon, CheckCircleIcon, VideoCameraIcon, MapIcon, ArrowLeftIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon, WifiIcon, ShieldCheckIcon, ClockIcon, BanknotesIcon, DocumentTextIcon, InformationCircleIcon, XMarkIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
@@ -452,10 +453,16 @@ export default function PropertyDetailPage() {
     if (!property.agent.name) {
       property.agent.name = property.agent.email || 'Agente';
     }
-    // Asegurar que el slug esté disponible (priorizar slug sobre ID)
+    // Generar slug si no existe
     if (!property.agent.slug && property.agent.id) {
-      // Si no hay slug, el ID se usará como fallback en los enlaces
-      console.log('Agent slug not found, will use ID as fallback:', property.agent.id);
+      const agentId = typeof property.agent.id === 'string' ? parseInt(property.agent.id, 10) : property.agent.id;
+      property.agent.slug = createAgentSlug({
+        nombre: firstName,
+        apellido: lastName,
+        firstName: firstName,
+        lastName: lastName,
+        id: agentId
+      });
     }
   }
 

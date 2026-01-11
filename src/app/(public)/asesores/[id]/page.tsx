@@ -1,5 +1,4 @@
-// Ruta legacy: antes se renderizaba con datos ficticios.
-// Para evitar mantener datos ficticios, redirigimos a la ruta pública real del agente.
+// Ruta legacy: redirigir a la nueva ruta con slug
 "use client";
 
 import { useEffect } from "react";
@@ -11,6 +10,7 @@ export default function AsesorDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     const id = params?.id;
     if (id) {
+      // Mantener compatibilidad: redirigir a /agente/[slug] usando el ID como fallback
       router.replace(`/agente/${id}`);
     } else {
       router.replace('/asesores');

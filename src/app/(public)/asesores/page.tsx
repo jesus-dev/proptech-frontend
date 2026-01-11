@@ -37,6 +37,7 @@ interface Asesor {
   verified: boolean;
   properties: number;
   description: string;
+  slug?: string;
 }
 
 export default function AsesoresPage() {
@@ -121,7 +122,8 @@ export default function AsesoresPage() {
             image: agent.photo || undefined,
             verified: Boolean(agent.isActive ?? agent.active ?? true),
             properties: propertiesCount,
-            description: agent.bio || `${fullName} es un profesional inmobiliario con experiencia en el mercado paraguayo. Especializado en ${position}.`
+            description: agent.bio || `${fullName} es un profesional inmobiliario con experiencia en el mercado paraguayo. Especializado en ${position}.`,
+            slug: agent.slug || agent.id // Usar slug del backend si existe, sino usar ID como fallback
           };
         });
 
@@ -185,7 +187,7 @@ export default function AsesoresPage() {
         '@type': 'RealEstateAgent',
         name: asesor.name,
         description: asesor.description,
-        url: `https://proptech.com.py/agente/${asesor.id}`,
+        url: `https://proptech.com.py/agente/${asesor.slug || asesor.id}`,
         address: {
           '@type': 'PostalAddress',
           addressLocality: asesor.city,
@@ -516,7 +518,7 @@ export default function AsesoresPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                   className="group bg-gradient-to-br from-white via-white to-gray-50/50 rounded-2xl lg:rounded-3xl shadow-xl hover:shadow-2xl border border-gray-100/50 overflow-hidden transition-all duration-700 hover:-translate-y-2 hover:scale-[1.02] relative cursor-pointer"
-                  onClick={() => window.location.href = `/agente/${asesor.id}`}
+                  onClick={() => window.location.href = `/agente/${asesor.slug || asesor.id}`}
                 >
                   {/* Decoración superior */}
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"></div>

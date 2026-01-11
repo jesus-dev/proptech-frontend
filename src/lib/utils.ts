@@ -217,4 +217,32 @@ export function createSlug(text: string): string {
 export function createProfessionalSlug(professional: { firstName: string; lastName: string; id: number }): string {
   const nameSlug = createSlug(`${professional.firstName} ${professional.lastName}`);
   return `${nameSlug}-${professional.id}`;
+}
+
+// Función para generar slug de agente (nombre + apellido + ID para unicidad)
+export function createAgentSlug(agent: { nombre?: string; apellido?: string; firstName?: string; lastName?: string; name?: string; id: number | string }): string {
+  const firstName = agent.nombre || agent.firstName || '';
+  const lastName = agent.apellido || agent.lastName || '';
+  const fullName = firstName && lastName ? `${firstName} ${lastName}` : (agent.name || '');
+  const nameSlug = createSlug(fullName);
+  const id = typeof agent.id === 'string' ? parseInt(agent.id, 10) : agent.id;
+  return `${nameSlug}-${id}`;
+}
+
+// Función para extraer ID de un slug (para compatibilidad con backend)
+export function extractIdFromSlug(slugOrId: string): number | null {
+  // Si es solo un número, es un ID directo (compatibilidad)
+  if (/^\d+$/.test(slugOrId)) {
+    return Number(slugOrId);
+  }
+  
+  // Si tiene formato slug-id, extraer el ID del final
+  const parts = slugOrId.split('-');
+  const lastPart = parts[parts.length - 1];
+  
+  if (/^\d+$/.test(lastPart)) {
+    return Number(lastPart);
+  }
+  
+  return null;
 } 

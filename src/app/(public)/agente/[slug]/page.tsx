@@ -18,6 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
 import { getImageBaseUrl } from "@/config/environment";
+import { extractIdFromSlug } from "@/lib/utils";
 
 // Función helper para construir URLs completas de imágenes
 const getImageUrl = (imagePath: string | null | undefined): string => {
@@ -44,7 +45,7 @@ const formatPrice = (price: number, currency: string) => {
 export default function AgentProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const agentSlugOrId = params?.id as string;
+  const agentSlugOrId = params?.slug as string;
   const [agent, setAgent] = useState<any>(null);
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +60,18 @@ export default function AgentProfilePage() {
       try {
         setLoading(true);
         
+        // Extraer ID del slug (compatibilidad con backend que usa ID)
+        // Si es solo un número, usar directamente; si es slug, extraer el ID
+        let agentId = agentSlugOrId;
+        if (!/^\d+$/.test(agentSlugOrId)) {
+          const extractedId = extractIdFromSlug(agentSlugOrId);
+          if (extractedId) {
+            agentId = extractedId.toString();
+          }
+        }
+        
         // Obtener datos del agente
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/agents/${agentSlugOrId}`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/agents/${agentId}`;
         const agentResponse = await fetch(apiUrl);
         if (!agentResponse.ok) {
           const errorText = await agentResponse.text();
@@ -94,18 +105,16 @@ export default function AgentProfilePage() {
         console.log('✅ Normalized agent:', normalizedAgent);
         setAgent(normalizedAgent);
         
-        // Obtener propiedades del agente usando slug o ID (primera carga: 10 propiedades)
-        // Priorizar slug, luego ID del agente, luego el parámetro original
-        const agentSlug = normalizedAgent.slug || agentData.slug || normalizedAgent.id || agentData.id || agentSlugOrId;
+        // Obtener propiedades del agente usando ID (el backend usa ID)
+        const agentIdForProperties = normalizedAgent.id || agentData.id || agentId;
         console.log('🔍 Fetching properties for agent:', {
-          slug: normalizedAgent.slug || agentData.slug,
-          id: normalizedAgent.id || agentData.id,
-          original: agentSlugOrId,
-          final: agentSlug
+          slug: agentSlugOrId,
+          id: agentIdForProperties,
+          extractedId: agentId
         });
         
-        if (agentSlug) {
-          const propertiesUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/properties/agent/${agentSlug}?page=1&limit=12`;
+        if (agentIdForProperties) {
+          const propertiesUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/properties/agent/${agentIdForProperties}?page=1&limit=12`;
           const propertiesResponse = await fetch(propertiesUrl);
           if (propertiesResponse.ok) {
             const propertiesData = await propertiesResponse.json();
@@ -134,10 +143,10 @@ export default function AgentProfilePage() {
     try {
       setLoadingMore(true);
       const nextPage = currentPage + 1;
-      // Priorizar slug, luego ID del agente, luego el parámetro original
-      const agentSlug = agent.slug || agent.id || agentSlugOrId;
-      console.log('🔄 Loading more properties - Page:', nextPage, 'Agent:', agentSlug);
-      const propertiesUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/properties/agent/${agentSlug}?page=${nextPage}&limit=12`;
+      // Usar ID del agente (el backend usa ID)
+      const agentId = agent.id || extractIdFromSlug(agentSlugOrId) || agentSlugOrId;
+      console.log('🔄 Loading more properties - Page:', nextPage, 'Agent ID:', agentId);
+      const propertiesUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/public/properties/agent/${agentId}?page=${nextPage}&limit=12`;
       
       const propertiesResponse = await fetch(propertiesUrl);
       if (propertiesResponse.ok) {

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import React from 'react';
 import PropertiesSection from '@/components/public/sections/PropertiesSection';
+import PropertyCategoriesCards from '@/components/public/sections/PropertyCategoriesCards';
 import StatsSection from '@/components/public/sections/StatsSection';
 import ProfessionalsBanner from '@/components/public/sections/ProfessionalsBanner';
 import FeaturesSection from '@/components/public/sections/FeaturesSection';
@@ -86,6 +87,9 @@ export default function PublicHome() {
     <div className="min-h-screen">
         {/* Sección Principal de Propiedades (incluye Hero con búsqueda) */}
       <PropertiesSection />
+        
+        {/* Tarjetas de Categorías */}
+        <PropertyCategoriesCards />
         
         {/* Sección de Estadísticas del Mercado */}
         <StatsSection />

@@ -9,7 +9,7 @@ import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
 import type { PublicPropertyFilters } from '@/services/publicPropertyService';
 import { logger } from '@/lib/logger';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, createAgentSlug } from '@/lib/utils';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -314,7 +314,7 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
   }, []);
 
   // Aumentar tamaño de página inicial para mejor rendimiento
-  const PAGE_SIZE = 12; // Cargar más propiedades inicialmente para mejor UX
+  const PAGE_SIZE = 6; // Mostrar 6 propiedades inicialmente
 
   const buildFilters = useCallback((): PublicPropertyFilters => {
     const filters: PublicPropertyFilters = {};
@@ -1267,6 +1267,16 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
               } else if (property.agent.avatar && !property.agent.fotoPerfilUrl) {
                 // Si viene avatar pero no fotoPerfilUrl, asignarlo también a fotoPerfilUrl
                 property.agent.fotoPerfilUrl = property.agent.avatar;
+              }
+              
+              // Generar slug si no existe
+              if (!property.agent.slug && property.agent.id) {
+                const agentId = typeof property.agent.id === 'string' ? parseInt(property.agent.id, 10) : property.agent.id;
+                property.agent.slug = createAgentSlug({
+                  firstName: firstName,
+                  lastName: lastName,
+                  id: agentId
+                });
               }
               
               return (
