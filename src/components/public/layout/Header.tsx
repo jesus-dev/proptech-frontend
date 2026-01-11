@@ -19,11 +19,14 @@ const Header = () => {
   const isAsesoresPage = pathname === '/asesores' || pathname?.startsWith('/asesores');
   const isProfesionalesPage = pathname === '/profesionales' || pathname?.startsWith('/profesionales');
   const isHomePage = pathname === '/';
-  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage || isAsesoresPage || isProfesionalesPage;
+  const isTerminosPage = pathname === '/terminos' || pathname === '/terminos/';
+  const isPrivacidadPage = pathname === '/privacidad' || pathname === '/privacidad/';
+  const isAyudaPage = pathname === '/ayuda' || pathname === '/ayuda/';
+  const isSeguridadPage = pathname === '/seguridad' || pathname === '/seguridad/';
+  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage || isAsesoresPage || isProfesionalesPage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage;
   
-  
-  // Determinar el color del texto basado en si no hay scroll
-  const shouldUseWhiteText = !isScrolled;
+  // Determinar el color del texto basado en si no hay scroll y tiene hero
+  const shouldUseWhiteText = !isScrolled && hasBlueHero;
 
   useEffect(() => {
     setIsMounted(true);
@@ -38,13 +41,16 @@ const Header = () => {
       setIsScrolled(scrolled);
     };
     
-    // Verificar estado inicial después de un pequeño delay para asegurar que el DOM esté listo
-    setTimeout(() => {
-    handleScroll();
+    // Pequeño delay para asegurar que el DOM esté listo
+    const timeoutId = setTimeout(() => {
+      handleScroll();
     }, 100);
     
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [pathname]); // Agregar pathname para resetear al cambiar de página
 
   // Prevenir scroll del body cuando el menú está abierto
@@ -113,7 +119,7 @@ const Header = () => {
                 src="/images/logo/proptech.png"
                 alt="PropTech"
                 className="w-auto transition-transform duration-300 hover:scale-105"
-                style={!isScrolled ? {
+                style={shouldUseWhiteText ? {
                   filter: 'brightness(0) invert(1)',
                   WebkitFilter: 'brightness(0) invert(1)',
                   height: '50px',

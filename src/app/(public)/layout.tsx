@@ -75,7 +75,11 @@ export default function PublicLayout({ children }: any) {
   const isRegistrarsePage = pathname === '/registrarse' || pathname === '/registrarse/';
   const isProptechPage = pathname === '/proptech' || pathname === '/proptech/';
   const isAgentePage = pathname?.startsWith('/agente/');
-  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isProfesionalesPage || isContactPage || isRegisterPage || isRegistrarsePage || isProptechPage || isAgentePage;
+  const isTerminosPage = pathname === '/terminos' || pathname === '/terminos/';
+  const isPrivacidadPage = pathname === '/privacidad' || pathname === '/privacidad/';
+  const isAyudaPage = pathname === '/ayuda' || pathname === '/ayuda/';
+  const isSeguridadPage = pathname === '/seguridad' || pathname === '/seguridad/';
+  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isProfesionalesPage || isContactPage || isRegisterPage || isRegistrarsePage || isProptechPage || isAgentePage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage;
 
   return (
     <>

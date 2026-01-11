@@ -10,7 +10,8 @@ import { getImageBaseUrl } from "@/config/environment";
 import { createAgentSlug } from "@/lib/utils";
 import { generatePropertyStructuredData } from "@/lib/seo";
 import { CommentList } from "@/components/comments/CommentList";
-import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, StarIcon, CheckCircleIcon, VideoCameraIcon, MapIcon, ArrowLeftIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon, WifiIcon, ShieldCheckIcon, ClockIcon, BanknotesIcon, DocumentTextIcon, InformationCircleIcon, XMarkIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, StarIcon, CheckCircleIcon, VideoCameraIcon, MapIcon, ArrowLeftIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon, WifiIcon, ShieldCheckIcon, ClockIcon, BanknotesIcon, DocumentTextIcon, InformationCircleIcon, XMarkIcon, ArrowRightIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import ModernPopup from "@/components/ui/ModernPopup";
 
 // Componente para manejar gestos de swipe en mobile
 const SwipeHandler = ({ onSwipeLeft, onSwipeRight }: { onSwipeLeft: () => void; onSwipeRight: () => void }) => {
@@ -143,6 +144,11 @@ export default function PropertyDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportComment, setReportComment] = useState('');
+  const [reportEmail, setReportEmail] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
   
   // Estados para secciones expandibles
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -820,6 +826,18 @@ export default function PropertyDetailPage() {
                           <span>Enviar Email</span>
                         </a>
                       )}
+                      
+                      {/* Botón de denuncia */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReportModalOpen(true);
+                        }}
+                        className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-100 border border-gray-200"
+                      >
+                        <ExclamationTriangleIcon className="w-5 h-5" />
+                        <span>Denunciar anuncio</span>
+                      </button>
                       
                       {/* Información adicional del agente/agencia */}
                       {(property.agent?.bio || property.agent?.description || property.agencyName) && (
@@ -1691,6 +1709,145 @@ export default function PropertyDetailPage() {
         <ArrowLeftIcon className="w-5 h-5" />
         <span className="hidden sm:inline">Volver</span>
       </button>
+
+      {/* Popup de denuncia */}
+      <ModernPopup
+        isOpen={reportModalOpen}
+        onClose={() => {
+          setReportModalOpen(false);
+          setReportReason('');
+          setReportComment('');
+          setReportEmail('');
+        }}
+        title="Denunciar anuncio"
+        subtitle="Ayúdanos a mantener la calidad de nuestros anuncios"
+        icon={<ExclamationTriangleIcon className="w-6 h-6 text-white" />}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setReportSubmitting(true);
+          
+          try {
+            // Aquí iría la llamada al API para enviar la denuncia
+            // Por ahora solo simulamos el envío
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            alert('Gracias por tu denuncia. La revisaremos lo antes posible.');
+            setReportModalOpen(false);
+            setReportReason('');
+            setReportComment('');
+            setReportEmail('');
+          } catch (error) {
+            alert('Error al enviar la denuncia. Por favor, intenta nuevamente.');
+          } finally {
+            setReportSubmitting(false);
+          }
+        }} className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Motivo de la denuncia <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              required
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            >
+              <option value="">Selecciona un motivo</option>
+              <option value="fraudulento">Anuncio fraudulento o engañoso</option>
+              <option value="duplicado">Anuncio duplicado</option>
+              <option value="inapropiado">Contenido inapropiado</option>
+              <option value="precio">Precio incorrecto o información falsa</option>
+              <option value="spam">Spam</option>
+              <option value="otro">Otro motivo</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Detalles adicionales
+            </label>
+            <textarea
+              value={reportComment}
+              onChange={(e) => setReportComment(e.target.value)}
+              rows={4}
+              placeholder="Describe el problema con más detalle..."
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Tu email (opcional)
+            </label>
+            <input
+              type="email"
+              value={reportEmail}
+              onChange={(e) => setReportEmail(e.target.value)}
+              placeholder="tu@email.com"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Si proporcionas tu email, podremos contactarte si necesitamos más información.
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => {
+                setReportModalOpen(false);
+                setReportReason('');
+                setReportComment('');
+                setReportEmail('');
+              }}
+              className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={reportSubmitting || !reportReason}
+              className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
+            >
+              {reportSubmitting ? 'Enviando...' : 'Enviar denuncia'}
+            </button>
+          </div>
+        </form>
+      </ModernPopup>
+
+      {/* Aviso Legal / Disclaimer */}
+      <div className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6">
+            <div className="flex items-start gap-4">
+              <InformationCircleIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-yellow-900 dark:text-yellow-100 mb-2">
+                  Aviso Legal
+                </h3>
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 leading-relaxed">
+                  PropTech actúa únicamente como plataforma de intermediación y no se hace responsable 
+                  por la veracidad, exactitud, integridad o calidad de la información proporcionada por 
+                  los agentes inmobiliarios en sus anuncios. Los anuncios publicados en esta plataforma 
+                  son responsabilidad exclusiva de los agentes que los publican. PropTech no garantiza 
+                  la disponibilidad de las propiedades ni asume responsabilidad alguna respecto de las 
+                  transacciones realizadas entre usuarios y agentes. Se recomienda verificar toda la 
+                  información directamente con el agente antes de tomar cualquier decisión.
+                </p>
+                <button
+                  onClick={() => setReportModalOpen(true)}
+                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
+                >
+                  <ExclamationTriangleIcon className="w-4 h-4" />
+                  Denunciar este anuncio
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </main>
   );

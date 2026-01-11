@@ -24,10 +24,10 @@ const Footer = () => {
       { name: 'Estado del Sistema', href: '#status' },
     ],
     legal: [
-      { name: 'Privacidad', href: '#privacy' },
-      { name: 'Términos', href: '#terms' },
+      { name: 'Privacidad', href: '/privacidad' },
+      { name: 'Términos', href: '/terminos' },
       { name: 'Cookies', href: '#cookies' },
-      { name: 'Seguridad', href: '#security' },
+      { name: 'Seguridad', href: '/seguridad' },
     ],
   };
 
@@ -92,18 +92,23 @@ const Footer = () => {
               <h3 className="text-sm font-bold text-white mb-3">Legal</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link href="#privacy" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm">
-                    Privacidad
+                  <Link href="/privacidad" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm">
+                    Políticas de Privacidad
                   </Link>
                 </li>
                 <li>
-                  <Link href="#terms" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm">
-                    Términos
+                  <Link href="/terminos" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm">
+                    Términos de Uso
                   </Link>
                 </li>
                 <li>
-                  <Link href="#help" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm">
+                  <Link href="/ayuda" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm">
                     Ayuda
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/seguridad" className="text-gray-300 hover:text-white transition-colors duration-300 text-sm">
+                    Seguridad
                   </Link>
                 </li>
               </ul>
@@ -238,25 +243,25 @@ const Footer = () => {
             </h3>
             <ul className="space-y-3">
               <li>
-                <Link href="#privacy" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
+                <Link href="/privacidad" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                  Privacidad
+                  Políticas de Privacidad
                 </Link>
               </li>
               <li>
-                <Link href="#terms" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
+                <Link href="/terminos" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                  Términos
+                  Términos de Uso
                 </Link>
               </li>
               <li>
-                <Link href="#help" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
+                <Link href="/ayuda" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                   Ayuda
                 </Link>
               </li>
               <li>
-                <Link href="#security" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
+                <Link href="/seguridad" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center group">
                   <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                   Seguridad
                 </Link>
