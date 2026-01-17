@@ -70,7 +70,6 @@ interface UserFormData {
   lastName: string;
   email: string;
   password: string;
-  userType: 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'AGENCY_ADMIN' | 'AGENT' | 'MANAGER' | 'VIEWER' | 'CUSTOMER';
   roles: string[];
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING_ACTIVATION' | 'LOCKED';
   tenantId?: number;
@@ -135,7 +134,6 @@ export default function UsersPage() {
     lastName: '',
     email: '',
     password: '',
-    userType: 'AGENT',
     roles: [],
     status: 'ACTIVE',
     tenantId: undefined,
@@ -157,11 +155,17 @@ export default function UsersPage() {
     try {
       setLoading(true);
       const [usersData, rolesData] = await Promise.all([
-        authService.getUsers(),
-        authService.getRoles()
+        authService.getUsers().catch((err) => {
+          console.error('Error loading users:', err);
+          return [];
+        }),
+        authService.getRoles().catch((err) => {
+          console.error('Error loading roles:', err);
+          return [];
+        })
       ]);
-      setUsers(usersData);
-      setRoles(rolesData);
+      setUsers(Array.isArray(usersData) ? usersData : []);
+      setRoles(Array.isArray(rolesData) ? rolesData : []);
       
       // Cargar catálogos adicionales
       try {
@@ -183,19 +187,22 @@ export default function UsersPage() {
         // Cargar agentes
         const agentsData = await getAllAgents().catch((err) => { 
           console.error('❌ Error loading agents:', err.message || err);
-          console.error('Stack:', err);
           return []; 
         });
         
-        setTenants(tenantsData);
-        setAgencies(agenciesData);
-        setAgents(agentsData);
+        setTenants(Array.isArray(tenantsData) ? tenantsData : []);
+        setAgencies(Array.isArray(agenciesData) ? agenciesData : []);
+        setAgents(Array.isArray(agentsData) ? agentsData : []);
       } catch (error) {
         console.error('💥 Error general loading catalogs:', error);
+        setTenants([]);
+        setAgencies([]);
+        setAgents([]);
       }
     } catch (error) {
-      toast.error('Error al cargar los datos');
       console.error('Error loading data:', error);
+      setUsers([]);
+      setRoles([]);
     } finally {
       setLoading(false);
     }
@@ -225,8 +232,8 @@ export default function UsersPage() {
         bValue = b.status;
         break;
       case 'lastLogin':
-        aValue = a.lastLogin || new Date(0);
-        bValue = b.lastLogin || new Date(0);
+        aValue = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
+        bValue = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
         break;
       default:
         aValue = a.fullName;
@@ -278,17 +285,32 @@ export default function UsersPage() {
     try {
       setIsSubmitting(true);
       
+      // Validar que se haya seleccionado al menos un rol
+      const selectedRoleIds = roles.filter(r => formData.roles.includes(r.name)).map(r => r.id);
+      if (selectedRoleIds.length === 0) {
+        toast.error('Debe seleccionar al menos un rol para el usuario');
+        return;
+      }
+
       if (selectedUser) {
         // Update user
-        await authService.updateUser(selectedUser.id, {
+        const updateData: any = {
+          email: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
-          userType: formData.userType,
           status: formData.status,
+          roleIds: selectedRoleIds,
           tenantId: formData.tenantId,
           agencyId: formData.agencyId,
           agentId: formData.agentId
-        });
+        };
+        
+        // Solo incluir password si se proporciona una nueva
+        if (formData.password && formData.password.trim() !== '') {
+          updateData.password = formData.password;
+        }
+        
+        await authService.updateUser(selectedUser.id, updateData);
         toast.success('Usuario actualizado exitosamente');
       } else {
         // Create user
@@ -297,8 +319,7 @@ export default function UsersPage() {
           lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
-          userType: formData.userType,
-          roleIds: roles.filter(r => formData.roles.includes(r.name)).map(r => r.id),
+          roleIds: selectedRoleIds,
           tenantId: formData.tenantId,
           agencyId: formData.agencyId,
           agentId: formData.agentId
@@ -309,8 +330,9 @@ export default function UsersPage() {
       setShowUserModal(false);
       resetForm();
       loadData();
-    } catch (error) {
-      toast.error('Error al guardar el usuario');
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.error || error?.message || 'Error al guardar el usuario';
+      toast.error(errorMessage);
       console.error('Error saving user:', error);
     } finally {
       setIsSubmitting(false);
@@ -323,7 +345,6 @@ export default function UsersPage() {
       lastName: '',
       email: '',
       password: '',
-      userType: 'AGENT',
       roles: [],
       status: 'ACTIVE',
       tenantId: undefined,
@@ -333,21 +354,41 @@ export default function UsersPage() {
     setSelectedUser(null);
   };
 
-  const openUserModal = (user?: User) => {
+  const openUserModal = async (user?: User) => {
     if (user) {
-      setSelectedUser(user);
-      setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email,
-        password: '',
-        userType: (user.userType as any) || 'ADMIN',
-        roles: user.roles || [],
-        status: (user.status as any) || 'ACTIVE',
-        tenantId: (user as any).tenantId || undefined,
-        agencyId: (user as any).agencyId || undefined,
-        agentId: (user as any).agentId || undefined
-      });
+      try {
+        // Cargar los detalles completos del usuario
+        const fullUser = await authService.getUserById(user.id);
+        const formDataToSet = {
+          firstName: fullUser.firstName || '',
+          lastName: fullUser.lastName || '',
+          email: fullUser.email || '',
+          password: '',
+          roles: fullUser.roles || [],
+          status: (fullUser.status as any) || 'ACTIVE',
+          tenantId: (fullUser as any).tenantId || undefined,
+          agencyId: (fullUser as any).agencyId || undefined,
+          agentId: (fullUser as any).agentId || undefined
+        };
+        setSelectedUser(fullUser);
+        setFormData(formDataToSet);
+      } catch (error) {
+        console.error('Error loading user details:', error);
+        toast.error('Error al cargar los detalles del usuario');
+        // Fallback a usar los datos del listado
+        setSelectedUser(user);
+        setFormData({
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          email: user.email || '',
+          password: '',
+          roles: user.roles || [],
+          status: (user.status as any) || 'ACTIVE',
+          tenantId: (user as any).tenantId || undefined,
+          agencyId: (user as any).agencyId || undefined,
+          agentId: (user as any).agentId || undefined
+        });
+      }
     } else {
       resetForm();
     }
@@ -439,7 +480,7 @@ export default function UsersPage() {
       user.email.toLowerCase().includes('ejemplo') ||
       user.email.toLowerCase().includes('example') ||
       user.email.toLowerCase().includes('prueba') ||
-      user.userType === 'CUSTOMER' ||
+      (user.roles && user.roles.includes('CUSTOMER')) ||
       // Usuarios de prueba específicos del sistema
       user.email === 'maria.gonzalez@proptech.com' ||
       user.email === 'carlos.mendoza@proptech.com' ||
@@ -538,7 +579,7 @@ export default function UsersPage() {
               u.email.toLowerCase().includes('ejemplo') ||
               u.email.toLowerCase().includes('example') ||
               u.email.toLowerCase().includes('prueba') ||
-              u.userType === 'CUSTOMER' ||
+              (u.roles && u.roles.includes('CUSTOMER')) ||
               u.email === 'maria.gonzalez@proptech.com' ||
               u.email === 'carlos.mendoza@proptech.com' ||
               u.email === 'ana.silva@proptech.com' ||
@@ -557,7 +598,7 @@ export default function UsersPage() {
                   u.email.toLowerCase().includes('ejemplo') ||
                   u.email.toLowerCase().includes('example') ||
                   u.email.toLowerCase().includes('prueba') ||
-                  u.userType === 'CUSTOMER' ||
+                  (u.roles && u.roles.includes('CUSTOMER')) ||
                   u.email === 'maria.gonzalez@proptech.com' ||
                   u.email === 'carlos.mendoza@proptech.com' ||
                   u.email === 'ana.silva@proptech.com' ||
@@ -868,7 +909,9 @@ export default function UsersPage() {
                 </TableRow>
               ) : (
                 filteredUsers.map((user) => {
-                  const UserTypeIcon = USER_TYPE_ICONS[user.userType as keyof typeof USER_TYPE_ICONS] || UserIcon;
+                  const primaryRole = user.roles && user.roles.length > 0 ? user.roles[0] : null;
+                  const UserTypeIcon = primaryRole ? (USER_TYPE_ICONS[primaryRole as keyof typeof USER_TYPE_ICONS] || UserIcon) : UserIcon;
+                  const roleLabel = primaryRole ? (USER_TYPE_LABELS[primaryRole as keyof typeof USER_TYPE_LABELS] || primaryRole) : 'Sin rol';
                   return (
                     <TableRow key={user.id} className={`hover:bg-gray-50/50 border-b border-gray-100 ${selectedUsers.includes(user.id) ? 'bg-indigo-50' : ''}`}>
                       <TableCell className="w-12">
@@ -899,7 +942,7 @@ export default function UsersPage() {
                             <div className="flex items-center gap-2 mt-1">
                               <UserTypeIcon className="h-3 w-3 text-gray-400" />
                               <span className="text-sm text-gray-500">
-                                {USER_TYPE_LABELS[user.userType as keyof typeof USER_TYPE_LABELS] || user.userType || 'Sin tipo'}
+                                {roleLabel}
                               </span>
                             </div>
                           </div>
@@ -928,19 +971,26 @@ export default function UsersPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-gray-400" />
-                          {user.lastLogin ? (
-                            <span className="text-sm text-gray-600 font-medium">
-                              {new Date(user.lastLogin).toLocaleDateString('es-ES', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400 italic">Nunca ha iniciado sesión</span>
-                          )}
+                          <span className="text-sm text-gray-600 font-medium">
+                            {(() => {
+                              try {
+                                const dateToShow = user.lastLogin || user.createdAt;
+                                if (!dateToShow) return 'Fecha no disponible';
+                                const date = new Date(dateToShow);
+                                if (isNaN(date.getTime())) return 'Fecha inválida';
+                                const formattedDate = date.toLocaleString('es-PY', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                });
+                                return formattedDate;
+                              } catch (error) {
+                                return 'Fecha inválida';
+                              }
+                            })()}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -1051,53 +1101,26 @@ export default function UsersPage() {
             />
           </div>
           
-          {!selectedUser && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Contraseña *
-              </label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-                required
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Contraseña {!selectedUser && '*'}
+            </label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              placeholder={selectedUser ? "Dejar vacío para mantener la contraseña actual" : "••••••••"}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
+              required={!selectedUser}
+            />
+            {selectedUser && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Deja vacío para mantener la contraseña actual, o ingresa una nueva para cambiarla
+              </p>
+            )}
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Tipo de Usuario *
-              </label>
-              <select
-                value={formData.userType}
-                onChange={(e) => setFormData(prev => ({ ...prev, userType: e.target.value as any }))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-                required
-              >
-                <optgroup label="🔐 Administradores">
-                  <option value="SUPER_ADMIN">🌟 Super Administrador (SaaS)</option>
-                  <option value="TENANT_ADMIN">🏢 Admin Tenant</option>
-                  <option value="AGENCY_ADMIN">🏪 Admin Agencia</option>
-                </optgroup>
-                <optgroup label="👥 Operativos">
-                  <option value="AGENT">👔 Agente Inmobiliario</option>
-                  <option value="MANAGER">⚙️ Gerente/Supervisor</option>
-                </optgroup>
-                <optgroup label="👀 Otros">
-                  <option value="VIEWER">👁️ Visualizador</option>
-                  <option value="CUSTOMER">🛍️ Cliente</option>
-                </optgroup>
-              </select>
-              {formData.userType && USER_TYPE_DESCRIPTIONS[formData.userType] && (
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  ℹ️ {USER_TYPE_DESCRIPTIONS[formData.userType]}
-                </p>
-              )}
-            </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Estado *
@@ -1175,27 +1198,47 @@ export default function UsersPage() {
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Agente
               </label>
-              <select
-                value={formData.agentId || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, agentId: e.target.value ? Number(e.target.value) : undefined }))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-              >
-                <option value="">Se creará automáticamente con los datos del usuario</option>
-                {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.firstName || agent.nombre} {agent.lastName || agent.apellido}
-                  </option>
-                ))}
-              </select>
-              {agents.length === 0 ? (
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  ℹ️ No hay agentes previos. Se creará automáticamente un perfil de agente con el Nombre y Apellido que ingreses arriba.
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Deja vacío para crear un nuevo agente automáticamente, o selecciona uno existente
-                </p>
-              )}
+              {(() => {
+                const canHaveAgent = formData.roles.includes('AGENT') || formData.roles.includes('AGENCY_ADMIN');
+                return (
+                  <>
+                    <select
+                      value={formData.agentId || ''}
+                      onChange={(e) => setFormData(prev => ({ ...prev, agentId: e.target.value ? Number(e.target.value) : undefined }))}
+                      disabled={!canHaveAgent}
+                      className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200 ${!canHaveAgent ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''}`}
+                    >
+                      {canHaveAgent ? (
+                        <>
+                          <option value="">Se creará automáticamente con los datos del usuario</option>
+                          {agents.map((agent) => (
+                            <option key={agent.id} value={agent.id}>
+                              {agent.firstName || agent.nombre} {agent.lastName || agent.apellido}
+                            </option>
+                          ))}
+                        </>
+                      ) : (
+                        <option value="">No aplica - Este usuario no tiene el rol AGENT o AGENCY_ADMIN</option>
+                      )}
+                    </select>
+                    {canHaveAgent ? (
+                      agents.length === 0 ? (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          ℹ️ Se creará automáticamente un perfil de agente con el Nombre y Apellido que ingreses arriba.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Deja vacío para crear un nuevo agente automáticamente, o selecciona uno existente
+                        </p>
+                      )
+                    ) : (
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                        ⚠️ Solo los usuarios con el rol "AGENT" o "AGENCY_ADMIN" tienen perfil de agente. Este usuario NO tendrá agente.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
           
@@ -1203,12 +1246,16 @@ export default function UsersPage() {
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
               Roles
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 max-h-64 overflow-y-auto">
               {roles.map((role) => (
-                <div key={role.id} className="flex items-center space-x-3">
+                <label
+                  key={role.id}
+                  htmlFor={`role-${role.id}`}
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                >
                   <input
                     type="checkbox"
-                    id={role.name}
+                    id={`role-${role.id}`}
                     checked={formData.roles.includes(role.name)}
                     onChange={(e) => {
                       if (e.target.checked) {
@@ -1223,14 +1270,24 @@ export default function UsersPage() {
                         }));
                       }
                     }}
-                    className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500 dark:border-gray-600"
+                    className="w-4 h-4 text-brand-600 border-gray-300 rounded focus:ring-2 focus:ring-brand-500 focus:ring-offset-0 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-brand-600 cursor-pointer flex-shrink-0"
                   />
-                  <label htmlFor={role.name} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {role.name}
-                  </label>
-                </div>
+                  </span>
+                </label>
               ))}
+              {roles.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4 col-span-full">
+                  No hay roles disponibles
+                </p>
+              )}
             </div>
+            {formData.roles.length > 0 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                {formData.roles.length} rol(es) seleccionado(s)
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end space-x-3 pt-6">

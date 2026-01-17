@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthContext as useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap, Loader2 } from 'lucide-react';
+import { Check, Crown, Star, Zap, Loader2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { subscriptionService, SubscriptionPlan, UserSubscription, SubscriptionAccess } from '@/services/subscriptionService';
 
@@ -28,10 +28,10 @@ export default function SubscriptionsPage() {
     try {
       setLoadingPlans(true);
       const plansData = await subscriptionService.getPropTechPlans();
-      setPlans(plansData);
+      setPlans(Array.isArray(plansData) ? plansData : []);
     } catch (error) {
       console.error('Error loading plans:', error);
-      toast.error('Error al cargar los planes de suscripción');
+      setPlans([]);
     } finally {
       setLoadingPlans(false);
     }
@@ -46,11 +46,12 @@ export default function SubscriptionsPage() {
         subscriptionService.getUserSubscriptions(user.id),
         subscriptionService.getUserAccess(user.id)
       ]);
-      setUserSubscriptions(subscriptionsData);
+      setUserSubscriptions(Array.isArray(subscriptionsData) ? subscriptionsData : []);
       setUserAccess(accessData);
     } catch (error) {
       console.error('Error loading user data:', error);
-      toast.error('Error al cargar información del usuario');
+      setUserSubscriptions([]);
+      setUserAccess(null);
     } finally {
       setLoadingSubscriptions(false);
     }
@@ -164,6 +165,13 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
+      {plans.length === 0 && !loadingPlans && (
+        <div className="text-center py-12">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500">No hay planes de suscripción disponibles</p>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         {plans.map((plan) => {
           const isSubscribed = isUserSubscribedToPlan(plan.id);
@@ -172,7 +180,7 @@ export default function SubscriptionsPage() {
           return (
             <div 
               key={plan.id} 
-              className={`relative bg-white rounded-lg shadow-lg border-2 ${isSubscribed ? 'ring-2 ring-green-500' : getTierColor(plan.tier)} hover:shadow-xl transition-shadow duration-300`}
+              className={`relative bg-white rounded-lg shadow-lg border-2 flex flex-col ${isSubscribed ? 'ring-2 ring-green-500' : getTierColor(plan.tier)} hover:shadow-xl transition-shadow duration-300`}
             >
               {isSubscribed && (
                 <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500">
@@ -180,12 +188,12 @@ export default function SubscriptionsPage() {
                 </Badge>
               )}
               
-              <div className="p-6 text-center">
+              <div className="p-6 text-center flex flex-col flex-1">
                 <div className="flex items-center justify-center mb-4">
                   {getTierIcon(plan.tier)}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-gray-600 text-sm mb-4">{plan.description}</p>
+                <p className="text-gray-600 text-sm mb-4 line-clamp-3 break-words overflow-hidden">{plan.description}</p>
                 
                 <div className="mb-6">
                   <span className="text-3xl font-bold text-gray-900">
@@ -198,7 +206,7 @@ export default function SubscriptionsPage() {
                   {plan.features && plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center">
                       <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                      <span className="text-sm text-gray-600">{feature}</span>
+                      <span className="text-sm text-gray-600 break-words">{feature}</span>
                     </li>
                   ))}
                   {plan.maxProperties > 0 && (
@@ -243,6 +251,7 @@ export default function SubscriptionsPage() {
                   )}
                 </ul>
 
+                <div className="mt-auto">
                 {isSubscribed ? (
                   <div className="space-y-2">
                     <Button 
@@ -252,9 +261,17 @@ export default function SubscriptionsPage() {
                     >
                       Plan Actual
                     </Button>
-                    {currentSubscription && (
+                    {currentSubscription && currentSubscription.endDate && (
                       <p className="text-xs text-gray-500">
-                        Válido hasta: {new Date(currentSubscription.endDate).toLocaleDateString('es-PY')}
+                        Válido hasta: {(() => {
+                          try {
+                            const date = new Date(currentSubscription.endDate);
+                            if (isNaN(date.getTime())) return 'Fecha inválida';
+                            return date.toLocaleDateString('es-PY');
+                          } catch {
+                            return 'Fecha inválida';
+                          }
+                        })()}
                       </p>
                     )}
                   </div>
@@ -274,6 +291,7 @@ export default function SubscriptionsPage() {
                     )}
                   </Button>
                 )}
+                </div>
               </div>
             </div>
           );

@@ -68,88 +68,32 @@ export default function AdminCommissionsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Simular carga de datos (reemplazar con llamada real a la API)
-      const mockCommissions: Commission[] = [
-        {
-          id: 1,
-          salesAgentId: 1,
-          agentName: 'María González',
-          agentCode: 'AGENT001',
-          subscriptionId: 101,
-          userName: 'Juan Pérez',
-          planName: 'PropTech Premium',
-          saleAmount: 750000,
-          commissionPercentage: 15,
-          commissionAmount: 112500,
-          saleDate: '2024-08-15',
-          status: 'PAID',
-          paymentDate: '2024-08-20',
-          notes: 'Pago realizado por transferencia bancaria'
-        },
-        {
-          id: 2,
-          salesAgentId: 2,
-          agentName: 'Carlos Mendoza',
-          agentCode: 'AGENT002',
-          subscriptionId: 102,
-          userName: 'Ana López',
-          planName: 'PropTech Intermedio',
-          saleAmount: 350000,
-          commissionPercentage: 10,
-          commissionAmount: 35000,
-          saleDate: '2024-08-18',
-          status: 'PENDING',
-          notes: 'Pendiente de verificación de pago'
-        },
-        {
-          id: 3,
-          salesAgentId: 3,
-          agentName: 'Ana Patricia Silva',
-          agentCode: 'AGENT003',
-          subscriptionId: 103,
-          userName: 'Roberto García',
-          planName: 'PropTech Premium',
-          saleAmount: 750000,
-          commissionPercentage: 20,
-          commissionAmount: 150000,
-          saleDate: '2024-08-20',
-          status: 'PENDING',
-          notes: 'Pendiente de aprobación'
-        },
-        {
-          id: 4,
-          salesAgentId: 1,
-          agentName: 'María González',
-          agentCode: 'AGENT001',
-          subscriptionId: 104,
-          userName: 'Carmen Rodríguez',
-          planName: 'PropTech Inicial',
-          saleAmount: 150000,
-          commissionPercentage: 15,
-          commissionAmount: 22500,
-          saleDate: '2024-08-22',
-          status: 'PAID',
-          paymentDate: '2024-08-25',
-          notes: 'Pago realizado por tarjeta de crédito'
-        }
-      ];
-
-      const mockStats: CommissionStats = {
-        totalCommissions: 320000,
-        paidCommissions: 135000,
-        pendingCommissions: 185000,
+      // TODO: Implementar llamada real a la API cuando esté disponible
+      // Por ahora retornar datos vacíos
+      setCommissions([]);
+      setStats({
+        totalCommissions: 0,
+        paidCommissions: 0,
+        pendingCommissions: 0,
         cancelledCommissions: 0,
-        totalSales: 2000000,
-        averageCommissionRate: 16.0,
-        topPerformingAgent: 'Ana Patricia Silva',
-        monthlyGrowth: 12.5
-      };
-
-      setCommissions(mockCommissions);
-      setStats(mockStats);
+        totalSales: 0,
+        averageCommissionRate: 0,
+        topPerformingAgent: '',
+        monthlyGrowth: 0
+      });
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Error al cargar los datos');
+      setCommissions([]);
+      setStats({
+        totalCommissions: 0,
+        paidCommissions: 0,
+        pendingCommissions: 0,
+        cancelledCommissions: 0,
+        totalSales: 0,
+        averageCommissionRate: 0,
+        topPerformingAgent: '',
+        monthlyGrowth: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -198,12 +142,8 @@ export default function AdminCommissionsPage() {
   };
 
   const handleMarkAsPaid = (commissionId: number) => {
-    setCommissions(prev => prev.map(commission => 
-      commission.id === commissionId 
-        ? { ...commission, status: 'PAID', paymentDate: new Date().toISOString().split('T')[0] }
-        : commission
-    ));
-    toast.success('Comisión marcada como pagada');
+    // TODO: Implementar llamada real a la API cuando esté disponible
+    toast.info('Funcionalidad de marcar como pagada próximamente');
   };
 
   if (loading) {

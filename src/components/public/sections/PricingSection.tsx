@@ -7,10 +7,34 @@ import { apiClient } from '@/lib/api';
 
 const PricingSection = () => {
   const [isAnnual, setIsAnnual] = useState(false);
-  const [plans, setPlans] = useState<any[]>([]);
+  const [allPlans, setAllPlans] = useState<any[]>([]); // Todos los planes sin filtrar
+  const [plans, setPlans] = useState<any[]>([]); // Planes filtrados por mensual/anual
   const [loading, setLoading] = useState(true);
 
-  // Cargar planes dinámicamente del backend
+  // Funciones helper para mapear datos del backend (definirlas antes del useEffect)
+  const getIconForTier = (tier: string) => {
+    switch (tier) {
+      case 'FREE': return '🆓';
+      case 'INICIAL': return '🪵';
+      case 'INTERMEDIO': return '🏠';
+      case 'PREMIUM': return '🏢';
+      case 'ENTERPRISE': return '🌇';
+      default: return '📋';
+    }
+  };
+
+  const getSubtitleForTier = (tier: string) => {
+    switch (tier) {
+      case 'FREE': return 'Ideal para probar la plataforma';
+      case 'INICIAL': return 'Ideal para empezar tu carrera inmobiliaria';
+      case 'INTERMEDIO': return 'Todo lo que necesitas para crecer tu negocio';
+      case 'PREMIUM': return 'Potencia tu equipo y escala tu negocio';
+      case 'ENTERPRISE': return 'La solución completa para empresas grandes';
+      default: return '';
+    }
+  };
+
+  // Cargar planes dinámicamente del backend (solo una vez)
   useEffect(() => {
     const loadPlans = async () => {
       try {
@@ -40,39 +64,21 @@ const PricingSection = () => {
           }
         }
         
-        console.log('🟢 ETAPA 1 - Total backendPlans después de combinar:', backendPlans.length, backendPlans.map(p => ({ id: p.id, name: p.name, tier: p.tier })));
+        console.log('🟢 ETAPA 1 - Total backendPlans después de combinar:', backendPlans.length, backendPlans.map(p => ({ id: p.id, name: p.name, tier: p.tier, billingDays: p.billingCycleDays })));
         
-        // ETAPA 2: Eliminar duplicados por tier (PROPTECH)
-        const seenTiers = new Set<string>();
-        const uniquePlans = backendPlans.filter((plan: any) => {
-          // Si es PROPTECH, solo mostrar un plan por tier
-          if (plan.type === 'PROPTECH') {
-            const tierKey = `PROPTECH-${plan.tier}`;
-            if (seenTiers.has(tierKey)) {
-              console.log('❌ Duplicado filtrado por tier:', { id: plan.id, name: plan.name, tier: plan.tier });
-              return false; // Ya hay un plan con este tier
-            }
-            seenTiers.add(tierKey);
-            return true;
-          }
-          // NETWORK siempre se muestra (ya se filtró arriba por ID/name)
-          return true;
-        });
-        
-        console.log('🟢 ETAPA 2 - Después de filtrar por tier:', uniquePlans.length, uniquePlans.map(p => ({ id: p.id, name: p.name, tier: p.tier, type: p.type })));
-        
-        // ETAPA 3: Mapear a formato del componente
-        const mappedPlans = uniquePlans.map((plan: any) => {
+        // ETAPA 2: Mapear a formato del componente (SIN FILTRAR - mostrar todos)
+        const mappedPlans = backendPlans.map((plan: any) => {
           const tier = plan.tier;
           const price = Number(plan.price) || 0;
           const billingCycleDays = Number(plan.billingCycleDays) || 30;
           const monthlyPrice = billingCycleDays === 30 ? price : Math.round(price / 12);
           const annualPrice = billingCycleDays === 365 ? price : price * 12;
           return {
-            id: plan.id, // Incluir ID para identificar duplicados
+            id: plan.id,
             name: plan.name,
             type: tier,
             sourceType: plan.type, // PROPTECH o NETWORK
+            billingCycleDays: billingCycleDays, // Guardar para filtrar por mensual/anual
             icon: getIconForTier(tier),
             // Descripción visible en la card tomada del backend
             description: (plan.description || '').trim(),
@@ -80,58 +86,36 @@ const PricingSection = () => {
             subtitle: (plan.description || '').trim() || getSubtitleForTier(tier),
             monthlyPrice,
             annualPrice,
-            popular: tier === 'INTERMEDIO',
+            popular: tier === 'INTERMEDIO' && billingCycleDays === 30, // Popular solo para el mensual
             features: Array.isArray(plan.features) ? plan.features : [],
             cta: tier === 'FREE' ? 'Comenzar gratis' : (tier === 'PREMIUM' || tier === 'ENTERPRISE' ? 'Contactar ventas' : 'Comenzar ahora')
           };
         });
 
-        console.log('🟢 ETAPA 3 - Después de mapear:', mappedPlans.length, mappedPlans.map(p => ({ id: p.id, name: p.name, type: p.type, sourceType: p.sourceType })));
+        console.log('🟢 ETAPA 2 - Después de mapear:', mappedPlans.length, mappedPlans.map(p => ({ id: p.id, name: p.name, type: p.type, billingDays: p.billingCycleDays })));
 
-        // ETAPA 4: Eliminar duplicados finales por ID y por combinación de tier+sourceType
+        // ETAPA 3: Filtrar solo duplicados por ID (mantener todos los planes)
         const seenIds = new Set<number>();
-        const seenTierType = new Set<string>();
         const finalPlans = mappedPlans.filter((plan: any) => {
-          // Filtrar por ID primero
+          // Solo filtrar duplicados exactos por ID
           if (plan.id && seenIds.has(plan.id)) {
-            console.log('❌ Duplicado final filtrado por ID:', { id: plan.id, name: plan.name, type: plan.type });
+            console.log('❌ Duplicado filtrado por ID:', { id: plan.id, name: plan.name });
             return false;
           }
           if (plan.id) {
             seenIds.add(plan.id);
           }
-          
-          // Filtrar por combinación tier+sourceType (para PROPTECH, solo uno por tier)
-          if (plan.sourceType === 'PROPTECH') {
-            const key = `${plan.type}-${plan.sourceType}`;
-            if (seenTierType.has(key)) {
-              console.log('❌ Duplicado final filtrado por tier+type:', { id: plan.id, name: plan.name, type: plan.type, key });
-              return false;
-            }
-            seenTierType.add(key);
-          }
-          
           return true;
         });
 
-        console.log('🟢 ETAPA 4 - Final después de filtrar duplicados:', finalPlans.length, finalPlans.map(p => ({ id: p.id, name: p.name, type: p.type, sourceType: p.sourceType })));
+        console.log('🟢 ETAPA 3 - Final después de filtrar duplicados por ID:', finalPlans.length, finalPlans.map(p => ({ id: p.id, name: p.name, type: p.type, billingDays: p.billingCycleDays })));
 
-        // ETAPA 5: Ordenar
-        const order: Record<string, number> = { INICIAL: 0, INTERMEDIO: 1, PREMIUM: 2, FREE: 3 };
-        finalPlans.sort((a: any, b: any) => {
-          if (a.sourceType === 'NETWORK' && b.sourceType !== 'NETWORK') return -1;
-          if (b.sourceType === 'NETWORK' && a.sourceType !== 'NETWORK') return 1;
-          return (order[a.type] ?? 99) - (order[b.type] ?? 99);
-        });
-
-        console.log('🟢 ETAPA 5 - Final ordenado:', finalPlans.length, finalPlans.map(p => ({ id: p.id, name: p.name, type: p.type })));
-
-        // Mostrar todos los planes sin duplicados
-        setPlans(finalPlans);
+        // Guardar todos los planes sin filtrar
+        setAllPlans(finalPlans);
       } catch (error) {
         console.error('Error cargando planes:', error);
         // Fallback a array vacío si hay error
-        setPlans([]);
+        setAllPlans([]);
       } finally {
         setLoading(false);
       }
@@ -140,28 +124,38 @@ const PricingSection = () => {
     loadPlans();
   }, []);
 
-  // Funciones helper para mapear datos del backend
-  const getIconForTier = (tier: string) => {
-    switch (tier) {
-      case 'FREE': return '🆓';
-      case 'INICIAL': return '🪵';
-      case 'INTERMEDIO': return '🏠';
-      case 'PREMIUM': return '🏢';
-      case 'ENTERPRISE': return '🌇';
-      default: return '📋';
+  // Filtrar planes según el toggle mensual/anual (reactivo)
+  useEffect(() => {
+    if (allPlans.length === 0) {
+      setPlans([]);
+      return;
     }
-  };
 
-  const getSubtitleForTier = (tier: string) => {
-    switch (tier) {
-      case 'FREE': return 'Ideal para probar la plataforma';
-      case 'INICIAL': return 'Ideal para empezar tu carrera inmobiliaria';
-      case 'INTERMEDIO': return 'Todo lo que necesitas para crecer tu negocio';
-      case 'PREMIUM': return 'Potencia tu equipo y escala tu negocio';
-      case 'ENTERPRISE': return 'La solución completa para empresas grandes';
-      default: return '';
-    }
-  };
+    // Filtrar según el toggle mensual/anual
+    const filteredByBilling = allPlans.filter((plan: any) => {
+      if (isAnnual) {
+        // Si está en modo anual, mostrar solo planes anuales (365 días)
+        return plan.billingCycleDays === 365;
+      } else {
+        // Si está en modo mensual, mostrar solo planes mensuales (30 días)
+        return plan.billingCycleDays === 30;
+      }
+    });
+
+    // Ordenar
+    const order: Record<string, number> = { INICIAL: 0, INTERMEDIO: 1, PREMIUM: 2, FREE: 3 };
+    filteredByBilling.sort((a: any, b: any) => {
+      if (a.sourceType === 'NETWORK' && b.sourceType !== 'NETWORK') return -1;
+      if (b.sourceType === 'NETWORK' && a.sourceType !== 'NETWORK') return 1;
+      return (order[a.type] ?? 99) - (order[b.type] ?? 99);
+    });
+
+    console.log('🟢 Filtrando por billing (isAnnual:', isAnnual, '):', filteredByBilling.length, filteredByBilling.map(p => ({ id: p.id, name: p.name, type: p.type, billingDays: p.billingCycleDays })));
+
+    // Mostrar todos los planes filtrados por mensual/anual
+    setPlans(filteredByBilling);
+  }, [allPlans, isAnnual]);
+
 
   const getFeaturesForTier = (plan: any) => {
     const features = [];

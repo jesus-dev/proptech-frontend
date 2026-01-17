@@ -258,6 +258,7 @@ const navItems: NavItem[] = [
     name: "Autenticación",
     path: "/auth",
     icon: <UserCircleIcon />,
+    requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
     subItems: [
       {
         name: "Usuarios",
@@ -301,11 +302,13 @@ const proptechItems: NavItem[] = [
     name: "Citas Agendadas",
     path: "/proptech/appointments",
     icon: <Calendar className="w-5 h-5" />,
+    requiredRole: "SUPER_ADMIN",
   },
   {
     name: "Suscripciones",
     path: "/proptech/subscriptions/admin",
     icon: <CreditCard className="w-5 h-5" />,
+    requiredRole: "SUPER_ADMIN",
     subItems: [
       {
         name: "Dashboard",
@@ -398,6 +401,7 @@ const catalogItems: NavItem[] = [
     name: "CMS - Sitio Web",
     path: "/cms",
     icon: <Globe className="w-5 h-5" />,
+    requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
     subItems: [
       {
         name: "Panel CMS",
@@ -449,6 +453,11 @@ const MobileSidebar: React.FC = () => {
       return hasAnyRole(subItem.requiredRole);
     }
     return hasRole(subItem.requiredRole);
+  };
+
+  // Función para verificar si hay items visibles en un array de items
+  const hasVisibleItems = (items: NavItem[]): boolean => {
+    return items.some(canViewItem);
   };
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isMounted, setIsMounted] = useState(false);
@@ -752,12 +761,14 @@ const MobileSidebar: React.FC = () => {
               </div>
               
               {/* PropTech */}
-              <div>
-                <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start">
-                  PropTech
-                </h2>
-                {renderMenuItems(proptechItems, "proptech")}
-              </div>
+              {hasVisibleItems(proptechItems) && (
+                <div>
+                  <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start">
+                    PropTech
+                  </h2>
+                  {renderMenuItems(proptechItems, "proptech")}
+                </div>
+              )}
               
               {/* Catálogos */}
               <div>

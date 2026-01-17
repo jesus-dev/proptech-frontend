@@ -308,6 +308,7 @@ const navItems: NavItem[] = [
     name: "Autenticación",
     path: "/auth",
     icon: <UserCircleIcon />,
+    requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
     subItems: [
       {
         name: "Usuarios",
@@ -352,11 +353,13 @@ const proptechItems: NavItem[] = [
     name: "Citas Agendadas",
     path: "/proptech/appointments",
     icon: <Calendar className="w-5 h-5" />,
+    requiredRole: "SUPER_ADMIN",
   },
   {
     name: "Suscripciones",
     path: "/proptech/subscriptions/admin",
     icon: <CreditCard className="w-5 h-5" />,
+    requiredRole: "SUPER_ADMIN",
     subItems: [
       {
         name: "Dashboard",
@@ -449,6 +452,7 @@ const catalogItems: NavItem[] = [
     name: "CMS - Sitio Web",
     path: "/cms",
     icon: <Globe className="w-5 h-5" />,
+    requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
     subItems: [
       {
         name: "Panel CMS",
@@ -503,6 +507,11 @@ const AppSidebar: React.FC = () => {
       return hasAnyRole(subItem.requiredRole);
     }
     return hasRole(subItem.requiredRole);
+  };
+
+  // Función para verificar si hay items visibles en un array de items
+  const hasVisibleItems = (items: NavItem[]): boolean => {
+    return items.some(canViewItem);
   };
 
   useEffect(() => {
@@ -586,11 +595,6 @@ const AppSidebar: React.FC = () => {
     // Si no hay items después del filtro, no renderizar nada
     if (filteredItems.length === 0) {
       return null;
-    }
-    
-    // Debug: log para verificar qué se está renderizando
-    if (menuType === "proptech") {
-      console.log("PropTech items:", filteredItems);
     }
     
     return (
@@ -794,24 +798,26 @@ const AppSidebar: React.FC = () => {
                 {renderMenuItems(navItems, "main")}
               </div>
               
-              <div>
-                <h2
-                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
-                    isMobile 
-                      ? "justify-start"
-                      : !isExpanded && !isHovered
-                        ? "lg:justify-center"
-                        : "justify-start"
-                  }`}
-                >
-                  {isMobile || isExpanded || isHovered ? (
-                    "PropTech"
-                  ) : (
-                    "•••"
-                  )}
-                </h2>
-                {renderMenuItems(proptechItems, "proptech")}
-              </div>
+              {hasVisibleItems(proptechItems) && (
+                <div>
+                  <h2
+                    className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
+                      isMobile 
+                        ? "justify-start"
+                        : !isExpanded && !isHovered
+                          ? "lg:justify-center"
+                          : "justify-start"
+                    }`}
+                  >
+                    {isMobile || isExpanded || isHovered ? (
+                      "PropTech"
+                    ) : (
+                      "•••"
+                    )}
+                  </h2>
+                  {renderMenuItems(proptechItems, "proptech")}
+                </div>
+              )}
 
               <div>
                 <h2

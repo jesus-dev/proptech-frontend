@@ -53,28 +53,21 @@ export const subscriptionService = {
   // Obtener todos los planes disponibles
   async getAllPlans(): Promise<SubscriptionPlan[]> {
     try {
-      console.log('Calling GET /api/subscriptions/admin/plans');
       const response = await apiClient.get('/api/subscriptions/admin/plans');
-      console.log('Response status:', response.status);
-      console.log('Response data:', response.data);
       
       // Asegurar que siempre retornemos un array
       if (!response.data) {
-        console.warn('Response data is null or undefined');
         return [];
       }
       
       if (!Array.isArray(response.data)) {
-        console.warn('Response data is not an array:', response.data);
         return [];
       }
       
       return response.data;
     } catch (error: any) {
       console.error('Error fetching subscription plans:', error);
-      console.error('Error response:', error?.response?.data);
-      console.error('Error status:', error?.response?.status);
-      throw error;
+      return [];
     }
   },
 
@@ -82,10 +75,16 @@ export const subscriptionService = {
   async getPropTechPlans(): Promise<SubscriptionPlan[]> {
     try {
       const response = await apiClient.get('/api/subscriptions/plans/proptech');
+      if (!response.data) {
+        return [];
+      }
+      if (!Array.isArray(response.data)) {
+        return [];
+      }
       return response.data;
     } catch (error) {
       console.error('Error fetching PropTech plans:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -115,21 +114,27 @@ export const subscriptionService = {
   async getUserSubscriptions(userId: number): Promise<UserSubscription[]> {
     try {
       const response = await apiClient.get(`/api/subscriptions/user/${userId}`);
+      if (!response.data) {
+        return [];
+      }
+      if (!Array.isArray(response.data)) {
+        return [];
+      }
       return response.data;
     } catch (error) {
       console.error('Error fetching user subscriptions:', error);
-      throw error;
+      return [];
     }
   },
 
   // Obtener acceso del usuario
-  async getUserAccess(userId: number): Promise<SubscriptionAccess> {
+  async getUserAccess(userId: number): Promise<SubscriptionAccess | null> {
     try {
       const response = await apiClient.get(`/api/subscriptions/user/${userId}/access`);
-      return response.data;
+      return response.data || null;
     } catch (error) {
       console.error('Error fetching user access:', error);
-      throw error;
+      return null;
     }
   },
 
@@ -250,10 +255,17 @@ export const subscriptionService = {
       if (planType) params.append('planType', planType);
 
       const response = await apiClient.get(`/api/subscriptions/admin/all?${params.toString()}`);
-      return response.data;
+      // El backend puede devolver un objeto paginado o un array directo
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      }
+      if (response.data && response.data.content && Array.isArray(response.data.content)) {
+        return response.data.content;
+      }
+      return [];
     } catch (error) {
       console.error('Error fetching all subscriptions:', error);
-      throw error;
+      return [];
     }
   },
 
@@ -261,10 +273,20 @@ export const subscriptionService = {
   async getSubscriptionStats(): Promise<any> {
     try {
       const response = await apiClient.get('/api/subscriptions/admin/stats');
-      return response.data;
+      return response.data || {
+        totalSubscriptions: 0,
+        activeSubscriptions: 0,
+        expiringSoon: 0,
+        monthlyRevenue: 0
+      };
     } catch (error) {
       console.error('Error fetching subscription stats:', error);
-      throw error;
+      return {
+        totalSubscriptions: 0,
+        activeSubscriptions: 0,
+        expiringSoon: 0,
+        monthlyRevenue: 0
+      };
     }
   },
 
