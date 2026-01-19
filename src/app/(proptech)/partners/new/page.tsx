@@ -191,13 +191,65 @@ export default function NewPartnerPage() {
     }
   };
 
+  const validateUrl = (url: string): boolean => {
+    if (!url || url.trim() === '') return true; // URL vacía es válida (opcional)
+    
+    // Verificar que tenga protocolo
+    const hasProtocol = /^https?:\/\//i.test(url);
+    if (!hasProtocol) {
+      return false;
+    }
+    
+    // Verificar que no sea solo un dominio sin protocolo
+    try {
+      const urlObj = new URL(url);
+      // Verificar que tenga un hostname válido (no solo "www." o similar)
+      const hostname = urlObj.hostname;
+      if (!hostname || hostname === 'www' || hostname === 'www.') {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
       setUploadError(null);
 
+      // Validar URL del sitio web
+      if (formData.website && !validateUrl(formData.website)) {
+        toast({
+          title: "Error de validación",
+          description: "La URL del sitio web debe incluir el protocolo (http:// o https://) y un dominio válido.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Preparar datos para enviar, asegurando que socialMedia sea un array vacío si es null/undefined
+      const dataToSend: Omit<Partner, 'id'> = {
+        ...formData,
+        // Asegurar que socialMedia siempre sea un array, nunca null o undefined
+        socialMedia: Array.isArray(formData.socialMedia) ? formData.socialMedia : [],
+        // No enviar campos de fecha
+        partnershipDate: undefined,
+        contractStartDate: undefined,
+        contractEndDate: undefined,
+        nextPaymentDate: undefined,
+        lastPaymentDate: undefined,
+      } as Omit<Partner, 'id'>;
+      
+      // Asegurar explícitamente que socialMedia esté presente como array
+      if (!dataToSend.socialMedia || !Array.isArray(dataToSend.socialMedia)) {
+        dataToSend.socialMedia = [];
+      }
+
       // Crear el socio primero
-      const newPartner = await partnerService.createPartner(formData as Omit<Partner, 'id'>);
+      const newPartner = await partnerService.createPartner(dataToSend);
       
       // Si hay una imagen pendiente, subirla después de crear el socio
       if (pendingImageBlob && newPartner.id) {
@@ -219,6 +271,7 @@ export default function NewPartnerPage() {
       });
       router.push("/partners");
     } catch (error) {
+      console.error('Error submitting form:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error desconocido",
@@ -456,6 +509,23 @@ export default function NewPartnerPage() {
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estado <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="status"
+                value={formData.status || "PENDING"}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="PENDING">Pendiente</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="INACTIVE">Inactivo</option>
+                <option value="SUSPENDED">Suspendido</option>
+                <option value="TERMINATED">Terminado</option>
+              </select>
+            </div>
           </div>
         );
       case 3:
@@ -534,8 +604,12 @@ export default function NewPartnerPage() {
                 name="website"
                 value={formData.website || ""}
                 onChange={handleInputChange}
+                placeholder="https://ejemplo.com"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
               />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Debe incluir el protocolo (http:// o https://)
+              </p>
             </div>
           </div>
         );

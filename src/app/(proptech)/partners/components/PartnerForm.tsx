@@ -121,12 +121,46 @@ export default function PartnerForm({ partner, isEditing = false, onPartnerUpdat
     }));
   };
 
+  const validateUrl = (url: string): boolean => {
+    if (!url || url.trim() === '') return true; // URL vacía es válida (opcional)
+    
+    // Verificar que tenga protocolo
+    const hasProtocol = /^https?:\/\//i.test(url);
+    if (!hasProtocol) {
+      return false;
+    }
+    
+    // Verificar que no sea solo un dominio sin protocolo
+    try {
+      const urlObj = new URL(url);
+      // Verificar que tenga un hostname válido (no solo "www." o similar)
+      const hostname = urlObj.hostname;
+      if (!hostname || hostname === 'www' || hostname === 'www.') {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       setLoading(true);
       setUploadError(null);
+
+      // Validar URL del sitio web
+      if (formData.website && !validateUrl(formData.website)) {
+        toast({
+          title: "Error de validación",
+          description: "La URL del sitio web debe incluir el protocolo (http:// o https://) y un dominio válido.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       // Si estamos editando y hay una imagen pendiente, subirla primero
       if (isEditing && partner && pendingImageBlob) {
@@ -152,9 +186,27 @@ export default function PartnerForm({ partner, isEditing = false, onPartnerUpdat
         setOriginalPhotoUrl('');
       }
 
+      // Preparar datos para enviar, asegurando que socialMedia sea un array vacío si es null/undefined
+      const dataToSend: Partial<Partner> = {
+        ...formData,
+        // Asegurar que socialMedia siempre sea un array, nunca null o undefined
+        socialMedia: Array.isArray(formData.socialMedia) ? formData.socialMedia : [],
+        // No enviar campos de fecha
+        partnershipDate: undefined,
+        contractStartDate: undefined,
+        contractEndDate: undefined,
+        nextPaymentDate: undefined,
+        lastPaymentDate: undefined,
+      };
+      
+      // Asegurar explícitamente que socialMedia esté presente como array
+      if (!dataToSend.socialMedia || !Array.isArray(dataToSend.socialMedia)) {
+        dataToSend.socialMedia = [];
+      }
+
       // Guardar el partner
       if (isEditing && partner) {
-        const updatedPartner = await partnerService.updatePartner(partner.id, formData);
+        const updatedPartner = await partnerService.updatePartner(partner.id, dataToSend);
         toast({
           title: "Socio actualizado",
           description: "El socio ha sido actualizado exitosamente.",
@@ -178,7 +230,7 @@ export default function PartnerForm({ partner, isEditing = false, onPartnerUpdat
           router.push(`/partners/${partner.id}`);
         }
       } else {
-        const newPartner = await partnerService.createPartner(formData as Omit<Partner, 'id'>);
+        const newPartner = await partnerService.createPartner(dataToSend as Omit<Partner, 'id'>);
         toast({
           title: "Socio creado",
           description: "El socio ha sido creado exitosamente.",
@@ -627,8 +679,12 @@ export default function PartnerForm({ partner, isEditing = false, onPartnerUpdat
                   name="website"
                   value={formData.website || ""}
                   onChange={handleInputChange}
+                  placeholder="https://ejemplo.com"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Debe incluir el protocolo (http:// o https://)
+                </p>
               </div>
             </div>
           </div>

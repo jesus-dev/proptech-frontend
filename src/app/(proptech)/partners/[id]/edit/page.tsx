@@ -107,7 +107,8 @@ export default function EditPartnerPage() {
           : (typeof data.territories === 'string' && data.territories
               ? (data.territories as string).split(",").map((s: string) => s.trim())
               : []),
-        socialMedia: Array.isArray(data.socialMedia) ? data.socialMedia : [],
+        // Asegurar que socialMedia siempre sea un array, nunca null o undefined
+        socialMedia: (data.socialMedia && Array.isArray(data.socialMedia)) ? data.socialMedia : [],
         languages: Array.isArray(data.languages) ? data.languages : ["Español"],
         certifications: Array.isArray(data.certifications) ? data.certifications : []
       };
@@ -257,10 +258,44 @@ export default function EditPartnerPage() {
     }
   };
 
+  const validateUrl = (url: string): boolean => {
+    if (!url || url.trim() === '') return true; // URL vacía es válida (opcional)
+    
+    // Verificar que tenga protocolo
+    const hasProtocol = /^https?:\/\//i.test(url);
+    if (!hasProtocol) {
+      return false;
+    }
+    
+    // Verificar que no sea solo un dominio sin protocolo
+    try {
+      const urlObj = new URL(url);
+      // Verificar que tenga un hostname válido (no solo "www." o similar)
+      const hostname = urlObj.hostname;
+      if (!hostname || hostname === 'www' || hostname === 'www.') {
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
       setUploadError(null);
+
+      // Validar URL del sitio web
+      if (formData.website && !validateUrl(formData.website)) {
+        toast({
+          title: "Error de validación",
+          description: "La URL del sitio web debe incluir el protocolo (http:// o https://) y un dominio válido.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
       // Si hay una imagen pendiente, subirla primero
       if (pendingImageBlob) {
@@ -295,8 +330,26 @@ export default function EditPartnerPage() {
         }
       }
 
+      // Preparar datos para enviar, asegurando que socialMedia sea un array vacío si es null/undefined
+      const dataToSend: Partial<Partner> = {
+        ...formData,
+        // Asegurar que socialMedia siempre sea un array, nunca null o undefined
+        socialMedia: Array.isArray(formData.socialMedia) ? formData.socialMedia : [],
+        // No enviar campos de fecha
+        partnershipDate: undefined,
+        contractStartDate: undefined,
+        contractEndDate: undefined,
+        nextPaymentDate: undefined,
+        lastPaymentDate: undefined,
+      };
+      
+      // Asegurar explícitamente que socialMedia esté presente como array
+      if (!dataToSend.socialMedia || !Array.isArray(dataToSend.socialMedia)) {
+        dataToSend.socialMedia = [];
+      }
+
       // Actualizar el socio
-      await partnerService.updatePartner(partnerId, formData);
+      await partnerService.updatePartner(partnerId, dataToSend);
       
       toast({
         title: "Socio actualizado",
@@ -304,6 +357,7 @@ export default function EditPartnerPage() {
       });
       router.push(`/partners/${partnerId}`);
     } catch (error) {
+      console.error('Error submitting form:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Error desconocido",
@@ -541,6 +595,23 @@ export default function EditPartnerPage() {
                 />
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Estado <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="status"
+                value={formData.status || "PENDING"}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="PENDING">Pendiente</option>
+                <option value="ACTIVE">Activo</option>
+                <option value="INACTIVE">Inactivo</option>
+                <option value="SUSPENDED">Suspendido</option>
+                <option value="TERMINATED">Terminado</option>
+              </select>
+            </div>
           </div>
         );
       case 3:
@@ -619,8 +690,12 @@ export default function EditPartnerPage() {
                 name="website"
                 value={formData.website || ""}
                 onChange={handleInputChange}
+                placeholder="https://ejemplo.com"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
               />
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Debe incluir el protocolo (http:// o https://)
+              </p>
             </div>
           </div>
         );

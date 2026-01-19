@@ -1191,8 +1191,8 @@ export default function SocialPageContent() {
       
       {/* Campo para crear post */}
       {isAuthenticated && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-          <div className="flex items-start space-x-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-6">
+          <div className="flex items-start space-x-3 sm:space-x-4">
             {/* Avatar del usuario */}
             {(() => {
               const userPhoto = (user as any)?.photoUrl || user?.agent?.fotoPerfilUrl;
@@ -1230,7 +1230,7 @@ export default function SocialPageContent() {
                 </div>
               );
             })()}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
                     <textarea
                       value={newPost}
                       onChange={(e) => {
@@ -1240,7 +1240,7 @@ export default function SocialPageContent() {
                         setDetectedUrls(urls);
                       }}
                       placeholder={`¿Qué quieres compartir, ${user?.fullName || 'Usuario'}?`}
-                      className="w-full p-4 border border-gray-200 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
+                      className="w-full p-3 sm:p-4 border border-gray-200 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 transition-all"
                       rows={3}
                     />
                     
@@ -1399,11 +1399,11 @@ export default function SocialPageContent() {
                       </div>
                     )}
 
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center space-x-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     <label className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer group">
-                      <Camera className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-medium">Fotos (máx. 5)</span>
+                      <Camera className="w-5 h-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                      <span className="text-sm font-medium whitespace-nowrap">Fotos (máx. 5)</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -1414,11 +1414,11 @@ export default function SocialPageContent() {
                     </label>
                     <button
                       onClick={openLocationPicker}
-                      className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors group"
+                      className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors group min-w-0"
                       title="Seleccionar ubicación en mapa"
                     >
-                      <MapPin className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-medium">
+                      <MapPin className="w-5 h-5 group-hover:scale-110 transition-transform flex-shrink-0" />
+                      <span className="text-sm font-medium truncate max-w-[150px] sm:max-w-none">
                         {userLocation ? userLocation : 'Seleccionar ubicación'}
                       </span>
                     </button>
@@ -1426,7 +1426,7 @@ export default function SocialPageContent() {
                   <button
                     onClick={handleCreatePost}
                     disabled={!newPost.trim()}
-                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                   >
                     Publicar
                   </button>

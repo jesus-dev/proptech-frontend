@@ -130,12 +130,28 @@ class PartnerApiService {
 
   async createPartner(partner: Omit<Partner, 'id'>): Promise<Partner> {
     try {
+      // Asegurar que socialMedia siempre sea un array antes de serializar
+      // Eliminar campos undefined/null que no queremos enviar
+      const cleanedPartner: any = { ...partner };
+      
+      // Asegurar que socialMedia siempre sea un array, nunca null o undefined
+      if (!Array.isArray(cleanedPartner.socialMedia)) {
+        cleanedPartner.socialMedia = [];
+      }
+      
+      // Eliminar campos de fecha que no queremos enviar
+      delete cleanedPartner.partnershipDate;
+      delete cleanedPartner.contractStartDate;
+      delete cleanedPartner.contractEndDate;
+      delete cleanedPartner.nextPaymentDate;
+      delete cleanedPartner.lastPaymentDate;
+      
       const response = await fetch(getEndpoint('/api/partners'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(partner),
+        body: JSON.stringify(cleanedPartner),
       });
       
       if (!response.ok) {
@@ -152,12 +168,29 @@ class PartnerApiService {
 
   async updatePartner(id: number, partner: Partial<Partner>): Promise<Partner> {
     try {
+      // Asegurar que socialMedia siempre sea un array antes de serializar
+      const cleanedPartner: any = { ...partner };
+      
+      // Si socialMedia está presente, asegurar que sea un array
+      if (cleanedPartner.socialMedia !== undefined) {
+        cleanedPartner.socialMedia = Array.isArray(cleanedPartner.socialMedia) 
+          ? cleanedPartner.socialMedia 
+          : [];
+      }
+      
+      // Eliminar campos de fecha que no queremos enviar
+      delete cleanedPartner.partnershipDate;
+      delete cleanedPartner.contractStartDate;
+      delete cleanedPartner.contractEndDate;
+      delete cleanedPartner.nextPaymentDate;
+      delete cleanedPartner.lastPaymentDate;
+      
       const response = await fetch(getEndpoint(`/api/partners/${id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(partner),
+        body: JSON.stringify(cleanedPartner),
       });
       
       if (!response.ok) {
