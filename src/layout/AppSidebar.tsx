@@ -335,7 +335,7 @@ const othersItems: NavItem[] = [
   },
   {
     name: "Red Social",
-    path: "/aureo",
+    path: "/yvu",
     icon: (
       <div className="relative">
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

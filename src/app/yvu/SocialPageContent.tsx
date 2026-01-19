@@ -658,7 +658,7 @@ export default function SocialPageContent() {
       // Cerrar el menú primero
       setShowShareMenu(prev => ({ ...prev, [postId]: false }));
       
-      const postUrl = `${window.location.origin}/aureo/posts/${postId}`;
+      const postUrl = `${window.location.origin}/yvu/posts/${postId}`;
       const post = posts.find(p => p.id === postId);
       const postText = post?.content ? post.content.substring(0, 100) + '...' : 'Mira este post interesante';
       
@@ -1079,11 +1079,11 @@ export default function SocialPageContent() {
     return `hace ${Math.floor(diffInDays / 365)} año`;
   };
 
-  // Redirigir a la galería existente (/aureo/gallery/[postId])
+  // Redirigir a la galería existente (/yvu/gallery/[postId])
   const openImageGallery = (postId: number, imageIndex: number = 0) => {
     const target = imageIndex > 0 
-      ? `/aureo/gallery/${postId}?i=${imageIndex}` 
-      : `/aureo/gallery/${postId}`;
+      ? `/yvu/gallery/${postId}?i=${imageIndex}` 
+      : `/yvu/gallery/${postId}`;
     if (typeof window !== 'undefined') {
       window.location.href = target;
     }
@@ -1139,15 +1139,18 @@ export default function SocialPageContent() {
           
           <div className="relative text-center">
             {/* Logo con efecto hover */}
-            <div className="flex justify-center mb-3 sm:mb-4 md:mb-6">
+            <div className="flex flex-col items-center justify-center mb-3 sm:mb-4 md:mb-6">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
                 <img 
-                  src="/images/logo/aureo.png" 
+                  src="/images/logo/yvu.png" 
                   alt="Áureo Logo" 
                   className="relative h-12 sm:h-16 md:h-24 lg:h-28 w-auto object-contain transform group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
+                Donde nacen los negocios de bienes raices
+              </p>
             </div>
             
             {/* Tagline mejorado */}
@@ -1502,7 +1505,7 @@ export default function SocialPageContent() {
               onClick={() => {
                 // Redirigir a la página de propshots
                 if (typeof window !== 'undefined') {
-                  window.location.href = '/aureo/propshots';
+                  window.location.href = '/yvu/propshots';
                 }
               }}
               disabled={propShotsLoading || propShots.length === 0}
@@ -1783,7 +1786,7 @@ export default function SocialPageContent() {
                           {/* Otras opciones futuras pueden ir aquí */}
                           <button
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/aureo/posts/${post.id}`);
+                              navigator.clipboard.writeText(`${window.location.origin}/yvu/posts/${post.id}`);
                               setOpenDropdown(null);
                               alert('Enlace copiado al portapapeles');
                             }}

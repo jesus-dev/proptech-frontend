@@ -497,7 +497,7 @@ export default function UserDashboardPage() {
                   </Button>
                 </Link>
 
-                <Link href="/aureo/propshots">
+                <Link href="/yvu/propshots">
                   <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
                     <Camera className="h-5 w-5 mr-2" />
                     PropShots
@@ -917,7 +917,7 @@ export default function UserDashboardPage() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => window.location.href = '/aureo/propshots'}
+                    onClick={() => window.location.href = '/yvu/propshots'}
                     className="hover:shadow-lg hover:scale-105 transition-all duration-300"
                   >
                     <Play className="h-4 w-4 mr-2" />

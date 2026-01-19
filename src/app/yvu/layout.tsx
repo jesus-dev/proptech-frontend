@@ -11,7 +11,7 @@ import { getEndpoint } from '@/lib/api-config';
 export default function SocialLayout({ children }: any) {
   const { user, isAuthenticated, logout } = useAuth();
   const pathname = usePathname();
-  const isGalleryRoute = pathname?.startsWith('/aureo/gallery');
+  const isGalleryRoute = pathname?.startsWith('/yvu/gallery');
   const [unreadCount, setUnreadCount] = useState(0);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthMenu, setShowAuthMenu] = useState(false);
@@ -122,12 +122,12 @@ export default function SocialLayout({ children }: any) {
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-[275px] border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
         <div className="px-4 py-6">
           <button
-            onClick={() => window.location.href = '/aureo'}
-            className="flex items-center focus:outline-none hover:opacity-80 transition-opacity"
+            onClick={() => window.location.href = '/yvu'}
+            className="flex flex-col items-start focus:outline-none hover:opacity-80 transition-opacity w-full"
             aria-label="Áureo - Inicio"
           >
             <img 
-              src="/images/logo/aureo.png" 
+              src="/images/logo/yvu.png" 
               alt="Áureo Logo" 
               className="object-contain"
               style={{
@@ -135,56 +135,59 @@ export default function SocialLayout({ children }: any) {
                 width: 'auto'
               }}
             />
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 text-left">
+              Donde nacen los negocios de bienes raices
+            </p>
           </button>
         </div>
 
         <nav className="flex-1 px-3 py-2">
           <div className="space-y-1">
             <button 
-              onClick={() => window.location.href = '/aureo'}
+              onClick={() => window.location.href = '/yvu'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group ${
-                pathname === '/aureo' 
+                pathname === '/yvu' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <Home className={`w-6 h-6 ${pathname === '/aureo' ? '' : 'group-hover:scale-110'}`} />
+              <Home className={`w-6 h-6 ${pathname === '/yvu' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">Inicio</span>
             </button>
             
             <button 
-              onClick={() => window.location.href = '/aureo/propshots'}
+              onClick={() => window.location.href = '/yvu/propshots'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group ${
-                pathname === '/aureo/propshots' 
+                pathname === '/yvu/propshots' 
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <PlayCircle className={`w-6 h-6 ${pathname === '/aureo/propshots' ? '' : 'group-hover:scale-110'}`} />
+              <PlayCircle className={`w-6 h-6 ${pathname === '/yvu/propshots' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">PropShots</span>
             </button>
             
             <button 
-              onClick={() => window.location.href = '/aureo/asesores'}
+              onClick={() => window.location.href = '/yvu/asesores'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group ${
-                pathname === '/aureo/asesores' 
+                pathname === '/yvu/asesores' 
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <Users className={`w-6 h-6 ${pathname === '/aureo/asesores' ? '' : 'group-hover:scale-110'}`} />
+              <Users className={`w-6 h-6 ${pathname === '/yvu/asesores' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">Asesores</span>
             </button>
             
             <button 
-              onClick={() => window.location.href = '/aureo/messages'}
+              onClick={() => window.location.href = '/yvu/messages'}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-full transition-all duration-200 group relative ${
-                pathname === '/aureo/messages' 
+                pathname === '/yvu/messages' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300'
               }`}
             >
-              <MessageSquare className={`w-6 h-6 ${pathname === '/aureo/messages' ? '' : 'group-hover:scale-110'}`} />
+              <MessageSquare className={`w-6 h-6 ${pathname === '/yvu/messages' ? '' : 'group-hover:scale-110'}`} />
               <span className="text-xl">Mensajes</span>
               {unreadCount > 0 && (
                 <span className="ml-auto bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
@@ -332,13 +335,13 @@ export default function SocialLayout({ children }: any) {
       >
         <div className="px-2 py-4 flex items-center justify-center flex-shrink-0" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0))' }}>
           <button
-            onClick={() => window.location.href = '/aureo'}
-            className="flex items-center justify-center focus:outline-none hover:opacity-80 active:opacity-70 transition-opacity w-full touch-manipulation"
+            onClick={() => window.location.href = '/yvu'}
+            className="flex flex-col items-center justify-center focus:outline-none hover:opacity-80 active:opacity-70 transition-opacity w-full touch-manipulation"
             aria-label="Áureo - Inicio"
             style={{ minHeight: '48px', minWidth: '48px' }}
           >
             <img 
-              src="/images/logo/aureo.png" 
+              src="/images/logo/yvu.png" 
               alt="Áureo Logo" 
               className="object-contain max-w-full"
               style={{
@@ -346,15 +349,18 @@ export default function SocialLayout({ children }: any) {
                 width: 'auto'
               }}
             />
+            <p className="text-[8px] text-gray-500 dark:text-gray-400 mt-0.5 text-center leading-tight">
+              Donde nacen los negocios de bienes raices
+            </p>
           </button>
         </div>
 
         <nav className="flex-1 px-2 sm:px-3 py-2 sm:py-3 flex flex-col min-h-0 justify-between">
           <div className="space-y-2 sm:space-y-1.5 flex-shrink-0">
             <button 
-              onClick={() => window.location.href = '/aureo'}
+              onClick={() => window.location.href = '/yvu'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 touch-manipulation ${
-                pathname === '/aureo' 
+                pathname === '/yvu' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
@@ -365,9 +371,9 @@ export default function SocialLayout({ children }: any) {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/aureo/propshots'}
+              onClick={() => window.location.href = '/yvu/propshots'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 relative touch-manipulation ${
-                pathname === '/aureo/propshots' 
+                pathname === '/yvu/propshots' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
@@ -378,9 +384,9 @@ export default function SocialLayout({ children }: any) {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/aureo/asesores'}
+              onClick={() => window.location.href = '/yvu/asesores'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 touch-manipulation ${
-                pathname === '/aureo/asesores' 
+                pathname === '/yvu/asesores' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
@@ -391,9 +397,9 @@ export default function SocialLayout({ children }: any) {
             </button>
             
             <button 
-              onClick={() => window.location.href = '/aureo/messages'}
+              onClick={() => window.location.href = '/yvu/messages'}
               className={`w-full flex items-center justify-center p-3 rounded-full transition-all duration-200 relative touch-manipulation ${
-                pathname === '/aureo/messages' 
+                pathname === '/yvu/messages' 
                   ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-900 active:bg-gray-200 dark:active:bg-gray-800 text-gray-700 dark:text-gray-300'
               }`}
