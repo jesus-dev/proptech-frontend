@@ -35,11 +35,12 @@ interface NavItem {
   requiredRole?: string | string[]; // Rol requerido para ver este item
   subItems?: {
     name: string;
-    path: string;
+    path?: string; // Opcional para separadores/headers
     pro?: boolean;
     new?: boolean;
     nuevo?: boolean;
     requiredRole?: string | string[]; // Rol requerido para ver este subitem
+    isGroupHeader?: boolean; // Para títulos de grupo no clickeables
   }[];
 }
 
@@ -94,9 +95,59 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    name: "Desarrollos",
+    path: "/developments",
+    icon: <BoxCubeIcon />,
+    subItems: [
+      {
+        name: "Dashboard",
+        path: "/developments/dashboard",
+      },
+      {
+        name: "Todos los desarrollos",
+        path: "/developments",
+      },
+      {
+        name: "Gestionar Unidades",
+        path: "/developments/units",
+      },
+      {
+        name: "Gestionar Cuotas",
+        path: "/developments/quotas",
+      },
+      {
+        name: "Reservas",
+        path: "/developments/reservations",
+      },
+    ],
+  },
+  {
     name: "Condominios",
     path: "/condominiums",
     icon: <Building2 className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Todos los Condominios",
+        path: "/condominiums",
+      },
+      {
+        name: "Nuevo Condominio",
+        path: "/condominiums/new",
+        nuevo: true,
+      },
+      {
+        name: "Unidades",
+        path: "/condominiums/units",
+      },
+      {
+        name: "Cuotas",
+        path: "/condominiums/fees",
+      },
+      {
+        name: "Pagos",
+        path: "/condominiums/payments",
+      },
+    ],
   },
   {
     name: "Gestión de Propiedades de Propietarios",
@@ -174,6 +225,10 @@ const navItems: NavItem[] = [
     icon: <CalenderIcon />,
     subItems: [
       {
+        name: "Citas",
+        isGroupHeader: true,
+      },
+      {
         name: "Calendario",
         path: "/agenda/calendar",
       },
@@ -191,10 +246,22 @@ const navItems: NavItem[] = [
       },
       {
         name: "Visitas",
+        isGroupHeader: true,
+      },
+      {
+        name: "Ver Visitas",
         path: "/visits",
       },
       {
+        name: "Nueva Visita",
+        path: "/visits/new",
+      },
+      {
         name: "Reportes",
+        isGroupHeader: true,
+      },
+      {
+        name: "Reportes de Agenda",
         path: "/agenda/reports",
       },
     ],
@@ -208,6 +275,7 @@ const navItems: NavItem[] = [
     name: "Gestión de Socios",
     path: "/partners",
     icon: <GroupIcon className="w-5 h-5" />,
+    requiredRole: ["ACIAPP", "SUPER_ADMIN"],
     subItems: [
       {
         name: "Dashboard",
@@ -240,48 +308,6 @@ const navItems: NavItem[] = [
         name: "Tipos de Servicio",
         path: "/professionals/service-types",
       },
-    ],
-  },
-  {
-    name: "Desarrollos",
-    path: "/developments",
-    icon: <BoxCubeIcon />,
-    subItems: [
-      {
-        name: "Dashboard",
-        path: "/developments/dashboard",
-      },
-      {
-        name: "Todos los desarrollos",
-        path: "/developments",
-      },
-      {
-        name: "Gestionar Unidades",
-        path: "/developments/units",
-      },
-      {
-        name: "Gestionar Cuotas",
-        path: "/developments/quotas",
-      },
-      {
-        name: "Reservas",
-        path: "/developments/reservations",
-      },
-    ],
-  },
-  {
-    name: "Documentos",
-    path: "/documents",
-    icon: <DocsIcon />,
-    subItems: [
-      {
-        name: "Gestión Documental",
-        path: "/documents",
-      },
-      {
-        name: "Plantillas",
-        path: "/documents/templates",
-      }
     ],
   },
   {
@@ -393,6 +419,7 @@ const catalogItems: NavItem[] = [
       {
         name: "Agencias",
         path: "/catalogs/agencies",
+        requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
       },
       {
         name: "Agentes",
@@ -401,6 +428,7 @@ const catalogItems: NavItem[] = [
       {
         name: "Campañas",
         path: "/catalogs/campaigns",
+        requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
       },
       {
         name: "Países",
@@ -554,7 +582,7 @@ const AppSidebar: React.FC = () => {
       items.forEach((nav, index) => {
         if (nav.subItems) {
           nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
+            if (subItem.path && !subItem.isGroupHeader && isActive(subItem.path)) {
               const key = `${menuType}-${index}`;
               setOpenSubmenu({
                 type: menuType as "main" | "others" | "catalogs" | "proptech",
@@ -673,34 +701,42 @@ const AppSidebar: React.FC = () => {
               }}
             >
               <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.filter(canViewSubItem).map((subItem) => (
-                  <li key={subItem.name}>
-                    <Link
-                      href={subItem.path}
-                      className={`relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm ${
-                        isActive(subItem.path) ? "bg-blue-50 text-blue-500 dark:bg-blue-500/[0.12] dark:text-blue-400" : "text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
-                      }`}
-                      onClick={handleMenuLinkClick}
-                    >
-                      {subItem.name}
-                      <span className="flex items-center gap-1 ml-auto">
-                        {subItem.new && (
-                          <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path) ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
-                            new
-                          </span>
-                        )}
-                        {subItem.nuevo && (
-                          <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path) ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
-                            nuevo
-                          </span>
-                        )}
-                        {subItem.pro && (
-                          <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path) ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
-                            pro
-                          </span>
-                        )}
-                      </span>
-                    </Link>
+                {nav.subItems.filter(canViewSubItem).map((subItem, subIndex) => (
+                  <li key={`${subItem.name}-${subIndex}`}>
+                    {subItem.isGroupHeader ? (
+                      <div className="mt-3 first:mt-0 px-3">
+                        <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400 border-l border-gray-200 dark:border-gray-800 pl-2">
+                          {subItem.name}
+                        </div>
+                      </div>
+                    ) : (
+                      <Link
+                        href={subItem.path || "#"}
+                        className={`relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-sm ${
+                          isActive(subItem.path || "") ? "bg-blue-50 text-blue-500 dark:bg-blue-500/[0.12] dark:text-blue-400" : "text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                        }`}
+                        onClick={handleMenuLinkClick}
+                      >
+                        {subItem.name}
+                        <span className="flex items-center gap-1 ml-auto">
+                          {subItem.new && (
+                            <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path || "") ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
+                              new
+                            </span>
+                          )}
+                          {subItem.nuevo && (
+                            <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path || "") ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
+                              nuevo
+                            </span>
+                          )}
+                          {subItem.pro && (
+                            <span className={`ml-auto px-2 py-0.5 text-xs font-semibold rounded-full ${isActive(subItem.path || "") ? "bg-blue-200 text-blue-800" : "bg-green-100 text-green-800"}`}>
+                              pro
+                            </span>
+                          )}
+                        </span>
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

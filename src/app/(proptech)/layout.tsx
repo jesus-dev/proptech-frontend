@@ -20,18 +20,18 @@ export default function ProptechLayout({ children }: any) {
   return (
     <>
       <AuthGuard requireAuth={true}>
-        <div className="min-h-screen xl:flex xl:gap-0">
+        <div className="min-h-screen xl:flex xl:gap-0 overflow-x-hidden">
           {/* Sidebar and Backdrop */}
           <AppSidebar />
           <Backdrop />
           {/* Main Content Area */}
           <div
-            className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin} bg-gray-50 min-h-screen`}
+            className={`flex-1 transition-all duration-300 ease-in-out ${mainContentMargin} bg-gray-50 min-h-screen overflow-x-hidden`}
           >
             {/* Header */}
             <AppHeaderCRM />
             {/* Page Content */}
-            <div className="pt-4 md:pt-6 pl-6 md:pl-8 pr-6 md:pr-8 pb-20 w-full crm-content">
+            <div className="pt-4 md:pt-6 pl-6 md:pl-8 pr-6 md:pr-8 pb-20 w-full max-w-full crm-content overflow-x-hidden">
               {children}
             </div>
           </div>

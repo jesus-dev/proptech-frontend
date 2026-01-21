@@ -30,6 +30,7 @@ import { clientService } from "../../developments/services/clientService";
 import { Client } from "../../developments/components/types";
 import type { Property } from "../../properties/components/types";
 import { apiClient } from "@/lib/api";
+import { useAuthContext } from "@/context/AuthContext";
 
 interface LeadComboboxProps {
   selectedLead: Client | null;
@@ -167,6 +168,7 @@ const LeadCombobox: React.FC<LeadComboboxProps> = ({
 
 export default function NewLeadPage() {
   const router = useRouter();
+  const { getUserContext } = useAuthContext();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -206,14 +208,28 @@ export default function NewLeadPage() {
       // Sin datos ficticios: cargar agentes desde backend (o vacío)
       const res = await apiClient.get("/api/sales-agents?size=100");
       const list = Array.isArray(res.data) ? res.data : (res.data?.content || []);
-      setAgents(
-        Array.isArray(list)
-          ? list.map((a: any) => ({
-              id: Number(a.id),
-              name: `${a.firstName || a.name || ""} ${a.lastName || ""}`.trim() || String(a.email || "Agente"),
-            }))
-          : []
-      );
+      const mappedAgents = Array.isArray(list)
+        ? list.map((a: any) => ({
+            id: Number(a.id),
+            name: `${a.firstName || a.name || ""} ${a.lastName || ""}`.trim() || String(a.email || "Agente"),
+          }))
+        : [];
+
+      setAgents(mappedAgents);
+
+      // Preseleccionar el agente asociado al usuario, si existe
+      const context = getUserContext();
+      if (context.agentId) {
+        const agentIdNum = Number(context.agentId);
+        const existsInList = mappedAgents.some(a => a.id === agentIdNum);
+
+        if (existsInList) {
+          setFormData(prev => ({
+            ...prev,
+            agentId: agentIdNum.toString(),
+          }));
+        }
+      }
     } catch (error) {
       console.error('Error loading options:', error);
       setError('Error al cargar las opciones');

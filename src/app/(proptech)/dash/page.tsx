@@ -67,9 +67,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { systemService, SystemStats, SystemActivity, SystemProperty, PropertyTypeData, RevenueTrendData, PerformanceMetrics, AgentStats, AgentLead, AgentAppointment, PropertyAlert } from "@/services/systemService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import { PropShot, PropShotService } from "@/services/propShotService";
-import { Play, Camera } from "lucide-react";
-import PropShotGrid from "@/components/social/PropShotGrid";
 
 // Función para obtener indicador de crecimiento
 const getGrowthIndicator = (value: number) => {
@@ -137,11 +134,6 @@ export default function UserDashboardPage() {
     }
   });
   
-  // PropShots states
-  const [propShots, setPropShots] = useState<PropShot[]>([]);
-  const [propShotsLoading, setPropShotsLoading] = useState(true);
-  const [selectedPropShot, setSelectedPropShot] = useState<PropShot | null>(null);
-  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
@@ -165,8 +157,7 @@ export default function UserDashboardPage() {
         recommendedPropsData,
         visitsData,
         activitiesData,
-        notificationsData,
-        propShotsData
+        notificationsData
       ] = await Promise.all([
         systemService.getUserStats(),
         systemService.getAgentStats(),
@@ -178,8 +169,7 @@ export default function UserDashboardPage() {
         systemService.getUserRecommendedProperties(),
         systemService.getUserScheduledVisits(),
         systemService.getUserActivities(),
-        systemService.getUserNotifications(),
-        PropShotService.getPropShots()
+        systemService.getUserNotifications()
       ]);
 
       setUserStats(userStatsData);
@@ -193,14 +183,12 @@ export default function UserDashboardPage() {
       setScheduledVisits(visitsData);
       setUserActivities(activitiesData);
       setUserNotifications(notificationsData);
-      setPropShots(propShotsData);
       
     } catch (error: any) {
       console.error('❌ Error loading dashboard data:', error);
       setError(error?.message || 'Error al cargar los datos del dashboard');
     } finally {
       setLoading(false);
-      setPropShotsLoading(false);
     }
   }, []);
 
@@ -497,12 +485,6 @@ export default function UserDashboardPage() {
                   </Button>
                 </Link>
 
-                <Link href="/yvu/propshots">
-                  <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                    <Camera className="h-5 w-5 mr-2" />
-                    PropShots
-                  </Button>
-                </Link>
 
                 <Link href="/profile">
                   <Button variant="outline" className="w-full h-16 bg-white/80 hover:bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -894,71 +876,6 @@ export default function UserDashboardPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* PropShots Section */}
-        <div className="mb-8">
-          <Card className="bg-white/90 backdrop-blur-sm border border-gray-100/50 shadow-xl hover:shadow-2xl transition-all duration-500">
-            <CardHeader className="pb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Camera className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                      PropShots
-                    </CardTitle>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Videos inmobiliarios en formato reels
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.location.href = '/yvu/propshots'}
-                    className="hover:shadow-lg hover:scale-105 transition-all duration-300"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Ver todos
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <PropShotGrid
-                propShots={propShots}
-                loading={propShotsLoading}
-                limit={4}
-                onLike={async (propShotId) => {
-                  try {
-                    await PropShotService.likePropShot(propShotId);
-                    setPropShots(prev => prev.map(shot =>
-                      shot.id === propShotId
-                        ? { ...shot, likes: shot.likes + 1 }
-                        : shot
-                    ));
-                  } catch (error) {
-                    console.error('Error liking PropShot:', error);
-                  }
-                }}
-                onView={async (propShotId) => {
-                  try {
-                    await PropShotService.incrementViews(propShotId);
-                  } catch (error) {
-                    console.error('Error incrementing views:', error);
-                  }
-                }}
-                gridCols={{
-                  default: 2,
-                  sm: 3,
-                  lg: 4
-                }}
-              />
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Grid Principal - Optimizado para móvil */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">

@@ -133,6 +133,11 @@ export function useAgents() {
       filtered = filtered.filter(agent => agent.isActive === filters.isActive);
     }
 
+    // Apply tenant filter (solo para super admin)
+    if (filters.tenantId !== null && filters.tenantId !== undefined) {
+      filtered = filtered.filter(agent => agent.tenantId === filters.tenantId);
+    }
+
     setFilteredAgents(filtered);
   }, [agents]);
 

@@ -4,9 +4,9 @@ export interface CondominiumFee {
   id: number;
   condominiumId: number;
   condominiumName?: string;
-  period: string;
+  period: string; // Format: "YYYY-MM"
   totalAmount: number;
-  type: string;
+  type: string; // COMMON, EXTRAORDINARY, SPECIAL
   description?: string;
   dueDate: string;
   generatedDate?: string;
@@ -47,7 +47,7 @@ export const condominiumFeeService = {
       return response.data as PaginatedCondominiumFeesResponse;
     } catch (error: any) {
       console.error('Error fetching fees:', error);
-      throw new Error(error?.response?.data?.error || 'Error al cargar expensas');
+      throw new Error(error?.response?.data?.error || 'Error al cargar cuotas');
     }
   },
 
@@ -57,7 +57,7 @@ export const condominiumFeeService = {
       return response.data as CondominiumFee;
     } catch (error: any) {
       console.error('Error fetching fee:', error);
-      throw new Error(error?.response?.data?.error || 'Error al cargar expensa');
+      throw new Error(error?.response?.data?.error || 'Error al cargar cuota');
     }
   },
 
@@ -67,7 +67,7 @@ export const condominiumFeeService = {
       return response.data as CondominiumFee;
     } catch (error: any) {
       console.error('Error creating fee:', error);
-      throw new Error(error?.response?.data?.error || 'Error al crear expensa');
+      throw new Error(error?.response?.data?.error || 'Error al crear cuota');
     }
   },
 
@@ -77,7 +77,7 @@ export const condominiumFeeService = {
       return response.data as CondominiumFee;
     } catch (error: any) {
       console.error('Error updating fee:', error);
-      throw new Error(error?.response?.data?.error || 'Error al actualizar expensa');
+      throw new Error(error?.response?.data?.error || 'Error al actualizar cuota');
     }
   },
 
@@ -86,8 +86,7 @@ export const condominiumFeeService = {
       await apiClient.delete(`/api/condominiums/fees/${id}`);
     } catch (error: any) {
       console.error('Error deleting fee:', error);
-      throw new Error(error?.response?.data?.error || 'Error al eliminar expensa');
+      throw new Error(error?.response?.data?.error || 'Error al eliminar cuota');
     }
   }
 };
-

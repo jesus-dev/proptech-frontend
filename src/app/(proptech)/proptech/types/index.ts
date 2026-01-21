@@ -36,7 +36,6 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ParsedRegistrationNotes {
-  userType: string;
   planId: string;
   meetingDateTime: string;
 }

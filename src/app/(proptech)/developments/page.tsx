@@ -261,24 +261,28 @@ export default function DevelopmentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 w-full min-w-0">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        {/* Modern Header */}
-        <div className="mb-6 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 rounded-3xl blur-3xl"></div>
-          <div className="relative bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-4 border border-white/20 shadow-lg">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-md">
-                    <BuildingOffice2Icon className="w-6 h-6 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 w-full min-w-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        {/* Enhanced Modern Header */}
+        <div className="mb-8 relative">
+          {/* Animated background glow */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-indigo-600/20 rounded-3xl blur-3xl animate-pulse"></div>
+          <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
+                    <div className="relative p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl">
+                      <BuildingOffice2Icon className="w-7 h-7 text-white" />
+                    </div>
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                    <h1 className="text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-gray-900 via-blue-600 to-purple-600 dark:from-white dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                       Desarrollos
                     </h1>
-                    <p className="text-slate-600 dark:text-slate-400 mt-1 text-sm">
-                      Gestiona tus emprendimientos inmobiliarios
+                    <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm lg:text-base font-medium">
+                      Gestiona y administra tus emprendimientos inmobiliarios
                     </p>
                   </div>
                 </div>
@@ -286,15 +290,17 @@ export default function DevelopmentsPage() {
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/developments/dashboard">
-                  <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
-                    <ChartBarIcon className="w-5 h-5 mr-2" />
-                    Dashboard
+                  <Button className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 px-6 py-3">
+                    <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                    <ChartBarIcon className="w-5 h-5 mr-2 relative z-10" />
+                    <span className="relative z-10 font-semibold">Dashboard</span>
                   </Button>
                 </Link>
                 <Link href="/developments/new">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
-                    <PlusIcon className="w-5 h-5 mr-2" />
-                    Nuevo Desarrollo
+                  <Button className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 px-6 py-3">
+                    <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                    <PlusIcon className="w-5 h-5 mr-2 relative z-10" />
+                    <span className="relative z-10 font-semibold">Nuevo Desarrollo</span>
                   </Button>
                 </Link>
               </div>
@@ -302,86 +308,101 @@ export default function DevelopmentsPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-xs font-medium">Total Desarrollos</p>
-                  <p className="text-xl font-bold mt-1">{stats.totalDevelopments}</p>
+        {/* Enhanced Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <BuildingOffice2Icon className="w-6 h-6" />
                 </div>
-                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <BuildingOffice2Icon className="w-5 h-5" />
+                <div className="text-right">
+                  <p className="text-blue-100 text-xs font-semibold uppercase tracking-wide">Total</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.totalDevelopments}</p>
                 </div>
               </div>
+              <p className="text-blue-100/80 text-xs font-medium">Desarrollos registrados</p>
             </div>
           </Card>
 
-          <Card className="bg-gradient-to-br from-emerald-500 to-green-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-emerald-100 text-xs font-medium">Disponibles</p>
-                  <p className="text-xl font-bold mt-1">{stats.availableDevelopments}</p>
+          <Card className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <ChartBarSquareIcon className="w-6 h-6" />
                 </div>
-                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-                  <ChartBarSquareIcon className="w-8 h-8" />
+                <div className="text-right">
+                  <p className="text-emerald-100 text-xs font-semibold uppercase tracking-wide">Disponibles</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.availableDevelopments}</p>
                 </div>
               </div>
+              <p className="text-emerald-100/80 text-xs font-medium">Listos para venta</p>
             </div>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-500 to-rose-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-red-100 text-xs font-medium">Vendidos</p>
-                  <p className="text-xl font-bold mt-1">{stats.soldDevelopments}</p>
+          <Card className="group relative overflow-hidden bg-gradient-to-br from-red-500 via-rose-500 to-pink-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <StarIcon className="w-6 h-6" />
                 </div>
-                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-                  <StarIcon className="w-8 h-8" />
+                <div className="text-right">
+                  <p className="text-red-100 text-xs font-semibold uppercase tracking-wide">Vendidos</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.soldDevelopments}</p>
                 </div>
               </div>
+              <p className="text-red-100/80 text-xs font-medium">Emprendimientos vendidos</p>
             </div>
           </Card>
 
-          <Card className="bg-gradient-to-br from-yellow-500 to-amber-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-yellow-100 text-xs font-medium">Reservados</p>
-                  <p className="text-xl font-bold mt-1">{stats.reservedDevelopments}</p>
+          <Card className="group relative overflow-hidden bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <CalendarDaysIcon className="w-6 h-6" />
                 </div>
-                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-                  <CalendarDaysIcon className="w-8 h-8" />
+                <div className="text-right">
+                  <p className="text-yellow-100 text-xs font-semibold uppercase tracking-wide">Reservados</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.reservedDevelopments}</p>
                 </div>
               </div>
+              <p className="text-yellow-100/80 text-xs font-medium">Con reserva activa</p>
             </div>
           </Card>
         </div>
 
-        {/* Modern Filters */}
-        <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-md mb-4">
-          <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {/* Enhanced Modern Filters */}
+        <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl mb-6">
+          <div className="p-5 lg:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Buscar</label>
-                <input
-                  type="text"
-                  placeholder="Buscar desarrollos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm"
-                />
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Buscar</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar desarrollos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg"
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Tipo</label>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Tipo</label>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as "all" | "loteamiento" | "edificio" | "condominio" | "barrio_cerrado")}
-                  className="w-full px-3 py-2 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
                 >
                   <option value="all">Todos los tipos</option>
                   <option value="loteamiento">Loteamientos</option>
@@ -392,11 +413,11 @@ export default function DevelopmentsPage() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Estado</label>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Estado</label>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as "all" | "available" | "sold" | "reserved")}
-                  className="w-full px-3 py-2 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
                 >
                   <option value="all">Todos los estados</option>
                   <option value="available">Disponible</option>
@@ -406,7 +427,7 @@ export default function DevelopmentsPage() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Ordenar</label>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ordenar</label>
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={(e) => {
@@ -414,7 +435,7 @@ export default function DevelopmentsPage() {
                     setSortBy(newSortBy);
                     setSortOrder(newSortOrder);
                   }}
-                  className="w-full px-3 py-2 bg-white/50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
                 >
                   <option value="date-desc">Más recientes</option>
                   <option value="date-asc">Más antiguos</option>
@@ -426,29 +447,39 @@ export default function DevelopmentsPage() {
               </div>
             </div>
             
-            {/* View Controls */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                <span className="font-semibold text-slate-900 dark:text-white">{filteredAndSortedDevelopments.length}</span> desarrollo{filteredAndSortedDevelopments.length !== 1 ? 's' : ''} encontrado{filteredAndSortedDevelopments.length !== 1 ? 's' : ''}
-              </p>
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
+            {/* Enhanced View Controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-5 border-t border-gray-200/50 dark:border-gray-700/50">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Mostrando
+                </p>
+                <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  {filteredAndSortedDevelopments.length}
+                </span>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  desarrollo{filteredAndSortedDevelopments.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700/50 rounded-xl p-1.5 shadow-inner">
                 <button
                   onClick={() => setView("grid")}
-                  className={`p-2 rounded-lg transition-all duration-200 ${
+                  className={`p-2.5 rounded-lg transition-all duration-300 ${
                     view === "grid"
-                      ? "bg-white dark:bg-slate-600 text-blue-600 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-white dark:bg-gray-600 text-blue-600 shadow-lg transform scale-105"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-600/50"
                   }`}
+                  title="Vista de cuadrícula"
                 >
                   <GridIcon className="size-5" />
                 </button>
                 <button
                   onClick={() => setView("list")}
-                  className={`p-2 rounded-lg transition-all duration-200 ${
+                  className={`p-2.5 rounded-lg transition-all duration-300 ${
                     view === "list"
-                      ? "bg-white dark:bg-slate-600 text-blue-600 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-white dark:bg-gray-600 text-blue-600 shadow-lg transform scale-105"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-600/50"
                   }`}
+                  title="Vista de lista"
                 >
                   <ListIcon className="size-5" />
                 </button>
@@ -457,10 +488,10 @@ export default function DevelopmentsPage() {
           </div>
         </Card>
 
-        {/* Content */}
+        {/* Enhanced Content */}
         {filteredAndSortedDevelopments.length > 0 ? (
           <div className={view === "grid" 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" 
             : "space-y-6"
           }>
             {filteredAndSortedDevelopments.map((dev: Development) =>
@@ -472,21 +503,25 @@ export default function DevelopmentsPage() {
             )}
           </div>
         ) : (
-          <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl">
-            <div className="text-center py-16">
-              <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-3xl flex items-center justify-center">
-                <BuildingOffice2Icon className="w-12 h-12 text-slate-500 dark:text-slate-400" />
+          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-2xl overflow-hidden">
+            <div className="text-center py-20 px-6">
+              <div className="relative w-32 h-32 mx-auto mb-8">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-2xl animate-pulse"></div>
+                <div className="relative w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform duration-300">
+                  <BuildingOffice2Icon className="w-16 h-16 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-3">
                 No se encontraron desarrollos
               </h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+              <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-lg mx-auto text-base leading-relaxed">
                 No hay emprendimientos que coincidan con los criterios de búsqueda actuales. Intenta ajustar los filtros o crear un nuevo desarrollo.
               </p>
               <Link href="/developments/new">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
-                  <PlusIcon className="w-5 h-5 mr-2" />
-                  Crear Nuevo Desarrollo
+                <Button className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 px-8 py-4 text-base font-semibold">
+                  <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                  <PlusIcon className="w-5 h-5 mr-2 relative z-10" />
+                  <span className="relative z-10">Crear Nuevo Desarrollo</span>
                 </Button>
               </Link>
             </div>

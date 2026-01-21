@@ -9,7 +9,7 @@ interface AgentStatsProps {
 
 export default function AgentStats({ stats }: AgentStatsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4 mb-6">
       {/* Total Agents */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
         <div className="flex items-center">

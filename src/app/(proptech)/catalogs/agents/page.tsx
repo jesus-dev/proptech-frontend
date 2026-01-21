@@ -34,6 +34,7 @@ export default function AgentsPage() {
     active: null,
     agencyId: null,
     isActive: null,
+    tenantId: null,
   });
 
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function AgentsPage() {
   }
 
   return (
-    <div className="p-6">
+    <>
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -146,6 +147,6 @@ export default function AgentsPage() {
         onCancel={handleDeleteModalClose}
         isLoading={isSubmitting}
       />
-    </div>
+    </>
   );
 } 

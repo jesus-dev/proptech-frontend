@@ -1,8 +1,16 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgentFilters as AgentFiltersType } from '../types';
+import { useAuthContext } from '@/context/AuthContext';
+import { apiClient } from '@/lib/api';
 // Iconos reemplazados con SVG inline para evitar problemas de tipos
+
+interface Tenant {
+  id: number;
+  name: string;
+  active: boolean;
+}
 
 interface AgentFiltersProps {
   filters: AgentFiltersType;
@@ -17,6 +25,31 @@ export default function AgentFilters({
   onCreateNew,
   agencies,
 }: AgentFiltersProps) {
+  const { user } = useAuthContext();
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [loadingTenants, setLoadingTenants] = useState(false);
+  
+  const isSuperAdmin = user?.roles?.includes('SUPER_ADMIN') || user?.roles?.includes('ADMIN');
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      loadTenants();
+    }
+  }, [isSuperAdmin]);
+
+  const loadTenants = async () => {
+    try {
+      setLoadingTenants(true);
+      const response = await apiClient.get('/api/super-admin/tenants');
+      setTenants(response.data || []);
+    } catch (error) {
+      console.error('Error cargando tenants:', error);
+      setTenants([]);
+    } finally {
+      setLoadingTenants(false);
+    }
+  };
+
   const handleSearchChange = (value: string) => {
     onFiltersChange({ ...filters, searchTerm: value });
   };
@@ -34,6 +67,11 @@ export default function AgentFilters({
   const handleAuthStatusChange = (value: string) => {
     const isActive = value === 'all' ? null : value === 'true';
     onFiltersChange({ ...filters, isActive });
+  };
+
+  const handleTenantChange = (value: string) => {
+    const tenantId = value === 'all' ? null : parseInt(value);
+    onFiltersChange({ ...filters, tenantId });
   };
 
   return (
@@ -90,6 +128,23 @@ export default function AgentFilters({
               </option>
             ))}
           </select>
+
+          {/* Tenant Filter (solo para Super Admin) */}
+          {isSuperAdmin && (
+            <select
+              value={filters.tenantId?.toString() || "all"}
+              onChange={(e) => handleTenantChange(e.target.value)}
+              disabled={loadingTenants}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="all">Todos los tenants</option>
+              {tenants.map((tenant) => (
+                <option key={tenant.id} value={tenant.id.toString()}>
+                  {tenant.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         
         {/* Actions */}

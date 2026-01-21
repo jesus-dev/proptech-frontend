@@ -184,12 +184,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
     }
     
-    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
-                        user.roles?.includes('SUPER_ADMIN') ||
+    const isSuperAdmin = user.roles?.includes('SUPER_ADMIN') ||
                         user.roles?.includes('ADMIN'); // Retrocompatibilidad
     
-    const isTenantAdmin = user.userType === 'TENANT_ADMIN' || user.roles?.includes('TENANT_ADMIN');
-    const isAgencyAdmin = user.userType === 'AGENCY_ADMIN' || user.roles?.includes('AGENCY_ADMIN');
+    const isTenantAdmin = user.roles?.includes('TENANT_ADMIN');
+    const isAgencyAdmin = user.roles?.includes('AGENCY_ADMIN');
     const isAnyAdmin = isSuperAdmin || isTenantAdmin || isAgencyAdmin;
     
     return {
@@ -197,7 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       agentId: user.agentId || null,
       agencyId: user.agencyId || null,
       isAdmin: Boolean(isAnyAdmin),
-      isAgent: Boolean(user.userType === 'AGENT' || user.roles?.includes('AGENT')),
+      isAgent: Boolean(user.roles?.includes('AGENT')),
       isAgencyAdmin: Boolean(isAgencyAdmin),
     };
   }, [user]);
@@ -237,8 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return false;
     
     // Jerarquía de roles: SUPER_ADMIN tiene todos los permisos
-    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
-                        user.roles?.includes('SUPER_ADMIN') ||
+    const isSuperAdmin = user.roles?.includes('SUPER_ADMIN') ||
                         user.roles?.includes('ADMIN'); // Retrocompatibilidad
     
     if (isSuperAdmin) {
@@ -246,7 +244,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     // TENANT_ADMIN tiene casi todos los permisos excepto gestionar tenants
-    const isTenantAdmin = user.userType === 'TENANT_ADMIN' || user.roles?.includes('TENANT_ADMIN');
+    const isTenantAdmin = user.roles?.includes('TENANT_ADMIN');
     if (isTenantAdmin && permission !== 'TENANT_MANAGE') {
       return true;
     }
@@ -263,10 +261,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return false;
     
     // SUPER_ADMIN o TENANT_ADMIN tienen casi todos los permisos
-    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
-                        user.roles?.includes('SUPER_ADMIN') ||
+    const isSuperAdmin = user.roles?.includes('SUPER_ADMIN') ||
                         user.roles?.includes('ADMIN');
-    const isTenantAdmin = user.userType === 'TENANT_ADMIN' || user.roles?.includes('TENANT_ADMIN');
+    const isTenantAdmin = user.roles?.includes('TENANT_ADMIN');
     
     if (isSuperAdmin || isTenantAdmin) return true;
     
@@ -281,8 +278,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return false;
     
     // SUPER_ADMIN tiene todos los permisos
-    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
-                        user.roles?.includes('SUPER_ADMIN') ||
+    const isSuperAdmin = user.roles?.includes('SUPER_ADMIN') ||
                         user.roles?.includes('ADMIN');
     
     if (isSuperAdmin) return true;
@@ -310,8 +306,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user) return false;
     
     // SUPER_ADMIN puede acceder a todas las rutas
-    const isSuperAdmin = user.userType === 'SUPER_ADMIN' || 
-                        user.roles?.includes('SUPER_ADMIN') ||
+    const isSuperAdmin = user.roles?.includes('SUPER_ADMIN') ||
                         user.roles?.includes('ADMIN');
     if (isSuperAdmin) {
       return true;

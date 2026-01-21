@@ -229,13 +229,56 @@ export default function RegistrarsePage() {
       }
     } catch (error: any) {
       logger.error('Error en registro:', error);
-      const errorMessage = error.response?.data?.error || 'Error al procesar el registro. Por favor, intenta nuevamente.';
       
-      if (error.response?.status === 409) {
-        setErrors({ email: errorMessage });
-      } else {
-        setErrors({ submit: errorMessage });
+      // Manejar diferentes tipos de errores
+      let errorMessage = 'Error al procesar el registro. Por favor, intenta nuevamente.';
+      
+      if (error.response) {
+        // Error con respuesta del servidor
+        errorMessage = error.response?.data?.error || 
+                      error.response?.data?.message || 
+                      errorMessage;
+        
+        // Errores específicos por código de estado
+        if (error.response.status === 400) {
+          // Error de validación
+          const validationError = error.response?.data?.error || errorMessage;
+          // Intentar extraer errores de campos específicos si vienen en el formato del backend
+          if (validationError.includes('nombre')) {
+            setErrors({ name: validationError });
+          } else if (validationError.includes('email')) {
+            setErrors({ email: validationError });
+          } else if (validationError.includes('teléfono') || validationError.includes('telefono')) {
+            setErrors({ phone: validationError });
+          } else if (validationError.includes('empresa')) {
+            setErrors({ company: validationError });
+          } else if (validationError.includes('fecha') || validationError.includes('hora') || validationError.includes('reunión')) {
+            setErrors({ meetingDate: validationError, meetingTime: validationError });
+          } else if (validationError.includes('plan')) {
+            setErrors({ plan: validationError });
+          } else {
+            setErrors({ submit: validationError });
+          }
+          setLoading(false);
+          return;
+        } else if (error.response.status === 409) {
+          // Email duplicado
+          setErrors({ email: errorMessage });
+          setLoading(false);
+          return;
+        } else if (error.response.status === 429) {
+          // Rate limit
+          errorMessage = 'Has excedido el límite de intentos. Por favor, espera unos minutos antes de intentar nuevamente.';
+        } else if (error.response.status >= 500) {
+          // Error del servidor
+          errorMessage = 'Error del servidor. Por favor, intenta nuevamente más tarde.';
+        }
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+        // Error de red
+        errorMessage = 'Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.';
       }
+      
+      setErrors({ submit: errorMessage });
     } finally {
       setLoading(false);
     }

@@ -39,6 +39,31 @@ const computeStatusLabel = (sourceProperty: Property, normalizedStatus: CardStat
     }
   }
 
+  // Si no hay label claro, inferir por código / estado para casos como ALQUILADO, VENDIDO, etc.
+  const rawCode =
+    sourceProperty.propertyStatusCode ||
+    (typeof sourceProperty.propertyStatus === "string" ? sourceProperty.propertyStatus : "") ||
+    (typeof sourceProperty.status === "string" ? sourceProperty.status : "") ||
+    "";
+
+  const upperCode = rawCode.toUpperCase();
+
+  // Si la operación es RENT y el estado está inactivo, asumir \"Alquilado\"
+  if (
+    sourceProperty.operacion === "RENT" &&
+    (normalizedStatus === "inactive" || upperCode === "" || upperCode === "INACTIVE")
+  ) {
+    return "Alquilado";
+  }
+
+  if (upperCode.includes("ALQUILADO") || upperCode.includes("RENTED") || upperCode.includes("RENT")) {
+    return "Alquilado";
+  }
+
+  if (upperCode.includes("VENDIDO") || upperCode.includes("SOLD")) {
+    return "Vendido";
+  }
+
   if (normalizedStatus === "draft") return "Borrador";
   if (normalizedStatus === "active") return "Activa";
   return "Inactiva";
@@ -143,17 +168,48 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               onToggle={handleToggleFavorite}
             />
           </div>
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-              status === 'active'
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400'
-                : status === 'draft'
-                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'
-                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
-            }`}
-          >
-            {status === 'active' && (
-              <>
+          {(() => {
+            const statusCode =
+              property.propertyStatusCode ||
+              (typeof property.propertyStatus === "string" ? property.propertyStatus : "") ||
+              (typeof property.status === "string" ? property.status : "") ||
+              "";
+            const upperCode = statusCode.toUpperCase();
+
+            const isDraft = status === "draft";
+            const isRented =
+              property.operacion === "RENT" &&
+              (status === "inactive" ||
+                upperCode.includes("ALQUILADO") ||
+                upperCode.includes("RENTED") ||
+                upperCode.includes("RENT"));
+            const isSold =
+              upperCode.includes("VENDIDO") ||
+              upperCode.includes("SOLD") ||
+              upperCode.includes("SALE");
+            const isActive = status === "active" && !isRented && !isSold && !isDraft;
+
+            const baseClasses =
+              "inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full";
+
+            let colorClasses = "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400";
+            if (isDraft) {
+              colorClasses =
+                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300";
+            } else if (isRented) {
+              colorClasses =
+                "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
+            } else if (isSold) {
+              colorClasses =
+                "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300";
+            } else if (isActive) {
+              colorClasses =
+                "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400";
+            }
+
+            return (
+              <span className={`${baseClasses} ${colorClasses}`}>
+                {isActive && (
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
@@ -161,12 +217,11 @@ export default function PropertyCard({ property }: PropertyCardProps) {
                     clipRule="evenodd"
                   />
                 </svg>
-              </>
             )}
-            {status === 'inactive' && null}
-            {status === 'draft' && null}
-            {statusLabel ? statusLabel : status === 'active' ? 'Activa' : status === 'draft' ? 'Borrador' : 'Inactiva'}
+                {statusLabel ? statusLabel : status === "active" ? "Activa" : status === "draft" ? "Borrador" : "Inactiva"}
           </span>
+            );
+          })()}
         </div>
         <div className="absolute top-4 left-4 flex flex-col gap-1">
           {property.featured && (

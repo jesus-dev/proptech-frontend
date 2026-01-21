@@ -89,17 +89,53 @@ class PartnerApiService {
       }
       
       const data = await response.json();
+      const page = params?.page ?? 1;
+      const size = params?.size ?? 20;
       
-      // Si el backend devuelve un array simple, convertirlo al formato paginado
+      // Si el backend devuelve un array simple, aplicar filtros/paginación en el cliente
       if (Array.isArray(data)) {
-        const result = {
-          content: data,
-          totalElements: data.length,
-          totalPages: 1,
-          currentPage: 1,
-          size: data.length
+        let list: Partner[] = data;
+
+        // Filtro por búsqueda (nombre, email, documento, empresa, notas)
+        if (params?.search && params.search.trim() !== '') {
+          const q = params.search.toLowerCase().trim();
+          list = list.filter((p) => {
+            return (
+              (p.firstName && p.firstName.toLowerCase().includes(q)) ||
+              (p.lastName && p.lastName.toLowerCase().includes(q)) ||
+              (p.email && p.email.toLowerCase().includes(q)) ||
+              (p.companyName && p.companyName.toLowerCase().includes(q)) ||
+              (p.documentNumber && p.documentNumber.toLowerCase().includes(q)) ||
+              (p.notes && p.notes.toLowerCase().includes(q))
+            );
+          });
+        }
+
+        // Filtro por tipo
+        if (params?.type) {
+          list = list.filter((p) => p.type === params.type);
+        }
+
+        // Filtro por estado
+        if (params?.status) {
+          list = list.filter((p) => p.status === params.status);
+        }
+
+        const totalElements = list.length;
+        const safeSize = size > 0 ? size : totalElements || 1;
+        const totalPages = Math.max(1, Math.ceil(totalElements / safeSize));
+        const currentPage = Math.min(Math.max(page, 1), totalPages);
+        const startIndex = (currentPage - 1) * safeSize;
+        const endIndex = Math.min(startIndex + safeSize, totalElements);
+        const content = totalElements > 0 ? list.slice(startIndex, endIndex) : [];
+
+        return {
+          content,
+          totalElements,
+          totalPages,
+          currentPage,
+          size: safeSize,
         };
-        return result;
       }
       
       // Si ya es un objeto paginado, devolverlo tal como está

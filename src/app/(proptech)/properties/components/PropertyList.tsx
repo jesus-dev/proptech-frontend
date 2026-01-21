@@ -306,6 +306,20 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full min-w-0 overflow-x-auto">
           {properties.map((property) => {
             const normalizedStatus = resolvePropertyStatus(property as any);
+            // Obtener el nombre real del estado
+            const statusName = property.propertyStatusLabel || 
+                              property.propertyStatusName || 
+                              property.statusLabel || 
+                              property.statusName ||
+                              (normalizedStatus === "active" ? "Activa" : normalizedStatus === "draft" ? "Borrador" : "Inactiva");
+            // Determinar color según el estado real
+            const statusCode = property.propertyStatusCode || property.statusCode || property.status || '';
+            const statusCodeUpper = statusCode.toUpperCase();
+            const isActive = normalizedStatus === "active";
+            const isDraft = normalizedStatus === "draft";
+            const isRented = statusCodeUpper.includes('ALQUILADO') || statusCodeUpper.includes('RENTED') || statusCodeUpper.includes('RENT');
+            const isSold = statusCodeUpper.includes('VENDIDO') || statusCodeUpper.includes('SOLD') || statusCodeUpper.includes('SALE');
+            
             return (
               <div
                 key={property.id}
@@ -337,17 +351,38 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                 {/* Status Badge */}
                 <div className="absolute top-3 left-3">
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                    normalizedStatus === "active"
+                    isDraft
+                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                      : isRented
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                      : isSold
+                      ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+                      : isActive
                       ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                       : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                   }`}>
-                    {normalizedStatus === "active" ? (
+                    {isDraft ? (
+                      <>
+                        <Clock className="w-3 h-3" />
+                        {statusName}
+                      </>
+                    ) : isRented ? (
                       <>
                         <CheckCircleIcon className="w-3 h-3" />
-                        Activa
+                        {statusName}
+                      </>
+                    ) : isSold ? (
+                      <>
+                        <Award className="w-3 h-3" />
+                        {statusName}
+                      </>
+                    ) : isActive ? (
+                      <>
+                        <CheckCircleIcon className="w-3 h-3" />
+                        {statusName}
                       </>
                     ) : (
-                      "Inactiva"
+                      statusName
                     )}
                   </span>
                 </div>
@@ -540,6 +575,20 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {properties.map((property) => {
                 const normalizedStatus = resolvePropertyStatus(property as any);
+                // Obtener el nombre real del estado
+                const statusName = property.propertyStatusLabel || 
+                                  property.propertyStatusName || 
+                                  property.statusLabel || 
+                                  property.statusName ||
+                                  (normalizedStatus === "active" ? "Activa" : normalizedStatus === "draft" ? "Borrador" : "Inactiva");
+                // Determinar color según el estado real
+                const statusCode = property.propertyStatusCode || property.statusCode || property.status || '';
+                const statusCodeUpper = statusCode.toUpperCase();
+                const isActive = normalizedStatus === "active";
+                const isDraft = normalizedStatus === "draft";
+                const isRented = statusCodeUpper.includes('ALQUILADO') || statusCodeUpper.includes('RENTED') || statusCodeUpper.includes('RENT');
+                const isSold = statusCodeUpper.includes('VENDIDO') || statusCodeUpper.includes('SOLD') || statusCodeUpper.includes('SALE');
+                
                 return (
                   <tr key={property.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <td className="px-6 py-4">
@@ -649,17 +698,38 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
-                      normalizedStatus === "active"
+                      isDraft
+                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                        : isRented
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                        : isSold
+                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400"
+                        : isActive
                         ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
                         : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                     }`}>
-                      {normalizedStatus === "active" ? (
+                      {isDraft ? (
+                        <>
+                          <Clock className="w-3 h-3" />
+                          {statusName}
+                        </>
+                      ) : isRented ? (
                         <>
                           <CheckCircleIcon className="w-3 h-3" />
-                          Activa
+                          {statusName}
+                        </>
+                      ) : isSold ? (
+                        <>
+                          <Award className="w-3 h-3" />
+                          {statusName}
+                        </>
+                      ) : isActive ? (
+                        <>
+                          <CheckCircleIcon className="w-3 h-3" />
+                          {statusName}
                         </>
                       ) : (
-                        "Inactiva"
+                        statusName
                       )}
                     </span>
                   </td>

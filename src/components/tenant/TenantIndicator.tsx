@@ -27,29 +27,63 @@ export default function TenantIndicator() {
       const response = await apiClient.get('/api/super-admin/current-context');
       const data = response.data;
       
-      setIsSuperAdmin(data.isSuperAdmin || false);
+      console.log('🔍 TenantIndicator - Contexto recibido:', data);
       
-      if (data.tenantId) {
+      const isSuperAdminValue = data?.isSuperAdmin === true;
+      setIsSuperAdmin(isSuperAdminValue);
+      
+      // Si no es SUPER_ADMIN, no mostrar el componente
+      if (!isSuperAdminValue) {
+        console.log('⚠️ TenantIndicator - Usuario no es SUPER_ADMIN, ocultando componente');
+        setLoading(false);
+        return;
+      }
+
+      // Verificar si hay tenant seleccionado en localStorage primero
+      // Esta es la fuente de verdad - tiene prioridad sobre el backend
+      const savedTenant = localStorage.getItem('selectedTenant');
+      console.log('🔍 TenantIndicator - Verificando localStorage:', savedTenant);
+      
+      if (savedTenant) {
+        try {
+          const parsed = JSON.parse(savedTenant);
+          console.log('🔍 TenantIndicator - Tenant parseado de localStorage:', parsed);
+          
+          // Aceptar cualquier tenant guardado (incluyendo id: 0 para "Mostrar todo")
+          if (parsed && (parsed.id === 0 || parsed.id > 0)) {
+            setCurrentTenant(parsed);
+            console.log('✅ TenantIndicator - Usando tenant guardado en localStorage:', parsed);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.warn('⚠️ TenantIndicator - Error parseando tenant guardado:', e);
+          // Si hay error parseando, limpiar localStorage corrupto
+          localStorage.removeItem('selectedTenant');
+        }
+      } else {
+        console.log('⚠️ TenantIndicator - No hay tenant guardado en localStorage');
+      }
+
+      // Si hay tenantId en la respuesta y no hay tenant guardado en localStorage, usarlo
+      if (data?.tenantId) {
         setCurrentTenant({
           id: data.tenantId,
           name: data.tenantName || 'Sin nombre',
           active: true
         });
-      }
-
-      // Verificar si hay tenant seleccionado en localStorage
-      const savedTenant = localStorage.getItem('selectedTenant');
-      if (savedTenant) {
-        try {
-          const parsed = JSON.parse(savedTenant);
-          setCurrentTenant(parsed);
-        } catch (e) {
-          // Ignorar si el JSON está corrupto
-        }
+        console.log('✅ TenantIndicator - Usando tenant del contexto:', data.tenantId);
+      } else {
+        // Si no hay tenant seleccionado, significa "Mostrar todo"
+        const allTenantsOption = { id: 0, name: 'Todos los tenants', active: true };
+        setCurrentTenant(allTenantsOption);
+        // Guardar en localStorage para consistencia
+        localStorage.setItem('selectedTenant', JSON.stringify(allTenantsOption));
+        console.log('✅ TenantIndicator - Sin tenant seleccionado, usando "Todos los tenants"');
       }
     } catch (error: any) {
-      console.error('Error cargando contexto:', error);
-      // Si no es SUPER_ADMIN o hay error, no mostrar el componente
+      console.error('❌ TenantIndicator - Error cargando contexto:', error);
+      // Si hay error, no mostrar el componente
       setIsSuperAdmin(false);
     } finally {
       setLoading(false);
@@ -78,9 +112,9 @@ export default function TenantIndicator() {
             <BuildingOfficeIcon className="w-5 h-5" />
           </div>
           <div className="text-left hidden sm:block">
-            <p className="text-xs text-brand-100">Tenant Actual:</p>
+            <p className="text-xs text-brand-100">Vista Actual:</p>
             <p className="font-bold text-sm leading-tight">
-              {currentTenant?.name || 'Sin seleccionar'}
+              {currentTenant?.name || 'Todos los tenants'}
             </p>
           </div>
         </div>

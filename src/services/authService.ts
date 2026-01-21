@@ -57,13 +57,85 @@ export const authService = {
   },
 
   createUser: async (userData: any): Promise<User> => {
-    const response = await apiClient.post<User>('/api/auth/users', userData);
-    return response.data!;
+    try {
+      console.log('📤 authService.createUser - Enviando datos:', JSON.stringify({
+        ...userData,
+        password: userData.password ? '***' : 'no proporcionada'
+      }, null, 2));
+      const response = await apiClient.post<User>('/api/auth/users', userData);
+      console.log('✅ authService.createUser - Respuesta exitosa:', response.data);
+      return response.data!;
+    } catch (error: any) {
+      // Log detallado del error
+      const errorDetails = {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        responseData: error?.response?.data,
+        responseHeaders: error?.response?.headers,
+        requestData: userData,
+        requestUrl: error?.config?.url,
+        requestMethod: error?.config?.method
+      };
+      
+      console.error('❌ authService.createUser - Error completo:', errorDetails);
+      console.error('❌ authService.createUser - Response data (raw):', error?.response?.data);
+      console.error('❌ authService.createUser - Response data (stringified):', JSON.stringify(error?.response?.data, null, 2));
+      
+      // Si hay un mensaje de error en la respuesta, lanzarlo con más contexto
+      if (error?.response?.data) {
+        const errorMessage = typeof error.response.data === 'string' 
+          ? error.response.data 
+          : error.response.data.error || error.response.data.message || JSON.stringify(error.response.data);
+        const enhancedError = new Error(errorMessage);
+        (enhancedError as any).response = error.response;
+        (enhancedError as any).status = error.response?.status;
+        throw enhancedError;
+      }
+      
+      throw error;
+    }
   },
 
   updateUser: async (id: number, userData: any): Promise<User> => {
-    const response = await apiClient.put<User>(`/api/auth/users/${id}`, userData);
-    return response.data!;
+    try {
+      console.log('📤 authService.updateUser - Enviando datos:', JSON.stringify({
+        ...userData,
+        password: userData.password ? '***' : 'no proporcionada'
+      }, null, 2));
+      const response = await apiClient.put<User>(`/api/auth/users/${id}`, userData);
+      console.log('✅ authService.updateUser - Respuesta exitosa:', response.data);
+      return response.data!;
+    } catch (error: any) {
+      // Log detallado del error
+      const errorDetails = {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        responseData: error?.response?.data,
+        responseHeaders: error?.response?.headers,
+        requestData: userData,
+        requestUrl: error?.config?.url,
+        requestMethod: error?.config?.method
+      };
+      
+      console.error('❌ authService.updateUser - Error completo:', errorDetails);
+      console.error('❌ authService.updateUser - Response data (raw):', error?.response?.data);
+      console.error('❌ authService.updateUser - Response data (stringified):', JSON.stringify(error?.response?.data, null, 2));
+      
+      // Si hay un mensaje de error en la respuesta, lanzarlo con más contexto
+      if (error?.response?.data) {
+        const errorMessage = typeof error.response.data === 'string' 
+          ? error.response.data 
+          : error.response.data.error || error.response.data.message || JSON.stringify(error.response.data);
+        const enhancedError = new Error(errorMessage);
+        (enhancedError as any).response = error.response;
+        (enhancedError as any).status = error.response?.status;
+        throw enhancedError;
+      }
+      
+      throw error;
+    }
   },
 
   deleteUser: async (id: number): Promise<void> => {
@@ -72,8 +144,26 @@ export const authService = {
       const response = await apiClient.delete(`/api/auth/users/${id}`);
       console.log('authService.deleteUser respuesta:', response);
       return response.data;
-    } catch (error) {
-      console.error('authService.deleteUser error:', error);
+    } catch (error: any) {
+      console.error('authService.deleteUser error completo:', {
+        error,
+        message: error?.message,
+        response: error?.response,
+        responseData: error?.response?.data,
+        status: error?.response?.status
+      });
+      
+      // Si hay un mensaje de error en la respuesta, lanzarlo con más contexto
+      if (error?.response?.data) {
+        const errorMessage = typeof error.response.data === 'string' 
+          ? error.response.data 
+          : error.response.data.error || error.response.data.message || JSON.stringify(error.response.data);
+        const enhancedError = new Error(errorMessage);
+        (enhancedError as any).response = error.response;
+        (enhancedError as any).status = error.response?.status;
+        throw enhancedError;
+      }
+      
       throw error;
     }
   },

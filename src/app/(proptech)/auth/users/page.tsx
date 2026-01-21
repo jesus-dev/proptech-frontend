@@ -285,45 +285,175 @@ export default function UsersPage() {
     try {
       setIsSubmitting(true);
       
+      // Validar campos obligatorios
+      if (!formData.firstName || formData.firstName.trim() === '') {
+        toast.error('El nombre es obligatorio');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!formData.lastName || formData.lastName.trim() === '') {
+        toast.error('El apellido es obligatorio');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!formData.email || formData.email.trim() === '') {
+        toast.error('El email es obligatorio');
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Validar que se haya seleccionado al menos un rol
       const selectedRoleIds = roles.filter(r => formData.roles.includes(r.name)).map(r => r.id);
       if (selectedRoleIds.length === 0) {
         toast.error('Debe seleccionar al menos un rol para el usuario');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validar que los roleIds sean números válidos
+      const invalidRoleIds = selectedRoleIds.filter(id => !id || isNaN(Number(id)));
+      if (invalidRoleIds.length > 0) {
+        console.error('❌ RoleIds inválidos:', invalidRoleIds);
+        toast.error('Error: algunos roles seleccionados no son válidos');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validar tenantId (obligatorio)
+      if (!formData.tenantId) {
+        toast.error('Debe seleccionar un tenant para el usuario');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validar que tenantId sea un número válido
+      if (isNaN(Number(formData.tenantId))) {
+        console.error('❌ TenantId inválido:', formData.tenantId);
+        toast.error('Error: el tenant seleccionado no es válido');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validar password solo al crear (no al actualizar)
+      if (!selectedUser && (!formData.password || formData.password.trim() === '')) {
+        toast.error('La contraseña es obligatoria al crear un nuevo usuario');
+        setIsSubmitting(false);
         return;
       }
 
       if (selectedUser) {
-        // Update user
+        // Validación frontend antes de enviar
+        if (!formData.email || formData.email.trim() === '') {
+          toast.error('El email es obligatorio');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formData.firstName || formData.firstName.trim() === '') {
+          toast.error('El nombre es obligatorio');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formData.lastName || formData.lastName.trim() === '') {
+          toast.error('El apellido es obligatorio');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!selectedRoleIds || selectedRoleIds.length === 0) {
+          toast.error('Debe seleccionar al menos un rol');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formData.tenantId) {
+          toast.error('El tenant es obligatorio');
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Update user - construir objeto sin campos undefined
         const updateData: any = {
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          status: formData.status,
+          email: formData.email.trim(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
           roleIds: selectedRoleIds,
-          tenantId: formData.tenantId,
-          agencyId: formData.agencyId,
-          agentId: formData.agentId
+          tenantId: formData.tenantId
         };
+        
+        // Solo incluir status si tiene valor
+        if (formData.status !== undefined && formData.status !== null) {
+          updateData.status = formData.status;
+        }
+        
+        // Solo incluir campos opcionales si tienen valor (no undefined)
+        if (formData.agencyId !== undefined && formData.agencyId !== null) {
+          updateData.agencyId = formData.agencyId;
+        }
+        
+        if (formData.agentId !== undefined && formData.agentId !== null) {
+          updateData.agentId = formData.agentId;
+        }
         
         // Solo incluir password si se proporciona una nueva
         if (formData.password && formData.password.trim() !== '') {
           updateData.password = formData.password;
         }
         
+        // Log para debugging - mostrar datos exactos que se envían
+        console.log('📤 Actualizando usuario con datos:', JSON.stringify({
+          ...updateData,
+          password: updateData.password ? '***' : 'no proporcionada'
+        }, null, 2));
+        console.log('📤 Tipos de datos:', {
+          firstName: typeof updateData.firstName,
+          lastName: typeof updateData.lastName,
+          email: typeof updateData.email,
+          password: typeof updateData.password,
+          roleIds: Array.isArray(updateData.roleIds) ? `array[${updateData.roleIds.length}]` : typeof updateData.roleIds,
+          tenantId: typeof updateData.tenantId,
+          roleIdsValues: updateData.roleIds,
+          tenantIdValue: updateData.tenantId
+        });
+        
         await authService.updateUser(selectedUser.id, updateData);
         toast.success('Usuario actualizado exitosamente');
       } else {
-        // Create user
-        await authService.createUser({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
+        // Create user - construir objeto sin campos undefined
+        const createData: any = {
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim(),
           password: formData.password,
           roleIds: selectedRoleIds,
-          tenantId: formData.tenantId,
-          agencyId: formData.agencyId,
-          agentId: formData.agentId
+          tenantId: formData.tenantId
+        };
+        
+        // Solo incluir campos opcionales si tienen valor
+        if (formData.agencyId) {
+          createData.agencyId = formData.agencyId;
+        }
+        
+        if (formData.agentId) {
+          createData.agentId = formData.agentId;
+        }
+        
+        // Log para debugging - mostrar datos exactos que se envían
+        console.log('📤 Creando usuario con datos:', JSON.stringify({
+          ...createData,
+          password: createData.password ? '***' : 'no proporcionada'
+        }, null, 2));
+        console.log('📤 Tipos de datos:', {
+          firstName: typeof createData.firstName,
+          lastName: typeof createData.lastName,
+          email: typeof createData.email,
+          password: typeof createData.password,
+          roleIds: Array.isArray(createData.roleIds) ? `array[${createData.roleIds.length}]` : typeof createData.roleIds,
+          tenantId: typeof createData.tenantId,
+          roleIdsValues: createData.roleIds,
+          tenantIdValue: createData.tenantId
         });
+        
+        await authService.createUser(createData);
         toast.success('Usuario creado exitosamente');
       }
       
@@ -331,9 +461,75 @@ export default function UsersPage() {
       resetForm();
       loadData();
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.error || error?.message || 'Error al guardar el usuario';
+      // Log completo del error para debugging
+      console.error('❌ Error saving user - Detalles completos:', {
+        error,
+        message: error?.message,
+        response: error?.response,
+        responseData: error?.response?.data,
+        responseStatus: error?.response?.status,
+        responseStatusText: error?.response?.statusText,
+        requestData: selectedUser ? 'update' : 'create',
+        stack: error?.stack
+      });
+      
+      // Manejar diferentes tipos de errores
+      let errorMessage = 'Error al guardar el usuario';
+      
+      if (error?.response) {
+        // Error con respuesta del servidor
+        const responseData = error.response?.data;
+        
+        // Intentar extraer el mensaje de error de diferentes formatos
+        if (typeof responseData === 'string') {
+          errorMessage = responseData;
+        } else if (responseData?.error) {
+          errorMessage = responseData.error;
+        } else if (responseData?.message) {
+          errorMessage = responseData.message;
+        } else if (responseData?.errors && Array.isArray(responseData.errors)) {
+          // Errores de validación en formato array
+          errorMessage = responseData.errors.map((e: any) => 
+            e.message || e.field || String(e)
+          ).join(', ');
+        } else if (typeof responseData === 'object') {
+          // Intentar extraer cualquier mensaje del objeto
+          const keys = Object.keys(responseData);
+          if (keys.length > 0) {
+            errorMessage = responseData[keys[0]] || JSON.stringify(responseData);
+          }
+        }
+        
+        // Errores específicos por código de estado
+        if (error.response.status === 400) {
+          // Error de validación - usar el mensaje del backend
+          if (!errorMessage || errorMessage === 'Error al guardar el usuario') {
+            errorMessage = 'Error de validación. Por favor, verifica que todos los campos estén completos y sean válidos.';
+          }
+        } else if (error.response.status === 409) {
+          // Email duplicado
+          errorMessage = errorMessage || 'El email ya está registrado';
+        } else if (error.response.status === 403) {
+          // Sin permisos
+          errorMessage = 'No tienes permisos para realizar esta acción';
+        } else if (error.response.status >= 500) {
+          // Error del servidor
+          errorMessage = 'Error del servidor. Por favor, intenta nuevamente más tarde.';
+        }
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+        // Error de red
+        errorMessage = 'Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.';
+      } else if (error?.message) {
+        // Usar el mensaje del error si está disponible
+        errorMessage = error.message;
+      }
+      
+      // Limitar la longitud del mensaje para evitar mensajes muy largos
+      if (errorMessage.length > 200) {
+        errorMessage = errorMessage.substring(0, 200) + '...';
+      }
+      
       toast.error(errorMessage);
-      console.error('Error saving user:', error);
     } finally {
       setIsSubmitting(false);
     }

@@ -12,7 +12,7 @@ export function useAgentNormalizer() {
   const normalizeAgent = (backendAgent: any): Agent => {
     return {
       id: backendAgent.id?.toString() || '',
-      userId: backendAgent.userId?.toString() || '',
+      userId: backendAgent.userId?.toString(),
       // Campos nuevos
       nombre: backendAgent.nombre || '',
       apellido: backendAgent.apellido || '',
@@ -46,7 +46,7 @@ export function useAgentNormalizer() {
       dni: backendAgent.licenciaInmobiliaria || backendAgent.dni,
       license: backendAgent.licenciaInmobiliaria || backendAgent.license,
       active: backendAgent.isActive ?? backendAgent.active ?? true,
-      username: backendAgent.email,
+      username: backendAgent.username,
       role: backendAgent.role || 'agente',
     };
   };
@@ -68,9 +68,6 @@ export function useAgentNormalizer() {
       bio: formData.bio,
       agencyId: formData.agencyId,
       isActive: formData.isActive ?? formData.active ?? true,
-      // User
-      username: formData.username,
-      password: formData.password,
     };
   };
 

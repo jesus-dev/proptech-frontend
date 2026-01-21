@@ -18,6 +18,7 @@ interface SelectValueProps {
 
 interface SelectContentProps {
   children: React.ReactNode
+  className?: string
 }
 
 interface SelectItemProps {
@@ -98,11 +99,14 @@ const SelectValue = ({ placeholder, children }: SelectValueProps) => {
   return <span className="text-sm text-gray-900">{content}</span>
 }
 
-const SelectContent = ({ children }: SelectContentProps) => {
+const SelectContent = ({ children, className }: SelectContentProps) => {
   const ctx = React.useContext(SelectContext)
   if (!ctx?.open) return null
   return (
-    <div className="absolute top-full left-0 z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+    <div
+      className={`absolute top-full left-0 z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto w-max min-w-full max-w-[90vw] ${className || ""}`}
+      style={{ scrollbarGutter: "stable" as any }}
+    >
       {children}
     </div>
   )
@@ -116,7 +120,9 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
         ref={ref}
         role="option"
         aria-selected={ctx?.value === value}
-        className={`px-3 py-2 text-sm cursor-pointer border-b border-gray-100 last:border-b-0 ${ctx?.value === value ? 'bg-blue-50 text-blue-700' : 'text-gray-900 hover:bg-blue-50'}`}
+        className={`px-3 py-2 pr-12 text-sm cursor-pointer border-b border-gray-100 last:border-b-0 whitespace-nowrap ${
+          ctx?.value === value ? 'bg-blue-50 text-blue-700' : 'text-gray-900 hover:bg-blue-50'
+        }`}
         onClick={() => {
           ctx?.onValueChange?.(value)
           onValueChange?.(value)

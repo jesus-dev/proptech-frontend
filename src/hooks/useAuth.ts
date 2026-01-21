@@ -53,8 +53,8 @@ export const useAuth = () => {
   const hasPermission = useCallback((permission: PermissionEnum) => {
     if (!user) return false;
     
-    // Si el usuario es ADMIN (por userType o por rol), tiene todos los permisos
-    if (user.userType === 'ADMIN' || user.roles?.includes('ADMIN')) {
+    // Si el usuario es ADMIN (por rol), tiene todos los permisos
+    if (user.roles?.includes('ADMIN') || user.roles?.includes('SUPER_ADMIN')) {
       return true;
     }
     
@@ -77,7 +77,7 @@ export const useAuth = () => {
     if (!user) return false;
 
     // Si el usuario es ADMIN, tiene todos los permisos
-    if (user.userType === 'ADMIN' || user.roles?.includes('ADMIN')) {
+    if (user.roles?.includes('ADMIN') || user.roles?.includes('SUPER_ADMIN')) {
       return true;
     }
 
@@ -89,7 +89,7 @@ export const useAuth = () => {
     if (!user) return false;
 
     // Si el usuario es ADMIN, tiene todos los permisos
-    if (user.userType === 'ADMIN' || user.roles?.includes('ADMIN')) {
+    if (user.roles?.includes('ADMIN') || user.roles?.includes('SUPER_ADMIN')) {
       return true;
     }
 

@@ -140,94 +140,124 @@ export default function DevelopmentReservationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Gestión de Reservas
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Administra todas las reservas de desarrollos
-              </p>
-            </div>
-            <Link
-              href="/developments/reservations/new"
-              className="inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700"
-            >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Nueva Reserva
-            </Link>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <DocumentTextIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        {/* Enhanced Modern Header */}
+        <div className="mb-8 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-indigo-600/20 rounded-3xl blur-3xl animate-pulse"></div>
+          <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
+                    <div className="relative p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl">
+                      <CalendarIcon className="w-7 h-7 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-gray-900 via-blue-600 to-purple-600 dark:from-white dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                      Gestión de Reservas
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm lg:text-base font-medium">
+                      Administra todas las reservas de desarrollos
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                <CalendarIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pendientes</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <CalendarIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Confirmadas</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.confirmed}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                <CalendarIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Canceladas</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.cancelled}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-gray-100 dark:bg-gray-900/20 rounded-lg">
-                <CalendarIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Expiradas</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.expired}</p>
-              </div>
+              
+              <Link
+                href="/developments/reservations/new"
+                className="group relative overflow-hidden inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 rounded-xl font-semibold"
+              >
+                <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                <PlusIcon className="w-5 h-5 mr-2 relative z-10" />
+                <span className="relative z-10">Nueva Reserva</span>
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
+        {/* Enhanced Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <div className="group relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <DocumentTextIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-blue-100 text-xs font-semibold uppercase tracking-wide">Total</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.total}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-600 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <CalendarIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-yellow-100 text-xs font-semibold uppercase tracking-wide">Pendientes</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.pending}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <CalendarIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-emerald-100 text-xs font-semibold uppercase tracking-wide">Confirmadas</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.confirmed}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden bg-gradient-to-br from-red-500 via-rose-500 to-pink-600 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <CalendarIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-red-100 text-xs font-semibold uppercase tracking-wide">Canceladas</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.cancelled}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative overflow-hidden bg-gradient-to-br from-gray-500 via-slate-500 to-zinc-600 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="relative p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
+                  <CalendarIcon className="w-6 h-6" />
+                </div>
+                <div className="text-right">
+                  <p className="text-gray-100 text-xs font-semibold uppercase tracking-wide">Expiradas</p>
+                  <p className="text-3xl font-extrabold mt-1">{stats.expired}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Filters */}
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 mb-6">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">

@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, User, ArrowLeft, Plus, CalendarDays, Star, TrendingUp, Bell, CheckCircle, AlertCircle, ArrowRight, Building2 } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { agendaService } from "../services/agendaService";
 
 interface Appointment {
@@ -299,30 +298,32 @@ export default function TodayAppointmentsPage() {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">Todos</SelectItem>
-                    <SelectItem value="Programada">Programada</SelectItem>
-                    <SelectItem value="Confirmada">Confirmada</SelectItem>
-                    <SelectItem value="En Progreso">En Progreso</SelectItem>
-                    <SelectItem value="Completada">Completada</SelectItem>
-                    <SelectItem value="Cancelada">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Ordenar por" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DATE_ASC">Hora ascendente</SelectItem>
-                    <SelectItem value="DATE_DESC">Hora descendente</SelectItem>
-                    <SelectItem value="DURATION_DESC">Duración descendente</SelectItem>
-                    <SelectItem value="DURATION_ASC">Duración ascendente</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div>
+                  <select
+                    className="h-10 w-[180px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="ALL">Todos</option>
+                    <option value="Programada">Programada</option>
+                    <option value="Confirmada">Confirmada</option>
+                    <option value="En Progreso">En Progreso</option>
+                    <option value="Completada">Completada</option>
+                    <option value="Cancelada">Cancelada</option>
+                  </select>
+                </div>
+                <div>
+                  <select
+                    className="h-10 w-[200px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    <option value="DATE_ASC">Hora ascendente</option>
+                    <option value="DATE_DESC">Hora descendente</option>
+                    <option value="DURATION_DESC">Duración descendente</option>
+                    <option value="DURATION_ASC">Duración ascendente</option>
+                  </select>
+                </div>
               </div>
               {appointments.length === 0 ? (
                 <div className="text-center py-16">

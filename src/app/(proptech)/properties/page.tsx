@@ -432,11 +432,23 @@ export default function PropertiesPage() {
 
     // Filtros básicos (exactos)
     if (statusFilter.trim()) {
-      filtered = filtered.filter(property => 
-        property.propertyStatusCode === statusFilter.trim() || 
-        property.propertyStatus === statusFilter.trim() ||
-        property.status === statusFilter.trim()
-      );
+      const filterValue = statusFilter.trim().toUpperCase();
+      filtered = filtered.filter(property => {
+        const code = (property.propertyStatusCode || property.propertyStatus || property.status || '').toUpperCase();
+        const name = (property.propertyStatusLabel || property.propertyStatusName || property.statusLabel || property.statusName || '').toUpperCase();
+        const filterValueLower = filterValue.toLowerCase();
+        const nameLower = name.toLowerCase();
+        
+        // Comparar por código (exacto)
+        if (code === filterValue) return true;
+        // Comparar por nombre (case-insensitive, parcial)
+        if (name && (nameLower.includes(filterValueLower) || filterValueLower.includes(nameLower))) return true;
+        // Comparar código original (case-insensitive)
+        const originalCode = (property.propertyStatusCode || property.propertyStatus || property.status || '').toUpperCase();
+        if (originalCode === filterValue) return true;
+        
+        return false;
+      });
     }
     
     if (typeFilter.trim()) {

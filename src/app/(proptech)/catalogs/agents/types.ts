@@ -3,7 +3,8 @@ export type AgentRole = 'admin' | 'agente' | 'supervisor';
 export interface Agent {
   id: string;
   // Relación 1:1 con User
-  userId: string;
+  userId?: string;
+  username?: string;
   // Datos del agente (modelo nuevo)
   nombre: string;
   apellido: string;
@@ -85,6 +86,7 @@ export interface AgentFilters {
   active: boolean | null;
   agencyId: string | null;
   isActive: boolean | null;
+  tenantId?: number | null;
 }
 
 export interface AgentStats {

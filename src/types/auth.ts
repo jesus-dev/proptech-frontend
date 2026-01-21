@@ -80,7 +80,6 @@ export interface User {
   // Auth
   role?: UserRole;
   roles?: string[];
-  userType?: string;
   permissions: UserPermissions | string[];
   isActive?: boolean;
   status?: string;

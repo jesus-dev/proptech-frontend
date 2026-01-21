@@ -38,8 +38,34 @@ export default function TenantSwitcher({
   useEffect(() => {
     if (isOpen) {
       loadTenants();
+      
+      // Cuando se abre el modal, verificar localStorage directamente para asegurar sincronización
+      const savedTenant = localStorage.getItem('selectedTenant');
+      if (savedTenant) {
+        try {
+          const parsed = JSON.parse(savedTenant);
+          if (parsed && (parsed.id === 0 || parsed.id > 0)) {
+            setSelectedTenant(parsed);
+            console.log('✅ TenantSwitcher - Sincronizado con localStorage:', parsed);
+          }
+        } catch (e) {
+          console.warn('⚠️ TenantSwitcher - Error parseando tenant guardado:', e);
+        }
+      } else {
+        // Si no hay tenant guardado, significa "Mostrar todo"
+        const allTenantsOption = { id: 0, name: 'Todos los tenants', active: true };
+        setSelectedTenant(allTenantsOption);
+        console.log('✅ TenantSwitcher - Sin tenant guardado, usando "Todos los tenants"');
+      }
     }
   }, [isOpen]);
+
+  // Sincronizar selectedTenant cuando cambia currentTenant desde el padre
+  useEffect(() => {
+    if (currentTenant) {
+      setSelectedTenant(currentTenant);
+    }
+  }, [currentTenant]);
 
   const loadTenants = async () => {
     try {
@@ -54,8 +80,24 @@ export default function TenantSwitcher({
     }
   };
 
-  const handleSelectTenant = async (tenant: Tenant) => {
+  const handleSelectTenant = async (tenant: Tenant | null) => {
     try {
+      if (tenant === null) {
+        // Seleccionar "Mostrar todo" - guardar en localStorage con id: 0
+        const allTenantsOption = { id: 0, name: 'Todos los tenants', active: true };
+        localStorage.setItem('selectedTenant', JSON.stringify(allTenantsOption));
+        
+        // Actualizar estado local
+        setSelectedTenant(allTenantsOption);
+        
+        // Notificar al componente padre
+        onTenantChange(allTenantsOption);
+        
+        // Recargar la página para aplicar el nuevo contexto
+        window.location.reload();
+        return;
+      }
+
       // Llamar al endpoint para cambiar de tenant
       const response = await apiClient.post(`/api/super-admin/switch-tenant/${tenant.id}`);
 
@@ -75,6 +117,10 @@ export default function TenantSwitcher({
     } catch (error) {
       console.error('Error cambiando de tenant:', error);
     }
+  };
+
+  const handleSelectAll = () => {
+    handleSelectTenant(null);
   };
 
   const filteredTenants = tenants.filter(t =>
@@ -151,7 +197,53 @@ export default function TenantSwitcher({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <>
+              {/* Opción "Mostrar todo" */}
+              {(() => {
+                const isAllSelected = !selectedTenant || selectedTenant.id === 0 || !currentTenant || currentTenant.id === 0;
+                return (
+                  <button
+                    onClick={handleSelectAll}
+                    disabled={isAllSelected}
+                    className={`
+                      w-full mb-4 p-6 rounded-xl border-2 transition-all duration-300 text-left
+                      ${isAllSelected
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 cursor-default'
+                        : 'border-purple-200 dark:border-purple-700 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transform hover:scale-105 hover:shadow-lg'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        isAllSelected
+                          ? 'bg-purple-600'
+                          : 'bg-gradient-to-br from-purple-600 to-purple-700'
+                      }`}>
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
+                            Mostrar todos los tenants
+                          </h3>
+                          {isAllSelected && (
+                            <span className="bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                              Actual
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Ver datos de todos los tenants sin filtrar
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredTenants.map((tenant) => {
                 const isSelected = selectedTenant?.id === tenant.id;
                 const isCurrent = currentTenant?.id === tenant.id;
@@ -218,7 +310,8 @@ export default function TenantSwitcher({
                   </button>
                 );
               })}
-            </div>
+              </div>
+            </>
           )}
         </div>
 

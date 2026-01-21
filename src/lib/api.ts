@@ -45,11 +45,13 @@ apiClient.interceptors.request.use(
       }
       
       // Si es SUPER_ADMIN y tiene un tenant seleccionado, enviarlo en el header
+      // Si tenant.id es 0 o null, significa "Mostrar todo", no enviar header
       const selectedTenant = localStorage.getItem('selectedTenant');
       if (selectedTenant) {
         try {
           const tenant = JSON.parse(selectedTenant);
-          if (tenant && tenant.id) {
+          // Solo enviar header si el tenant tiene un ID válido (no es "Mostrar todo")
+          if (tenant && tenant.id && tenant.id !== 0 && tenant.id !== null) {
             config.headers['X-Selected-Tenant-Id'] = tenant.id.toString();
           }
         } catch (e) {
@@ -145,15 +147,21 @@ apiClient.interceptors.response.use(
                                    errorMessage.includes('acceso denegado') ||
                                    errorMessage.includes('access denied');
     
+    // NO intentar refresh para endpoints públicos (no requieren autenticación)
+    const isPublicEndpoint = config.url?.includes('/api/public/') || 
+                            config.url?.includes('/api/auth/login') ||
+                            config.url?.includes('/api/auth/register');
+    
     // Intentar refresh:
-    // - Si es 401 (siempre es token)
-    // - Si es 403 pero NO es un error de permisos real Y hay refresh token disponible
-    // - Si es 403 sin mensaje de error claro (puede ser token expirado)
+    // - Si es 401 (siempre es token) Y NO es endpoint público
+    // - Si es 403 pero NO es un error de permisos real Y hay refresh token disponible Y NO es endpoint público
+    // - Si es 403 sin mensaje de error claro (puede ser token expirado) Y NO es endpoint público
     const hasRefreshToken = localStorage.getItem('refreshToken') && 
                            localStorage.getItem('refreshToken') !== 'undefined' && 
                            localStorage.getItem('refreshToken') !== 'null';
     
-    const shouldTryRefresh = (error.response?.status === 401 || 
+    const shouldTryRefresh = !isPublicEndpoint && 
+                             (error.response?.status === 401 || 
                              (error.response?.status === 403 && !isRealPermissionError && hasRefreshToken)) && 
                              !config._retry;
     
@@ -272,8 +280,9 @@ apiClient.interceptors.response.use(
           
           // Reintentar petición original con el nuevo token
           console.log('🔄 Token refrescado exitosamente, reintentando request:', config.method, config.url);
-          // Limpiar el flag _retry para permitir reintentos si es necesario
-          delete config._retry;
+          // NO limpiar el flag _retry:
+          // - Así nos aseguramos de que esta misma request no vuelva a disparar otro ciclo de refresh
+          // - Evita bucles infinitos cuando el backend sigue devolviendo 403 por falta de permisos
           
           // El interceptor de request también agregará el header automáticamente, pero ya lo tenemos aquí
           return apiClient(config);
@@ -786,7 +795,7 @@ export const authApi = {
   verifyToken: () => api.get<any>('/api/auth/verify'),
 
   // Cambiar contraseña
-  changePassword: (data: { oldPassword: string; newPassword: string }) =>
+  changePassword: (data: { oldPassword: string; newPassword: string; confirmPassword: string }) =>
     api.post<any>('/api/auth/change-password', data),
 };
 

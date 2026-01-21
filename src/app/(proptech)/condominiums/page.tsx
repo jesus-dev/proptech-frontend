@@ -123,6 +123,12 @@ export default function CondominiumsPage() {
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
                 </button>
               </Link>
+              <Link href="/condominiums/units">
+                <button className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-500/30">
+                  <BuildingOfficeIcon className="mr-2 h-5 w-5" />
+                  Ver Todas las Unidades
+                </button>
+              </Link>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Building2, Plus, TrendingUp, Star, ArrowRight, CalendarDays, Users, BarChart3, Bell, CheckCircle, AlertCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Building2, Plus, TrendingUp, Star, ArrowRight, CalendarDays, Users, BarChart3, Bell, CheckCircle, AlertCircle, Home, Info } from "lucide-react";
 import Link from "next/link";
 
 interface Appointment {
@@ -263,6 +263,79 @@ export default function AgendaPage() {
           </Card>
         </div>
 
+        {/* Info Section: Difference between Appointments and Visits */}
+        <div className="mb-6">
+          <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-purple-50/80 dark:from-slate-800/80 dark:via-slate-700/50 dark:to-slate-800/80 backdrop-blur-sm border-2 border-blue-200/50 dark:border-blue-800/50 shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5"></div>
+            <CardHeader className="p-6 relative z-10">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex-shrink-0">
+                  <Info className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2">
+                    ¿Cuál es la diferencia entre Citas y Visitas?
+                  </CardTitle>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="p-4 rounded-xl bg-white/60 dark:bg-slate-700/60 backdrop-blur-sm border border-blue-200/50 dark:border-blue-800/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-2 rounded-lg bg-blue-500/10">
+                          <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-200">Citas (Appointments)</h3>
+                      </div>
+                      <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Sistema completo:</strong> Reuniones, inspecciones, firmas de contrato, valuaciones, tours</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Referencias:</strong> Vinculadas a clientes y agentes del sistema</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Fecha y hora completa:</strong> Con duración en minutos</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Estados detallados:</strong> Programada, Confirmada, En Progreso, Completada, etc.</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="p-4 rounded-xl bg-white/60 dark:bg-slate-700/60 backdrop-blur-sm border border-orange-200/50 dark:border-orange-800/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-2 rounded-lg bg-orange-500/10">
+                          <Home className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-200">Visitas (Visits)</h3>
+                      </div>
+                      <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Específico:</strong> Solo para visitas a propiedades</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Datos del visitante:</strong> Nombre, teléfono y email directos</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Vista Kanban:</strong> Gestión visual por estados (Programada, En Progreso, Completada)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                          <span><strong>Simple y rápido:</strong> Ideal para agendar visitas rápidamente</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        </div>
+
         {/* Enhanced Quick Actions */}
         <div className="mb-6">
           <div className="text-center mb-4">
@@ -274,7 +347,7 @@ export default function AgendaPage() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Link href="/agenda/calendar">
               <Card className="group relative overflow-hidden bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 hover:-rotate-1 cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -327,8 +400,34 @@ export default function AgendaPage() {
               </Card>
             </Link>
 
-            <Link href="/agenda/reports">
+            <Link href="/visits">
               <Card className="group relative overflow-hidden bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 hover:-rotate-1 cursor-pointer">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <CardHeader className="p-8 relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="p-5 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg group-hover:shadow-orange-500/25 group-hover:scale-110 transition-all duration-300">
+                      <Home className="w-8 h-8 text-white" />
+                    </div>
+                    <ArrowRight className="w-6 h-6 text-slate-400 group-hover:text-orange-500 group-hover:translate-x-2 transition-all duration-300" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-200 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-300">
+                    Visitas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-8 pt-0 relative z-10">
+                  <p className="text-slate-600 dark:text-slate-400 font-medium text-lg leading-relaxed">
+                    Gestiona visitas a propiedades con vista Kanban
+                  </p>
+                  <div className="flex items-center mt-4 text-orange-600 dark:text-orange-400 font-semibold">
+                    <span>Ver visitas</span>
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/agenda/reports">
+              <Card className="group relative overflow-hidden bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 hover:rotate-1 cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <CardHeader className="p-8 relative z-10">
                   <div className="flex items-center justify-between mb-6">

@@ -73,7 +73,6 @@ interface ProfileUser extends BaseUser {
   position?: string;
   timezone?: string;
   language?: string;
-  userType?: string;
   status?: string;
   photoUrl?: string;
   notifications?: {
@@ -544,7 +543,6 @@ loadUserData();
           notifications: profileData.notifications
         },
         accountInfo: {
-          userType: profileUser.userType,
           status: profileUser.status,
           createdAt: profileUser.createdAt,
           lastLogin: profileUser.lastLogin
@@ -605,7 +603,8 @@ loadUserData();
     try {
       const result = await authApi.changePassword({ 
         oldPassword: securityData.currentPassword, 
-        newPassword: securityData.newPassword 
+        newPassword: securityData.newPassword,
+        confirmPassword: securityData.confirmPassword
       });
       
       setPasswordSuccess('Contraseña cambiada exitosamente');
@@ -630,17 +629,17 @@ loadUserData();
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1">
+        return <Badge className="!bg-emerald-100 !text-emerald-950 border-emerald-200 dark:!bg-emerald-900/40 dark:!text-emerald-100 dark:border-emerald-800/60 flex items-center gap-1">
           <CheckCircle className="h-3 w-3" />
           Activo
         </Badge>;
       case 'INACTIVE':
-        return <Badge className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1">
+        return <Badge className="!bg-red-100 !text-red-950 border-red-200 dark:!bg-red-900/40 dark:!text-red-100 dark:border-red-800/60 flex items-center gap-1">
           <AlertCircle className="h-3 w-3" />
           Inactivo
         </Badge>;
       default:
-        return <Badge className="bg-gray-50 text-gray-700 border-gray-200">{status}</Badge>;
+        return <Badge className="!bg-gray-200 !text-gray-950 border-gray-300 dark:!bg-gray-700/60 dark:!text-gray-100 dark:border-gray-600/60">{status}</Badge>;
     }
   };
 
@@ -704,10 +703,19 @@ loadUserData();
 
 
 
-  const UserTypeIcon = USER_TYPE_ICONS[profileUser.userType as keyof typeof USER_TYPE_ICONS] || UserIcon;
+  // Obtener el rol principal del usuario (reemplaza userType)
+  const primaryRole = profileUser.roles && profileUser.roles.length > 0 ? profileUser.roles[0] : null;
+  const UserTypeIcon = primaryRole ? (USER_TYPE_ICONS[primaryRole as keyof typeof USER_TYPE_ICONS] || UserIcon) : UserIcon;
+
+  const inputBaseClass =
+    "w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 shadow-sm hover:shadow-md focus:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500";
+
+  const inputErrorClass =
+    "border-red-500 focus:border-red-500 focus:ring-red-500";
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 w-full min-w-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 space-y-8">
       {/* Header con avatar editable - Mejorado */}
       <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -776,7 +784,7 @@ loadUserData();
               <div className="flex items-center gap-4 mt-3">
                 <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <UserTypeIcon className="h-4 w-4" />
-                  <span>{USER_TYPE_LABELS[profileUser.userType as keyof typeof USER_TYPE_LABELS] || profileUser.userType || 'USER'}</span>
+                  <span>{primaryRole ? (USER_TYPE_LABELS[primaryRole as keyof typeof USER_TYPE_LABELS] || primaryRole) : 'Sin rol'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <Calendar className="h-4 w-4" />
@@ -810,96 +818,100 @@ loadUserData();
         {/* Profile Card */}
         <div className="lg:col-span-2 space-y-6">
           {/* Personal Information */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
               <UserIcon className="h-5 w-5 text-indigo-600" />
               Información Personal
               {isLoadingUser && (
                 <span className="text-sm text-gray-500 ml-2">(Cargando...)</span>
               )}
             </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Mantén tus datos actualizados para mejorar la comunicación y la seguridad de tu cuenta.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-sm font-medium">Nombre</Label>
+                <Label htmlFor="firstName" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Nombre</Label>
                 <Input
                   id="firstName"
                   value={profileData.firstName}
                   onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
-                  placeholder="Tu nombre"
-                  className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formErrors.firstName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="Ej: Juan"
+                  className={`${inputBaseClass} ${formErrors.firstName ? inputErrorClass : ""}`}
                 />
                 {formErrors.firstName && <p className="text-xs text-red-500 mt-1">{formErrors.firstName}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-sm font-medium">Apellido</Label>
+                <Label htmlFor="lastName" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Apellido</Label>
                 <Input
                   id="lastName"
                   value={profileData.lastName}
                   onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
-                  placeholder="Tu apellido"
-                  className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formErrors.lastName ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="Ej: González"
+                  className={`${inputBaseClass} ${formErrors.lastName ? inputErrorClass : ""}`}
                 />
                 {formErrors.lastName && <p className="text-xs text-red-500 mt-1">{formErrors.lastName}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="email" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={profileData.email}
                   onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="tu@email.com"
-                  className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="Ej: juan@empresa.com"
+                  className={`${inputBaseClass} ${formErrors.email ? inputErrorClass : ""}`}
                 />
                 {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium">Teléfono</Label>
+                <Label htmlFor="phone" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Teléfono</Label>
                 <Input
                   id="phone"
                   value={profileData.phone}
                   onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="+595 123 456 789"
-                  className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 ${formErrors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="Ej: +595 981 123 456"
+                  className={`${inputBaseClass} ${formErrors.phone ? inputErrorClass : ""}`}
                 />
                 {formErrors.phone && <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="company" className="text-sm font-medium">Empresa</Label>
+                <Label htmlFor="company" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Empresa</Label>
                 <Input
                   id="company"
                   value={profileData.company}
                   onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
-                  placeholder="Nombre de tu empresa"
-                  className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="Ej: PropTech S.A."
+                  className={inputBaseClass}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="position" className="text-sm font-medium">Cargo</Label>
+                <Label htmlFor="position" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Cargo</Label>
                 <Input
                   id="position"
                   value={profileData.position}
                   onChange={(e) => setProfileData(prev => ({ ...prev, position: e.target.value }))}
-                  placeholder="Tu cargo o posición"
-                  className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="Ej: Agente / Administrador / Gerente"
+                  className={inputBaseClass}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="website" className="text-sm font-medium">Sitio Web</Label>
+                <Label htmlFor="website" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Sitio web</Label>
                 <Input
                   id="website"
                   value={profileData.website}
                   onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
-                  placeholder="https://tu-sitio.com"
-                  className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="Ej: https://miempresa.com"
+                  className={inputBaseClass}
                 />
+                <p className="text-xs text-gray-500 dark:text-gray-400">Opcional. Útil para tu perfil público.</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country" className="text-sm font-medium">País</Label>
+                <Label htmlFor="country" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">País</Label>
                 <select 
                   value={profileData.country} 
                   onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
                 >
                   <option value="Paraguay">Paraguay</option>
                   <option value="Argentina">Argentina</option>
@@ -913,68 +925,72 @@ loadUserData();
             
             <div className="mt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm font-medium">Dirección</Label>
+                <Label htmlFor="address" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Dirección</Label>
                 <Input
                   id="address"
                   value={profileData.address}
                   onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Tu dirección completa"
-                  className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="Ej: Av. Santa Teresa 1234"
+                  className={inputBaseClass}
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="city" className="text-sm font-medium">Ciudad</Label>
+                  <Label htmlFor="city" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ciudad</Label>
                   <Input
                     id="city"
                     value={profileData.city}
                     onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="Tu ciudad"
-                    className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="Ej: Asunción"
+                    className={inputBaseClass}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="timezone" className="text-sm font-medium">Zona Horaria</Label>
-                                  <select 
-                  value={profileData.timezone} 
-                  onChange={(e) => setProfileData(prev => ({ ...prev, timezone: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
-                >
-                  {TIMEZONES.map((tz) => (
-                    <option key={tz.value} value={tz.value}>
-                      {tz.label}
-                    </option>
-                  ))}
-                </select>
+                  <Label htmlFor="timezone" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Zona horaria</Label>
+                  <select 
+                    value={profileData.timezone} 
+                    onChange={(e) => setProfileData(prev => ({ ...prev, timezone: e.target.value }))}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
+                  >
+                    {TIMEZONES.map((tz) => (
+                      <option key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bio" className="text-sm font-medium">Biografía</Label>
+                <Label htmlFor="bio" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Biografía</Label>
                 <Textarea
                   id="bio"
                   value={profileData.bio}
                   onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Cuéntanos un poco sobre ti..."
+                  placeholder="Ej: Especialista en ventas de desarrollos, con experiencia en atención al cliente y cierres."
                   rows={4}
-                  className="border-gray-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  className={`${inputBaseClass} min-h-[110px] resize-y`}
                 />
+                <p className="text-xs text-gray-500 dark:text-gray-400">Opcional. Máximo recomendado: 2–3 líneas.</p>
               </div>
             </div>
           </div>
 
           {/* Preferences & Notifications */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
               <Settings className="h-5 w-5 text-indigo-600" />
               Preferencias y Notificaciones
             </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Personaliza el idioma y cómo quieres recibir avisos del sistema.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="language" className="text-sm font-medium">Idioma</Label>
+                <Label htmlFor="language" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Idioma</Label>
                 <select 
                   value={profileData.language} 
                   onChange={(e) => setProfileData(prev => ({ ...prev, language: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
                 >
                   {LANGUAGES.map((lang) => (
                     <option key={lang.value} value={lang.value}>
@@ -988,10 +1004,10 @@ loadUserData();
             <div className="mt-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Notificaciones</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl p-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Notificaciones por Email</p>
-                    <p className="text-sm text-gray-500">Recibe actualizaciones importantes por email</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">Notificaciones por email</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Recibe avisos importantes y actualizaciones.</p>
                   </div>
                   <Switch
                     label="Notificaciones por Email"
@@ -1000,10 +1016,10 @@ loadUserData();
                     color="blue"
                   />
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl p-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Notificaciones Push</p>
-                    <p className="text-sm text-gray-500">Recibe notificaciones en tiempo real</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Notificaciones push</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Alertas en tiempo real dentro de la app.</p>
                   </div>
                   <Switch
                     label="Notificaciones Push"
@@ -1012,10 +1028,10 @@ loadUserData();
                     color="blue"
                   />
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl p-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Notificaciones SMS</p>
-                    <p className="text-sm text-gray-500">Recibe alertas por mensaje de texto</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Notificaciones SMS</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Solo para alertas críticas.</p>
                   </div>
                   <Switch
                     label="Notificaciones SMS"
@@ -1024,10 +1040,10 @@ loadUserData();
                     color="blue"
                   />
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl p-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Marketing</p>
-                    <p className="text-sm text-gray-500">Recibe ofertas y promociones especiales</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Marketing</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Novedades, ofertas y promociones.</p>
                   </div>
                   <Switch
                     label="Marketing"
@@ -1041,47 +1057,47 @@ loadUserData();
           </div>
 
           {/* Activity & Security */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
               <Shield className="h-5 w-5 text-indigo-600" />
               Actividad y Seguridad
             </h2>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <div className="h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                     <CheckCircle className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Sesión Actual</p>
-                    <p className="text-xs text-gray-500">Activa desde {new Date().toLocaleDateString('es-ES')}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Sesión actual</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Activa desde {new Date().toLocaleDateString('es-ES')}</p>
                   </div>
                 </div>
-                <Badge className="bg-green-100 text-green-800">Activa</Badge>
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">Activa</Badge>
               </div>
               
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                     <Clock className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Último Acceso</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Último acceso</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {profileUser.lastLogin ? new Date(profileUser.lastLogin).toLocaleString('es-ES') : 'Nunca'}
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
                     <MapPin className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Ubicación</p>
-                    <p className="text-xs text-gray-500">Asunción, Paraguay</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Ubicación</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Asunción, Paraguay</p>
                   </div>
                 </div>
               </div>
@@ -1117,7 +1133,7 @@ loadUserData();
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Profile Summary */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
             <div className="text-center mb-6">
               <div className="relative inline-block mb-4">
                 {(previewUrl || avatarUrl || profileUser.photoUrl) ? (
@@ -1175,32 +1191,32 @@ loadUserData();
                   className="hidden"
                 />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{profileUser.fullName}</h3>
-              <p className="text-gray-600">{profileUser.email}</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{profileUser.fullName}</h3>
+              <p className="text-gray-600 dark:text-gray-400">{profileUser.email}</p>
               <div className="flex items-center justify-center gap-2 mt-2">
                 <UserTypeIcon className="h-4 w-4 text-gray-400" />
-                <span className="text-sm text-gray-500">
-                  {USER_TYPE_LABELS[profileUser.userType as keyof typeof USER_TYPE_LABELS] || profileUser.userType}
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {primaryRole ? (USER_TYPE_LABELS[primaryRole as keyof typeof USER_TYPE_LABELS] || primaryRole) : 'Sin rol'}
                 </span>
               </div>
             </div>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm">
                 <Shield className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600">Estado:</span>
+                <span className="text-gray-600 dark:text-gray-400">Estado:</span>
                 {getStatusBadge(profileUser.status || 'ACTIVE')}
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600">Miembro desde:</span>
-                <span className="text-gray-900">
+                <span className="text-gray-600 dark:text-gray-400">Miembro desde:</span>
+                <span className="text-gray-900 dark:text-white">
                   {profileUser.createdAt ? new Date(profileUser.createdAt).toLocaleDateString('es-ES') : 'N/A'}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Clock className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600">Último login:</span>
-                <span className="text-gray-900">
+                <span className="text-gray-600 dark:text-gray-400">Último login:</span>
+                <span className="text-gray-900 dark:text-white">
                   {profileUser.lastLogin ? new Date(profileUser.lastLogin).toLocaleDateString('es-ES') : 'Nunca'}
                 </span>
               </div>
@@ -1208,43 +1224,43 @@ loadUserData();
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-indigo-600" />
               Estadísticas Rápidas
             </h3>
             <div className="space-y-4">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white/60 dark:bg-gray-700/40 p-6 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Propiedades Gestionadas</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats?.properties ?? 0}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Propiedades gestionadas</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats?.properties ?? 0}</p>
                   </div>
-                  <div className="p-3 bg-blue-100 rounded-lg">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
                     <Building2 className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white/60 dark:bg-gray-700/40 p-6 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Vistas</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats?.views ?? 0}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Vistas</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats?.views ?? 0}</p>
                   </div>
-                  <div className="p-3 bg-green-100 rounded-lg">
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
                     <Eye className="h-6 w-6 text-green-600" />
                   </div>
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white/60 dark:bg-gray-700/40 p-6 rounded-xl border border-gray-200/60 dark:border-gray-700/60">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Favoritos</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats?.favorites ?? 0}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Favoritos</p>
+                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats?.favorites ?? 0}</p>
                   </div>
-                  <div className="p-3 bg-purple-100 rounded-lg">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
                     <Heart className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
@@ -1252,58 +1268,9 @@ loadUserData();
             </div>
           </div>
 
-          {/* Account Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Shield className="h-5 w-5 text-indigo-600" />
-              Acciones de Cuenta
-            </h3>
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowPasswordDialog(true)}
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Key className="h-4 w-4 mr-2" />
-                Cambiar Contraseña
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Bell className="h-4 w-4 mr-2" />
-                Notificaciones
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Globe className="h-4 w-4 mr-2" />
-                Privacidad
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => handleExportData('json')}
-                disabled={exportLoading}
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {exportLoading ? 'Exportando JSON...' : 'Exportar JSON'}
-              </Button>
-              {exportSuccess && <span className="text-green-600 text-xs ml-2">{exportSuccess}</span>}
-              <Button
-                variant="outline"
-                onClick={() => handleExportData('csv')}
-                disabled={exportLoading}
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {exportLoading ? 'Exportando CSV...' : 'Exportar CSV'}
-              </Button>
-
-            </div>
-          </div>
         </div>
+      </div>
+
       </div>
 
       {/* Change Password Dialog */}
@@ -1330,7 +1297,7 @@ loadUserData();
                   value={securityData.currentPassword}
                   onChange={(e) => setSecurityData(prev => ({ ...prev, currentPassword: e.target.value }))}
                   placeholder="••••••••"
-                  className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 pr-10 ${passwordErrors.currentPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  className={`${inputBaseClass} pr-10 ${passwordErrors.currentPassword ? inputErrorClass : ""}`}
                 />
                 <button
                   type="button"
@@ -1352,7 +1319,7 @@ loadUserData();
                   value={securityData.newPassword}
                   onChange={(e) => setSecurityData(prev => ({ ...prev, newPassword: e.target.value }))}
                   placeholder="••••••••"
-                  className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 pr-10 ${passwordErrors.newPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  className={`${inputBaseClass} pr-10 ${passwordErrors.newPassword ? inputErrorClass : ""}`}
                 />
                 <button
                   type="button"
@@ -1373,7 +1340,7 @@ loadUserData();
                   value={securityData.confirmPassword}
                   onChange={(e) => setSecurityData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                   placeholder="••••••••"
-                  className={`border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 pr-10 ${passwordErrors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  className={`${inputBaseClass} pr-10 ${passwordErrors.confirmPassword ? inputErrorClass : ""}`}
                 />
                 <button
                   type="button"

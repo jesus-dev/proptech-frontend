@@ -2,11 +2,56 @@ import { Agent, AgentFormData, AgentStats } from '../types';
 import { apiClient } from '@/lib/api';
 import { getEndpoint } from '@/lib/api-config';
 
+// Función para normalizar un agente del backend
+const normalizeAgent = (backendAgent: any): Agent => {
+  return {
+    id: backendAgent.id?.toString() || '',
+    userId: backendAgent.userId?.toString(),
+    // Campos nuevos
+    nombre: backendAgent.firstName || backendAgent.nombre || '',
+    apellido: backendAgent.lastName || backendAgent.apellido || '',
+    nombreCompleto: backendAgent.fullName || backendAgent.nombreCompleto || `${backendAgent.firstName || backendAgent.nombre || ''} ${backendAgent.lastName || backendAgent.apellido || ''}`.trim(),
+    telefono: backendAgent.phone || backendAgent.telefono,
+    email: backendAgent.email || '',
+    licenciaInmobiliaria: backendAgent.license || backendAgent.licenciaInmobiliaria,
+    zonaOperacion: backendAgent.zonaOperacion,
+    fotoPerfilUrl: backendAgent.photo || backendAgent.fotoPerfilUrl,
+    position: backendAgent.position,
+    bio: backendAgent.bio,
+    isActive: backendAgent.isActive ?? backendAgent.active ?? true,
+    // Relaciones
+    agencyId: backendAgent.agencyId?.toString(),
+    agencyName: backendAgent.agencyName,
+    tenantId: backendAgent.tenantId,
+    tenantName: backendAgent.tenantName,
+    // Suscripción
+    isIndependent: backendAgent.isIndependent,
+    effectivePlan: backendAgent.effectivePlan,
+    canOperate: backendAgent.canOperate,
+    maxProperties: backendAgent.maxProperties,
+    // Timestamps
+    createdAt: backendAgent.createdAt || new Date().toISOString(),
+    updatedAt: backendAgent.updatedAt || new Date().toISOString(),
+    // Campos legacy para compatibilidad con componentes existentes
+    firstName: backendAgent.firstName || backendAgent.nombre || '',
+    lastName: backendAgent.lastName || backendAgent.apellido || '',
+    phone: backendAgent.phone || backendAgent.telefono,
+    photo: backendAgent.photo || backendAgent.fotoPerfilUrl,
+    dni: backendAgent.license || backendAgent.licenciaInmobiliaria || backendAgent.dni,
+    license: backendAgent.license || backendAgent.licenciaInmobiliaria,
+    active: backendAgent.isActive ?? backendAgent.active ?? true,
+    username: backendAgent.username,
+    role: backendAgent.role || 'agente',
+  };
+};
+
 // Get all agents
 export const getAllAgents = async (): Promise<Agent[]> => {
   try {
     const response = await apiClient.get('/api/agents');
-    return response.data || [];
+    const agents = response.data || [];
+    // Normalizar los datos del backend
+    return agents.map((agent: any) => normalizeAgent(agent));
   } catch (error) {
     console.error('Error fetching agents:', error);
     // Retornar array vacío en lugar de lanzar error para evitar que la app se rompa
