@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Upload, Image as ImageIcon, MapPin } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+import { Image as ImageIcon, MapPin } from 'lucide-react';
+import { getEndpoint } from '@/lib/api-config';
 
 interface EventFormProps {
   initialData?: any;
@@ -80,23 +80,43 @@ export default function EventForm({
 
     try {
       setUploadingImage(true);
-      
+
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
       uploadFormData.append('fileName', file.name);
       uploadFormData.append('category', 'EVENT');
 
-      const response = await apiClient.post('/api/cms/media/upload', uploadFormData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const headers: Record<string, string> = {};
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (token && token !== 'undefined' && token !== 'null') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const selectedTenant = typeof window !== 'undefined' ? localStorage.getItem('selectedTenant') : null;
+      if (selectedTenant) {
+        try {
+          const tenant = JSON.parse(selectedTenant);
+          if (tenant?.id && tenant.id !== 0 && tenant.id != null) {
+            headers['X-Selected-Tenant-Id'] = String(tenant.id);
+          }
+        } catch (_) {}
+      }
+
+      const res = await fetch(getEndpoint('/api/cms/media/upload'), {
+        method: 'POST',
+        headers,
+        body: uploadFormData,
       });
-      handleChange('eventImage', response.data.fileUrl);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || 'Error al subir la imagen');
+      }
+      const data = (await res.json()) as { fileUrl: string };
+      handleChange('eventImage', data.fileUrl);
     } catch (error: any) {
       console.error('Error uploading image:', error);
-      // 401 es manejado automáticamente por el interceptor de apiClient
-      if (error?.response?.status !== 401) {
-        alert('Error al subir la imagen');
+      if (error?.message && !error.message.includes('401')) {
+        alert(error.message || 'Error al subir la imagen');
       }
     } finally {
       setUploadingImage(false);
@@ -351,7 +371,7 @@ export default function EventForm({
               <div className="space-y-3">
                 <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
                   <img
-                    src={getEndpoint(formData.eventImage)}
+                    src={formData.eventImage.startsWith('http') ? formData.eventImage : getEndpoint(formData.eventImage.startsWith('/') ? formData.eventImage : `/${formData.eventImage}`)}
                     alt="Event"
                     className="w-full h-full object-cover"
                   />

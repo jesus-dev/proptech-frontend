@@ -5,6 +5,8 @@ import { getAllPropertyStatuses, createPropertyStatus, updatePropertyStatus, del
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon, PlusIcon, PencilIcon, TrashIcon, TagIcon } from "@heroicons/react/24/outline";
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import ModernPopup from '@/components/ui/ModernPopup';
+import { useRouter } from 'next/navigation';
+import { useAuthContext } from '@/context/AuthContext';
 
 interface PropertyStatusFormData {
   name: string;
@@ -12,6 +14,8 @@ interface PropertyStatusFormData {
 }
 
 export default function PropertyStatusPage() {
+  const { hasRole, hasAnyRole, isLoading: authLoading } = useAuthContext();
+  const router = useRouter();
   const [propertyStatuses, setPropertyStatuses] = useState<PropertyStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,6 +26,19 @@ export default function PropertyStatusPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Protección: Si el usuario es solo AGENT (sin roles de admin), redirigir a perfil
+  useEffect(() => {
+    if (authLoading) return;
+    
+    const isAgent = hasRole('AGENT');
+    const hasAdmin = hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
+    
+    // Si es solo AGENT (sin admin), redirigir a perfil
+    if (isAgent && !hasAdmin) {
+      router.replace('/profile');
+    }
+  }, [authLoading, hasRole, hasAnyRole, router]);
 
   useEffect(() => {
     loadPropertyStatuses();
@@ -103,10 +120,23 @@ export default function PropertyStatusPage() {
     (status.description && status.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="p-6">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Verificar acceso después de que authLoading termine
+  const isAgent = hasRole('AGENT');
+  const hasAdmin = hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
+  if (isAgent && !hasAdmin) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">No tienes permisos para acceder a esta página.</p>
+        </div>
       </div>
     );
   }

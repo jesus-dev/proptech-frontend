@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api';
+import { getEndpoint } from '@/lib/api-config';
 
 export interface Gallery {
   id: number;
@@ -77,16 +78,33 @@ class WebGalleryService {
     formData.append('file', file);
     formData.append('fileName', file.name);
 
-    const response = await apiClient.post<GalleryPhoto>(
-      `/api/cms/galleries/${galleryId}/photos`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
+    const headers: Record<string, string> = {};
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (token && token !== 'undefined' && token !== 'null') {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const selectedTenant = typeof window !== 'undefined' ? localStorage.getItem('selectedTenant') : null;
+    if (selectedTenant) {
+      try {
+        const tenant = JSON.parse(selectedTenant);
+        if (tenant?.id && tenant.id !== 0 && tenant.id != null) {
+          headers['X-Selected-Tenant-Id'] = String(tenant.id);
+        }
+      } catch (_) {}
+    }
+
+    const res = await fetch(getEndpoint(`/api/cms/galleries/${galleryId}/photos`), {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { error?: string }).error || 'Error al subir la foto');
+    }
+
+    return (await res.json()) as GalleryPhoto;
   }
 
   async deletePhoto(photoId: number): Promise<void> {

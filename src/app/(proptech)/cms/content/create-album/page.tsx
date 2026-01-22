@@ -169,9 +169,23 @@ export default function CreateAlbumPage() {
         const batchPromises = batch.map(async (file) => {
           try {
             // Convertir HEIC si es necesario
-            const processedFile = isHeicFile(file) 
-              ? await processImageFiles([file]).then(files => files[0])
-              : file;
+            let processedFile = file;
+            if (isHeicFile(file)) {
+              try {
+                const processedFiles = await processImageFiles([file]);
+                if (processedFiles.length > 0 && processedFiles[0]) {
+                  processedFile = processedFiles[0];
+                } else {
+                  // Si la conversión falla, mostrar error y no incluir el archivo
+                  toast.error(`No se pudo convertir ${file.name}. Por favor, convierte la imagen a JPG o PNG antes de subirla.`);
+                  return null; // Retornar null para filtrar después
+                }
+              } catch (heicError: any) {
+                console.error('Error converting HEIC:', file.name, heicError);
+                toast.error(`No se pudo convertir ${file.name}: ${heicError?.message || 'Error desconocido'}`);
+                return null; // Retornar null para filtrar después
+              }
+            }
             
             // Crear preview optimizado
             const preview = await createOptimizedPreview(processedFile);
@@ -183,21 +197,29 @@ export default function CreateAlbumPage() {
             };
           } catch (error) {
             console.error('Error processing file:', file.name, error);
-            // Fallback: usar preview directo sin optimización
-            return {
-              file,
-              preview: URL.createObjectURL(file),
-              id: Math.random().toString(36).substring(2, 15)
-            };
+            // Si no es HEIC, intentar usar preview directo sin optimización
+            if (!isHeicFile(file)) {
+              return {
+                file,
+                preview: URL.createObjectURL(file),
+                id: Math.random().toString(36).substring(2, 15)
+              };
+            } else {
+              // Si es HEIC y falló, no incluir
+              toast.error(`Error procesando ${file.name}`);
+              return null;
+            }
           }
         });
         
         const batchResults = await Promise.all(batchPromises);
-        newFiles.push(...batchResults);
-        processedCount += batch.length;
+        // Filtrar nulls (archivos que fallaron al procesar)
+        const validResults = batchResults.filter((result): result is SelectedFile => result !== null);
+        newFiles.push(...validResults);
+        processedCount += validResults.length;
         
         // Actualizar estado progresivamente
-        setSelectedFiles(prev => [...prev, ...batchResults]);
+        setSelectedFiles(prev => [...prev, ...validResults]);
         
         // Actualizar toast de progreso
         toast.loading(`Procesando ${processedCount}/${imageFiles.length} foto(s)...`, { id: 'processing' });

@@ -11,8 +11,10 @@ import {
   getAgentStats,
   getAllAgencies,
 } from '../services/agentService';
+import { useAuthContext } from '@/context/AuthContext';
 
 export function useAgents() {
+  const { getUserContext, hasAnyRole } = useAuthContext();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [filteredAgents, setFilteredAgents] = useState<Agent[]>([]);
   const [agencies, setAgencies] = useState<Array<{id: string, name: string, active: boolean}>>([]);
@@ -34,18 +36,45 @@ export function useAgents() {
       setLoading(true);
       setError(null);
       const data = await getAllAgents();
-      setAgents(data);
       
-      // Update stats
-      const statsData = await getAgentStats();
-      setStats(statsData);
+      // Si el usuario es solo AGENT (no admin), filtrar para mostrar solo su agente
+      const context = getUserContext();
+      const isOnlyAgent = context.isAgent && !context.isAdmin;
+      
+      let filteredData = data;
+      if (isOnlyAgent && context.agentId) {
+        // Filtrar solo el agente del usuario
+        filteredData = data.filter(agent => 
+          agent.id === String(context.agentId) || 
+          agent.userId === String(context.agentId)
+        );
+      }
+      
+      setAgents(filteredData);
+      
+      // Update stats - solo calcular stats del agente si es solo agente
+      if (isOnlyAgent && filteredData.length > 0) {
+        const agent = filteredData[0];
+        setStats({
+          total: 1,
+          active: agent.isActive ?? agent.active ? 1 : 0,
+          inactive: agent.isActive ?? agent.active ? 0 : 1,
+          withAgency: agent.agencyId ? 1 : 0,
+          withoutAgency: agent.agencyId ? 0 : 1,
+          canLogin: agent.username ? 1 : 0,
+          locked: 0,
+        });
+      } else {
+        const statsData = await getAgentStats();
+        setStats(statsData);
+      }
     } catch (err) {
       setError('Error al cargar los agentes');
       console.error('Error loading agents:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getUserContext]);
 
   // Load agencies
   const loadAgencies = useCallback(async () => {

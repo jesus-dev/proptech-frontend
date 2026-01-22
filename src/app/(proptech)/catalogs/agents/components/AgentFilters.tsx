@@ -17,6 +17,7 @@ interface AgentFiltersProps {
   onFiltersChange: (filters: AgentFiltersType) => void;
   onCreateNew: () => void;
   agencies: Array<{id: string, name: string, active: boolean}>;
+  hideCreateButton?: boolean;
 }
 
 export default function AgentFilters({
@@ -24,6 +25,7 @@ export default function AgentFilters({
   onFiltersChange,
   onCreateNew,
   agencies,
+  hideCreateButton = false,
 }: AgentFiltersProps) {
   const { user } = useAuthContext();
   const [tenants, setTenants] = useState<Tenant[]>([]);
@@ -148,17 +150,19 @@ export default function AgentFilters({
         </div>
         
         {/* Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onCreateNew}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Nuevo Agente
-          </button>
-        </div>
+        {!hideCreateButton && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onCreateNew}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Nuevo Agente
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

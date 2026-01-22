@@ -392,6 +392,7 @@ const catalogItems: NavItem[] = [
       {
         name: "Agentes",
         path: "/catalogs/agents",
+        requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN", "AGENCY_ADMIN"],
       },
       {
         name: "Campañas",
@@ -433,6 +434,7 @@ const catalogItems: NavItem[] = [
       {
         name: "Estados de Propiedad",
         path: "/catalogs/property-status",
+        requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN", "AGENCY_ADMIN"],
       },
       {
         name: "Zonas de la Ciudad",
@@ -495,11 +497,29 @@ const MobileSidebar: React.FC = () => {
 
   // Función para verificar si el usuario puede ver un subitem del menú
   const canViewSubItem = (subItem: NonNullable<NavItem['subItems']>[0]): boolean => {
-    if (!subItem.requiredRole) return true;
-    if (Array.isArray(subItem.requiredRole)) {
-      return hasAnyRole(subItem.requiredRole);
+    // Caso especial: "Agentes" - SOLO para admins, NUNCA para solo AGENT
+    if (subItem.path === '/catalogs/agents' || subItem.name === 'Agentes') {
+      // SOLO mostrar si tiene alguno de los roles de admin
+      // Si no tiene admin, retornar false inmediatamente (sin importar otros roles)
+      return hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
     }
-    return hasRole(subItem.requiredRole);
+    
+    // Caso especial: "Estados de Propiedad" - SOLO para admins, NUNCA para solo AGENT
+    if (subItem.path === '/catalogs/property-status' || subItem.name === 'Estados de Propiedad') {
+      // SOLO mostrar si tiene alguno de los roles de admin
+      // Si no tiene admin, retornar false inmediatamente (sin importar otros roles)
+      return hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
+    }
+    
+    // Verificar requiredRole para otros items
+    if (subItem.requiredRole) {
+      if (Array.isArray(subItem.requiredRole)) {
+        return hasAnyRole(subItem.requiredRole);
+      }
+      return hasRole(subItem.requiredRole);
+    }
+    
+    return true;
   };
 
   // Función para verificar si hay items visibles en un array de items

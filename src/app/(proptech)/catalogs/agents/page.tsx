@@ -9,8 +9,10 @@ import AgentTable from './components/AgentTable';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { useRouter } from 'next/navigation';
+import { useAuthContext } from '@/context/AuthContext';
 
 export default function AgentsPage() {
+  const { getUserContext, hasRole, hasAnyRole, isLoading: authLoading } = useAuthContext();
   const {
     agents,
     filteredAgents,
@@ -22,6 +24,9 @@ export default function AgentsPage() {
     filterAgents,
     clearError,
   } = useAgents();
+  
+  const context = getUserContext();
+  const isOnlyAgent = context.isAgent && !context.isAdmin;
 
   // State for modals
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -38,6 +43,19 @@ export default function AgentsPage() {
   });
 
   const router = useRouter();
+
+  // Protección: Si el usuario es solo AGENT (sin roles de admin), redirigir a perfil
+  useEffect(() => {
+    if (authLoading) return;
+    
+    const isAgent = hasRole('AGENT');
+    const hasAdmin = hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
+    
+    // Si es solo AGENT (sin admin), redirigir a perfil
+    if (isAgent && !hasAdmin) {
+      router.replace('/profile');
+    }
+  }, [authLoading, hasRole, hasAnyRole, router]);
 
   // Apply filters when they change
   useEffect(() => {
@@ -74,10 +92,42 @@ export default function AgentsPage() {
     setAgentToDelete(null);
   };
 
-  if (loading) {
+  // Mostrar loading mientras se verifica autenticación o carga datos
+  if (authLoading || loading) {
     return (
       <div className="p-6">
         <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Verificar acceso antes de renderizar
+  const isAgent = hasRole('AGENT');
+  const hasAdmin = hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
+  
+  // Si es solo AGENT (sin admin), mostrar mensaje de acceso denegado
+  if (isAgent && !hasAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="mb-4">
+            <svg className="h-16 w-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
+            Acceso Restringido
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            Los agentes no tienen acceso a la gestión de agentes. Puedes editar tu información en tu perfil.
+          </p>
+          <button
+            onClick={() => router.push('/profile')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Ir a Mi Perfil
+          </button>
+        </div>
       </div>
     );
   }
@@ -123,20 +173,23 @@ export default function AgentsPage() {
       {/* Stats */}
       <AgentStats stats={stats} />
 
-      {/* Filters */}
-      <AgentFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        onCreateNew={() => router.push('/catalogs/agents/new')}
-        agencies={agencies}
-      />
+      {/* Filters - Solo mostrar si no es solo agente */}
+      {!isOnlyAgent && (
+        <AgentFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          onCreateNew={() => router.push('/catalogs/agents/new')}
+          agencies={agencies}
+          hideCreateButton={isOnlyAgent}
+        />
+      )}
 
       {/* Table */}
       <AgentTable
         agents={filteredAgents}
         onView={(agent) => router.push(`/catalogs/agents/${agent.id}`)}
         onEdit={(agent) => router.push(`/catalogs/agents/${agent.id}/edit`)}
-        onDelete={handleDelete}
+        {...(isOnlyAgent ? {} : { onDelete: handleDelete })}
       />
 
       {/* Delete Confirmation Modal */}

@@ -6,7 +6,6 @@ import {
   NewspaperIcon, 
   CalendarIcon, 
   DocumentTextIcon, 
-  PhotoIcon,
   ChartBarIcon,
   PencilSquareIcon
 } from '@heroicons/react/24/outline';
@@ -36,14 +35,6 @@ export default function CMSPage() {
       href: '/cms/pages',
       color: 'from-green-500 to-green-600',
       stats: { label: 'Páginas', value: '--' }
-    },
-    {
-      title: 'Galería de Medios',
-      description: 'Administra imágenes y archivos multimedia',
-      icon: PhotoIcon,
-      href: '/cms/media',
-      color: 'from-orange-500 to-orange-600',
-      stats: { label: 'Archivos', value: '--' }
     }
   ];
 
@@ -60,7 +51,7 @@ export default function CMSPage() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div>
@@ -91,15 +82,6 @@ export default function CMSPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Archivos Multimedia</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">--</p>
-            </div>
-            <PhotoIcon className="w-10 h-10 text-orange-500" />
-          </div>
-        </div>
       </div>
 
       {/* Modules Grid */}

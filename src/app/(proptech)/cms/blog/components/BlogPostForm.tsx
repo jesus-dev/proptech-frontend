@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Upload, Image as ImageIcon } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+import { Image as ImageIcon } from 'lucide-react';
+import { getEndpoint } from '@/lib/api-config';
+import { isHeicFile, processImageFiles } from '@/lib/image-utils';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 // Importar el editor de forma dinámica para evitar problemas con SSR (mismo que en propiedades)
@@ -42,9 +43,24 @@ export default function BlogPostForm({
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
+
+  const getImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    // Si es HEIC, no se puede mostrar en el navegador - retornar vacío para mostrar placeholder
+    if (url.toLowerCase().endsWith('.heic') || url.toLowerCase().endsWith('.heif') || url.toLowerCase().endsWith('.hif')) {
+      return '';
+    }
+    return getEndpoint(url.startsWith('/') ? url : `/${url}`);
+  };
 
   useEffect(() => {
     if (initialData) {
+      console.log('Loading initialData:', initialData);
+      console.log('featuredImage from initialData:', initialData.featuredImage);
+      const featuredImg = initialData.featuredImage || '';
       setFormData({
         title: initialData.title || '',
         slug: initialData.slug || '',
@@ -53,11 +69,20 @@ export default function BlogPostForm({
         category: initialData.category || '',
         tags: initialData.tags || '',
         status: initialData.status || 'DRAFT',
-        featuredImage: initialData.featuredImage || '',
+        featuredImage: featuredImg,
         featured: initialData.featured || false,
       });
+      if (featuredImg) {
+        const imgUrl = getImageUrl(featuredImg);
+        setPreviewUrl(imgUrl);
+        setImageError(false); // Reset error state when loading new image
+      }
     }
   }, [initialData]);
+
+  useEffect(() => {
+    console.log('formData.featuredImage changed:', formData.featuredImage);
+  }, [formData.featuredImage]);
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -77,9 +102,10 @@ export default function BlogPostForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Aceptar todos los formatos de imagen (incluyendo JPEG sin tipo MIME correcto)
+    // Aceptar todos los formatos de imagen (JPEG, PNG, WEBP, GIF, HEIC, etc.)
     const isImage = file.type.startsWith('image/') || 
-                   ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].some(ext => 
+                   isHeicFile(file) ||
+                   ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.heic', '.heif', '.hif'].some(ext => 
                      file.name.toLowerCase().endsWith(ext)
                    );
     if (!isImage) {
@@ -89,24 +115,101 @@ export default function BlogPostForm({
 
     try {
       setUploadingImage(true);
+
+      // Convertir HEIC a JPG si es necesario - NO permitir subir HEIC sin convertir
+      let fileToUpload: File;
       
+      if (isHeicFile(file)) {
+        console.log('Detected HEIC file, attempting conversion...');
+        try {
+          const processedFiles = await processImageFiles([file]);
+          console.log('Processed files result:', processedFiles.length, processedFiles);
+          
+          if (processedFiles.length === 0 || !processedFiles[0]) {
+            // Si la conversión falla completamente, NO subir el archivo HEIC
+            console.error('HEIC conversion failed - no files returned');
+            alert('No se pudo convertir la imagen HEIC. Por favor, convierte la imagen a JPG o PNG antes de subirla.\n\nEl navegador no puede mostrar archivos HEIC directamente.');
+            setUploadingImage(false);
+            return;
+          }
+          
+          fileToUpload = processedFiles[0];
+          
+          // Verificar que el archivo convertido NO sea HEIC
+          if (isHeicFile(fileToUpload)) {
+            console.error('Converted file is still HEIC - conversion failed');
+            alert('La conversión de HEIC falló. Por favor, convierte la imagen a JPG o PNG antes de subirla.');
+            setUploadingImage(false);
+            return;
+          }
+          
+          console.log('HEIC converted successfully to:', fileToUpload.name, fileToUpload.type);
+        } catch (error: any) {
+          console.error('Error processing HEIC file:', file.name, error);
+          const errorMessage = error?.message || 'Error desconocido';
+          alert(
+            `No se pudo convertir la imagen HEIC.\n\n` +
+            `Error: ${errorMessage}\n\n` +
+            `Por favor, convierte la imagen a JPG o PNG antes de subirla.\n\n` +
+            `Puedes usar herramientas como:\n` +
+            `- iCloud Photos (convertir a JPG)\n` +
+            `- Online converters (heictojpg.com)\n` +
+            `- Aplicaciones de conversión`
+          );
+          setUploadingImage(false);
+          return;
+        }
+      } else {
+        fileToUpload = file;
+      }
+
       const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
-      uploadFormData.append('fileName', file.name);
+      uploadFormData.append('file', fileToUpload);
+      uploadFormData.append('fileName', fileToUpload.name);
       uploadFormData.append('category', 'BLOG');
       uploadFormData.append('altText', formData.title);
 
-      const response = await apiClient.post('/api/cms/media/upload', uploadFormData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const headers: Record<string, string> = {};
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (token && token !== 'undefined' && token !== 'null') {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const selectedTenant = typeof window !== 'undefined' ? localStorage.getItem('selectedTenant') : null;
+      if (selectedTenant) {
+        try {
+          const tenant = JSON.parse(selectedTenant);
+          if (tenant?.id && tenant.id !== 0 && tenant.id != null) {
+            headers['X-Selected-Tenant-Id'] = String(tenant.id);
+          }
+        } catch (_) {}
+      }
+
+      const res = await fetch(getEndpoint('/api/cms/media/upload'), {
+        method: 'POST',
+        headers,
+        body: uploadFormData,
       });
-      handleChange('featuredImage', response.data.fileUrl);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || 'Error al subir la imagen');
+      }
+      const data = (await res.json()) as { fileUrl: string };
+      console.log('Upload response:', data);
+      console.log('fileUrl received:', data.fileUrl);
+      
+      if (!data.fileUrl) {
+        throw new Error('El servidor no devolvió la URL de la imagen');
+      }
+      
+      console.log('Setting featuredImage to:', data.fileUrl);
+      handleChange('featuredImage', data.fileUrl);
+      setPreviewUrl(getImageUrl(data.fileUrl));
+      console.log('After handleChange, formData should update...');
     } catch (error: any) {
       console.error('Error uploading image:', error);
-      // 401 es manejado automáticamente por el interceptor de apiClient
-      if (error?.response?.status !== 401) {
-        alert('Error al subir la imagen');
+      if (error?.message && !error.message.includes('401')) {
+        alert(error.message || 'Error al subir la imagen');
       }
     } finally {
       setUploadingImage(false);
@@ -245,18 +348,73 @@ export default function BlogPostForm({
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Imagen Destacada</h3>
             
-            {formData.featuredImage ? (
+            {(formData.featuredImage || previewUrl) ? (
               <div className="space-y-3">
-                <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
-                  <img
-                    src={getEndpoint(formData.featuredImage)}
-                    alt="Featured"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700">
+                  {(() => {
+                    const featuredImageUrl = formData.featuredImage || '';
+                    const isHeic = featuredImageUrl.toLowerCase().endsWith('.heic') || 
+                                  featuredImageUrl.toLowerCase().endsWith('.heif') ||
+                                  featuredImageUrl.toLowerCase().endsWith('.hif');
+                    
+                    // Si es HEIC, mostrar placeholder (el navegador no puede mostrarlo)
+                    if (isHeic) {
+                      return (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gray-50 dark:bg-gray-800">
+                          <ImageIcon className="w-12 h-12 text-gray-400 mb-2" />
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Imagen HEIC guardada
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            El navegador no puede mostrar archivos HEIC
+                          </p>
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                            Por favor, sube una nueva imagen en formato JPG o PNG
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    // Para imágenes normales, intentar mostrar
+                    const imageUrl = previewUrl || getImageUrl(featuredImageUrl);
+                    
+                    if (!imageUrl || imageError) {
+                      return (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gray-50 dark:bg-gray-800">
+                          <ImageIcon className="w-12 h-12 text-gray-400 mb-2" />
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            No se pudo cargar la imagen
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <img
+                        src={imageUrl}
+                        alt="Featured"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Error loading image:', featuredImageUrl);
+                          console.error('Preview URL:', previewUrl);
+                          console.error('Constructed URL:', imageUrl);
+                          setImageError(true);
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully:', imageUrl);
+                          setImageError(false);
+                        }}
+                      />
+                    );
+                  })()}
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleChange('featuredImage', '')}
+                  onClick={() => {
+                    handleChange('featuredImage', '');
+                    setPreviewUrl(null);
+                    setImageError(false);
+                  }}
                   className="w-full text-sm text-red-600 hover:text-red-700 dark:text-red-400"
                 >
                   Eliminar imagen
@@ -274,7 +432,7 @@ export default function BlogPostForm({
                 </div>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif,.hif"
                   onChange={handleImageUpload}
                   className="hidden"
                   disabled={uploadingImage}
