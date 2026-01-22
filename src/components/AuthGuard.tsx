@@ -26,6 +26,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
+    let fallbackTimeoutId: NodeJS.Timeout;
 
     const checkAuth = async () => {
       // Si es una ruta pública, no verificar autenticación
@@ -50,13 +51,47 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
         return;
       }
 
-      // Si hay token pero el contexto no está cargado, esperar
+      // Verificar datos de usuario en localStorage como fallback
+      const userData = localStorage.getItem('user');
+      let hasValidLocalStorageData = false;
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          if (parsedUser.id && parsedUser.email) {
+            hasValidLocalStorageData = true;
+          }
+        } catch (e) {
+          // Datos corruptos
+        }
+      }
+
+      // Si hay token y datos válidos en localStorage, pero el contexto aún no carga,
+      // esperar un poco, pero no más de 3 segundos
+      if (isLoading && hasValidLocalStorageData) {
+        // Timeout de fallback: si después de 2 segundos sigue cargando, usar localStorage
+        fallbackTimeoutId = setTimeout(() => {
+          if (isChecking) {
+            console.log('⚠️ AuthGuard - Usando datos de localStorage (fallback por timeout de carga)');
+            setIsChecking(false);
+          }
+        }, 2000);
+        return;
+      }
+
+      // Si isLoading pero no hay datos válidos en localStorage, esperar un poco más
       if (isLoading) {
         return;
       }
 
-      // Si no está autenticado según el contexto, redirigir
+      // Si no está autenticado según el contexto, verificar localStorage como fallback
       if (!isAuthenticated || !user) {
+        if (hasValidLocalStorageData) {
+          // Hay datos válidos en localStorage, permitir acceso (fallback)
+          console.log('⚠️ AuthGuard - Usando datos de localStorage (fallback)');
+          setIsChecking(false);
+          return;
+        }
+        // No hay datos válidos, redirigir
         localStorage.clear();
         router.push(redirectTo);
         return;
@@ -66,19 +101,35 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
       setIsChecking(false);
     };
 
-    // Timeout de seguridad: si después de 3 segundos seguimos esperando, redirigir
+    // Timeout de seguridad: si después de 5 segundos seguimos esperando, usar localStorage o redirigir
     timeoutId = setTimeout(() => {
       if (isChecking && requireAuth) {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+            if (user.id && user.email) {
+              // Hay datos válidos, permitir acceso
+              console.log('⚠️ AuthGuard - Timeout pero hay datos válidos en localStorage, permitiendo acceso');
+              setIsChecking(false);
+              return;
+            }
+          } catch (e) {
+            // Datos corruptos
+          }
+        }
+        // No hay datos válidos, redirigir
         console.warn('⚠️ Auth check timeout - redirecting to login');
         localStorage.clear();
         router.push(redirectTo);
       }
-    }, 3000);
+    }, 5000);
 
     checkAuth();
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
+      if (fallbackTimeoutId) clearTimeout(fallbackTimeoutId);
     };
   }, [isAuthenticated, user, isLoading, isPublicRoute, requireAuth, redirectTo, router, pathname, isChecking]);
 
