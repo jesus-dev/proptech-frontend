@@ -10,6 +10,7 @@ import {
   Squares2X2Icon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+import TenantIndicator from '@/components/tenant/TenantIndicator';
 
 export default function CMSLayout({
   children,
@@ -65,6 +66,10 @@ export default function CMSLayout({
               <div>
                 <h1 className="text-xl font-semibold text-gray-900 dark:text-white">CMS</h1>
               </div>
+            </div>
+            {/* Tenant Indicator - Visible en CMS para Super Admin */}
+            <div className="flex items-center gap-3">
+              <TenantIndicator />
             </div>
           </div>
         </div>
