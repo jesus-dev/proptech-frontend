@@ -86,12 +86,24 @@ export default function LoginPage() {
       setShowSuccess(false);
       const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
+      
+      // Log detallado del error para debugging
+      console.error('❌ Error de login:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL
+      });
+      
       if (newAttempts >= 5) {
         setIsLocked(true);
         setLockTime(new Date());
         handleLoginError('Demasiados intentos fallidos. Tu cuenta ha sido bloqueada por 30 minutos.');
       } else {
-        handleLoginError(error.response?.data?.error || 'Credenciales incorrectas. Intenta nuevamente.');
+        const errorMsg = error.response?.data?.error || error.message || 'Credenciales incorrectas. Intenta nuevamente.';
+        handleLoginError(errorMsg);
       }
     } finally {
       setIsLoading(false);

@@ -208,7 +208,6 @@ export default function ProfilePage() {
 
   // Validar en tiempo real
   useEffect(() => {
-    console.log('Profile data changed:', profileData);
     setFormErrors(validateProfile(profileData));
   }, [profileData.firstName, profileData.lastName, profileData.email, profileData.phone]);
 
@@ -223,6 +222,23 @@ export default function ProfilePage() {
     else if (data.newPassword !== data.confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
     return errors;
   };
+
+  // Limpiar campos de contraseña cuando se abre el diálogo
+  useEffect(() => {
+    if (showPasswordDialog) {
+      // Limpiar todos los campos de contraseña cuando se abre el diálogo
+      setSecurityData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setPasswordErrors({});
+      setPasswordSuccess(null);
+      setShowPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+    }
+  }, [showPasswordDialog]);
 
   // Validar en tiempo real
   useEffect(() => {
@@ -280,13 +296,19 @@ export default function ProfilePage() {
       setProfileUser(parsedUser);
       setAvatarUrl(parsedUser.photoUrl || null);
       setOriginalPhotoUrl(parsedUser.photoUrl || '');
+      
+      // Establecer userId desde parsedUser
+      const userIdFromUser = parsedUser.id || parsedUser.userId || parsedUser.user_id;
+      if (userIdFromUser) {
+        setUserId(userIdFromUser);
+      }
+      
       setIsLoadingUser(false);
     } else {
       // Si no hay token, redirigir al login
       window.location.href = '/login';
     }
   } catch (error) {
-    console.error('❌ Error loading user data:', error);
     setApiError('Error al cargar datos del usuario');
     setIsLoadingUser(false);
   }
@@ -295,21 +317,36 @@ export default function ProfilePage() {
 loadUserData();
 }, []);
 
+  // Referencia al input de archivo
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Manejar selección de archivo para foto de perfil
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      // Resetear el input si no hay archivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
 
     // Validar tipo de archivo
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast.error('Solo se permiten archivos de imagen (JPG, PNG, GIF, WEBP)');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
     // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('El archivo es demasiado grande. Máximo 5MB');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
@@ -319,10 +356,13 @@ loadUserData();
       setSelectedImage(reader.result as string);
       setShowCropModal(true);
     };
+    reader.onerror = () => {
+      toast.error('Error al leer el archivo');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
     reader.readAsDataURL(file);
-
-    // Resetear el input
-    e.target.value = '';
   };
 
   // Manejar crop completo
@@ -331,24 +371,42 @@ loadUserData();
       setShowCropModal(false);
       setUploadError(null);
       
-      // Guardar el blob para subirlo después al guardar el formulario
-      setPendingImageBlob(croppedImageBlob);
-      
-      // Crear URL local para previsualización
+      // Crear URL local para previsualización PRIMERO
       const localUrl = URL.createObjectURL(croppedImageBlob);
-      setPreviewUrl(localUrl);
+      
+      // Guardar el blob para subirlo después
+      setPendingImageBlob(croppedImageBlob);
       
       // Guardar la URL original si aún no lo hemos hecho
       if (!originalPhotoUrl && profileUser?.photoUrl) {
         setOriginalPhotoUrl(profileUser.photoUrl.split('?')[0]);
       }
       
-      // Subir inmediatamente (igual que en agentes)
+      // Establecer previewUrl INMEDIATAMENTE para que se muestre
+      setPreviewUrl(localUrl);
+      
+      // Forzar un re-render inmediato usando flushSync (si está disponible)
+      // Si no, usar un pequeño delay
+      await new Promise(resolve => {
+        // Usar setTimeout para dar tiempo a React de actualizar el estado
+        setTimeout(() => {
+          resolve(undefined);
+        }, 50);
+      });
+      
+      // Subir la imagen (el previewUrl se mantiene visible durante la subida)
       await uploadPhoto(croppedImageBlob);
       
     } catch (error) {
-      console.error('Error processing image:', error);
       toast.error('Error al procesar la imagen. Por favor intenta nuevamente.');
+      // Si hay error, limpiar el preview
+      setPreviewUrl((prev) => {
+        if (prev) {
+          URL.revokeObjectURL(prev);
+        }
+        return null;
+      });
+      setPendingImageBlob(null);
     } finally {
       setSelectedImage(null);
     }
@@ -374,7 +432,9 @@ loadUserData();
       }
 
       const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint(`/api/auth/users/${userId}/upload-photo`), {
+      const endpoint = getEndpoint(`/api/auth/users/${userId}/upload-photo`);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -383,11 +443,17 @@ loadUserData();
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
         throw new Error(errorData.error || 'Error al subir la foto');
       }
 
       const result = await response.json();
+      
+      // Limpiar previewUrl ANTES de actualizar avatarUrl para evitar conflictos
+      const currentPreviewUrl = previewUrl;
+      if (currentPreviewUrl) {
+        URL.revokeObjectURL(currentPreviewUrl);
+      }
       
       // Actualizar estado local
       setAvatarUrl(result.fileUrl);
@@ -411,7 +477,7 @@ loadUserData();
       toast.success('Foto de perfil actualizada exitosamente');
       
     } catch (error) {
-      console.error('Error uploading file:', error);
+      setUploadError(error instanceof Error ? error.message : 'Error al subir la foto');
       toast.error(error instanceof Error ? error.message : 'Error al subir la foto');
     } finally {
       setUploadingPhoto(false);
@@ -422,6 +488,9 @@ loadUserData();
   const handleCropCancel = () => {
     setShowCropModal(false);
     setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Eliminar foto
@@ -471,7 +540,6 @@ loadUserData();
       toast.success('Foto de perfil eliminada');
       
     } catch (error) {
-      console.error('Error deleting photo:', error);
       toast.error('Error al eliminar la foto');
     } finally {
       setUploadingPhoto(false);
@@ -481,19 +549,24 @@ loadUserData();
   // Guardar cambios en la API
   const handleProfileUpdate = async () => {
     const errors = validateProfile(profileData);
+    
     setFormErrors(errors);
     setFormSuccess(null);
     setApiError(null);
+    
     if (Object.keys(errors).length > 0) {
       toast.error('Corrige los errores antes de guardar');
       return;
     }
+    
     if (!userId) {
       setApiError('No se pudo identificar el usuario.');
       return;
     }
+    
     try {
       setLoading(true);
+      
       // Solo enviar campos permitidos y requeridos
       const updateData: any = {
         email: profileData.email, // <-- ¡Siempre incluir!
@@ -501,12 +574,28 @@ loadUserData();
         lastName: profileData.lastName,
         phone: profileData.phone,
       };
+      
       await authService.updateUser(userId, updateData);
+      
       setFormSuccess('Perfil actualizado exitosamente');
       toast.success('Perfil actualizado exitosamente');
+      
+      // Actualizar profileUser con los nuevos datos
+      if (profileUser) {
+        setProfileUser({
+          ...profileUser,
+          email: updateData.email,
+          firstName: updateData.firstName,
+          lastName: updateData.lastName,
+          phone: updateData.phone,
+          fullName: `${updateData.firstName} ${updateData.lastName}`.trim(),
+        });
+      }
+      
     } catch (error) {
-      setApiError(handleApiError(error));
-      toast.error(handleApiError(error));
+      const errorMessage = handleApiError(error);
+      setApiError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -612,7 +701,6 @@ loadUserData();
       setShowPasswordDialog(false);
       setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error) {
-      console.error('❌ Error en cambio de contraseña:', error);
       const errorMessage = handleApiError(error);
       
       setApiError(errorMessage);
@@ -668,7 +756,6 @@ loadUserData();
         setStatsError(errorMsg);
         setStatsLoading(false);
         // Log para depuración
-        console.error('Error cargando estadísticas:', err);
       });
   }, [userId]);
 
@@ -721,29 +808,54 @@ loadUserData();
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-center gap-8 mb-4 lg:mb-0">
             <div className="relative group">
-              {(previewUrl || avatarUrl) ? (
+              {(previewUrl || avatarUrl || profileUser?.photoUrl) ? (
                 <div className="relative">
-                  {uploadingPhoto ? (
-                    <div className="h-28 w-28 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-4 border-white">
-                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
-                    </div>
-                  ) : (
-                    <Avatar src={(previewUrl || avatarUrl)!} size="xlarge" alt="Foto de perfil" />
-                  )}
+                  <div className="h-28 w-28 rounded-full overflow-hidden border-4 border-white shadow-lg relative">
+                    {(() => {
+                      // Priorizar previewUrl sobre todo lo demás
+                      let imageSrc: string;
+                      if (previewUrl) {
+                        imageSrc = previewUrl;
+                      } else if (avatarUrl) {
+                        imageSrc = avatarUrl.startsWith('http') 
+                          ? avatarUrl
+                          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${avatarUrl}`;
+                      } else if (profileUser?.photoUrl) {
+                        imageSrc = profileUser.photoUrl.startsWith('http')
+                          ? profileUser.photoUrl
+                          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${profileUser.photoUrl}`;
+                      } else {
+                        imageSrc = '';
+                      }
+                      
+                      return (
+                        <img
+                          key={previewUrl ? `preview-${previewUrl}` : `avatar-${imageSrc}`}
+                          src={imageSrc}
+                          alt="Foto de perfil"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) {
+                              parent.innerHTML = `<div class="h-28 w-28 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg"><span class="text-4xl font-bold text-white">${(profileUser?.fullName || profileUser?.email || 'U').charAt(0).toUpperCase()}</span></div>`;
+                            }
+                          }}
+                        />
+                      );
+                    })()}
+                    {uploadingPhoto && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-full">
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+                      </div>
+                    )}
+                  </div>
                   <label
                     htmlFor="avatar-upload"
                     className="absolute -bottom-2 -right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Editar foto"
                   >
                     <Edit className="h-6 w-6" />
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                      disabled={uploadingPhoto}
-                    />
                   </label>
                   {avatarUrl && !uploadingPhoto && (
                     <button
@@ -761,14 +873,6 @@ loadUserData();
                   <AvatarText name={profileUser?.fullName || profileUser?.email || 'Usuario'} className="h-28 w-28 text-4xl" />
                   <label htmlFor="avatar-upload" className="absolute -bottom-2 -right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
                     <Camera className="h-6 w-6" />
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                      disabled={uploadingPhoto}
-                    />
                   </label>
                 </div>
               )}
@@ -1148,6 +1252,7 @@ loadUserData();
                         }
                         alt="Foto de perfil"
                         className="w-full h-full object-cover"
+                        key={previewUrl ? `sidebar-preview-${previewUrl}` : `sidebar-avatar-${avatarUrl || profileUser.photoUrl}`}
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                           const parent = e.currentTarget.parentElement;
@@ -1159,7 +1264,7 @@ loadUserData();
                       />
                     </div>
                     <label
-                      htmlFor="user-photo-upload"
+                      htmlFor="avatar-upload"
                       className="absolute -bottom-2 -right-2 p-2 bg-indigo-600 text-white rounded-full cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg"
                       title="Editar foto"
                     >
@@ -1174,7 +1279,7 @@ loadUserData();
                       </span>
                     </div>
                     <label
-                      htmlFor="user-photo-upload"
+                      htmlFor="avatar-upload"
                       className="absolute -bottom-2 -right-2 p-2 bg-indigo-600 text-white rounded-full cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg"
                       title="Agregar foto"
                     >
@@ -1182,14 +1287,7 @@ loadUserData();
                     </label>
                   </div>
                 )}
-                <input
-                  id="user-photo-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  disabled={uploadingPhoto}
-                  className="hidden"
-                />
+                {/* Input único compartido - no se renderiza aquí, está en el header principal */}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{profileUser.fullName}</h3>
               <p className="text-gray-600 dark:text-gray-400">{profileUser.email}</p>
@@ -1296,7 +1394,7 @@ loadUserData();
                   type={showPassword ? "text" : "password"}
                   value={securityData.currentPassword}
                   onChange={(e) => setSecurityData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  placeholder="••••••••"
+                  placeholder=""
                   className={`${inputBaseClass} pr-10 ${passwordErrors.currentPassword ? inputErrorClass : ""}`}
                 />
                 <button
@@ -1318,7 +1416,7 @@ loadUserData();
                   type={showNewPassword ? "text" : "password"}
                   value={securityData.newPassword}
                   onChange={(e) => setSecurityData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  placeholder="••••••••"
+                  placeholder=""
                   className={`${inputBaseClass} pr-10 ${passwordErrors.newPassword ? inputErrorClass : ""}`}
                 />
                 <button
@@ -1339,7 +1437,7 @@ loadUserData();
                   type={showConfirmPassword ? "text" : "password"}
                   value={securityData.confirmPassword}
                   onChange={(e) => setSecurityData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  placeholder="••••••••"
+                  placeholder=""
                   className={`${inputBaseClass} pr-10 ${passwordErrors.confirmPassword ? inputErrorClass : ""}`}
                 />
                 <button
@@ -1371,6 +1469,17 @@ loadUserData();
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Input único de archivo compartido por todos los labels */}
+      <input
+        ref={fileInputRef}
+        id="avatar-upload"
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileSelect}
+        disabled={uploadingPhoto}
+      />
 
       {/* Modal de crop de imagen */}
       {showCropModal && selectedImage && (

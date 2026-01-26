@@ -79,7 +79,8 @@ export default function PublicLayout({ children }: any) {
   const isPrivacidadPage = pathname === '/privacidad' || pathname === '/privacidad/';
   const isAyudaPage = pathname === '/ayuda' || pathname === '/ayuda/';
   const isSeguridadPage = pathname === '/seguridad' || pathname === '/seguridad/';
-  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isProfesionalesPage || isContactPage || isRegisterPage || isRegistrarsePage || isProptechPage || isAgentePage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage;
+  const isInstructivosPage = pathname === '/instructivos' || pathname?.startsWith('/instructivos');
+  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isProfesionalesPage || isContactPage || isRegisterPage || isRegistrarsePage || isProptechPage || isAgentePage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage || isInstructivosPage;
 
   return (
     <>

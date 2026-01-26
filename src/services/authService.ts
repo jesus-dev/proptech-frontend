@@ -12,8 +12,24 @@ import {
 export const authService = {
   // Authentication
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/api/auth/login', credentials);
-    return response.data!;
+    try {
+      console.log('🔐 Intentando login con:', { email: credentials.email, passwordLength: credentials.password?.length });
+      console.log('🌐 URL del API:', apiClient.defaults.baseURL);
+      
+      const response = await apiClient.post<LoginResponse>('/api/auth/login', credentials);
+      
+      console.log('✅ Login exitoso');
+      return response.data!;
+    } catch (error: any) {
+      console.error('❌ Error en login:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL
+      });
+      throw error;
+    }
   },
 
   logout: async (): Promise<void> => {

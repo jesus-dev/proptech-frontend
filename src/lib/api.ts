@@ -4,11 +4,11 @@ import axios, { AxiosError } from 'axios';
 function resolveApiUrl(): string {
   // En el servidor Next.js (SSR/SSG), usar localhost directo (sin tunnel)
   if (typeof window === 'undefined') {
-    return process.env.API_URL_INTERNAL || 'http://localhost:9091';
+    return process.env.API_URL_INTERNAL || 'http://localhost:8080';
   }
   
   // En el navegador, usar URL pública a través de Cloudflare
-  let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9091';
+  let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
   
   // Clean up malformed URLs
   if (apiUrl.includes('https://proptech.com.py/https/api.proptech.com.py')) {
