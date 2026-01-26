@@ -49,11 +49,26 @@ class NotificationService {
         totalCount: response.data.totalCount || 0,
         notifications: response.data.notifications || []
       };
-    } catch (error) {
-      // Evitar ruido en consola por casos esperables (ej: sin sesión / userId inválido)
-      if ((error as any)?.response?.status !== 401) {
-        console.error('Error fetching user notifications:', error);
+    } catch (error: any) {
+      // Errores de red (backend no disponible) - retornar datos vacíos silenciosamente
+      if (error?.code === 'ERR_NETWORK' || 
+          error?.code === 'ERR_CONNECTION_REFUSED' ||
+          error?.message?.includes('Network error') ||
+          error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        // No loguear errores de red esperables
+        return { unreadCount: 0, totalCount: 0, notifications: [] };
       }
+      
+      // 401 suele ser "no logueado" en páginas públicas; no lo tratamos como error ruidoso
+      if (error?.response?.status === 401) {
+        return { unreadCount: 0, totalCount: 0, notifications: [] };
+      }
+      
+      // Solo loguear errores inesperados (no de red ni 401)
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Error fetching user notifications:', error?.message || error);
+      }
+      
       return {
         unreadCount: 0,
         totalCount: 0,
@@ -71,15 +86,24 @@ class NotificationService {
       
       // El backend ya filtra las notificaciones no leídas
       return response.data.notifications || [];
-    } catch (error) {
-      // 401 suele ser "no logueado" en páginas públicas; no lo tratamos como error ruidoso
-      if ((error as any)?.response?.status !== 401) {
-        console.error('Error fetching unread notifications:', error);
+    } catch (error: any) {
+      // Errores de red (backend no disponible) - retornar array vacío silenciosamente
+      if (error?.code === 'ERR_NETWORK' || 
+          error?.code === 'ERR_CONNECTION_REFUSED' ||
+          error?.message?.includes('Network error') ||
+          error?.message?.includes('ERR_CONNECTION_REFUSED')) {
+        // No loguear errores de red esperables (backend no disponible en desarrollo)
+        return [];
       }
       
-      // Si es un error de red, verificar si el backend está disponible
-      if (error instanceof Error && error.message.includes('Network Error')) {
-        console.warn('Backend no disponible. Verifica que el servidor esté ejecutándose en http://localhost:8080');
+      // 401 suele ser "no logueado" en páginas públicas; no lo tratamos como error ruidoso
+      if (error?.response?.status === 401) {
+        return [];
+      }
+      
+      // Solo loguear errores inesperados (no de red ni 401)
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Error fetching unread notifications:', error?.message || error);
       }
       
       return [];

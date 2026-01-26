@@ -73,6 +73,8 @@ export default function EditAgentClient({ agent, agencies, agentId }: EditAgentC
     setIsSubmitting(true);
     try {
       await updateAgent(agent.id, formData);
+      // El backend sincroniza automáticamente la foto con el usuario en la base de datos
+      // La BD es la fuente de verdad - no necesitamos actualizar localStorage manualmente
       router.push('/catalogs/agents');
     } catch (error) {
       console.error('Error updating agent:', error);

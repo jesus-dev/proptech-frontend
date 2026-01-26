@@ -9,7 +9,7 @@ import { publicPropertyService } from '@/services/publicPropertyService';
 import { getImageBaseUrl } from '@/config/environment';
 import type { PublicPropertyFilters } from '@/services/publicPropertyService';
 import { logger } from '@/lib/logger';
-import { formatPrice, createAgentSlug } from '@/lib/utils';
+import { formatPrice, createAgentSlug, getUserProfileImage } from '@/lib/utils';
 
 // Estado para datos reales
 type PublicProperty = any;
@@ -168,32 +168,19 @@ const normalizePropertyType = (value?: string | null) => {
     .replace(/^-+|-+$/g, '');
 };
 
+// Función centralizada para obtener avatar del agente
+// Usa getUserProfileImage que prioriza user.photoUrl (el backend sincroniza automáticamente)
 const resolveAgentAvatar = (agent: any, property: any): string | null => {
   if (!agent) return null;
 
-  // Buscar en múltiples campos posibles (priorizando fotoPerfilUrl)
-  const possiblePaths = [
-    agent.fotoPerfilUrl,
-    property.agent?.fotoPerfilUrl,
-    agent.avatar,
-    property.agent?.avatar,
-    agent.photo, // Legacy
-    property.agent?.photo, // Legacy
-    property.agentPhoto,
-    agent.media?.photo
-  ];
-
-  for (const path of possiblePaths) {
-    if (typeof path === "string" && path.trim().length > 0) {
-      const trimmed = path.trim();
-      // No devolver placeholders o rutas vacías
-      if (trimmed !== '/images/placeholder.jpg' && trimmed !== '') {
-        return trimmed;
-      }
-    }
-  }
-
-  return null;
+  // Usar función centralizada que prioriza user.photoUrl
+  const user = agent.user || property?.agent?.user;
+  const agentData = agent || property?.agent;
+  
+  return getUserProfileImage(
+    user ? { photoUrl: user.photoUrl, agent: { fotoPerfilUrl: agentData?.fotoPerfilUrl } } : null,
+    agentData
+  );
 };
 
 const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: string }) => {
@@ -1405,25 +1392,31 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                       <div className="relative flex-shrink-0">
                         {property.agent?.name || property.agentName ? (
                           <>
-                            {(property.agent?.fotoPerfilUrl || property.agent?.avatar) ? (
-                              <img 
-                                src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar)} 
-                                alt={property.agent?.name || property.agentName}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
-                                loading="lazy"      // ⭐ Lazy loading
-                                decoding="async"    // ⭐ Async decoding
-                                onError={(e) => {
-                                  // Si falla la carga, ocultar la imagen y mostrar placeholder
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
+                            {(() => {
+                              const agentImage = getUserProfileImage(
+                                property.agent?.user ? { photoUrl: property.agent.user.photoUrl, agent: { fotoPerfilUrl: property.agent.fotoPerfilUrl } } : null,
+                                property.agent
+                              );
+                              return agentImage ? (
+                                <img 
+                                  src={getImageUrl(agentImage)} 
+                                  alt={property.agent?.name || property.agentName}
+                                  className="w-10 h-10 rounded-full object-cover object-center border-2 border-white shadow-md"
+                                  loading="lazy"      // ⭐ Lazy loading
+                                  decoding="async"    // ⭐ Async decoding
+                                  onError={(e) => {
+                                    // Si falla la carga, ocultar la imagen y mostrar placeholder
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                                 <span className="text-white text-base font-bold">
                                   {(property.agent?.name || property.agentName || 'A').charAt(0).toUpperCase()}
                                 </span>
                               </div>
-                            )}
+                              );
+                            })()}
                             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm">
                               <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
                             </div>
@@ -1492,24 +1485,30 @@ const PropertiesSectionContent = ({ defaultCategory }: { defaultCategory?: strin
                       <div className="relative flex-shrink-0">
                         {property.agent?.name || property.agentName ? (
                           <>
-                            {(property.agent?.fotoPerfilUrl || property.agent?.avatar) ? (
-                              <img 
-                                src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar)} 
-                                alt={property.agent?.name || property.agentName}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
-                                loading="lazy"
-                                decoding="async"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : (
+                            {(() => {
+                              const agentImage = getUserProfileImage(
+                                property.agent?.user ? { photoUrl: property.agent.user.photoUrl, agent: { fotoPerfilUrl: property.agent.fotoPerfilUrl } } : null,
+                                property.agent
+                              );
+                              return agentImage ? (
+                                <img 
+                                  src={getImageUrl(agentImage)} 
+                                  alt={property.agent?.name || property.agentName}
+                                  className="w-10 h-10 rounded-full object-cover object-center border-2 border-white shadow-md"
+                                  loading="lazy"
+                                  decoding="async"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-2 border-white shadow-md">
                                 <span className="text-white text-base font-bold">
                                   {(property.agent?.name || property.agentName || 'A').charAt(0).toUpperCase()}
                                 </span>
                               </div>
-                            )}
+                              );
+                            })()}
                             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm">
                               <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
                             </div>

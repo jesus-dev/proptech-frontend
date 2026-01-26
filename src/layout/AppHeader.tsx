@@ -10,6 +10,7 @@ import Logo from "@/components/common/Logo";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getEndpoint } from "@/lib/api-config";
+import { getUserProfileImage } from "@/lib/utils";
 
 const AppHeaderCRM: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
@@ -142,16 +143,7 @@ const AppHeaderCRM: React.FC = () => {
           <UserDropdown 
             name={user?.fullName || user?.agent?.nombreCompleto || `${user?.agent?.nombre || user?.firstName || ''} ${user?.agent?.apellido || user?.lastName || ''}`.trim() || user?.email?.split('@')[0] || 'Usuario'}
             email={user?.email || 'usuario@proptech.com'}
-            avatarUrl={(() => {
-              const rawUrl = user?.agent?.fotoPerfilUrl || user?.avatarUrl || user?.photo || user?.profileImage || user?.imageUrl;
-              if (!rawUrl) return undefined;
-              // Si ya es una URL completa, retornarla tal cual
-              if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
-                return rawUrl;
-              }
-              // Si es una ruta relativa, construir la URL completa con getEndpoint
-              return getEndpoint(rawUrl);
-            })()}
+            avatarUrl={getUserProfileImage(user as any, user?.agent as any) || undefined}
             role={user?.roles?.[0] || 'Administrador'}
             lastLogin={user?.lastLogin}
             onProfile={handleProfile}

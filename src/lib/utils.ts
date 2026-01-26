@@ -245,4 +245,95 @@ export function extractIdFromSlug(slugOrId: string): number | null {
   }
   
   return null;
+}
+
+/**
+ * Obtiene la URL COMPLETA de la imagen de perfil del usuario/agente de forma centralizada.
+ * Prioriza photoUrl del usuario porque el backend sincroniza automáticamente con el agente.
+ * Esta función construye la URL completa usando getProfilePhotoUrl internamente.
+ * 
+ * @param user - Objeto usuario que puede tener photoUrl y/o agent
+ * @param agent - Objeto agente (opcional, para compatibilidad con código legacy)
+ * @returns URL completa de la imagen o null si no existe
+ */
+// Función auxiliar para construir URL de imagen (evita dependencia circular)
+function buildImageUrl(imagePath: string | null | undefined): string | null {
+  if (!imagePath) return null;
+  
+  // Si ya es una URL completa, retornarla tal cual
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // Si es un blob URL, retornarlo tal cual
+  if (imagePath.startsWith('blob:')) {
+    return imagePath;
+  }
+  
+  // Construir URL completa
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 
+    (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
+  
+  // Asegurar que no haya doble concatenación
+  if (imagePath.startsWith('/') && apiBaseUrl.endsWith('/')) {
+    return `${apiBaseUrl.slice(0, -1)}${imagePath}`;
+  }
+  
+  return `${apiBaseUrl}${imagePath}`;
+}
+
+export function getUserProfileImage(
+  user?: { photoUrl?: string | null; agent?: { fotoPerfilUrl?: string | null } } | null,
+  agent?: { fotoPerfilUrl?: string | null; photo?: string | null; avatar?: string | null } | null
+): string | null {
+  // Prioridad 1: photoUrl del usuario (fuente de verdad - el backend sincroniza con agente)
+  if (user?.photoUrl && user.photoUrl.trim()) {
+    const url = buildImageUrl(user.photoUrl.trim());
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 getUserProfileImage - Prioridad 1 (user.photoUrl):', { input: user.photoUrl, output: url });
+    }
+    return url;
+  }
+  
+  // Prioridad 2: fotoPerfilUrl del agente asociado al usuario
+  if (user?.agent?.fotoPerfilUrl && user.agent.fotoPerfilUrl.trim()) {
+    const url = buildImageUrl(user.agent.fotoPerfilUrl.trim());
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 getUserProfileImage - Prioridad 2 (user.agent.fotoPerfilUrl):', { input: user.agent.fotoPerfilUrl, output: url });
+    }
+    return url;
+  }
+  
+  // Prioridad 3: fotoPerfilUrl del agente pasado como parámetro
+  if (agent?.fotoPerfilUrl && agent.fotoPerfilUrl.trim()) {
+    const url = buildImageUrl(agent.fotoPerfilUrl.trim());
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 getUserProfileImage - Prioridad 3 (agent.fotoPerfilUrl):', { input: agent.fotoPerfilUrl, output: url });
+    }
+    return url;
+  }
+  
+  // Prioridad 4: Campos legacy del agente (photo)
+  if (agent?.photo && agent.photo.trim()) {
+    const url = buildImageUrl(agent.photo.trim());
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 getUserProfileImage - Prioridad 4 (agent.photo):', { input: agent.photo, output: url });
+    }
+    return url;
+  }
+  
+  // Prioridad 5: avatar del agente
+  if (agent?.avatar && agent.avatar.trim()) {
+    const url = buildImageUrl(agent.avatar.trim());
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 getUserProfileImage - Prioridad 5 (agent.avatar):', { input: agent.avatar, output: url });
+    }
+    return url;
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️ getUserProfileImage - No se encontró foto:', { user, agent });
+  }
+  
+  return null;
 } 

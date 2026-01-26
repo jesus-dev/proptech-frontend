@@ -58,3 +58,60 @@ export function buildImageUrl(imagePath: string | null | undefined, baseUrl?: st
   
   return `${apiBaseUrl}${imagePath}`;
 }
+
+/**
+ * Get profile photo URL from user or agent object
+ * Handles multiple possible field names and constructs the full URL
+ * 
+ * Priority order:
+ * 1. photoUrl (user field)
+ * 2. fotoPerfilUrl (agent field)
+ * 3. photo (legacy/alternative field)
+ * 4. avatar (alternative field)
+ * 
+ * @param entity - User or Agent object with potential photo fields
+ * @param baseUrl - Optional base URL, defaults to API URL from env
+ * @returns Full photo URL or null if no photo found
+ */
+export function getProfilePhotoUrl(
+  entity: {
+    photoUrl?: string | null;
+    fotoPerfilUrl?: string | null;
+    photo?: string | null;
+    avatar?: string | null;
+  } | null | undefined,
+  baseUrl?: string
+): string | null {
+  if (!entity) return null;
+  
+  // Try all possible fields in priority order
+  const photoPath = entity.photoUrl || 
+                    entity.fotoPerfilUrl || 
+                    entity.photo || 
+                    entity.avatar || 
+                    null;
+  
+  if (!photoPath) return null;
+  
+  return buildImageUrl(photoPath, baseUrl);
+}
+
+/**
+ * Get profile photo URL with fallback to initials
+ * Returns the photo URL if available, or null for fallback rendering
+ * 
+ * @param entity - User or Agent object
+ * @param baseUrl - Optional base URL
+ * @returns Photo URL string or null
+ */
+export function getProfilePhotoUrlOrNull(
+  entity: {
+    photoUrl?: string | null;
+    fotoPerfilUrl?: string | null;
+    photo?: string | null;
+    avatar?: string | null;
+  } | null | undefined,
+  baseUrl?: string
+): string | null {
+  return getProfilePhotoUrl(entity, baseUrl);
+}

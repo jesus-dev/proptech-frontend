@@ -21,6 +21,7 @@ import { AgentService } from '@/services/agentService';
 import Link from 'next/link';
 import { logger } from '@/lib/logger';
 import { AgentListSkeleton } from '@/components/public/common/SkeletonLoader';
+import { getUserProfileImage } from '@/lib/utils';
 
 interface Asesor {
   id: string;
@@ -87,6 +88,16 @@ export default function AsesoresPage() {
         const agents = await AgentService.getAllAgents();
         logger.debug(`Agentes recibidos: ${agents.length}`);
         
+        // Debug: verificar qué datos tienen los agentes
+        if (process.env.NODE_ENV === 'development' && agents.length > 0) {
+          console.log('🔍 Primer agente recibido en asesores/page:', agents[0]);
+          console.log('🔍 Campos de foto del primer agente:', {
+            photo: agents[0].photo,
+            fotoPerfilUrl: (agents[0] as any).fotoPerfilUrl,
+            user: (agents[0] as any).user
+          });
+        }
+        
         if (agents.length === 0) {
           setError('No se encontraron agentes disponibles');
           setAsesores([]);
@@ -108,6 +119,27 @@ export default function AsesoresPage() {
           const position = (agent.position || '').toString().trim() || 'Agente Inmobiliario';
           const propertiesCount = agent.propertiesCount ?? 0;
           
+          // Construir URL de foto directamente - SIMPLIFICADO
+          let photoUrl: string | undefined = undefined;
+          
+          // El backend (AgentDTO) ya coloca la foto en agent.photo
+          const photoPath = agent.photo;
+          
+          if (photoPath && typeof photoPath === 'string' && photoPath.trim()) {
+            const trimmedPath = photoPath.trim();
+            
+            // Si ya es una URL completa, usarla directamente
+            if (trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://') || trimmedPath.startsWith('blob:')) {
+              photoUrl = trimmedPath;
+            } else {
+              // Construir URL completa - SIN complicaciones
+              const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+              const pathWithSlash = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`;
+              const baseWithoutSlash = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
+              photoUrl = `${baseWithoutSlash}${pathWithSlash}`;
+            }
+          }
+          
           return {
             id: agent.id,
             name: fullName,
@@ -119,7 +151,7 @@ export default function AsesoresPage() {
             experience: '',
             phone: agent.phone || '',
             email: agent.email || '',
-            image: agent.photo || undefined,
+            image: photoUrl || undefined,
             verified: Boolean(agent.isActive ?? agent.active ?? true),
             properties: propertiesCount,
             description: agent.bio || `${fullName} es un profesional inmobiliario con experiencia en el mercado paraguayo. Especializado en ${position}.`,

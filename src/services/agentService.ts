@@ -43,6 +43,16 @@ export class AgentService {
       const agents = response.data || [];
       console.log('📥 Respuesta del backend:', agents.length, 'agentes');
       console.log('📥 Primer agente (raw):', agents[0]);
+      // Log detallado del primer agente para ver campos de foto
+      if (agents[0]) {
+        console.log('📸 Primer agente - Campos de foto:', {
+          photo: agents[0].photo,
+          fotoPerfilUrl: agents[0].fotoPerfilUrl,
+          user: agents[0].user,
+          userPhotoUrl: agents[0].user?.photoUrl,
+          allKeys: Object.keys(agents[0])
+        });
+      }
       
       if (agents.length === 0) {
         console.warn('⚠️ No se encontraron agentes en la respuesta');
@@ -50,7 +60,20 @@ export class AgentService {
       }
       
       // El backend retorna campos en inglés (firstName, lastName, phone, photo, license)
+      // AgentDTO.from() ya prioriza user.photoUrl sobre agent.fotoPerfilUrl y lo coloca en 'photo'
       const normalizedAgents = agents.map((agent: any): Agent => {
+        // Debug: ver qué campos tiene el agente
+        if (process.env.NODE_ENV === 'development' && agents.indexOf(agent) === 0) {
+          console.log('🔍 Agente raw del backend:', {
+            id: agent.id,
+            photo: agent.photo,
+            fotoPerfilUrl: agent.fotoPerfilUrl,
+            user: agent.user,
+            userPhotoUrl: agent.user?.photoUrl,
+            allKeys: Object.keys(agent)
+          });
+        }
+        
         const normalized: Agent = {
           ...agent,
           id: String(agent.id),
@@ -58,12 +81,33 @@ export class AgentService {
           firstName: agent.firstName || '',
           lastName: agent.lastName || '',
           phone: agent.phone || '',
-          photo: agent.photo || undefined,
+          // El backend (AgentDTO) ya prioriza user.photoUrl y lo coloca en 'photo'
+          // Si no está en 'photo', intentar otros campos
+          photo: agent.photo || agent.fotoPerfilUrl || (agent.user?.photoUrl) || undefined,
           active: agent.active ?? agent.isActive ?? true,
           isActive: agent.isActive ?? agent.active ?? true,
           license: agent.license || undefined,
           email: agent.email || ''
         };
+        
+        // Preservar campos adicionales del backend que pueden ser útiles
+        if (agent.user) {
+          (normalized as any).user = agent.user;
+        }
+        if (agent.fotoPerfilUrl) {
+          (normalized as any).fotoPerfilUrl = agent.fotoPerfilUrl;
+        }
+        
+        // Debug: ver qué se normalizó
+        if (process.env.NODE_ENV === 'development' && agents.indexOf(agent) === 0) {
+          console.log('✅ Agente normalizado:', {
+            id: normalized.id,
+            photo: normalized.photo,
+            hasPhoto: !!normalized.photo,
+            fotoPerfilUrl: (normalized as any).fotoPerfilUrl,
+            user: (normalized as any).user
+          });
+        }
         
         console.log(`🔍 Agente normalizado ID ${normalized.id}:`, {
           firstName: normalized.firstName,

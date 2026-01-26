@@ -18,7 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarSolidIcon } from "@heroicons/react/24/solid";
 import { getImageBaseUrl } from "@/config/environment";
-import { extractIdFromSlug } from "@/lib/utils";
+import { extractIdFromSlug, getUserProfileImage } from "@/lib/utils";
 
 // Función helper para construir URLs completas de imágenes
 const getImageUrl = (imagePath: string | null | undefined): string => {
@@ -80,6 +80,12 @@ export default function AgentProfilePage() {
         const agentData = await agentResponse.json();
         
         // Normalizar datos del agente
+        // Usar función centralizada para obtener la imagen (prioriza user.photoUrl si existe)
+        const profileImage = getUserProfileImage(
+          agentData.user ? { photoUrl: agentData.user.photoUrl, agent: { fotoPerfilUrl: agentData.fotoPerfilUrl } } : null,
+          { fotoPerfilUrl: agentData.fotoPerfilUrl, photo: agentData.photo, avatar: agentData.avatar }
+        );
+        
         const normalizedAgent = {
           ...agentData,
           nombre: agentData.nombre || agentData.firstName || '',
@@ -87,7 +93,7 @@ export default function AgentProfilePage() {
           nombreCompleto: agentData.nombreCompleto || `${agentData.nombre || agentData.firstName || ''} ${agentData.apellido || agentData.lastName || ''}`.trim() || agentData.email || 'Agente',
           telefono: agentData.telefono || agentData.phone,
           email: agentData.email || '',
-          fotoPerfilUrl: agentData.fotoPerfilUrl || agentData.photo || agentData.avatar,
+          fotoPerfilUrl: profileImage, // Usar imagen centralizada
           position: agentData.position,
           bio: agentData.bio,
           agencyName: agentData.agencyName,
@@ -261,7 +267,7 @@ export default function AgentProfilePage() {
                     <img 
                       src={getImageUrl(agent.fotoPerfilUrl)} 
                       alt={agent.nombreCompleto}
-                      className="relative w-64 h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover shadow-2xl border-8 border-white/20 transform group-hover:scale-105 transition-transform duration-700"
+                      className="relative w-64 h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full object-cover object-center shadow-2xl border-8 border-white/20 transform group-hover:scale-105 transition-transform duration-700"
                     />
                   ) : (
                     <div className="relative w-64 h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-full bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-2xl border-8 border-white/20 transform group-hover:scale-105 transition-transform duration-700">

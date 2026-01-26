@@ -1,5 +1,4 @@
 "use client";
-import Image from 'next/image';
 import React, { useState, useRef, useEffect } from "react";
 import { notificationService, Notification } from "@/services/notificationService";
 import { useAuth } from "@/hooks/useAuth";
@@ -200,13 +199,14 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
         <div className="relative flex-shrink-0">
           {avatarUrl ? (
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg relative">
-              <Image
+              <img
                 src={avatarUrl}
                 alt={name}
-                fill
-                sizes="40px"
-                className="object-cover"
-                quality={85}
+                className="w-full h-full object-cover object-center"
+                onError={(e) => {
+                  // Si la imagen falla, ocultarla y mostrar iniciales
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </div>
           ) : (
@@ -247,13 +247,14 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
               {/* Avatar grande */}
               {avatarUrl ? (
                 <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-white/50 shadow-xl relative">
-                  <Image
+                  <img
                     src={avatarUrl}
                     alt={name}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                    quality={90}
+                    className="w-full h-full object-cover object-center"
+                    onError={(e) => {
+                      // Si la imagen falla, ocultarla y mostrar iniciales
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                 </div>
               ) : (

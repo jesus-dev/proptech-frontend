@@ -147,6 +147,8 @@ export default function AgentForm({
       }
 
       const result = await response.json();
+      // El backend sincroniza automáticamente la foto con el usuario en la base de datos
+      // No necesitamos actualizar localStorage manualmente - la BD es la fuente de verdad
       return result.fileUrl;
       
     } catch (error) {

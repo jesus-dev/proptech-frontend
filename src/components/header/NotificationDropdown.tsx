@@ -70,10 +70,22 @@ export default function NotificationDropdown() {
       if (Array.isArray(data)) {
         setNotifications(data);
         setNotifying(data.length > 0);
+      } else {
+        // Si no hay datos válidos, mantener estado vacío
+        setNotifications([]);
+        setNotifying(false);
       }
-    } catch (error) {
-      console.error('🔔 Error loading notifications:', error);
-      // No cambiar el estado en caso de error para mantener las notificaciones existentes
+    } catch (error: any) {
+      // El servicio ya maneja los errores y retorna array vacío
+      // Solo loguear si es un error inesperado (no de red)
+      if (error?.code !== 'ERR_NETWORK' && 
+          error?.code !== 'ERR_CONNECTION_REFUSED' &&
+          !error?.message?.includes('Network error')) {
+        console.warn('🔔 Error loading notifications:', error?.message || error);
+      }
+      // Mantener estado vacío en caso de error
+      setNotifications([]);
+      setNotifying(false);
     } finally {
       setLoading(false);
     }

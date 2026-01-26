@@ -58,6 +58,7 @@ import { useSpring, animated } from '@react-spring/web';
 import ImageCropModal from '@/components/common/ImageCropModal';
 import { Upload, Edit } from 'lucide-react';
 import { getEndpoint } from '@/lib/api-config';
+import { getProfilePhotoUrl } from '@/lib/url-utils';
 
 // Tipo extendido para el perfil del usuario
 interface ProfileUser extends BaseUser {
@@ -156,6 +157,8 @@ export default function ProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
+  const [sidebarImageError, setSidebarImageError] = useState(false);
  
   // Form states
   const [profileData, setProfileData] = useState<ProfileFormData>({
@@ -460,6 +463,8 @@ loadUserData();
       setOriginalPhotoUrl(result.fileUrl);
       setPreviewUrl(null);
       setPendingImageBlob(null);
+      setImageError(false); // Reset error state when new image is uploaded
+      setSidebarImageError(false); // Reset sidebar error state
       
       // Actualizar profileUser
       if (profileUser) {
@@ -812,20 +817,31 @@ loadUserData();
                 <div className="relative">
                   <div className="h-28 w-28 rounded-full overflow-hidden border-4 border-white shadow-lg relative">
                     {(() => {
+                      // Si hay error de imagen, mostrar avatar con iniciales
+                      if (imageError) {
+                        return (
+                          <div className="h-28 w-28 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg">
+                            <span className="text-4xl font-bold text-white">
+                              {(profileUser?.fullName || profileUser?.email || 'U').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        );
+                      }
+                      
                       // Priorizar previewUrl sobre todo lo demás
-                      let imageSrc: string;
+                      let imageSrc: string | null = null;
                       if (previewUrl) {
                         imageSrc = previewUrl;
                       } else if (avatarUrl) {
-                        imageSrc = avatarUrl.startsWith('http') 
-                          ? avatarUrl
-                          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${avatarUrl}`;
+                        // Usar función centralizada para construir URL
+                        imageSrc = getProfilePhotoUrl({ photoUrl: avatarUrl }) || avatarUrl;
                       } else if (profileUser?.photoUrl) {
-                        imageSrc = profileUser.photoUrl.startsWith('http')
-                          ? profileUser.photoUrl
-                          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${profileUser.photoUrl}`;
-                      } else {
-                        imageSrc = '';
+                        // Usar función centralizada para construir URL
+                        imageSrc = getProfilePhotoUrl({ photoUrl: profileUser.photoUrl }) || profileUser.photoUrl;
+                      }
+                      
+                      if (!imageSrc) {
+                        return null;
                       }
                       
                       return (
@@ -833,13 +849,12 @@ loadUserData();
                           key={previewUrl ? `preview-${previewUrl}` : `avatar-${imageSrc}`}
                           src={imageSrc}
                           alt="Foto de perfil"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const parent = e.currentTarget.parentElement;
-                            if (parent) {
-                              parent.innerHTML = `<div class="h-28 w-28 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg"><span class="text-4xl font-bold text-white">${(profileUser?.fullName || profileUser?.email || 'U').charAt(0).toUpperCase()}</span></div>`;
-                            }
+                          className="w-full h-full object-cover object-center"
+                          onError={() => {
+                            setImageError(true);
+                          }}
+                          onLoad={() => {
+                            setImageError(false);
                           }}
                         />
                       );
@@ -1240,26 +1255,25 @@ loadUserData();
           <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
             <div className="text-center mb-6">
               <div className="relative inline-block mb-4">
-                {(previewUrl || avatarUrl || profileUser.photoUrl) ? (
+                {(previewUrl || avatarUrl || profileUser.photoUrl) && !sidebarImageError ? (
                   <>
                     <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
                       <img 
                         src={
                           previewUrl || 
-                          (avatarUrl || profileUser.photoUrl)?.startsWith('http') 
-                            ? (avatarUrl || profileUser.photoUrl)
-                            : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}${avatarUrl || profileUser.photoUrl}`
+                          getProfilePhotoUrl({ 
+                            photoUrl: avatarUrl || profileUser.photoUrl 
+                          }) || 
+                          (avatarUrl || profileUser.photoUrl)
                         }
                         alt="Foto de perfil"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-center"
                         key={previewUrl ? `sidebar-preview-${previewUrl}` : `sidebar-avatar-${avatarUrl || profileUser.photoUrl}`}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const parent = e.currentTarget.parentElement;
-                          if (parent) {
-                            parent.innerHTML = `<span class="text-2xl font-bold text-white">${profileUser.fullName?.charAt(0) || profileUser.email.charAt(0).toUpperCase()}</span>`;
-                            parent.className = 'w-24 h-24 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg';
-                          }
+                        onError={() => {
+                          setSidebarImageError(true);
+                        }}
+                        onLoad={() => {
+                          setSidebarImageError(false);
                         }}
                       />
                     </div>
@@ -1275,7 +1289,7 @@ loadUserData();
                   <div className="relative">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg">
                       <span className="text-2xl font-bold text-white">
-                        {profileUser.fullName?.charAt(0) || profileUser.email.charAt(0).toUpperCase()}
+                        {profileUser.fullName?.charAt(0) || profileUser.email?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <label
@@ -1287,7 +1301,6 @@ loadUserData();
                     </label>
                   </div>
                 )}
-                {/* Input único compartido - no se renderiza aquí, está en el header principal */}
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{profileUser.fullName}</h3>
               <p className="text-gray-600 dark:text-gray-400">{profileUser.email}</p>

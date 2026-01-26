@@ -7,7 +7,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { publicPropertyService } from "@/services/publicPropertyService";
 import { getImageBaseUrl } from "@/config/environment";
-import { createAgentSlug } from "@/lib/utils";
+import { createAgentSlug, getUserProfileImage } from "@/lib/utils";
 import { generatePropertyStructuredData } from "@/lib/seo";
 import { CommentList } from "@/components/comments/CommentList";
 import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftRightIcon, HomeModernIcon, UserIcon, MapPinIcon, CurrencyDollarIcon, StarIcon, CheckCircleIcon, VideoCameraIcon, MapIcon, ArrowLeftIcon, SparklesIcon, ChevronDownIcon, ChevronUpIcon, WifiIcon, ShieldCheckIcon, ClockIcon, BanknotesIcon, DocumentTextIcon, InformationCircleIcon, XMarkIcon, ArrowRightIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
@@ -705,13 +705,18 @@ export default function PropertyDetailPage() {
                 >
                     <div className="text-center mb-8">
                       <div className="relative w-28 h-28 mx-auto mb-5">
-                        {property.agent?.fotoPerfilUrl || property.agent?.avatar || property.agent?.photo ? (
-                          <img 
-                            src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar || property.agent.photo)} 
-                            alt={property.agent?.name || property.agentName || 'Agente'} 
-                            className="w-full h-full rounded-full object-cover border-4 border-gray-100 shadow-xl group-hover:scale-105 transition-transform duration-300" 
-                          />
-                        ) : (property.agent?.name || property.agentName) ? (
+                        {(() => {
+                          const agentImage = getUserProfileImage(
+                            property.agent?.user ? { photoUrl: property.agent.user.photoUrl, agent: { fotoPerfilUrl: property.agent.fotoPerfilUrl } } : null,
+                            property.agent
+                          );
+                          return agentImage ? (
+                            <img 
+                              src={getImageUrl(agentImage)} 
+                              alt={property.agent?.name || property.agentName || 'Agente'} 
+                              className="w-full h-full rounded-full object-cover object-center border-4 border-gray-100 shadow-xl group-hover:scale-105 transition-transform duration-300" 
+                            />
+                          ) : (property.agent?.name || property.agentName) ? (
                           <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center border-4 border-gray-100 shadow-xl group-hover:scale-105 transition-transform duration-300">
                             <span className="text-white text-4xl font-bold">
                               {(property.agent?.name || property.agentName).charAt(0).toUpperCase()}
@@ -729,7 +734,8 @@ export default function PropertyDetailPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                           </div>
-                        )}
+                        );
+                        })()}
                         {(property.agent?.name || property.agentName) && (
                           <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-white shadow-xl flex items-center justify-center">
                             <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -877,13 +883,18 @@ export default function PropertyDetailPage() {
                 <div className="bg-white/95 backdrop-blur-xl rounded-2xl p-6 shadow-2xl border border-white/30 sticky top-24">
                   <div className="text-center mb-6">
                     <div className="relative w-24 h-24 mx-auto mb-4">
-                      {property.agent?.fotoPerfilUrl || property.agent?.avatar || property.agent?.photo ? (
-                        <img 
-                          src={getImageUrl(property.agent.fotoPerfilUrl || property.agent.avatar || property.agent.photo)} 
-                          alt={property.agent?.name || property.agentName || 'Agente'} 
-                          className="w-full h-full rounded-full object-cover border-4 border-white shadow-lg" 
-                        />
-                      ) : (property.agent?.name || property.agentName) ? (
+                      {(() => {
+                        const agentImage = getUserProfileImage(
+                          property.agent?.user ? { photoUrl: property.agent.user.photoUrl, agent: { fotoPerfilUrl: property.agent.fotoPerfilUrl } } : null,
+                          property.agent
+                        );
+                        return agentImage ? (
+                          <img 
+                            src={getImageUrl(agentImage)} 
+                            alt={property.agent?.name || property.agentName || 'Agente'} 
+                            className="w-full h-full rounded-full object-cover object-center border-4 border-white shadow-lg" 
+                          />
+                        ) : (property.agent?.name || property.agentName) ? (
                         <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                           <span className="text-white text-3xl font-bold">
                             {(property.agent?.name || property.agentName).charAt(0).toUpperCase()}
@@ -901,7 +912,8 @@ export default function PropertyDetailPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                         </div>
-                      )}
+                      );
+                      })()}
                       {(property.agent?.name || property.agentName) && (
                         <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg">
                           <div className="w-full h-full bg-green-400 rounded-full animate-pulse"></div>
