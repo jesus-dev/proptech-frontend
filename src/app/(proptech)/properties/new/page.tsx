@@ -75,7 +75,8 @@ export default function NewPropertyPage() {
     handleFloorPlansChange,
     handleFloorPlanImageUpload,
     handleNearbyFacilitiesChange,
-    publishProperty
+      publishProperty,
+      saveDraft,
   } = usePropertyForm();
 
   useEffect(() => {
@@ -176,28 +177,17 @@ export default function NewPropertyPage() {
     }
   };
 
-  const onPublish = async () => {
-    if (!draftPropertyId) {
-      // Si no hay ID de borrador, primero guardar
-      const e = new Event('submit') as any;
-      await onSubmit(e);
-    }
-    
-    if (draftPropertyId) {
-      setSaving(true);
-      try {
-        await publishProperty();
-        setSaveSuccess(true);
-        
-        // Redirigir después de publicar
-        setTimeout(() => {
-          router.push("/properties");
-        }, 2000);
-      } catch (error) {
-        console.error('❌ Error al publicar:', error);
-      } finally {
-        setSaving(false);
-      }
+  // Guardado de borrador SIN validación
+  const onSaveDraft = async () => {
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      await saveDraft();
+      setSaveSuccess(true);
+    } catch (error) {
+      console.error('❌ NewPropertyPage: Error in onSaveDraft:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -511,11 +501,6 @@ export default function NewPropertyPage() {
                       💾 Guardando...
                     </span>
                   )}
-                  {hasUnsavedChanges && !isAutoSaving && (
-                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-                      ⚠️ Cambios sin guardar
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -548,7 +533,7 @@ export default function NewPropertyPage() {
               
               {/* Save as Draft button */}
               <button
-                onClick={onSubmit}
+                onClick={onSaveDraft}
                 disabled={saving || isInitializing}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                   saving || isInitializing
@@ -577,7 +562,7 @@ export default function NewPropertyPage() {
               {/* Publish button */}
               {isDraftStatus ? (
                 <button
-                  onClick={onPublish}
+                  onClick={publishProperty}
                   disabled={saving || isInitializing}
                   className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
                     saving || isInitializing

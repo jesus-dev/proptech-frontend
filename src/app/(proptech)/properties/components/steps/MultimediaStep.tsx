@@ -10,6 +10,7 @@ import {
   updateImageOrder,
   type GalleryImage 
 } from "../../services/galleryImageService";
+import { processImageFiles, isHeicFile } from '@/lib/image-utils';
 import {
   DndContext,
   closestCenter,
@@ -80,28 +81,51 @@ function SortableImageItem({
         <GripVertical className="h-4 w-4" />
       </div>
 
-      <div className="relative w-full h-32">
+      <div className="relative w-full h-32 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
         <img
           src={image.url}
           alt={image.altText || `Imagen ${image.id}`}
-          className="w-full h-full object-cover"
-          onLoad={() => {
-            // Image loaded successfully
+          className="w-full h-full object-cover relative z-10 bg-white"
+          style={{ minHeight: '100%' }}
+          onLoad={(e) => {
+            console.log('✅ Imagen cargada:', image.id, image.url);
+            // Ocultar placeholder cuando carga
+            const placeholder = (e.target as HTMLElement).parentElement?.querySelector('.image-placeholder') as HTMLElement;
+            if (placeholder) placeholder.style.display = 'none';
           }}
           onError={(e) => {
-            // Silenciosamente ocultar imagen si no se puede cargar (archivo no existe)
+            console.error('❌ Error cargando imagen:', image.id, image.url);
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
-            // No generar error en consola - es esperado que algunas imágenes puedan no existir
+            // Mostrar mensaje de error
+            const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
+            if (placeholder) {
+              placeholder.style.display = 'flex';
+              const loadingText = placeholder.querySelector('.loading-text') as HTMLElement;
+              const errorMsg = placeholder.querySelector('.error-message') as HTMLElement;
+              if (loadingText) loadingText.style.display = 'none';
+              if (errorMsg) {
+                errorMsg.classList.remove('hidden');
+                if (image.url.toLowerCase().endsWith('.heic') || image.url.toLowerCase().endsWith('.heif')) {
+                  errorMsg.textContent = 'Formato HEIC no compatible';
+                } else {
+                  errorMsg.textContent = 'Error al cargar imagen';
+                }
+              }
+            }
           }}
         />
-        {/* Placeholder */}
-        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500" style={{ zIndex: -1 }}>
-          <div className="text-center text-xs">
-            <svg className="w-8 h-8 mx-auto mb-1" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-            </svg>
-            <p>Imagen {index + 1}</p>
+        {/* Placeholder de fondo - visible si la imagen falla o está cargando */}
+        <div className="image-placeholder absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 pointer-events-none" style={{ zIndex: 0 }}>
+          <div className="text-center text-xs px-2">
+            <ImageIcon className="w-6 h-6 mx-auto mb-1 text-gray-400" />
+            <p className="text-[10px] loading-text">Cargando...</p>
+            <p className="error-message text-[10px] text-red-500 mt-1 font-medium hidden"></p>
+            {image.url.toLowerCase().endsWith('.heic') || image.url.toLowerCase().endsWith('.heif') ? (
+              <p className="text-[10px] text-orange-600 mt-1 font-medium">
+                ⚠️ Formato HEIC no compatible con navegadores
+              </p>
+            ) : null}
           </div>
         </div>
         {/* Badge de destacada */}
@@ -194,14 +218,20 @@ export default function MultimediaStep({
   }, [propertyId]);
 
   const loadGalleryImages = async () => {
-    if (!propertyId) return;
+    if (!propertyId) {
+      console.warn('⚠️ No propertyId, no se pueden cargar imágenes');
+      return;
+    }
     
     setLoadingGallery(true);
     try {
+      console.log('📥 Cargando imágenes de galería para propiedad:', propertyId);
       const images = await getGalleryImages(propertyId);
+      console.log('✅ Imágenes cargadas:', images.length, images);
       setGalleryImages(images);
     } catch (error) {
       console.error('❌ Error loading gallery images:', error);
+      // No mostrar alerta, solo loguear el error
     } finally {
       setLoadingGallery(false);
     }
@@ -218,21 +248,59 @@ export default function MultimediaStep({
 
     setUploadingImage(true);
     try {
-      // Subir todas las imágenes seleccionadas
-      const uploadPromises = Array.from(files).map(file => 
-        uploadGalleryImage(propertyId, file)
-      );
+      console.log('📤 Procesando', files.length, 'imagen(es)...');
       
-      await Promise.all(uploadPromises);
+      // Convertir HEIC a JPG antes de subir
+      const filesArray = Array.from(files);
+      const heicCount = filesArray.filter(f => isHeicFile(f)).length;
       
-      // Recargar la galería
-      await loadGalleryImages();
+      if (heicCount > 0) {
+        console.log(`🔄 Convirtiendo ${heicCount} archivo(s) HEIC a JPG...`);
+      }
+      
+      const processedFiles = await processImageFiles(filesArray);
+      
+      if (heicCount > 0) {
+        console.log(`✅ ${heicCount} archivo(s) HEIC convertido(s) a JPG`);
+      }
+      
+      // Subir todas las imágenes procesadas
+      const uploadPromises = processedFiles.map(async (file) => {
+        try {
+          const uploaded = await uploadGalleryImage(propertyId, file);
+          console.log('✅ Imagen subida:', uploaded.id, uploaded.url);
+          return uploaded;
+        } catch (error) {
+          console.error('❌ Error subiendo imagen', file.name, ':', error);
+          throw error;
+        }
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      console.log('✅ Todas las imágenes subidas:', uploadedImages);
+
+      // Actualizar galería localmente para previsualizar al instante
+      setGalleryImages(prev => {
+        const updated = [...prev, ...uploadedImages];
+        console.log('🖼️ Galería actualizada, total:', updated.length);
+        return updated;
+      });
+      
+      // También recargar desde el backend para asegurar sincronización
+      setTimeout(async () => {
+        try {
+          await loadGalleryImages();
+        } catch (error) {
+          console.warn('⚠️ Error al recargar galería (no crítico):', error);
+        }
+      }, 500);
       
       // Limpiar el input
       e.target.value = '';
-    } catch (error) {
-      console.error('Error uploading gallery image:', error);
-      alert('Error al subir las imágenes. Por favor, intenta nuevamente.');
+    } catch (error: any) {
+      console.error('❌ Error uploading gallery image:', error);
+      const errorMessage = error?.message || 'Error al subir las imágenes. Por favor, intenta nuevamente.';
+      alert(errorMessage);
     } finally {
       setUploadingImage(false);
     }
@@ -349,6 +417,14 @@ export default function MultimediaStep({
             </div>
           )}
 
+          {/* Uploading indicator */}
+          {uploadingImage && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <span className="text-sm text-blue-700">Subiendo imágenes, por favor espera...</span>
+            </div>
+          )}
+
           {/* Gallery Grid */}
           {!loadingGallery && galleryImages.length > 0 && (
             <>
@@ -367,6 +443,7 @@ export default function MultimediaStep({
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                     {galleryImages.map((image, index) => {
+                      console.log('🖼️ Renderizando imagen:', { id: image.id, url: image.url, index });
                       const isFeatured = image.isFeatured || formData.featuredImage === image.url;
                       return (
                         <SortableImageItem
@@ -406,7 +483,7 @@ export default function MultimediaStep({
             <input
               type="file"
               id="galleryImages"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.hif"
               multiple
               onChange={handleGalleryImageUpload}
               disabled={uploadingImage}
@@ -578,7 +655,7 @@ export default function MultimediaStep({
           type="url"
           id="virtualTourUrl"
           name="virtualTourUrl"
-          value={formData.virtualTourUrl}
+          value={formData.virtualTourUrl || ''}
           onChange={handleChange}
           placeholder="https://..."
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${

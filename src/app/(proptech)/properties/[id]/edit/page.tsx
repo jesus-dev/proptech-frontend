@@ -96,6 +96,7 @@ export default function EditPropertyPage({ params }: PageProps) {
   const { 
     formData, 
     errors, 
+    draftPropertyId,
     handleChange, 
     handleFileChange, 
     removeImage, 
@@ -111,6 +112,7 @@ export default function EditPropertyPage({ params }: PageProps) {
     handleFloorPlanImageUpload,
     handleNearbyFacilitiesChange,
     publishProperty,
+    saveDraft,
   } = usePropertyForm(initialPropertyData);
 
   // Sin promesas: params ya viene resuelto
@@ -381,6 +383,20 @@ export default function EditPropertyPage({ params }: PageProps) {
       } else {
       }
     } catch (error) {
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Guardar borrador SIN validación (igual que en nueva propiedad)
+  const onSaveDraft = async () => {
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      await saveDraft();
+      setSaveSuccess(true);
+    } catch (error) {
+      console.error('❌ EditPropertyPage: Error in onSaveDraft:', error);
     } finally {
       setSaving(false);
     }
@@ -811,7 +827,35 @@ export default function EditPropertyPage({ params }: PageProps) {
                 </div>
               )}
               
-              {/* Save button */}
+              {/* Save Draft button */}
+              <button
+                onClick={onSaveDraft}
+                disabled={saving || loading}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  saving || loading
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-gray-600 text-white hover:bg-gray-700 shadow-lg'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <LoadingSpinner size="md" />
+                    <span className="ml-2">Guardando...</span>
+                  </>
+                ) : saveSuccess ? (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    Guardado
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    {draftPropertyId ? 'Actualizar Borrador' : 'Guardar Borrador'}
+                  </>
+                )}
+              </button>
+
+              {/* Save button (con validación completa) */}
               <button
                 onClick={onSubmit}
                 disabled={saving || loading}
@@ -841,39 +885,11 @@ export default function EditPropertyPage({ params }: PageProps) {
                 )}
               </button>
 
-              {isDraftStatus ? (
-                <button
-                  onClick={onPublish}
-                  disabled={publishing || saving || loading}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                    publishing || saving || loading
-                      ? 'bg-gray-300 text-white cursor-not-allowed'
-                      : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg'
-                  }`}
-                >
-                  {publishing ? (
-                    <>
-                      <LoadingSpinner size="md" />
-                      <span className="ml-2">Publicando...</span>
-                    </>
-                  ) : publishSuccess ? (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      ¡Publicado!
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      Publicar Propiedad
-                    </>
-                  )}
-                </button>
-              ) : (
-                <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
-                  <CheckCircle className="w-4 h-4" />
-                  Propiedad publicada
-                </span>
-              )}
+              {/* Indicador simple de estado publicado/borrador */}
+              <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                <CheckCircle className="w-4 h-4" />
+                {isDraftStatus ? 'Borrador' : 'Propiedad publicada'}
+              </span>
             </div>
           </div>
         </div>
@@ -946,11 +962,6 @@ export default function EditPropertyPage({ params }: PageProps) {
                       {steps[currentStep - 1]?.description}
                     </p>
                   </div>
-                  {hasUnsavedChanges && (
-                    <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full border border-yellow-200">
-                      Cambios sin guardar
-                    </span>
-                  )}
                 </div>
               </div>
 

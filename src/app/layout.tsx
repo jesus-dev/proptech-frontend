@@ -188,15 +188,9 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="192x192" href="/images/Proptech ICO.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/images/Proptech ICO.png" />
         
-        {/* Manifest & Theme */}
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#ea580c" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#c2410c" media="(prefers-color-scheme: dark)" />
+        {/* Config básica solo como sitio web (sin PWA instalable) */}
+        <meta name="theme-color" content="#ea580c" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="ON PropTech" />
         {/* Schema.org JSON-LD */}
         <script
           type="application/ld+json"
@@ -214,6 +208,28 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(localBusinessSchema)
+          }}
+        />
+        {/* Forzar desregistro de cualquier Service Worker antiguo (desactivar PWA para este origen) */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  registrations.forEach(function(reg) {
+                    reg.unregister().catch(function() {});
+                  });
+                }).catch(function() {});
+                if (window.caches && window.caches.keys) {
+                  caches.keys().then(function(keys) {
+                    keys.forEach(function(key) {
+                      caches.delete(key).catch(function() {});
+                    });
+                  });
+                }
+              }
+            `,
           }}
         />
       </head>

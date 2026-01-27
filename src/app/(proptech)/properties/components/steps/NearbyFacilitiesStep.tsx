@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Plus as PlusIcon, MapPin as MapPinIcon, Trash2 as TrashIcon, Pencil as PencilIcon, Star as StarIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus as PlusIcon, MapPin as MapPinIcon, Trash2 as TrashIcon, Pencil as PencilIcon, Star as StarIcon, Search as SearchIcon, ChevronDown as ChevronDownIcon, X as XIcon } from 'lucide-react';
 import { Star as StarIconSolid } from 'lucide-react';
 import { NearbyFacility, FacilityTypeLabels } from '../../../catalogs/nearby-facilities/types';
 import { nearbyFacilityService } from '../../../catalogs/nearby-facilities/services/nearbyFacilityService';
 import { apiClient } from '@/lib/api';
+import type { AxiosError } from 'axios';
 
 interface PropertyNearbyFacility {
   id?: number;
@@ -37,11 +38,32 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
     isFeatured: false,
     notes: ''
   });
+  const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
+  const [selectedCatalogFacilityId, setSelectedCatalogFacilityId] = useState<number | ''>('');
+  const [isComboboxOpen, setIsComboboxOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const comboboxRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Cargar datos iniciales
   useEffect(() => {
     loadData();
   }, [propertyId]);
+
+  // Cerrar combobox al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (comboboxRef.current && !comboboxRef.current.contains(event.target as Node)) {
+        setIsComboboxOpen(false);
+        setHighlightedIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const loadData = async () => {
     try {
@@ -68,7 +90,19 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
     
     try {
       const response = await apiClient.get(`/api/properties/${propertyId}/nearby-facilities`);
-      return response.data;
+      const data = Array.isArray(response.data) ? response.data : [];
+
+      // Normalizar el shape que viene del backend a lo que espera el frontend
+      return data.map((item: any) => ({
+        id: item.id,
+        nearbyFacilityId: item.nearbyFacilityId ?? item.nearbyFacility?.id,
+        nearbyFacility: item.nearbyFacility,
+        distanceKm: item.distanceKm,
+        walkingTimeMinutes: item.walkingTimeMinutes,
+        drivingTimeMinutes: item.drivingTimeMinutes,
+        isFeatured: item.isFeatured ?? false,
+        notes: item.notes,
+      })) as PropertyNearbyFacility[];
     } catch (error) {
       console.error('Error loading property facilities:', error);
       return [];
@@ -102,30 +136,43 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
         notes: formData.notes
       };
 
-      let newFacility: PropertyNearbyFacility;
-
       if (propertyId) {
-        // Guardar en el backend
-        const response = await apiClient.post(`/api/properties/${propertyId}/nearby-facilities`, facilityData);
-        newFacility = response.data;
+        // Guardar en el backend y luego recargar desde la API para mantener el estado consistente
+        await apiClient.post(`/api/properties/${propertyId}/nearby-facilities`, facilityData);
+        await loadData();
       } else {
         // Solo en el frontend para nuevas propiedades
         const { nearbyFacilityId, ...rest } = facilityData;
-        newFacility = {
+        const newFacility: PropertyNearbyFacility = {
           nearbyFacilityId: selectedFacility.id,
           nearbyFacility: selectedFacility,
           ...rest
         };
+        const updatedFacilities = [...facilities, newFacility];
+        setFacilities(updatedFacilities);
+        onDataChange?.(updatedFacilities);
       }
 
-      const updatedFacilities = [...facilities, newFacility];
-      setFacilities(updatedFacilities);
-      onDataChange?.(updatedFacilities);
       setIsModalOpen(false);
       setSelectedFacility(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving facility:', error);
-      setError('Error al guardar la facilidad');
+      const axiosErr = error as AxiosError<any>;
+
+      // Si ya está asociada, recargar lista y no mostrar error fuerte
+      if (axiosErr?.response?.status === 409) {
+        await loadData();
+        setIsModalOpen(false);
+        setSelectedFacility(null);
+        setError('Esta facilidad ya estaba asociada a la propiedad, se ha sincronizado la lista.');
+        return;
+      }
+
+      const backendMessage =
+        axiosErr?.response?.data?.error ||
+        axiosErr?.response?.data?.message ||
+        axiosErr?.message;
+      setError(backendMessage ? `Error al guardar la facilidad: ${backendMessage}` : 'Error al guardar la facilidad');
     }
   };
 
@@ -215,10 +262,54 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
   };
 
-  // Filtrar facilidades ya agregadas
-  const availableToAdd = availableFacilities.filter(
-    facility => !facilities.some(f => f.nearbyFacilityId === facility.id)
-  );
+  // Filtrar facilidades ya asociadas (defensivo por si la API devuelve algo inesperado)
+  const safeFacilities = Array.isArray(facilities) ? facilities : [];
+  const safeAvailableFacilities = Array.isArray(availableFacilities) ? availableFacilities : [];
+
+  const availableToAdd = safeAvailableFacilities
+    .filter(facility => !safeFacilities.some(f => f.nearbyFacilityId === facility.id))
+    .filter(facility => {
+      if (!catalogSearchTerm.trim()) return true;
+      const term = catalogSearchTerm.toLowerCase();
+      return (
+        facility.name.toLowerCase().includes(term) ||
+        (facility.address || '').toLowerCase().includes(term) ||
+        FacilityTypeLabels[facility.type].toLowerCase().includes(term)
+      );
+    });
+
+  const handleSelectFromCatalog = (facilityId?: number) => {
+    const idToUse = facilityId || selectedCatalogFacilityId;
+    if (!idToUse) return;
+    // Buscar solo entre las que realmente están disponibles para agregar (ya filtradas)
+    const facility = availableToAdd.find(f => f.id === idToUse);
+    if (!facility) return;
+    // Limpiar selección y buscador para el siguiente uso
+    setCatalogSearchTerm('');
+    setSelectedCatalogFacilityId('');
+    setIsComboboxOpen(false);
+    setHighlightedIndex(-1);
+    handleAddFacility(facility);
+  };
+
+  const handleComboboxKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => 
+        prev < availableToAdd.length - 1 ? prev + 1 : prev
+      );
+      setIsComboboxOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault();
+      handleSelectFromCatalog(availableToAdd[highlightedIndex].id);
+    } else if (e.key === 'Escape') {
+      setIsComboboxOpen(false);
+      setHighlightedIndex(-1);
+    }
+  };
 
   if (loading) {
     return (
@@ -235,15 +326,17 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
         <div>
           <h3 className="text-lg font-medium text-gray-900 flex items-center">
             <MapPinIcon className="h-5 w-5 text-orange-600 mr-2" />
-            Facilidades Cercanas
+            Facilidades cercanas de esta propiedad
           </h3>
           <p className="text-sm text-gray-500 mt-1">
-            Agrega facilidades cercanas que sean relevantes para esta propiedad
+            Elige desde el catálogo qué facilidades cercanas aplicar a esta propiedad y, opcionalmente, define distancias y tiempos.
           </p>
         </div>
-        <div className="text-sm text-gray-500">
-          {facilities.length} facilidad{facilities.length !== 1 ? 'es' : ''} agregada{facilities.length !== 1 ? 's' : ''}
-        </div>
+        {safeFacilities.length > 0 && (
+          <div className="text-sm text-gray-500">
+            {safeFacilities.length} facilidad{safeFacilities.length !== 1 ? 'es' : ''} asociada{safeFacilities.length !== 1 ? 's' : ''}
+          </div>
+        )}
       </div>
 
       {/* Error Alert */}
@@ -261,12 +354,12 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
         </div>
       )}
 
-      {/* Facilidades agregadas */}
-      {facilities.length > 0 && (
+      {/* Facilidades asociadas a la propiedad */}
+      {safeFacilities.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-900">Facilidades agregadas</h4>
+          <h4 className="text-sm font-medium text-gray-900">Facilidades asociadas a esta propiedad</h4>
           <div className="grid gap-3">
-            {facilities.map((facility) => (
+            {safeFacilities.map((facility) => (
               <div
                 key={facility.nearbyFacilityId}
                 className={`p-4 border rounded-lg ${
@@ -336,34 +429,90 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
         </div>
       )}
 
-      {/* Agregar facilidades */}
-      {availableToAdd.length > 0 && (
+      {/* Facilidades disponibles en el catálogo */}
+      {safeAvailableFacilities.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-900">Agregar facilidades</h4>
-          <div className="grid gap-2 max-h-60 overflow-y-auto">
-            {availableToAdd.map((facility) => (
-              <div
-                key={facility.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="text-xl">{getTypeIcon(facility.type)}</div>
-                  <div>
-                    <h5 className="font-medium text-gray-900">{facility.name}</h5>
-                    <p className="text-sm text-gray-500">
-                      {FacilityTypeLabels[facility.type]} • {facility.address}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleAddFacility(facility)}
-                  className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-orange-600 bg-orange-100 hover:bg-orange-200"
-                >
-                  <PlusIcon className="h-3 w-3 mr-1" />
-                  Agregar
-                </button>
+          <h4 className="text-sm font-medium text-gray-900">Facilidades disponibles en el catálogo</h4>
+          <div className="relative" ref={comboboxRef}>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-gray-400" />
               </div>
-            ))}
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Buscar y seleccionar facilidad..."
+                value={catalogSearchTerm}
+                onChange={(e) => {
+                  setCatalogSearchTerm(e.target.value);
+                  setIsComboboxOpen(true);
+                  setHighlightedIndex(-1);
+                }}
+                onFocus={() => setIsComboboxOpen(true)}
+                onKeyDown={handleComboboxKeyDown}
+                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              />
+              {catalogSearchTerm && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCatalogSearchTerm('');
+                    setSelectedCatalogFacilityId('');
+                    inputRef.current?.focus();
+                  }}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <XIcon className="h-5 w-5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsComboboxOpen(!isComboboxOpen)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <ChevronDownIcon className={`h-5 w-5 transition-transform ${isComboboxOpen ? 'transform rotate-180' : ''}`} />
+              </button>
+            </div>
+            
+            {isComboboxOpen && availableToAdd.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                {availableToAdd.map((facility, index) => (
+                  <div
+                    key={facility.id}
+                    onClick={() => handleSelectFromCatalog(facility.id)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={`px-4 py-3 cursor-pointer transition-colors ${
+                      index === highlightedIndex
+                        ? 'bg-orange-50 border-l-4 border-orange-500'
+                        : 'hover:bg-gray-50 border-l-4 border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className="text-xl flex-shrink-0">{getTypeIcon(facility.type)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate">
+                          {facility.name}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {FacilityTypeLabels[facility.type]}
+                        </div>
+                        {facility.address && (
+                          <div className="text-xs text-gray-500 truncate mt-1">
+                            📍 {facility.address}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {isComboboxOpen && availableToAdd.length === 0 && catalogSearchTerm && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500">
+                No se encontraron facilidades que coincidan con "{catalogSearchTerm}"
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -384,7 +533,7 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Agregar {selectedFacility.name}
+                Asociar {selectedFacility.name} a la propiedad
               </h3>
               
               <div className="space-y-4">
@@ -452,7 +601,7 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
                     className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                   />
                   <label htmlFor="isFeatured" className="ml-2 block text-sm text-gray-700">
-                    Marcar como destacada
+                    Marcar como facilidad destacada en esta propiedad
                   </label>
                 </div>
               </div>

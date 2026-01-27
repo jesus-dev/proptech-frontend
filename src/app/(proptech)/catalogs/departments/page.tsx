@@ -10,9 +10,7 @@ import ModernPopup from '@/components/ui/ModernPopup';
 
 interface DepartmentFormData {
   name: string;
-  code: string;
   countryId: string;
-  description: string;
   active: boolean;
 }
 
@@ -32,9 +30,7 @@ export default function DepartmentsPage() {
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: '',
-    code: '',
     countryId: '',
-    description: '',
     active: true
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,7 +52,7 @@ export default function DepartmentsPage() {
   // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.code.trim() || !formData.countryId) return;
+    if (!formData.name.trim() || !formData.countryId) return;
 
     setIsSubmitting(true);
     try {
@@ -68,7 +64,7 @@ export default function DepartmentsPage() {
       
       setIsModalOpen(false);
       setEditingDepartment(null);
-      setFormData({ name: '', code: '', countryId: '', description: '', active: true });
+      setFormData({ name: '', countryId: '', active: true });
     } catch (error) {
       console.error('Error saving department:', error);
     } finally {
@@ -81,9 +77,7 @@ export default function DepartmentsPage() {
     setEditingDepartment(department);
     setFormData({
       name: department.name,
-      code: department.code,
       countryId: department.countryId?.toString() || '',
-      description: department.description || '',
       active: department.active
     });
     setIsModalOpen(true);
@@ -105,7 +99,7 @@ export default function DepartmentsPage() {
   // Reset modal
   const openModal = () => {
     setEditingDepartment(null);
-    setFormData({ name: '', code: '', countryId: '', description: '', active: true });
+    setFormData({ name: '', countryId: '', active: true });
     setIsModalOpen(true);
   };
 
@@ -113,7 +107,7 @@ export default function DepartmentsPage() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingDepartment(null);
-    setFormData({ name: '', code: '', countryId: '', description: '', active: true });
+    setFormData({ name: '', countryId: '', active: true });
   };
 
   // Error alert
@@ -133,8 +127,6 @@ export default function DepartmentsPage() {
 
   const filteredDepartments = departments.filter(department =>
     department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    department.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (department.description && department.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (department.countryName && department.countryName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -151,10 +143,10 @@ export default function DepartmentsPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Gestión de Departamentos
+          Divisiones Políticas
         </h1>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-          Administra los departamentos/divisiones políticas disponibles en el sistema
+          Administra las divisiones políticas (departamentos / estados / provincias) disponibles en el sistema
         </p>
       </div>
 
@@ -167,13 +159,13 @@ export default function DepartmentsPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
         >
           <PlusIcon className="w-5 h-5" />
-          Nuevo Departamento
+          Nueva División Política
         </button>
 
         <div className="relative">
           <input
             type="text"
-            placeholder="Buscar departamentos..."
+            placeholder="Buscar divisiones políticas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -198,7 +190,7 @@ export default function DepartmentsPage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Departamentos ({filteredDepartments.length})
+            Divisiones Políticas ({filteredDepartments.length})
           </h2>
         </div>
 
@@ -208,10 +200,7 @@ export default function DepartmentsPage() {
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Departamento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Código
+                    División Política
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     País
@@ -233,16 +222,6 @@ export default function DepartmentsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
                         {department.name}
-                      </div>
-                      {department.description && (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {department.description}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {department.code}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -320,20 +299,6 @@ export default function DepartmentsPage() {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Código *
-            </label>
-            <input
-              type="text"
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-              placeholder="Ej: CENTRAL, ALTO_PARANA..."
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               País *
             </label>
             <select
@@ -349,19 +314,6 @@ export default function DepartmentsPage() {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Descripción
-            </label>
-            <textarea
-              rows={3}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-200"
-              placeholder="Descripción del departamento..."
-            />
           </div>
 
           <div className="flex items-center">

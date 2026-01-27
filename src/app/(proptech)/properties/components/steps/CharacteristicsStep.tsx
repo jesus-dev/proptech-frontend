@@ -29,6 +29,9 @@ interface CharacteristicsStepProps {
 export default function CharacteristicsStep({ formData, handleChange, errors }: CharacteristicsStepProps) {
   const [activeSection, setActiveSection] = useState('basic');
 
+  // Nota: La detección de terreno se manejará más adelante
+  // Por ahora, todos los campos se muestran siempre y nada es obligatorio
+
   const handleNumberChange = (name: string, value: string) => {
     const numValue = value === '' ? '' : Math.max(0, parseInt(value) || 0).toString();
     const event = {
@@ -100,13 +103,13 @@ export default function CharacteristicsStep({ formData, handleChange, errors }: 
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Habitaciones */}
+            {/* Habitaciones - Siempre visible, no obligatorio */}
             <div className="relative group">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Habitaciones <span className="text-red-500">*</span>
+                Habitaciones
               </label>
               <div className="relative">
-                                 <HomeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <HomeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="number"
                   id="bedrooms"
@@ -125,13 +128,13 @@ export default function CharacteristicsStep({ formData, handleChange, errors }: 
               )}
             </div>
 
-            {/* Baños */}
+            {/* Baños - Siempre visible, no obligatorio */}
             <div className="relative group">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Baños <span className="text-red-500">*</span>
+                Baños
               </label>
               <div className="relative">
-                                 <WrenchScrewdriverIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <WrenchScrewdriverIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="number"
                   id="bathrooms"

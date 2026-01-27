@@ -131,9 +131,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     featuredImage: null,
     galleryImages: []
   });
-  const [uploadedFloorPlanImages, setUploadedFloorPlanImages] = useState<{
-    [key: number]: File | null;
-  }>({});
+  const [uploadedFloorPlanImages, setUploadedFloorPlanImages] = useState<{ [key: number]: File | null }>({});
 
   const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080')).replace(/\/$/, '');
 
@@ -171,86 +169,98 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     }
   }, [initialData]);
 
-  // Auto-guardado cada 15 segundos si hay cambios sin guardar
-  // SOLO se ejecuta si estamos en una página de propiedades
-  useEffect(() => {
-    // Verificar que estamos en una ruta de propiedades
-    const isPropertyPage = pathname?.includes('/properties');
-    
-    if (!isPropertyPage) {
-      return;
-    }
-    
-    const autoSaveInterval = setInterval(async () => {
-      if (hasUnsavedChanges && !isAutoSaving) {
-        setIsAutoSaving(true);
-        
-        try {
-          // Preparar datos mínimos - SIN validaciones
-          const { currency, propertyStatusId, additionalPropertyTypes, ...propertyDataWithoutCurrency } = formData;
-          const propertyData: any = {
-            ...propertyDataWithoutCurrency,
-            // El título puede estar vacío (el backend pone "Borrador sin título")
-            title: formData.title || '',
-            images: [],
-            // operacion se enviará con valor por defecto en backend si está vacío
-            operacion: formData.operacion || '',
-            // NO enviar propertyStatusId para que el backend use DRAFT por defecto
-            // Mapear additionalPropertyTypes a additionalPropertyTypeIds para el backend
-            // Siempre enviar el campo, incluso si está vacío, para que el backend pueda limpiar la lista
-            additionalPropertyTypeIds: additionalPropertyTypes && Array.isArray(additionalPropertyTypes)
-              ? additionalPropertyTypes.map((id: any) => Number(id)).filter((id: number) => !isNaN(id))
-              : [],
-            // Mapear privateFiles al formato esperado por el backend
-            privateFiles: formData.privateFiles && Array.isArray(formData.privateFiles)
-              ? formData.privateFiles.map((file: any) => ({
-                  url: file.url || file,
-                  fileName: file.fileName || file.name || (typeof file === 'string' ? file.split('/').pop() : 'unknown')
-                }))
-              : undefined,
-          };
+  // Guardar borrador SIN validación (reutilizado por autosave manual / botón "Guardar borrador")
+  const saveDraft = useCallback(async () => {
+    try {
+      // Preparar datos mínimos - SIN validaciones
+      // IMPORTANTE: ahora SÍ enviamos agentId (y agencyId) para que el backend valide coherencia
+      const {
+        currency,
+        propertyStatusId,
+        additionalPropertyTypes,
+        ...propertyDataWithoutCurrency
+      } = formData;
 
-          const fallbackFeatured = selectFallbackFeaturedImage();
-          if (fallbackFeatured) {
-            propertyData.featuredImage = fallbackFeatured;
-          } else {
-            delete propertyData.featuredImage;
-          }
+      const propertyData: any = {
+        ...propertyDataWithoutCurrency,
+        // El título puede estar vacío (el backend pone "Borrador sin título")
+        title: formData.title || '',
+        images: [],
+        // operacion se enviará con valor por defecto en backend si está vacío
+        operacion: formData.operacion || '',
+        // Mapear additionalPropertyTypes a additionalPropertyTypeIds para el backend
+        // Siempre enviar el campo, incluso si está vacío, para que el backend pueda limpiar la lista
+        additionalPropertyTypeIds: additionalPropertyTypes && Array.isArray(additionalPropertyTypes)
+          ? additionalPropertyTypes.map((id: any) => Number(id)).filter((id: number) => !isNaN(id))
+          : [],
+        // Mapear privateFiles al formato esperado por el backend
+        privateFiles: formData.privateFiles && Array.isArray(formData.privateFiles)
+          ? formData.privateFiles.map((file: any) => ({
+              url: file.url || file,
+              fileName: file.fileName || file.name || (typeof file === 'string' ? file.split('/').pop() : 'unknown')
+            }))
+          : undefined,
+      };
 
-          if (draftPropertyId) {
-            // Actualizar borrador existente
-            await propertyService.updateProperty(draftPropertyId, propertyData);
-          } else {
-            // Crear nuevo borrador - siempre se puede crear
-            const newProperty = await propertyService.createProperty(propertyData);
-            if (newProperty && newProperty.id) {
-              setDraftPropertyId(newProperty.id);
-            }
-          }
-          
-          setHasUnsavedChanges(false);
-          setLastSaved(new Date());
-          
-          // Mostrar notificación sutil
-          if (typeof window !== 'undefined') {
-            toast({
-              variant: 'default',
-              title: '💾 Guardado automático',
-              description: `Borrador ${draftPropertyId ? 'actualizado' : 'creado'}.`,
-              duration: 2000,
-            });
-          }
-        } catch (error) {
-          console.error('❌ Error en auto-guardado:', error);
-          // No mostrar error al usuario para no interrumpir su trabajo
-        } finally {
-          setIsAutoSaving(false);
+      const fallbackFeatured = selectFallbackFeaturedImage();
+      if (fallbackFeatured) {
+        propertyData.featuredImage = fallbackFeatured;
+      } else {
+        delete propertyData.featuredImage;
+      }
+
+      let savedProperty;
+      if (draftPropertyId) {
+        // Actualizar borrador existente
+        savedProperty = await propertyService.updateProperty(draftPropertyId, propertyData);
+      } else {
+        // Crear nuevo borrador
+        savedProperty = await propertyService.createProperty(propertyData);
+        if (savedProperty && savedProperty.id) {
+          setDraftPropertyId(savedProperty.id);
         }
       }
-    }, 15000); // 15 segundos
+      
+      setHasUnsavedChanges(false);
+      setLastSaved(new Date());
+      
+      // Mostrar notificación sutil
+      toast({
+        variant: 'default',
+        title: '💾 Guardado automático',
+        description: `Borrador ${draftPropertyId ? 'actualizado' : 'creado'}.`,
+        duration: 2000,
+      });
 
-    return () => clearInterval(autoSaveInterval);
-  }, [hasUnsavedChanges, isAutoSaving, formData, draftPropertyId, toast, pathname]);
+      return true;
+    } catch (error: any) {
+      // Manejar explícitamente el 403 para que no entre en bucle ni rompa la página
+      const message = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+      if (error?.response?.status === 403) {
+        console.error('❌ Error 403 al guardar borrador:', message);
+        toast({
+          variant: 'destructive',
+          title: 'Error de permisos',
+          description: message || 'No tienes permisos para asignar este agente o crear la propiedad.',
+        });
+      } else {
+        console.error('❌ Error al guardar borrador:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'No se pudo guardar el borrador. Intenta nuevamente.',
+        });
+      }
+      return false;
+    }
+  }, [formData, draftPropertyId, selectFallbackFeaturedImage, toast]);
+
+  useEffect(() => {
+    return;
+  }, []);
+
+  // Nota: La validación de bedrooms y bathrooms se manejará más adelante
+  // Por ahora, estos campos no son obligatorios
 
   // Obtener automáticamente el agente del usuario logueado
   useEffect(() => {
@@ -534,8 +544,14 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     checkField('state', "El estado/departamento es obligatorio", false);
     // checkField('zip', "El código postal es obligatorio", !formData.zip || formData.zip.trim() === '');
     
-    checkField('bedrooms', "El número de dormitorios debe ser mayor a 0", (formData.bedrooms || 0) < 0);
-    checkField('bathrooms', "El número de baños debe ser mayor a 0", (formData.bathrooms || 0) < 0);
+    // Nota: bedrooms y bathrooms no son obligatorios por ahora
+    // Solo validar que no sean negativos si se proporcionan
+    if (formData.bedrooms !== undefined && formData.bedrooms !== null && formData.bedrooms < 0) {
+      checkField('bedrooms', "El número de dormitorios no puede ser negativo", true);
+    }
+    if (formData.bathrooms !== undefined && formData.bathrooms !== null && formData.bathrooms < 0) {
+      checkField('bathrooms', "El número de baños no puede ser negativo", true);
+    }
     checkField('area', "El área debe ser mayor a 0 m²", (formData.area || 0) < 0);
     checkField('parking', "El número de espacios de estacionamiento no puede ser negativo", (formData.parking || 0) < 0);
     
@@ -991,5 +1007,6 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     handleFloorPlanImageUpload,
     handleNearbyFacilitiesChange,
     publishProperty,
+    saveDraft,
   };
 } 
