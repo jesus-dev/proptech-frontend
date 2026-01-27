@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Contact, ContactFormData } from "@/app/(proptech)/contacts/types";
-import { contactService } from "@/app/(proptech)/contacts/services/contactService";
+import { Contact } from "@/app/(proptech)/contacts/types";
+import { ownerService, Owner, CreateOwnerRequest } from "@/services/ownerService";
 import { 
   X, 
   Search, 
@@ -29,167 +29,158 @@ export default function SelectOwnerModal({
   onSelect, 
   selectedOwnerIds 
 }: SelectOwnerModalProps) {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [owners, setOwners] = useState<Owner[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newContactForm, setNewContactForm] = useState<ContactFormData>({
-    firstName: "",
-    lastName: "",
+  const [newOwnerForm, setNewOwnerForm] = useState<CreateOwnerRequest>({
+    name: "",
     email: "",
     phone: "",
-    type: "owner",
-    status: "lead",
-    company: "",
-    position: "",
     address: "",
-    city: "",
-    state: "",
-    zip: "",
-    country: "",
-    notes: "",
-    source: "",
-    budget: {
-      min: undefined,
-      max: undefined,
-      currency: "USD"
-    },
-    preferences: {
-      propertyType: [],
-      location: [],
-      bedrooms: undefined,
-      bathrooms: undefined,
-      area: {
-        min: undefined,
-        max: undefined
-      }
-    },
-    tags: [],
-    assignedTo: "",
-    lastContact: "",
-    nextFollowUp: ""
+    documentNumber: "",
+    bankAccount: "",
+    notes: ""
   });
 
   useEffect(() => {
     if (isOpen) {
-      loadContacts();
+      loadOwners();
     }
   }, [isOpen]);
 
-  const handleCreateContact = async (e: React.FormEvent) => {
+  // Convertir Owner a Contact para compatibilidad
+  const ownerToContact = (owner: Owner): Contact => {
+    const nameParts = owner.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    return {
+      id: owner.id.toString(),
+      firstName,
+      lastName,
+      email: owner.email || '',
+      phone: owner.phone || '',
+      type: 'owner',
+      status: owner.status === 'active' ? 'active' : 'inactive',
+      company: '',
+      position: '',
+      address: owner.address || '',
+      city: '',
+      state: '',
+      zip: '',
+      country: '',
+      notes: owner.notes || '',
+      source: '',
+      budget: {
+        min: undefined,
+        max: undefined,
+        currency: 'USD'
+      },
+      preferences: {
+        propertyType: [],
+        location: [],
+        bedrooms: undefined,
+        bathrooms: undefined,
+        area: {
+          min: undefined,
+          max: undefined
+        }
+      },
+      tags: [],
+      assignedTo: '',
+      lastContact: '',
+      nextFollowUp: '',
+      createdAt: '',
+      updatedAt: ''
+    };
+  };
+
+  const handleCreateOwner = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validación básica
-    if (!newContactForm.firstName || !newContactForm.lastName || !newContactForm.phone) {
-      alert("Por favor complete los campos obligatorios: Nombre, Apellido y Teléfono");
+    if (!newOwnerForm.name || !newOwnerForm.phone) {
+      alert("Por favor complete los campos obligatorios: Nombre y Teléfono");
       return;
     }
 
     try {
       setCreating(true);
-      const newContact = await contactService.createContact(newContactForm);
+      const newOwner = await ownerService.createOwner(newOwnerForm);
       
-      // Actualizar la lista de contactos
-      await loadContacts();
-      
-      // Seleccionar automáticamente el nuevo contacto
-      onSelect(newContact);
-      
-      // Cerrar popups
-      setShowCreatePopup(false);
-      onClose();
-      
-      // Resetear formulario
-      setNewContactForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        type: "owner",
-        status: "lead",
-        company: "",
-        position: "",
-        address: "",
-        city: "",
-        state: "",
-        zip: "",
-        country: "",
-        notes: "",
-        source: "",
-        budget: {
-          min: undefined,
-          max: undefined,
-          currency: "USD"
-        },
-        preferences: {
-          propertyType: [],
-          location: [],
-          bedrooms: undefined,
-          bathrooms: undefined,
-          area: {
-            min: undefined,
-            max: undefined
-          }
-        },
-        tags: [],
-        assignedTo: "",
-        lastContact: "",
-        nextFollowUp: ""
-      });
+      if (newOwner) {
+        // Actualizar la lista de owners
+        await loadOwners();
+        
+        // Convertir Owner a Contact y seleccionar
+        const contact = ownerToContact(newOwner);
+        onSelect(contact);
+        
+        // Cerrar popups
+        setShowCreatePopup(false);
+        onClose();
+        
+        // Resetear formulario
+        setNewOwnerForm({
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+          documentNumber: "",
+          bankAccount: "",
+          notes: ""
+        });
+      }
     } catch (error) {
-      console.error("Error creating contact:", error);
-      alert("Error al crear el contacto. Por favor intente nuevamente.");
+      console.error("Error creating owner:", error);
+      alert("Error al crear el propietario. Por favor intente nuevamente.");
     } finally {
       setCreating(false);
     }
   };
 
-  const loadContacts = async () => {
+  const loadOwners = async () => {
     try {
       setLoading(true);
-      const allContacts = await contactService.getAllContacts();
-      setContacts(allContacts || []);
+      const allOwners = await ownerService.getAllOwners();
+      setOwners(allOwners || []);
     } catch (error) {
-      console.error("Error loading contacts:", error);
+      console.error("Error loading owners:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredContacts = contacts.filter((contact) => {
-    if (selectedOwnerIds.includes(contact.id)) return false;
+  const filteredOwners = owners.filter((owner) => {
+    if (selectedOwnerIds.includes(owner.id.toString())) return false;
     
     const searchLower = searchTerm.toLowerCase();
     return (
-      contact.firstName?.toLowerCase().includes(searchLower) ||
-      contact.lastName?.toLowerCase().includes(searchLower) ||
-      contact.email?.toLowerCase().includes(searchLower) ||
-      contact.phone?.toLowerCase().includes(searchLower) ||
-      contact.company?.toLowerCase().includes(searchLower)
+      owner.name?.toLowerCase().includes(searchLower) ||
+      owner.email?.toLowerCase().includes(searchLower) ||
+      owner.phone?.toLowerCase().includes(searchLower) ||
+      owner.address?.toLowerCase().includes(searchLower)
     );
   });
 
-  const getContactTypeLabel = (type: string) => {
+  const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      owner: "Titular",
-      client: "Cliente",
-      prospect: "Interesado",
-      buyer: "Comprador",
-      seller: "Vendedor"
+      active: "Activo",
+      inactive: "Inactivo",
+      pending: "Pendiente"
     };
-    return labels[type] || type;
+    return labels[status] || status;
   };
 
-  const getTypeColor = (type: string) => {
+  const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      owner: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-      client: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      prospect: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-      buyer: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      seller: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+      active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      inactive: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300",
+      pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
     };
-    return colors[type] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-gray-100 text-gray-800";
   };
 
   if (!isOpen) return null;
@@ -253,28 +244,29 @@ export default function SelectOwnerModal({
               <div className="flex justify-center items-center py-12">
                 <LoadingSpinner size="lg" />
               </div>
-            ) : filteredContacts.length === 0 ? (
+            ) : filteredOwners.length === 0 ? (
               <div className="text-center py-12">
                 <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 dark:text-gray-400">
                   {searchTerm 
-                    ? "No se encontraron contactos con ese criterio" 
-                    : "No hay contactos disponibles"}
+                    ? "No se encontraron propietarios con ese criterio" 
+                    : "No hay propietarios disponibles"}
                 </p>
                 <button
                   onClick={() => setShowCreatePopup(true)}
                   className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                 >
                   <Plus className="h-4 w-4" />
-                  Crear Primer Contacto
+                  Crear Primer Propietario
                 </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {filteredContacts.map((contact) => (
+                {filteredOwners.map((owner) => (
                   <button
-                    key={contact.id}
+                    key={owner.id}
                     onClick={() => {
+                      const contact = ownerToContact(owner);
                       onSelect(contact);
                       onClose();
                     }}
@@ -287,29 +279,29 @@ export default function SelectOwnerModal({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                            {contact.firstName} {contact.lastName}
+                            {owner.name}
                           </h3>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTypeColor(contact.type)}`}>
-                            {getContactTypeLabel(contact.type)}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(owner.status)}`}>
+                            {getStatusLabel(owner.status)}
                           </span>
                         </div>
                         <div className="space-y-1">
-                          {contact.email && (
+                          {owner.email && (
                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                               <Mail className="h-3.5 w-3.5" />
-                              <span className="truncate">{contact.email}</span>
+                              <span className="truncate">{owner.email}</span>
                             </div>
                           )}
-                          {contact.phone && (
+                          {owner.phone && (
                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                               <Phone className="h-3.5 w-3.5" />
-                              <span>{contact.phone}</span>
+                              <span>{owner.phone}</span>
                             </div>
                           )}
-                          {contact.company && (
+                          {owner.address && (
                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                               <Building className="h-3.5 w-3.5" />
-                              <span className="truncate">{contact.company}</span>
+                              <span className="truncate">{owner.address}</span>
                             </div>
                           )}
                         </div>
@@ -324,7 +316,7 @@ export default function SelectOwnerModal({
           {/* Footer */}
           <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {filteredContacts.length} contacto{filteredContacts.length !== 1 ? 's' : ''} disponible{filteredContacts.length !== 1 ? 's' : ''}
+              {filteredOwners.length} propietario{filteredOwners.length !== 1 ? 's' : ''} disponible{filteredOwners.length !== 1 ? 's' : ''}
             </p>
             <button
               onClick={onClose}
@@ -342,41 +334,14 @@ export default function SelectOwnerModal({
         onClose={() => {
           setShowCreatePopup(false);
           // Resetear formulario al cerrar
-          setNewContactForm({
-            firstName: "",
-            lastName: "",
+          setNewOwnerForm({
+            name: "",
             email: "",
             phone: "",
-            type: "owner",
-            status: "lead",
-            company: "",
-            position: "",
             address: "",
-            city: "",
-            state: "",
-            zip: "",
-            country: "",
-            notes: "",
-            source: "",
-            budget: {
-              min: undefined,
-              max: undefined,
-              currency: "USD"
-            },
-            preferences: {
-              propertyType: [],
-              location: [],
-              bedrooms: undefined,
-              bathrooms: undefined,
-              area: {
-                min: undefined,
-                max: undefined
-              }
-            },
-            tags: [],
-            assignedTo: "",
-            lastContact: "",
-            nextFollowUp: ""
+            documentNumber: "",
+            bankAccount: "",
+            notes: ""
           });
         }}
         title="Crear Nuevo Propietario"
@@ -385,7 +350,7 @@ export default function SelectOwnerModal({
         maxWidth="max-w-2xl"
         closeOnBackdropClick={!creating}
       >
-        <form onSubmit={handleCreateContact} className="space-y-6">
+        <form onSubmit={handleCreateOwner} className="space-y-6">
           {/* Información Básica */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -394,28 +359,15 @@ export default function SelectOwnerModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nombre *
+                  Nombre Completo *
                 </label>
                 <input
                   type="text"
                   required
-                  value={newContactForm.firstName}
-                  onChange={(e) => setNewContactForm({ ...newContactForm, firstName: e.target.value })}
+                  value={newOwnerForm.name}
+                  onChange={(e) => setNewOwnerForm({ ...newOwnerForm, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Juan"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Apellido *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newContactForm.lastName}
-                  onChange={(e) => setNewContactForm({ ...newContactForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Pérez"
+                  placeholder="Juan Pérez"
                 />
               </div>
               <div>
@@ -424,8 +376,8 @@ export default function SelectOwnerModal({
                 </label>
                 <input
                   type="email"
-                  value={newContactForm.email}
-                  onChange={(e) => setNewContactForm({ ...newContactForm, email: e.target.value })}
+                  value={newOwnerForm.email}
+                  onChange={(e) => setNewOwnerForm({ ...newOwnerForm, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="correo@ejemplo.com"
                 />
@@ -437,39 +389,59 @@ export default function SelectOwnerModal({
                 <input
                   type="tel"
                   required
-                  value={newContactForm.phone}
-                  onChange={(e) => setNewContactForm({ ...newContactForm, phone: e.target.value })}
+                  value={newOwnerForm.phone}
+                  onChange={(e) => setNewOwnerForm({ ...newOwnerForm, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="+595 981 123456"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Empresa
+                  Dirección
                 </label>
                 <input
                   type="text"
-                  value={newContactForm.company || ""}
-                  onChange={(e) => setNewContactForm({ ...newContactForm, company: e.target.value })}
+                  value={newOwnerForm.address || ""}
+                  onChange={(e) => setNewOwnerForm({ ...newOwnerForm, address: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  placeholder="Nombre de la empresa"
+                  placeholder="Dirección completa"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tipo
+                  Número de Documento
                 </label>
-                <select
-                  value={newContactForm.type}
-                  onChange={(e) => setNewContactForm({ ...newContactForm, type: e.target.value as any })}
+                <input
+                  type="text"
+                  value={newOwnerForm.documentNumber || ""}
+                  onChange={(e) => setNewOwnerForm({ ...newOwnerForm, documentNumber: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                >
-                  <option value="owner">Titular</option>
-                  <option value="client">Cliente</option>
-                  <option value="prospect">Interesado</option>
-                  <option value="buyer">Comprador</option>
-                  <option value="seller">Vendedor</option>
-                </select>
+                  placeholder="1234567"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Cuenta Bancaria
+                </label>
+                <input
+                  type="text"
+                  value={newOwnerForm.bankAccount || ""}
+                  onChange={(e) => setNewOwnerForm({ ...newOwnerForm, bankAccount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="Número de cuenta"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Notas
+                </label>
+                <textarea
+                  value={newOwnerForm.notes || ""}
+                  onChange={(e) => setNewOwnerForm({ ...newOwnerForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="Notas adicionales sobre el propietario"
+                  rows={3}
+                />
               </div>
             </div>
           </div>
@@ -480,41 +452,14 @@ export default function SelectOwnerModal({
               type="button"
               onClick={() => {
                 setShowCreatePopup(false);
-                setNewContactForm({
-                  firstName: "",
-                  lastName: "",
+                setNewOwnerForm({
+                  name: "",
                   email: "",
                   phone: "",
-                  type: "owner",
-                  status: "lead",
-                  company: "",
-                  position: "",
                   address: "",
-                  city: "",
-                  state: "",
-                  zip: "",
-                  country: "",
-                  notes: "",
-                  source: "",
-                  budget: {
-                    min: undefined,
-                    max: undefined,
-                    currency: "USD"
-                  },
-                  preferences: {
-                    propertyType: [],
-                    location: [],
-                    bedrooms: undefined,
-                    bathrooms: undefined,
-                    area: {
-                      min: undefined,
-                      max: undefined
-                    }
-                  },
-                  tags: [],
-                  assignedTo: "",
-                  lastContact: "",
-                  nextFollowUp: ""
+                  documentNumber: "",
+                  bankAccount: "",
+                  notes: ""
                 });
               }}
               disabled={creating}
