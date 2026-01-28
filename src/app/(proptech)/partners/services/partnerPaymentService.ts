@@ -1,4 +1,4 @@
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface PartnerPayment {
   id: number;
@@ -47,12 +47,8 @@ export interface CreatePaymentData {
 class PartnerPaymentService {
   async getAllPayments(): Promise<PartnerPayment[]> {
     try {
-      const response = await fetch(getEndpoint('/api/partner-payments'));
-      if (!response.ok) {
-        console.warn(`No se pudieron obtener pagos (status ${response.status})`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get('/api/partner-payments');
+      return response.data;
     } catch (error) {
       console.error('Error fetching payments:', error);
       return [];
@@ -61,15 +57,12 @@ class PartnerPaymentService {
 
   async getPaymentById(id: number): Promise<PartnerPayment | null> {
     try {
-      const response = await fetch(getEndpoint(`/api/partner-payments/${id}`));
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        throw new Error(`Error: ${response.status}`);
+      const response = await apiClient.get(`/api/partner-payments/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
       }
-      return await response.json();
-    } catch (error) {
       console.error('Error fetching payment:', error);
       throw error;
     }
@@ -77,12 +70,8 @@ class PartnerPaymentService {
 
   async getPaymentsByPartner(partnerId: number): Promise<PartnerPayment[]> {
     try {
-      const response = await fetch(getEndpoint(`/api/partner-payments/partner/${partnerId}`));
-      if (!response.ok) {
-        console.warn(`No se pudieron obtener pagos del socio ${partnerId} (status ${response.status})`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/partner-payments/partner/${partnerId}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching partner payments:', error);
       return [];
@@ -91,12 +80,8 @@ class PartnerPaymentService {
 
   async getPendingQuotasByPartner(partnerId: number): Promise<PartnerPayment[]> {
     try {
-      const response = await fetch(getEndpoint(`/api/partner-payments/partner/${partnerId}/pending-quotas`));
-      if (!response.ok) {
-        console.warn(`No se pudieron obtener cuotas pendientes del socio ${partnerId} (status ${response.status})`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/partner-payments/partner/${partnerId}/pending-quotas`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching pending quotas:', error);
       return [];
@@ -105,12 +90,8 @@ class PartnerPaymentService {
 
   async getPaymentsByStatus(status: string): Promise<PartnerPayment[]> {
     try {
-      const response = await fetch(getEndpoint(`/api/partner-payments/status/${status}`));
-      if (!response.ok) {
-        console.warn(`No se pudieron obtener pagos por status ${status} (status ${response.status})`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/partner-payments/status/${status}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching payments by status:', error);
       return [];
@@ -119,12 +100,8 @@ class PartnerPaymentService {
 
   async getOverduePayments(): Promise<PartnerPayment[]> {
     try {
-      const response = await fetch(getEndpoint('/api/partner-payments/overdue'));
-      if (!response.ok) {
-        console.warn(`No se pudieron obtener pagos vencidos (status ${response.status})`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get('/api/partner-payments/overdue');
+      return response.data;
     } catch (error) {
       console.error('Error fetching overdue payments:', error);
       return [];
@@ -140,20 +117,8 @@ class PartnerPaymentService {
         paymentDate: paymentData.paymentDate || undefined
       };
       
-      const response = await fetch(getEndpoint('/api/partner-payments'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formattedData),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error ${response.status}: ${errorText || 'Unknown error'}`);
-      }
-      
-      return await response.json();
+      const response = await apiClient.post('/api/partner-payments', formattedData);
+      return response.data;
     } catch (error) {
       console.error('Error creating payment:', error);
       throw error;
@@ -162,17 +127,8 @@ class PartnerPaymentService {
 
   async updatePayment(id: number, paymentData: Partial<CreatePaymentData>): Promise<PartnerPayment> {
     try {
-      const response = await fetch(getEndpoint(`/api/partner-payments/${id}`), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(paymentData),
-      });
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      return await response.json();
+      const response = await apiClient.put(`/api/partner-payments/${id}`, paymentData);
+      return response.data;
     } catch (error) {
       console.error('Error updating payment:', error);
       throw error;
@@ -181,12 +137,7 @@ class PartnerPaymentService {
 
   async deletePayment(id: number): Promise<boolean> {
     try {
-      const response = await fetch(getEndpoint(`/api/partner-payments/${id}`), {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
+      await apiClient.delete(`/api/partner-payments/${id}`);
       return true;
     } catch (error) {
       console.error('Error deleting payment:', error);
@@ -202,13 +153,8 @@ class PartnerPaymentService {
         processedBy,
       });
       
-      const response = await fetch(getEndpoint(`/api/partner-payments/${id}/mark-as-paid?${params}`), {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      return await response.json();
+      const response = await apiClient.post(`/api/partner-payments/${id}/mark-as-paid?${params}`);
+      return response.data;
     } catch (error) {
       console.error('Error marking payment as paid:', error);
       throw error;
@@ -230,12 +176,7 @@ class PartnerPaymentService {
         frequency,
       });
       
-      const response = await fetch(getEndpoint(`/api/partner-payments/partner/${partnerId}/generate-quotas?${params}`), {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
+      await apiClient.post(`/api/partner-payments/partner/${partnerId}/generate-quotas?${params}`);
     } catch (error) {
       console.error('Error generating quota payments:', error);
       throw error;
@@ -244,18 +185,8 @@ class PartnerPaymentService {
 
   async getPartnerPaymentSummary(partnerId: number): Promise<PaymentSummary> {
     try {
-      const response = await fetch(getEndpoint(`/api/partner-payments/partner/${partnerId}/summary`));
-      if (!response.ok) {
-        console.warn(`No se pudo obtener resumen de pagos del socio ${partnerId} (status ${response.status})`);
-        return {
-          totalPaid: 0,
-          totalPending: 0,
-          totalOverdue: 0,
-          pendingCount: 0,
-          overdueCount: 0,
-        };
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/partner-payments/partner/${partnerId}/summary`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching payment summary:', error);
       return {

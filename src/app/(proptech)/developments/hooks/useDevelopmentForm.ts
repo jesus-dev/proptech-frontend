@@ -3,6 +3,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { Development, Loteamiento, Edificio, Condominio, BarrioCerrado, Unit } from "../components/types";
 import { developmentService } from "../services/developmentService";
+import { imageUploadService } from "@/app/(proptech)/properties/services/imageUploadService";
+import { apiClient } from "@/lib/api";
+import { buildDevelopmentPayload } from "../utils/developmentPayloadBuilder";
 
 export interface DevelopmentFormData {
   id?: string;
@@ -11,8 +14,6 @@ export interface DevelopmentFormData {
   description: string;
   address: string;
   city: string;
-  state: string;
-  zip: string;
   currency: string; // Campo de moneda
   currencyId?: number; // <-- Agregado para el id de moneda
   price: number;
@@ -57,8 +58,6 @@ export const useDevelopmentForm = (initialData?: Development) => {
     description: initialData?.description || "",
     address: initialData?.address || "",
     city: initialData?.city || "",
-    state: initialData?.state || "",
-    zip: initialData?.zip || "",
     currency: initialData?.currency || "",
     currencyId: (initialData as any)?.currencyId || undefined,
     price: initialData?.price || 0,
@@ -84,6 +83,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
 
   const [formData, setFormData] = useState<DevelopmentFormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [uploadedFiles, setUploadedFiles] = useState<{ images: File[] }>({ images: [] });
 
   // Update formData when initialData changes (for editing)
   useEffect(() => {
@@ -94,8 +94,6 @@ export const useDevelopmentForm = (initialData?: Development) => {
         description: initialData.description || "",
         address: initialData.address || "",
         city: initialData.city || "",
-        state: initialData.state || "",
-        zip: initialData.zip || "",
         currency: initialData.currency || "",
         currencyId: (initialData as any)?.currencyId || undefined,
         price: initialData.price || 0,
@@ -134,7 +132,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
     setErrors({});
   }, [initialFormData]);
 
-  const validate = useCallback((fieldsToValidate?: (keyof DevelopmentFormData)[]) => {
+  const validate = useCallback((fieldsToValidate?: (keyof DevelopmentFormData)[]): { isValid: boolean; errors: Partial<Record<keyof DevelopmentFormData, string>> } => {
     const newErrors: Partial<Record<keyof DevelopmentFormData, string>> = {};
     let isValid = true;
 
@@ -172,24 +170,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
             isValid = false;
           }
           break;
-        case 'state':
-          if (!formData.state?.trim()) {
-            newErrors.state = "Estado es requerido.";
-            isValid = false;
-          }
-          break;
-        case 'zip':
-          if (!formData.zip?.trim()) {
-            newErrors.zip = "Código postal es requerido.";
-            isValid = false;
-          }
-          break;
-        case 'currency':
-          if (!formData.currency?.trim()) {
-            newErrors.currency = "Moneda es requerida.";
-            isValid = false;
-          }
-          break;
+        // Currency se maneja solo en DevelopmentUnit, no en Development
         case 'status':
           if (!formData.status) {
             newErrors.status = "Estado es requerido.";
@@ -392,7 +373,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
     });
 
     setErrors(newErrors);
-    return isValid;
+    return { isValid, errors: newErrors };
   }, [formData]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -456,10 +437,26 @@ export const useDevelopmentForm = (initialData?: Development) => {
       const newImageUrls = newFiles.map(file => URL.createObjectURL(file));
       return { ...prev, images: [...currentImages, ...newImageUrls] };
     });
+    // Guardar los archivos originales para subirlos después
+    setUploadedFiles(prev => ({
+      ...prev,
+      images: [...prev.images, ...newFiles]
+    }));
   }, []);
 
   const removeImage = useCallback((indexToRemove: number) => {
-    setFormData(prev => ({
+    setFormData(prev => {
+      const urlToRemove = prev.images[indexToRemove];
+      if (urlToRemove && urlToRemove.startsWith('blob:')) {
+        URL.revokeObjectURL(urlToRemove);
+      }
+      return {
+        ...prev,
+        images: prev.images.filter((_, index) => index !== indexToRemove)
+      };
+    });
+    // También remover el archivo original
+    setUploadedFiles(prev => ({
       ...prev,
       images: prev.images.filter((_, index) => index !== indexToRemove)
     }));
@@ -493,7 +490,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
     e.preventDefault();
 
     const allFieldsToValidate: (keyof DevelopmentFormData)[] = [
-      'type', 'title', 'description', 'address', 'city', 'state', 'zip', 'currency', 'status', 'images'
+      'type', 'title', 'description', 'address', 'city', 'status', 'images'
     ];
 
     if (formData.type === "loteamiento") {
@@ -506,166 +503,133 @@ export const useDevelopmentForm = (initialData?: Development) => {
       allFieldsToValidate.push('numberOfLots', 'availableLots', 'totalArea', 'lotSizes', 'services', 'securityFeatures', 'commonAreas', 'maintenanceFee', 'amenities', 'buildingRegulations');
     }
 
-    if (!validate(allFieldsToValidate)) {
-      console.error("Form has validation errors.", errors);
+    const validationResult = validate(allFieldsToValidate);
+    if (!validationResult.isValid) {
+      console.error("Form has validation errors.", validationResult.errors);
       return false;
     }
 
     try {
       if (initialData?.id) {
-        // Update existing development
-        const updateData: DevelopmentFormData = { ...formData };
-        if (updateData.type === "loteamiento") {
-            updateData.amenities = undefined; // Clear amenity fields for loteamiento
-            updateData.additionalAmenities = undefined;
-            updateData.numberOfFloors = undefined;
-            updateData.numberOfUnits = undefined;
-            updateData.availableUnits = undefined;
-            updateData.unitTypes = undefined;
-            updateData.buildingFeatures = undefined;
-            updateData.commonAreas = undefined;
-            updateData.securityFeatures = undefined;
-            updateData.maintenanceFee = undefined;
-            updateData.buildingRegulations = undefined;
-        } else if (updateData.type === "edificio") {
-            updateData.numberOfLots = undefined; // Clear loteamiento fields for edificio
-            updateData.totalArea = undefined;
-            updateData.availableLots = undefined;
-            updateData.lotSizes = undefined;
-            updateData.services = undefined;
-            updateData.commonAreas = undefined;
-            updateData.securityFeatures = undefined;
-            updateData.maintenanceFee = undefined;
-            updateData.buildingRegulations = undefined;
-        } else if (updateData.type === "condominio") {
-            updateData.numberOfLots = undefined; // Clear loteamiento fields for condominio
-            updateData.services = undefined;
-            updateData.numberOfFloors = undefined;
-            updateData.buildingFeatures = undefined;
-            updateData.additionalAmenities = undefined;
-            updateData.buildingRegulations = undefined;
-            updateData.units = undefined;
-        } else if (updateData.type === "barrio_cerrado") {
-            updateData.numberOfFloors = undefined; // Clear edificio fields for barrio cerrado
-            updateData.numberOfUnits = undefined;
-            updateData.availableUnits = undefined;
-            updateData.unitTypes = undefined;
-            updateData.buildingFeatures = undefined;
-            updateData.additionalAmenities = undefined;
-            updateData.units = undefined;
+        // Update existing development - usar buildDevelopmentPayload para construir el payload correcto
+        const coordinates = initialData.coordinates 
+          ? { lat: initialData.coordinates.lat, lng: initialData.coordinates.lng }
+          : { lat: -31.4167, lng: -64.1833 };
+        
+        // Primero subir imágenes nuevas si hay archivos pendientes
+        let uploadedImageUrls: string[] = [];
+        if (uploadedFiles.images.length > 0) {
+          try {
+            console.log('📤 Subiendo', uploadedFiles.images.length, 'imagen(es) nuevas al servidor...');
+            
+            // Subir imágenes al servidor usando el developmentId
+            const subDirectory = `developments/${initialData.id}`;
+            const uploadResults = await imageUploadService.uploadMultipleImages(uploadedFiles.images, subDirectory);
+            uploadedImageUrls = uploadResults.map(result => result.url);
+            console.log('✅ Imágenes subidas:', uploadedImageUrls);
+          } catch (imageError) {
+            console.error("❌ useDevelopmentForm: Error subiendo imágenes:", imageError);
+            // Continuar aunque falle la subida de imágenes
+          }
         }
 
-        await developmentService.updateDevelopment(initialData.id, updateData as Development); // Cast to Development after clearing fields
+        // Combinar imágenes existentes con las nuevas
+        const existingImages = formData.images.filter(img => !img.startsWith('blob:'));
+        const allImages = [...existingImages, ...uploadedImageUrls];
+        console.log('🖼️ useDevelopmentForm: Total imágenes a guardar:', allImages.length);
+        console.log('🖼️ useDevelopmentForm: URLs de imágenes:', allImages);
+
+        // Construir el payload SIN imágenes (las imágenes se manejan por separado)
+        const updatePayload = buildDevelopmentPayload(formData, coordinates);
+        // NO incluir imágenes en el payload principal
+
+        // Actualizar el desarrollo primero (sin imágenes)
+        await apiClient.put(`/api/developments/${initialData.id}`, updatePayload);
+        console.log('✅ Desarrollo actualizado');
+
+        // Luego actualizar las imágenes usando el endpoint específico (igual que en properties)
+        if (allImages.length > 0) {
+          try {
+            const imagePayload: Record<string, unknown> = {
+              imageUrls: allImages
+            };
+
+            // Si hay una imagen destacada, agregarla
+            if (allImages.length > 0) {
+              imagePayload.featuredImageUrl = allImages[0];
+            }
+
+            await apiClient.put(`/api/developments/${initialData.id}/images`, imagePayload);
+            console.log('✅ Imágenes guardadas en la base de datos:', allImages.length);
+          } catch (imageError) {
+            console.warn('⚠️ useDevelopmentForm: Failed to update images, but development was saved', imageError);
+          }
+        }
       } else {
-        // Create new development
-        let developmentForCreate: Omit<Loteamiento, 'id' | 'createdAt' | 'updatedAt' | 'lots'> | Omit<Edificio, 'id' | 'createdAt' | 'updatedAt'> | Omit<Condominio, 'id' | 'createdAt' | 'updatedAt' | 'lots'> | Omit<BarrioCerrado, 'id' | 'createdAt' | 'updatedAt' | 'lots'>;
+        // Create new development - EXACTAMENTE como properties: crear primero, luego subir imágenes
+        // Usar buildDevelopmentPayload para construir el payload según el tipo
+        const coordinates = { lat: -31.4167, lng: -64.1833 }; // Default coordinates
+        const developmentForCreate = buildDevelopmentPayload(formData, coordinates);
 
-        if (formData.type === "loteamiento") {
-          const { id: _, createdAt: __, updatedAt: ___, ...loteamientoData } = formData as DevelopmentFormData;
-          developmentForCreate = {
-            type: "loteamiento",
-            title: loteamientoData.title,
-            description: loteamientoData.description,
-            address: loteamientoData.address,
-            city: loteamientoData.city,
-            state: loteamientoData.state,
-            zip: loteamientoData.zip,
-            currency: loteamientoData.currency,
-            images: loteamientoData.images,
-            status: loteamientoData.status,
-            privateFiles: loteamientoData.privateFiles,
-            coordinates: { lat: -31.4167, lng: -64.1833 }, // Default coordinates for Córdoba
-            numberOfLots: loteamientoData.numberOfLots!,
-            totalArea: loteamientoData.totalArea!,
-            availableLots: loteamientoData.availableLots!,
-            lotSizes: loteamientoData.lotSizes!,
-            services: loteamientoData.services!,
-          };
-        } else if (formData.type === "edificio") {
-          const { id: _, createdAt: __, updatedAt: ___, ...edificioData } = formData as DevelopmentFormData;
-          developmentForCreate = {
-            type: "edificio",
-            title: edificioData.title,
-            description: edificioData.description,
-            address: edificioData.address,
-            city: edificioData.city,
-            state: edificioData.state,
-            zip: edificioData.zip,
-            currency: edificioData.currency,
-            images: edificioData.images,
-            status: edificioData.status,
-            privateFiles: edificioData.privateFiles,
-            numberOfFloors: edificioData.numberOfFloors!,
-            numberOfUnits: edificioData.numberOfUnits!,
-            availableUnits: edificioData.availableUnits!,
-            unitTypes: edificioData.unitTypes!,
-            amenities: edificioData.amenities!,
-            buildingFeatures: edificioData.buildingFeatures || "",
-            additionalAmenities: edificioData.additionalAmenities!,
-            units: edificioData.units!,
-          };
-        } else if (formData.type === "condominio") {
-          const { id: _, createdAt: __, updatedAt: ___, ...condominioData } = formData as DevelopmentFormData;
-          developmentForCreate = {
-            type: "condominio",
-            title: condominioData.title,
-            description: condominioData.description,
-            address: condominioData.address,
-            city: condominioData.city,
-            state: condominioData.state,
-            zip: condominioData.zip,
-            currency: condominioData.currency,
-            images: condominioData.images,
-            status: condominioData.status,
-            privateFiles: condominioData.privateFiles,
-            coordinates: { lat: -31.4167, lng: -64.1833 }, // Default coordinates for Córdoba
-            numberOfUnits: condominioData.numberOfUnits!,
-            availableUnits: condominioData.availableUnits!,
-            unitTypes: condominioData.unitTypes!,
-            lotSizes: condominioData.lotSizes!,
-            totalArea: condominioData.totalArea!,
-            commonAreas: condominioData.commonAreas!,
-            securityFeatures: condominioData.securityFeatures!,
-            maintenanceFee: condominioData.maintenanceFee!,
-            amenities: condominioData.amenities!,
-          };
-        } else {
-          const { id: _, createdAt: __, updatedAt: ___, ...barrioCerradoData } = formData as DevelopmentFormData;
-          developmentForCreate = {
-            type: "barrio_cerrado",
-            title: barrioCerradoData.title,
-            description: barrioCerradoData.description,
-            address: barrioCerradoData.address,
-            city: barrioCerradoData.city,
-            state: barrioCerradoData.state,
-            zip: barrioCerradoData.zip,
-            currency: barrioCerradoData.currency,
-            images: barrioCerradoData.images,
-            status: barrioCerradoData.status,
-            privateFiles: barrioCerradoData.privateFiles,
-            coordinates: { lat: -31.4167, lng: -64.1833 }, // Default coordinates for Córdoba
-            numberOfLots: barrioCerradoData.numberOfLots!,
-            availableLots: barrioCerradoData.availableLots!,
-            totalArea: barrioCerradoData.totalArea!,
-            lotSizes: barrioCerradoData.lotSizes!,
-            services: barrioCerradoData.services!,
-            securityFeatures: barrioCerradoData.securityFeatures!,
-            commonAreas: barrioCerradoData.commonAreas!,
-            maintenanceFee: barrioCerradoData.maintenanceFee!,
-            buildingRegulations: barrioCerradoData.buildingRegulations!,
-            amenities: barrioCerradoData.amenities!,
-          };
+        // Crear el desarrollo primero (sin imágenes)
+        console.log('📤 [useDevelopmentForm] Enviando desarrollo para crear:', {
+          type: developmentForCreate.type,
+          status: developmentForCreate.status,
+          title: developmentForCreate.title,
+          city: developmentForCreate.city,
+          address: developmentForCreate.address
+          // Price y currency se manejan solo en DevelopmentUnit
+        });
+        
+        const newDevelopment = await developmentService.createDevelopment(developmentForCreate as any);
+        const developmentId = newDevelopment.id;
+
+        // Ahora subir las imágenes y guardar las referencias en la base de datos (EXACTAMENTE como properties)
+        if (uploadedFiles.images.length > 0) {
+          try {
+            console.log('📤 Subiendo', uploadedFiles.images.length, 'imagen(es) al servidor...');
+            
+            // Subir imágenes al servidor usando el developmentId
+            const subDirectory = `developments/${developmentId}`;
+            const uploadResults = await imageUploadService.uploadMultipleImages(uploadedFiles.images, subDirectory);
+            const uploadedImageUrls = uploadResults.map(result => result.url);
+            console.log('✅ Imágenes subidas:', uploadedImageUrls);
+
+            // Actualizar el desarrollo con las URLs de las imágenes usando el endpoint específico (igual que en editar)
+            try {
+              const imagePayload: Record<string, unknown> = {
+                imageUrls: uploadedImageUrls
+              };
+
+              // Si hay una imagen destacada, agregarla
+              if (uploadedImageUrls.length > 0) {
+                imagePayload.featuredImageUrl = uploadedImageUrls[0];
+              }
+
+              await apiClient.put(`/api/developments/${developmentId}/images`, imagePayload);
+              console.log('✅ Imágenes guardadas en la base de datos:', uploadedImageUrls.length);
+            } catch (error) {
+              console.warn('⚠️ useDevelopmentForm: Failed to update images, but development was saved', error);
+            }
+
+          } catch (imageError) {
+            console.error("❌ useDevelopmentForm: Error handling images:", imageError);
+            // No fallar el formulario si hay error con las imágenes
+          }
         }
-
-        await developmentService.createDevelopment(developmentForCreate as Development);
       }
 
       return true;
-    } catch (error) {
-      console.error("Error saving development:", error);
-      return false;
+    } catch (error: any) {
+      console.error("❌ [useDevelopmentForm] Error saving development:");
+      console.error("   - Error completo:", error);
+      console.error("   - Mensaje:", error.message);
+      console.error("   - Stack:", error.stack);
+      
+      // Re-lanzar el error para que el componente pueda manejarlo
+      throw error;
     }
-  }, [formData, validate, errors, initialData]);
+  }, [formData, validate, errors, initialData, uploadedFiles]);
 
   return {
     formData,

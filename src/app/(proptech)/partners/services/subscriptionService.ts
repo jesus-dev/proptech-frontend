@@ -6,18 +6,14 @@ import {
   CreateSubscriptionRequest,
   UpdateSubscriptionRequest 
 } from '../types/subscription';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export const subscriptionService = {
   // Planes de suscripción
   async getAllProducts(): Promise<SubscriptionPlan[]> {
     try {
-      const response = await fetch(getEndpoint('/api/subscription-plans'));
-      if (!response.ok) {
-        console.warn('No se pudieron obtener planes de suscripción (response not ok)');
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get('/api/subscription-plans');
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching subscription plans:', error);
       return [];
@@ -26,11 +22,13 @@ export const subscriptionService = {
 
   async getProductById(id: number): Promise<SubscriptionPlan | null> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscription-plans/${id}`));
-      if (!response.ok) {
-        return null;
+      try {
+        const response = await apiClient.get(`/api/subscription-plans/${id}`);
+        return response.data;
+      } catch (error: any) {
+        if (error.response?.status === 404) return null;
+        throw error;
       }
-      return await response.json();
     } catch (error) {
       console.error('Error fetching subscription plan:', error);
       return null;
@@ -39,19 +37,8 @@ export const subscriptionService = {
 
   async createProduct(data: any): Promise<SubscriptionPlan> {
     try {
-      const response = await fetch(getEndpoint('/api/subscription-plans'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al crear plan de suscripción');
-      }
-      
-      return await response.json();
+      const response = await apiClient.post('/api/subscription-plans', data);
+      return response.data;
     } catch (error) {
       console.error('Error creating subscription plan:', error);
       throw error;
@@ -60,19 +47,8 @@ export const subscriptionService = {
 
   async updateProduct(id: number, data: any): Promise<SubscriptionPlan> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscription-plans/${id}`), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al actualizar plan de suscripción');
-      }
-      
-      return await response.json();
+      const response = await apiClient.put(`/api/subscription-plans/${id}`, data);
+      return response.data;
     } catch (error) {
       console.error('Error updating subscription plan:', error);
       throw error;
@@ -81,13 +57,7 @@ export const subscriptionService = {
 
   async deleteProduct(id: number): Promise<void> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscription-plans/${id}`), {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al eliminar plan de suscripción');
-      }
+      await apiClient.delete(`/api/subscription-plans/${id}`);
     } catch (error) {
       console.error('Error deleting subscription plan:', error);
       throw error;
@@ -97,12 +67,8 @@ export const subscriptionService = {
   // Suscripciones de socios
   async getAllSubscriptions(): Promise<PartnerSubscription[]> {
     try {
-      const response = await fetch(getEndpoint('/api/subscriptions'));
-      if (!response.ok) {
-        console.warn('No se pudieron obtener suscripciones (response not ok)');
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get('/api/subscriptions');
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
       return [];
@@ -111,11 +77,8 @@ export const subscriptionService = {
 
   async getPartnerSubscriptions(partnerId: number): Promise<PartnerSubscription[]> {
     try {
-      const response = await fetch(getEndpoint(`/api/partners/${partnerId}/subscriptions`));
-      if (!response.ok) {
-        throw new Error('Error al obtener suscripciones del socio');
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/partners/${partnerId}/subscriptions`);
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching partner subscriptions:', error);
       return [];
@@ -124,11 +87,13 @@ export const subscriptionService = {
 
   async getSubscriptionById(id: number): Promise<PartnerSubscription | null> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscriptions/${id}`));
-      if (!response.ok) {
-        return null;
+      try {
+        const response = await apiClient.get(`/api/subscriptions/${id}`);
+        return response.data;
+      } catch (error: any) {
+        if (error.response?.status === 404) return null;
+        throw error;
       }
-      return await response.json();
     } catch (error) {
       console.error('Error fetching subscription:', error);
       return null;
@@ -138,28 +103,8 @@ export const subscriptionService = {
   async createSubscription(data: CreateSubscriptionRequest): Promise<PartnerSubscription> {
     try {
       console.log('Creating subscription with data:', data);
-      const response = await fetch(getEndpoint('/api/subscriptions'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', response.status, errorText);
-        let errorMessage = 'Error al crear suscripción';
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.error || errorMessage;
-        } catch (e) {
-          errorMessage = errorText || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-      
-      const result = await response.json();
+      const response = await apiClient.post('/api/subscriptions', data);
+      const result = response.data;
       console.log('Subscription created successfully:', result);
       return result;
     } catch (error) {
@@ -170,19 +115,8 @@ export const subscriptionService = {
 
   async updateSubscription(id: number, data: UpdateSubscriptionRequest): Promise<PartnerSubscription> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscriptions/${id}`), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al actualizar suscripción');
-      }
-      
-      return await response.json();
+      const response = await apiClient.put(`/api/subscriptions/${id}`, data);
+      return response.data;
     } catch (error) {
       console.error('Error updating subscription:', error);
       throw error;
@@ -191,19 +125,8 @@ export const subscriptionService = {
 
   async cancelSubscription(id: number, reason?: string): Promise<PartnerSubscription> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscriptions/${id}/cancel`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al cancelar suscripción');
-      }
-      
-      return await response.json();
+      const response = await apiClient.post(`/api/subscriptions/${id}/cancel`, { reason });
+      return response.data;
     } catch (error) {
       console.error('Error canceling subscription:', error);
       throw error;
@@ -212,15 +135,8 @@ export const subscriptionService = {
 
   async reactivateSubscription(id: number): Promise<PartnerSubscription> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscriptions/${id}/reactivate`), {
-        method: 'POST',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al reactivar suscripción');
-      }
-      
-      return await response.json();
+      const response = await apiClient.post(`/api/subscriptions/${id}/reactivate`);
+      return response.data;
     } catch (error) {
       console.error('Error reactivating subscription:', error);
       throw error;
@@ -230,11 +146,8 @@ export const subscriptionService = {
   // Facturas de suscripción
   async getSubscriptionInvoices(subscriptionId: number): Promise<SubscriptionInvoice[]> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscriptions/${subscriptionId}/invoices`));
-      if (!response.ok) {
-        throw new Error('Error al obtener facturas de suscripción');
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/subscriptions/${subscriptionId}/invoices`);
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching subscription invoices:', error);
       return [];
@@ -243,11 +156,13 @@ export const subscriptionService = {
 
   async getInvoiceById(id: number): Promise<SubscriptionInvoice | null> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscription-invoices/${id}`));
-      if (!response.ok) {
-        return null;
+      try {
+        const response = await apiClient.get(`/api/subscription-invoices/${id}`);
+        return response.data;
+      } catch (error: any) {
+        if (error.response?.status === 404) return null;
+        throw error;
       }
-      return await response.json();
     } catch (error) {
       console.error('Error fetching invoice:', error);
       return null;
@@ -257,11 +172,8 @@ export const subscriptionService = {
   // Uso de suscripción
   async getSubscriptionUsage(subscriptionId: number): Promise<SubscriptionUsage[]> {
     try {
-      const response = await fetch(getEndpoint(`/api/subscriptions/${subscriptionId}/usage`));
-      if (!response.ok) {
-        throw new Error('Error al obtener uso de suscripción');
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/subscriptions/${subscriptionId}/usage`);
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching subscription usage:', error);
       return [];
@@ -270,11 +182,8 @@ export const subscriptionService = {
 
   async getCurrentUsage(partnerId: number): Promise<SubscriptionUsage[]> {
     try {
-      const response = await fetch(getEndpoint(`/api/partners/${partnerId}/usage`));
-      if (!response.ok) {
-        throw new Error('Error al obtener uso actual');
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/partners/${partnerId}/usage`);
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching current usage:', error);
       return [];

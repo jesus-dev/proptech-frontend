@@ -7,6 +7,7 @@ import { imageUploadService } from "../services/imageUploadService";
 import { agentService } from "../services/agentService";
 import { CurrencyCode } from "@/lib/utils";
 import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
 import { FloorPlanForm } from "../components/steps/FloorPlansStep";
 import { useAuthContext } from "@/context/AuthContext";
@@ -674,19 +675,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             }));
             
             
-            const response = await fetch(getEndpoint(`/api/properties/${propertyId}/floor-plans`), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(mappedFloorPlans)
-            });
-
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.warn('⚠️ usePropertyForm: Failed to save floor plans:', errorText);
-            } else {
-            }
+            await apiClient.post(`/api/properties/${propertyId}/floor-plans`, mappedFloorPlans);
           } catch (floorPlanError) {
             console.error('❌ usePropertyForm: Error saving floor plans:', floorPlanError);
             // No fallar el formulario si hay error con los floor plans
@@ -723,16 +712,10 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
             }
 
             // Llamar al endpoint para actualizar las imágenes en la base de datos
-            const response = await fetch(getEndpoint(`/api/properties/${propertyId}/images`), {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-              console.warn('⚠️ usePropertyForm: Failed to update images, but property was saved');
+            try {
+              await apiClient.put(`/api/properties/${propertyId}/images`, payload);
+            } catch (error) {
+              console.warn('⚠️ usePropertyForm: Failed to update images, but property was saved', error);
             }
 
           } catch (imageError) {
@@ -938,21 +921,11 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
 
   const saveImageReference = async (propertyId: string, imageUrl: string, isPrimary: boolean = false) => {
     try {
-      const response = await fetch(getEndpoint(`/api/properties/${propertyId}/images`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          imageUrl,
-          fileName: imageUrl.split('/').pop(),
-          isPrimary,
-        }),
+      await apiClient.post(`/api/properties/${propertyId}/images`, {
+        imageUrl,
+        fileName: imageUrl.split('/').pop(),
+        isPrimary,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to save image reference');
-      }
     } catch (error) {
       console.error('Error saving image reference:', error);
       throw error;

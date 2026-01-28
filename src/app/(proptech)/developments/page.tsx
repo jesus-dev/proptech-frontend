@@ -1,6 +1,6 @@
 "use client";
 
-import { BuildingOfficeIcon, HomeIcon, MapPinIcon, UserIcon, ChartBarIcon, PlusIcon, ArrowRightIcon, ChartBarSquareIcon, StarIcon, BuildingOffice2Icon, MapPinIcon as MapPin, CalendarDaysIcon } from "@heroicons/react/24/outline";
+import { BuildingOfficeIcon, HomeIcon, MapPinIcon, UserIcon, ChartBarIcon, PlusIcon, ArrowRightIcon, ChartBarSquareIcon, StarIcon, BuildingOffice2Icon, MapPinIcon as MapPin, CalendarDaysIcon, EyeIcon } from "@heroicons/react/24/outline";
 
 import React, { useState, useEffect } from "react";
 import Image from 'next/image';
@@ -12,8 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { GridIcon, ListIcon } from "@/icons";
 import { Development } from "./components/types";
 import { developmentService } from "./services/developmentService";
+import { getImageBaseUrl } from '@/config/environment';
 
 const DevelopmentCard: React.FC<{ development: Development }> = ({ development }) => {
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "loteamiento": return <MapPin className="w-4 h-4" />;
@@ -31,69 +35,189 @@ const DevelopmentCard: React.FC<{ development: Development }> = ({ development }
     }
   };
 
+  // Helper para construir URL de imagen (igual que en PropertyCard)
+  const getImageUrl = (imagePath: string | null | undefined): string => {
+    if (!imagePath) {
+      return '/images/placeholder.jpg';
+    }
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    const baseUrl = getImageBaseUrl();
+    // Si la ruta es /uploads/1/... debería ser /uploads/developments/1/...
+    let correctedPath = imagePath;
+    if (imagePath.startsWith('/uploads/') && !imagePath.includes('/developments/')) {
+      // Extraer el ID del desarrollo de la ruta /uploads/1/... 
+      // y reconstruir como /uploads/developments/1/...
+      const parts = imagePath.split('/');
+      if (parts.length >= 4 && parts[1] === 'uploads' && /^\d+$/.test(parts[2])) {
+        // Formato: /uploads/1/filename.jpg -> /uploads/developments/1/filename.jpg
+        const developmentId = parts[2];
+        const fileName = parts.slice(3).join('/');
+        correctedPath = `/uploads/developments/${developmentId}/${fileName}`;
+      }
+    }
+    const fullUrl = `${baseUrl}${correctedPath.startsWith('/') ? '' : '/'}${correctedPath}`;
+    return fullUrl;
+  };
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (development.images && development.images.length > 0) {
+      const imageUrl = development.images[0];
+      setPreviewImage(getImageUrl(imageUrl));
+      setShowPreview(true);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setShowPreview(false);
+    setPreviewImage(null);
+  };
+
+  // Obtener la imagen principal (igual que PropertyCard)
+  const mainImage = development.images && development.images.length > 0 ? development.images[0] : null;
+  const fullImageUrl = getImageUrl(mainImage);
+
   return (
-    <Card className="group relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02]">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-30" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-      }}></div>
-      
-      {/* Image with overlay */}
-      <div className="relative overflow-hidden rounded-t-xl">
-        <img
-          src={development.images?.[0] || "/images/placeholder.jpg"}
-          alt={development.title}
-          className="w-full h-56 object-cover transition-transform duration-500 group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    <>
+      <Card className="group relative overflow-hidden bg-white dark:bg-slate-800 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02]">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-20 dark:opacity-10" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
         
-        {/* Type Badge */}
-        <div className="absolute top-4 left-4">
-          <Badge className={`${getStatusColor(development.status)} text-white border-0 shadow-lg backdrop-blur-sm flex items-center gap-1.5`}>
-            {getTypeIcon(development.type)}
-            {development.type === "loteamiento" ? "Loteamiento" : 
-             development.type === "edificio" ? "Edificio" : 
-             development.type === "condominio" ? "Condominio" : "Barrio Cerrado"}
-          </Badge>
-        </div>
-
-        {/* Status Badge */}
-        <div className="absolute top-4 right-4">
-          <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-0 shadow-lg backdrop-blur-sm">
-            {development.status === "available" ? "Disponible" : 
-             development.status === "sold" ? "Vendido" : "Reservado"}
-          </Badge>
-        </div>
-      </div>
-
-      <div className="p-6 relative">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-          <Link href={`/developments/${development.id}`} className="hover:underline">
-            {development.title}
-          </Link>
-        </h3>
-        
-        <div className="flex items-center text-slate-600 dark:text-slate-400 mb-3">
-          <MapPin className="w-4 h-4 mr-2 text-blue-500" />
-          <span className="text-sm">{development.address}, {development.city}</span>
-        </div>
-
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
-          {development.description}
-        </p>
-
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
-          <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
-            <CalendarDaysIcon className="w-4 h-4 mr-1" />
-            {new Date(development.createdAt).toLocaleDateString('es-ES')}
+        {/* Image with overlay and preview */}
+        <div className="relative overflow-hidden rounded-t-xl h-64 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+          {(() => {
+            // Usar la primera imagen si existe (igual que PropertyCard)
+            const imageToShow = mainImage ? getImageUrl(mainImage) : null;
+            
+            return imageToShow && imageToShow !== '/images/placeholder.jpg' ? (
+              <img
+                src={imageToShow}
+                alt={development.title}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 cursor-pointer"
+                onClick={handleImageClick}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+            ) : null;
+          })()}
+          {/* Fallback image */}
+          <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 flex items-center justify-center text-gray-500" style={{ display: mainImage ? 'none' : 'flex' }}>
+            <div className="text-center p-4">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-lg">
+                <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Sin imagen</p>
+            </div>
           </div>
           
-          <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-            <ArrowRightIcon className="w-4 h-4" />
-          </Button>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+          {/* Preview Button */}
+          {mainImage && (
+            <button
+              onClick={handleImageClick}
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full p-3 shadow-xl hover:scale-110 hover:bg-white dark:hover:bg-slate-700 z-10"
+              title="Ver previsualización"
+            >
+              <EyeIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </button>
+          )}
+          
+          {/* Type Badge */}
+          <div className="absolute top-4 left-4 z-10">
+            <Badge className={`${getStatusColor(development.status)} text-white border-0 shadow-lg backdrop-blur-sm flex items-center gap-1.5`}>
+              {getTypeIcon(development.type)}
+              {development.type === "loteamiento" ? "Loteamiento" : 
+               development.type === "edificio" ? "Edificio" : 
+               development.type === "condominio" ? "Condominio" : "Barrio Cerrado"}
+            </Badge>
+          </div>
+
+          {/* Status Badge */}
+          <div className="absolute top-4 right-4 z-10">
+            <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-0 shadow-lg backdrop-blur-sm">
+              {development.status === "available" ? "Disponible" : 
+               development.status === "sold" ? "Vendido" : "Reservado"}
+            </Badge>
+          </div>
+
+          {/* Image Counter */}
+          {development.images && development.images.length > 1 && (
+            <div className="absolute bottom-4 right-4 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full">
+              {development.images.length} {development.images.length === 1 ? 'imagen' : 'imágenes'}
+            </div>
+          )}
         </div>
-      </div>
-    </Card>
+
+        <div className="p-6 relative">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            <Link href={`/developments/${development.id}`} className="hover:underline">
+              {development.title}
+            </Link>
+          </h3>
+          
+          <div className="flex items-center text-slate-600 dark:text-slate-400 mb-3">
+            <MapPin className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0" />
+            <span className="text-sm truncate">{development.address}, {development.city}</span>
+          </div>
+
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
+            {development.description}
+          </p>
+
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
+              <CalendarDaysIcon className="w-4 h-4 mr-1" />
+              {new Date(development.createdAt).toLocaleDateString('es-ES')}
+            </div>
+            
+            <Link href={`/developments/${development.id}`}>
+              <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                <ArrowRightIcon className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Card>
+
+      {/* Preview Modal */}
+      {showPreview && previewImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={handleClosePreview}
+        >
+          <div className="relative max-w-5xl max-h-[90vh] w-full">
+            <button
+              onClick={handleClosePreview}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <img
+              src={previewImage}
+              alt={development.title}
+              className="w-full h-auto max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

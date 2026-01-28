@@ -1,4 +1,5 @@
 import { Contract } from "../components/types";
+import { apiClient } from '@/lib/api';
 
 export interface UploadResponse {
   success: boolean;
@@ -32,16 +33,10 @@ export const uploadSignedContract = async (
     }
 
     // Llamada al backend
-    const response = await fetch(`/api/contracts/${contractId}/documents`, {
-      method: 'POST',
-      body: formData,
-    });
+    // axios detecta automáticamente FormData y configura el Content-Type correctamente
+    const response = await apiClient.post(`/api/contracts/${contractId}/documents`, formData);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = response.data;
     
     return {
       success: true,
@@ -105,12 +100,21 @@ export const downloadScannedDocument = async (contract: Contract): Promise<void>
   }
 
   try {
-    const response = await fetch(contract.scannedDocumentUrl);
-    if (!response.ok) {
-      throw new Error('Error al descargar el documento.');
+    // Si es URL absoluta, usar fetch directo; si es relativa, usar apiClient
+    let blob: Blob;
+    if (contract.scannedDocumentUrl.startsWith('http://') || contract.scannedDocumentUrl.startsWith('https://')) {
+      const response = await fetch(contract.scannedDocumentUrl);
+      if (!response.ok) {
+        throw new Error('Error al descargar el documento.');
+      }
+      blob = await response.blob();
+    } else {
+      // URL relativa - usar apiClient para autenticación
+      const response = await apiClient.get(contract.scannedDocumentUrl, {
+        responseType: 'blob',
+      });
+      blob = new Blob([response.data]);
     }
-
-    const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -126,13 +130,7 @@ export const downloadScannedDocument = async (contract: Contract): Promise<void>
 
 export const deleteScannedDocument = async (contractId: string | number, documentId: string | number): Promise<boolean> => {
   try {
-    const response = await fetch(`/api/contracts/${contractId}/documents/${documentId}`, {
-      method: 'DELETE',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    await apiClient.delete(`/api/contracts/${contractId}/documents/${documentId}`);
 
     return true;
   } catch (error) {

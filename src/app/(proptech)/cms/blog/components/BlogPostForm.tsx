@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Image as ImageIcon } from 'lucide-react';
+import { apiClient } from '@/lib/api';
 import { getEndpoint } from '@/lib/api-config';
 import { isHeicFile, processImageFiles } from '@/lib/image-utils';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -169,32 +170,10 @@ export default function BlogPostForm({
       uploadFormData.append('category', 'BLOG');
       uploadFormData.append('altText', formData.title);
 
-      const headers: Record<string, string> = {};
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      if (token && token !== 'undefined' && token !== 'null') {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const selectedTenant = typeof window !== 'undefined' ? localStorage.getItem('selectedTenant') : null;
-      if (selectedTenant) {
-        try {
-          const tenant = JSON.parse(selectedTenant);
-          if (tenant?.id && tenant.id !== 0 && tenant.id != null) {
-            headers['X-Selected-Tenant-Id'] = String(tenant.id);
-          }
-        } catch (_) {}
-      }
+      // axios detecta automáticamente FormData y configura el Content-Type correctamente
+      const res = await apiClient.post('/api/cms/media/upload', uploadFormData);
 
-      const res = await fetch(getEndpoint('/api/cms/media/upload'), {
-        method: 'POST',
-        headers,
-        body: uploadFormData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error || 'Error al subir la imagen');
-      }
-      const data = (await res.json()) as { fileUrl: string };
+      const data = res.data as { fileUrl: string };
       console.log('Upload response:', data);
       console.log('fileUrl received:', data.fileUrl);
       

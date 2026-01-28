@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { AgencyFormData } from '../types';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { Upload, Image as ImageIcon, Edit } from 'lucide-react';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import ImageCropModal from '@/components/common/ImageCropModal';
 
 interface AgencyFormProps {
@@ -124,20 +124,10 @@ export default function AgencyForm({
         uploadFormData.append('oldLogoUrl', originalLogoUrl);
       }
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/agencies/upload-logo'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: uploadFormData,
-      });
+      // axios detecta automáticamente FormData y configura el Content-Type correctamente
+      const response = await apiClient.post('/api/agencies/upload-logo', uploadFormData);
 
-      if (!response.ok) {
-        throw new Error('Error al subir el logo');
-      }
-
-      const result = await response.json();
+      const result = response.data;
       return result.fileUrl;
       
     } catch (error) {
@@ -150,20 +140,9 @@ export default function AgencyForm({
     if (!originalLogoUrl) return;
     
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(getEndpoint('/api/agencies/delete-logo'), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ logoUrl: originalLogoUrl }),
+      await apiClient.delete('/api/agencies/delete-logo', {
+        data: { logoUrl: originalLogoUrl },
       });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar el logo');
-      }
     } catch (error) {
       console.error('Error deleting file:', error);
       throw error;

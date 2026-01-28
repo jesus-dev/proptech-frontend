@@ -1,3 +1,5 @@
+import { apiClient } from '@/lib/api';
+
 // Servicio para manejar operaciones de leads/negocios
 export interface Lead {
   id: string;
@@ -12,36 +14,12 @@ export interface LeadUpdateData {
 
 class LeadApiService {
   // Helper function to clean up malformed API URLs
-  private resolveApiUrl(): string {
-    let apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
-    
-    // Clean up malformed URLs that might have double concatenation
-    if (apiUrl.includes('https://proptech.com.py/https/api.proptech.com.py')) {
-      apiUrl = 'https://api.proptech.com.py';
-    } else if (apiUrl.includes('http://proptech.com.py/http/api.proptech.com.py')) {
-      apiUrl = 'http://api.proptech.com.py';
-    }
-    
-    return apiUrl;
-  }
-
-  private baseUrl = this.resolveApiUrl();
+  // apiClient ya maneja la URL base
 
   async updateLead(leadId: string, data: LeadUpdateData): Promise<Lead | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/leads/${leadId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error updating lead: ${response.statusText}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.put(`/api/leads/${leadId}`, data);
+      return response.data;
     } catch (error) {
       console.error('Error updating lead:', error);
       // Retornar null en caso de error para no romper el flujo
@@ -51,13 +29,8 @@ class LeadApiService {
 
   async getLead(leadId: string): Promise<Lead | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/leads/${leadId}`);
-
-      if (!response.ok) {
-        throw new Error(`Error fetching lead: ${response.statusText}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get(`/api/leads/${leadId}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching lead:', error);
       return null;
@@ -66,13 +39,8 @@ class LeadApiService {
 
   async getAllLeads(): Promise<Lead[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/leads`);
-
-      if (!response.ok) {
-        throw new Error(`Error fetching leads: ${response.statusText}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/api/leads');
+      return response.data || [];
     } catch (error) {
       console.error('Error fetching leads:', error);
       return [];

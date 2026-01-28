@@ -319,7 +319,7 @@ export default function NewContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estado/Provincia
+                    División Política
                   </label>
                   <input
                     type="text"

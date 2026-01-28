@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useDevelopmentForm, DevelopmentFormData } from "../../hooks/useDevelopmentForm";
 import TypeStep from "../../components/steps/TypeStep";
 import GeneralInfoStep from "../../components/steps/GeneralInfoStep";
@@ -14,13 +14,10 @@ import InfraAmenitiesStep from "../../components/steps/InfraAmenitiesStep";
 import CommonAmenitiesStep from "../../components/steps/CommonAmenitiesStep";
 import { developmentService } from "../../services/developmentService";
 
-interface PageProps {
-  params: Promise<{ id: string }>
-}
-
-export default function EditDevelopmentPage({ params }: PageProps) {
+export default function EditDevelopmentPage() {
   const router = useRouter();
-  const { id: developmentId } = React.use(params);
+  const params = useParams();
+  const developmentId = params?.id as string;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -101,7 +98,7 @@ export default function EditDevelopmentPage({ params }: PageProps) {
         fieldsToValidate = ['type'];
         break;
       case 'general':
-        fieldsToValidate = ['title', 'description', 'address', 'city', 'state', 'zip', 'status'];
+        fieldsToValidate = ['title', 'description', 'address', 'city', 'status'];
         break;
       case 'multimedia':
         fieldsToValidate = ['images'];

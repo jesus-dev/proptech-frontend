@@ -1,6 +1,6 @@
-
+"use client";
 import Image from 'next/image';
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { 
   Square3Stack3DIcon,
   HomeIcon,
@@ -10,6 +10,9 @@ import {
   PhotoIcon,
   DocumentTextIcon
 } from "@heroicons/react/24/outline";
+import { getFloorPlans, uploadFloorPlanImage, saveFloorPlans, FloorPlan } from '../../services/floorPlanService';
+import { PropertyFormData } from '../../hooks/usePropertyForm';
+
 export type FloorPlanForm = {
   title: string;
   bedrooms: number;
@@ -23,13 +26,61 @@ export type FloorPlanForm = {
 };
 
 interface FloorPlansStepProps {
+  formData?: PropertyFormData;
   floorPlans: FloorPlanForm[];
   setFloorPlans: (plans: FloorPlanForm[]) => void;
   errors?: unknown;
   handleFloorPlanImageUpload?: (planIndex: number, file: File) => Promise<string>;
 }
 
-export default function FloorPlansStep({ floorPlans, setFloorPlans, errors, handleFloorPlanImageUpload }: FloorPlansStepProps) {
+export default function FloorPlansStep({ formData, floorPlans, setFloorPlans, errors, handleFloorPlanImageUpload }: FloorPlansStepProps) {
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState<{ [key: number]: boolean }>({});
+  const propertyId = formData ? ((formData as any).id || formData.propertyId) : undefined;
+
+  // Cargar planos desde el backend cuando hay propertyId
+  useEffect(() => {
+    if (propertyId) {
+      setLoading(true);
+      getFloorPlans(propertyId)
+        .then((plans) => {
+          // Convertir FloorPlan a FloorPlanForm
+          const formPlans: FloorPlanForm[] = plans.map(plan => ({
+            title: plan.title || '',
+            bedrooms: plan.bedrooms || 0,
+            bathrooms: plan.bathrooms || 0,
+            price: plan.price || 0,
+            priceSuffix: plan.priceSuffix || '',
+            size: plan.size || 0,
+            image: plan.image,
+            description: plan.description || ''
+          }));
+          setFloorPlans(formPlans);
+        })
+        .catch(() => {
+          // Si no hay planos o hay error, mantener los planos del formData
+          console.error('Error loading floor plans');
+        })
+        .finally(() => setLoading(false));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId]);
+
+  // Guardar planos en el backend cuando cambian y hay propertyId
+  useEffect(() => {
+    if (propertyId && floorPlans.length >= 0) {
+      // Debounce: esperar 1 segundo después del último cambio antes de guardar
+      const timeoutId = setTimeout(() => {
+        saveFloorPlans(propertyId, floorPlans).catch((error) => {
+          console.error('Error auto-saving floor plans:', error);
+        });
+      }, 1000);
+
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId, JSON.stringify(floorPlans)]);
+
   const handleChange = (idx: number, field: keyof FloorPlanForm, value: any) => {
     const updated = [...floorPlans];
     updated[idx][field] = value;
@@ -39,18 +90,26 @@ export default function FloorPlansStep({ floorPlans, setFloorPlans, errors, hand
   const handleImageChange = async (idx: number, file: File | null) => {
     if (!file) return;
 
-    if (handleFloorPlanImageUpload) {
-      try {
+    setUploading({ ...uploading, [idx]: true });
+    try {
+      if (propertyId) {
+        // Si hay propertyId, subir directamente al backend
+        const imageUrl = await uploadFloorPlanImage(propertyId, file);
+        handleChange(idx, "image", imageUrl);
+      } else if (handleFloorPlanImageUpload) {
+        // Si no hay propertyId pero hay handler, usarlo
         const imageUrl = await handleFloorPlanImageUpload(idx, file);
         handleChange(idx, "image", imageUrl);
-      } catch (error) {
-        console.error('Error uploading floor plan image:', error);
-        // Opcional: mostrar un toast de error
+      } else {
+        // Fallback: crear URL temporal para preview
+        const imageUrl = URL.createObjectURL(file);
+        handleChange(idx, "image", imageUrl);
       }
-    } else {
-      // Fallback: crear URL temporal para preview
-      const imageUrl = URL.createObjectURL(file);
-      handleChange(idx, "image", imageUrl);
+    } catch (error) {
+      console.error('Error uploading floor plan image:', error);
+      alert('Error al subir imagen del plano. Por favor, intenta nuevamente.');
+    } finally {
+      setUploading({ ...uploading, [idx]: false });
     }
   };
 
@@ -61,8 +120,23 @@ export default function FloorPlansStep({ floorPlans, setFloorPlans, errors, hand
     ]);
   };
 
-  const handleRemove = (idx: number) => {
-    setFloorPlans(floorPlans.filter((_, i) => i !== idx));
+  const handleRemove = async (idx: number) => {
+    if (propertyId) {
+      // Si hay propertyId, actualizar la lista y guardar en el backend
+      const updated = floorPlans.filter((_, i) => i !== idx);
+      setFloorPlans(updated);
+      try {
+        await saveFloorPlans(propertyId, updated);
+      } catch (error) {
+        console.error('Error saving floor plans after removal:', error);
+        // Revertir el cambio si falla
+        setFloorPlans(floorPlans);
+        alert('Error al eliminar plano. Por favor, intenta nuevamente.');
+      }
+    } else {
+      // Si no hay propertyId, solo actualizar el estado local
+      setFloorPlans(floorPlans.filter((_, i) => i !== idx));
+    }
   };
 
   return (
@@ -231,12 +305,21 @@ export default function FloorPlansStep({ floorPlans, setFloorPlans, errors, hand
                     />
                   </div>
                   {plan.image && typeof plan.image === 'string' && (
-                    <div className="mt-2">
+                    <div className="mt-2 relative">
                       <img 
                         src={plan.image} 
                         alt={`Plano ${idx + 1}`} 
                         className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                        onError={(e) => {
+                          // Si la imagen falla al cargar, ocultarla
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
                       />
+                      {uploading[idx] && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 rounded-lg">
+                          <div className="text-white text-sm">Subiendo...</div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

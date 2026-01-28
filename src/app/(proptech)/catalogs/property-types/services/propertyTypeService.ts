@@ -1,4 +1,4 @@
-import { getEndpoint } from '../../../../../lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface PropertyType {
   id: number;
@@ -18,44 +18,35 @@ export interface PropertyTypeFormData {
 
 // Get all property types
 export const getAllPropertyTypes = async (): Promise<PropertyType[]> => {
-  const res = await fetch(getEndpoint('/api/property-types'));
-  if (!res.ok) throw new Error('Error al obtener tipos de propiedad');
-  return res.json();
+  const res = await apiClient.get('/api/property-types');
+  return res.data;
 };
 
 // Get property type by ID
 export const getPropertyTypeById = async (id: number): Promise<PropertyType | null> => {
-  const res = await fetch(getEndpoint(`/api/property-types/${id}`));
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await apiClient.get(`/api/property-types/${id}`);
+    return res.data;
+  } catch (error) {
+    return null;
+  }
 };
 
 // Create new property type
 export const createPropertyType = async (data: PropertyTypeFormData): Promise<PropertyType> => {
-  const res = await fetch(getEndpoint('/api/property-types'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Error al crear tipo de propiedad');
-  return res.json();
+  const res = await apiClient.post('/api/property-types', data);
+  return res.data;
 };
 
 // Update property type
 export const updatePropertyType = async (id: number, data: Partial<PropertyTypeFormData>): Promise<PropertyType> => {
-  const res = await fetch(getEndpoint(`/api/property-types/${id}`), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) throw new Error('Error al actualizar tipo de propiedad');
-  return res.json();
+  const res = await apiClient.put(`/api/property-types/${id}`, data);
+  return res.data;
 };
 
 // Delete property type
 export const deletePropertyType = async (id: number): Promise<void> => {
-  const res = await fetch(getEndpoint(`/api/property-types/${id}`), { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar tipo de propiedad');
+  await apiClient.delete(`/api/property-types/${id}`);
 };
 
 // Get active property types only
@@ -71,16 +62,14 @@ export const getActivePropertyTypes = async (): Promise<PropertyType[]> => {
 
 // Get parent property types only
 export const getParentPropertyTypes = async (): Promise<PropertyType[]> => {
-  const res = await fetch(getEndpoint('/api/property-types/parents'));
-  if (!res.ok) throw new Error('Error al obtener tipos padre de propiedad');
-  return res.json();
+  const res = await apiClient.get('/api/property-types/parents');
+  return res.data;
 };
 
 // Get child property types of a parent
 export const getChildPropertyTypes = async (parentId: number): Promise<PropertyType[]> => {
-  const res = await fetch(getEndpoint(`/api/property-types/${parentId}/children`));
-  if (!res.ok) throw new Error('Error al obtener tipos hijo de propiedad');
-  return res.json();
+  const res = await apiClient.get(`/api/property-types/${parentId}/children`);
+  return res.data;
 };
 
 // Search property types

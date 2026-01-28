@@ -37,6 +37,13 @@ apiClient.interceptors.request.use(
       config.headers = {} as any;
     }
     
+    // Si es FormData, NO establecer Content-Type manualmente
+    // axios lo detectará automáticamente y agregará el boundary correcto
+    if (config.data instanceof FormData) {
+      // Eliminar Content-Type para que axios lo configure automáticamente con boundary
+      delete config.headers['Content-Type'];
+    }
+    
     // Solo acceder a localStorage si estamos en el navegador
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token');

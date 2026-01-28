@@ -1,4 +1,4 @@
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface Partner {
   id: number;
@@ -78,17 +78,8 @@ class PartnerApiService {
       if (params?.agentId) searchParams.append('agentId', params.agentId.toString());
       if (params?.agencyId) searchParams.append('agencyId', params.agencyId.toString());
 
-      const url = getEndpoint(`/api/partners?${searchParams.toString()}`);
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Server error:', errorText);
-        throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
-      }
-      
-      const data = await response.json();
+      const response = await apiClient.get(`/api/partners?${searchParams.toString()}`);
+      const data = response.data;
       const page = params?.page ?? 1;
       const size = params?.size ?? 20;
       
@@ -148,16 +139,8 @@ class PartnerApiService {
 
   async getPartnerById(id: number): Promise<Partner> {
     try {
-      const response = await fetch(getEndpoint(`/api/partners/${id}`));
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Socio no encontrado');
-        }
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      return await response.json();
+      const response = await apiClient.get(`/api/partners/${id}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching partner:', error);
       throw new Error(`Error al cargar el socio: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -182,20 +165,8 @@ class PartnerApiService {
       delete cleanedPartner.nextPaymentDate;
       delete cleanedPartner.lastPaymentDate;
       
-      const response = await fetch(getEndpoint('/api/partners'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cleanedPartner),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
-      }
-      
-      return await response.json();
+      const response = await apiClient.post('/api/partners', cleanedPartner);
+      return response.data;
     } catch (error) {
       console.error('Error creating partner:', error);
       throw new Error(`Error al crear el socio: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -221,20 +192,8 @@ class PartnerApiService {
       delete cleanedPartner.nextPaymentDate;
       delete cleanedPartner.lastPaymentDate;
       
-      const response = await fetch(getEndpoint(`/api/partners/${id}`), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cleanedPartner),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
-      }
-      
-      return await response.json();
+      const response = await apiClient.put(`/api/partners/${id}`, cleanedPartner);
+      return response.data;
     } catch (error) {
       console.error('Error updating partner:', error);
       throw new Error(`Error al actualizar el socio: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -243,14 +202,7 @@ class PartnerApiService {
 
   async deletePartner(id: number): Promise<boolean> {
     try {
-      const response = await fetch(getEndpoint(`/api/partners/${id}`), {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
+      await apiClient.delete(`/api/partners/${id}`);
       return true;
     } catch (error) {
       console.error('Error deleting partner:', error);
@@ -261,13 +213,8 @@ class PartnerApiService {
   async searchPartners(query: string): Promise<Partner[]> {
     try {
       // Obtener todos los partners y filtrar por búsqueda en el cliente
-      const response = await fetch(getEndpoint('/api/partners'));
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      const allPartners = await response.json();
+      const response = await apiClient.get('/api/partners');
+      const allPartners = response.data;
       const searchTerm = query.toLowerCase();
       return allPartners.filter((partner: Partner) => 
         partner.firstName?.toLowerCase().includes(searchTerm) ||
@@ -284,13 +231,8 @@ class PartnerApiService {
   async getPartnersByType(type: string): Promise<Partner[]> {
     try {
       // Obtener todos los partners y filtrar por tipo en el cliente
-      const response = await fetch(getEndpoint('/api/partners'));
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      const allPartners = await response.json();
+      const response = await apiClient.get('/api/partners');
+      const allPartners = response.data;
       return allPartners.filter((partner: Partner) => partner.type === type);
     } catch (error) {
       console.error('Error fetching partners by type:', error);
@@ -301,13 +243,8 @@ class PartnerApiService {
   async getPartnersByStatus(status: string): Promise<Partner[]> {
     try {
       // Obtener todos los partners y filtrar por estado en el cliente
-      const response = await fetch(getEndpoint('/api/partners'));
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      const allPartners = await response.json();
+      const response = await apiClient.get('/api/partners');
+      const allPartners = response.data;
       return allPartners.filter((partner: Partner) => partner.status === status);
     } catch (error) {
       console.error('Error fetching partners by status:', error);
@@ -318,13 +255,8 @@ class PartnerApiService {
   async getActivePartners(): Promise<Partner[]> {
     try {
       // Obtener todos los partners y filtrar los activos en el cliente
-      const response = await fetch(getEndpoint('/api/partners'));
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      const allPartners = await response.json();
+      const response = await apiClient.get('/api/partners');
+      const allPartners = response.data;
       return allPartners.filter((partner: Partner) => partner.status === 'ACTIVE' || !partner.status);
     } catch (error) {
       console.error('Error fetching active partners:', error);
@@ -337,13 +269,8 @@ class PartnerApiService {
       const searchParams = new URLSearchParams();
       if (params?.month) searchParams.append('month', params.month);
       if (params?.category) searchParams.append('category', params.category);
-      const url = getEndpoint(`/api/partners/debtors?${searchParams.toString()}`);
-      const response = await fetch(url);
-      if (!response.ok) {
-        console.warn(`No se pudieron obtener morosos (status ${response.status})`);
-        return [];
-      }
-      return await response.json();
+      const response = await apiClient.get(`/api/partners/debtors?${searchParams.toString()}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching debtor partners:', error);
       return [];
@@ -353,13 +280,8 @@ class PartnerApiService {
   async getPartnersWithPendingPayments(): Promise<Partner[]> {
     try {
       // Obtener todos los partners y filtrar los que tienen pagos pendientes
-      const response = await fetch(getEndpoint('/api/partners'));
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      const allPartners = await response.json();
+      const response = await apiClient.get('/api/partners');
+      const allPartners = response.data;
       return allPartners.filter((partner: Partner) => (partner.pendingEarnings || 0) > 0);
     } catch (error) {
       console.error('Error fetching partners with pending payments:', error);
@@ -370,13 +292,8 @@ class PartnerApiService {
   async getVerifiedPartners(): Promise<Partner[]> {
     try {
       // Obtener todos los partners y filtrar los verificados
-      const response = await fetch(getEndpoint('/api/partners'));
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      const allPartners = await response.json();
+      const response = await apiClient.get('/api/partners');
+      const allPartners = response.data;
       return allPartners.filter((partner: Partner) => partner.isVerified === true);
     } catch (error) {
       console.error('Error fetching verified partners:', error);
@@ -387,13 +304,8 @@ class PartnerApiService {
   async getTopPerformers(limit: number = 10): Promise<Partner[]> {
     try {
       // Obtener todos los partners y ordenarlos por ganancias totales
-      const response = await fetch(getEndpoint('/api/partners'));
-      
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
-      }
-      
-      const allPartners = await response.json();
+      const response = await apiClient.get('/api/partners');
+      const allPartners = response.data;
       
       // Filtrar solo socios activos y ordenar por ganancias totales
       const topPerformers = allPartners
@@ -421,17 +333,10 @@ class PartnerApiService {
         formData.append('oldPhotoUrl', oldPhotoUrl);
       }
 
-      const response = await fetch(getEndpoint(`/api/partners/${id}/upload-photo`), {
-        method: 'POST',
-        body: formData,
-      });
+      // axios detecta automáticamente FormData y configura el Content-Type correctamente
+      const response = await apiClient.post(`/api/partners/${id}/upload-photo`, formData);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Error uploading partner photo:', error);
       throw new Error(`Error al subir la foto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -440,20 +345,11 @@ class PartnerApiService {
 
   async deletePartnerPhoto(id: number, photoUrl?: string): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await fetch(getEndpoint(`/api/partners/${id}/delete-photo`), {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ photoUrl }),
+      const response = await apiClient.delete(`/api/partners/${id}/delete-photo`, {
+        data: { photoUrl },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Error deleting partner photo:', error);
       throw new Error(`Error al eliminar la foto: ${error instanceof Error ? error.message : 'Error desconocido'}`);

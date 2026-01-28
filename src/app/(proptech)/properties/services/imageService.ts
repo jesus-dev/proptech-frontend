@@ -1,4 +1,5 @@
 import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export class ImageService {
   /**
@@ -111,34 +112,24 @@ export class ImageService {
     formData.append('file', file);
     formData.append('fileName', file.name);
 
-    const response = await fetch(getEndpoint(`/api/files/upload/properties`), {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload image');
+    try {
+      // axios detecta automáticamente FormData y configura el Content-Type correctamente
+      const response = await apiClient.post('/api/files/upload/properties', formData);
+      return response.data.url;
+    } catch (error: any) {
+      throw new Error(error.response?.data || 'Failed to upload image');
     }
-
-    const result = await response.json();
-    return result.url;
   }
 
   async saveImageReference(propertyId: string, imageUrl: string, isPrimary: boolean = false): Promise<void> {
-    const response = await fetch(getEndpoint(`/api/properties/${propertyId}/images`), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    try {
+      await apiClient.post(`/api/properties/${propertyId}/images`, {
         imageUrl,
         fileName: imageUrl.split('/').pop(),
         isPrimary,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to save image reference');
+      });
+    } catch (error: any) {
+      throw new Error(error.response?.data || 'Failed to save image reference');
     }
   }
 }

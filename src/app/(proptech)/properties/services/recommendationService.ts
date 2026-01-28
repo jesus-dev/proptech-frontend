@@ -1,20 +1,5 @@
 import { Property } from "../components/types";
-
-// Helper function to clean up malformed API URLs
-function resolveApiUrl(): string {
-  let apiUrl = process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080');
-  
-  // Clean up malformed URLs that might have double concatenation
-  if (apiUrl.includes('https://proptech.com.py/https/api.proptech.com.py')) {
-    apiUrl = 'https://api.proptech.com.py';
-  } else if (apiUrl.includes('http://proptech.com.py/http/api.proptech.com.py')) {
-    apiUrl = 'http://api.proptech.com.py';
-  }
-  
-  return apiUrl;
-}
-
-const API_BASE_URL = resolveApiUrl();
+import { apiClient } from '@/lib/api';
 
 export interface RecommendationCriteria {
   priceRange?: {
@@ -75,29 +60,31 @@ export interface RecommendationStats {
 }
 
 class RecommendationApiService {
-  private async makeRequest<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    
+  private async makeRequest<T>(endpoint: string, options?: { method?: string; data?: any }): Promise<T> {
     try {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const method = options?.method || 'GET';
+      const data = options?.data;
       
-      if (!data.success) {
-        throw new Error(data.error || 'Error en la respuesta del servidor');
+      let response;
+      if (method === 'GET') {
+        response = await apiClient.get(endpoint);
+      } else if (method === 'POST') {
+        response = await apiClient.post(endpoint, data);
+      } else if (method === 'PUT') {
+        response = await apiClient.put(endpoint, data);
+      } else if (method === 'DELETE') {
+        response = await apiClient.delete(endpoint);
+      } else {
+        throw new Error(`Unsupported method: ${method}`);
       }
 
-      return data.data || data;
+      const responseData = response.data;
+      
+      if (responseData && !responseData.success && responseData.error) {
+        throw new Error(responseData.error || 'Error en la respuesta del servidor');
+      }
+
+      return responseData?.data || responseData;
     } catch (error) {
       console.error('Error en recomendationService:', error);
       throw error;
@@ -121,7 +108,7 @@ class RecommendationApiService {
   ): Promise<PropertyRecommendation[]> {
     return this.makeRequest<PropertyRecommendation[]>(`/api/recommendations/custom/${userId}?limit=${limit}`, {
       method: 'POST',
-      body: JSON.stringify(criteria),
+      data: criteria,
     });
   }
 
@@ -138,7 +125,7 @@ class RecommendationApiService {
   async recordUserBehavior(request: UserBehaviorRequest): Promise<void> {
     return this.makeRequest<void>('/api/recommendations/behavior', {
       method: 'POST',
-      body: JSON.stringify(request),
+      data: request,
     });
   }
 

@@ -18,6 +18,7 @@ import {
 import { getPrivateFiles, uploadPrivateFile, deletePrivateFile, PrivateFile } from '../../services/privateFileService';
 import { imageUploadService } from '../../services/imageUploadService';
 import ValidatedInput from "@/components/form/input/ValidatedInput";
+import { apiClient } from '@/lib/api';
 
 interface PrivateFilesStepProps {
   formData: PropertyFormData;
@@ -28,19 +29,36 @@ interface PrivateFilesStepProps {
 
 const downloadPrivateFile = async (fileUrl: string, fileName: string) => {
   try {
-    const response = await fetch(fileUrl);
-    if (!response.ok) {
-      throw new Error('Error al descargar el archivo');
+    // Si la URL es relativa, usar apiClient; si es absoluta, usar fetch directo
+    if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error('Error al descargar el archivo');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } else {
+      // URL relativa - usar apiClient para autenticación
+      const response = await apiClient.get(fileUrl, {
+        responseType: 'blob',
+      });
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     }
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error downloading file:', error);
     alert('Error al descargar el archivo');

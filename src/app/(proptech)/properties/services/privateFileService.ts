@@ -1,4 +1,5 @@
-import { getApiUrl, getEndpoint } from '@/lib/api-config';
+import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 // Servicio para manejar archivos privados asociados a propiedades
 
@@ -30,46 +31,52 @@ function getFullFileUrl(url: string): string {
 }
 
 export async function getPrivateFiles(propertyId: number | string): Promise<PrivateFile[]> {
-  const apiUrl = getApiUrl();
-  const res = await fetch(`${apiUrl}/api/private-files/property/${propertyId}`);
-  if (!res.ok) {
-    if (res.status === 404) {
+  try {
+    const response = await apiClient.get(`/api/private-files/property/${propertyId}`);
+    const files = response.data;
+    
+    // Convertir URLs relativas a completas
+    return files.map((file: PrivateFile) => ({
+      ...file,
+      url: getFullFileUrl(file.url)
+    }));
+  } catch (error: any) {
+    if (error.response?.status === 404) {
       // Si no hay archivos, devolver array vacío
       return [];
     }
+    console.error('Error getting private files:', error);
     throw new Error('Error al obtener archivos privados');
   }
-  const files = await res.json();
-  
-  // Convertir URLs relativas a completas
-  return files.map((file: PrivateFile) => ({
-    ...file,
-    url: getFullFileUrl(file.url)
-  }));
 }
 
 export async function uploadPrivateFile(propertyId: number | string, file: File): Promise<PrivateFile> {
-  const apiUrl = getApiUrl();
   const formData = new FormData();
   formData.append('file', file);
   formData.append('fileName', file.name);
   
-  const res = await fetch(`${apiUrl}/api/private-files/property/${propertyId}`, {
-    method: 'POST',
-    body: formData,
-  });
-  if (!res.ok) throw new Error('Error al subir archivo privado');
-  const uploadedFile = await res.json();
-  
-  // Convertir URL relativa a completa
-  return {
-    ...uploadedFile,
-    url: getFullFileUrl(uploadedFile.url)
-  };
+  try {
+    // axios detecta automáticamente FormData y configura el Content-Type correctamente
+    const response = await apiClient.post(`/api/private-files/property/${propertyId}`, formData);
+    
+    const uploadedFile = response.data;
+    
+    // Convertir URL relativa a completa
+    return {
+      ...uploadedFile,
+      url: getFullFileUrl(uploadedFile.url)
+    };
+  } catch (error: any) {
+    console.error('Error uploading private file:', error);
+    throw new Error(error.response?.data || 'Error al subir archivo privado');
+  }
 }
 
 export async function deletePrivateFile(fileId: number | string): Promise<void> {
-  const apiUrl = getApiUrl();
-  const res = await fetch(`${apiUrl}/api/private-files/${fileId}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Error al eliminar archivo privado');
+  try {
+    await apiClient.delete(`/api/private-files/${fileId}`);
+  } catch (error: any) {
+    console.error('Error deleting private file:', error);
+    throw new Error(error.response?.data || 'Error al eliminar archivo privado');
+  }
 } 

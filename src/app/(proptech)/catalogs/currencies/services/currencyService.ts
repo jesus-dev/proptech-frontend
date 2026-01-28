@@ -1,45 +1,28 @@
 import { Currency } from "./types";
-import { getEndpoint } from "@/lib/api-config";
-
-// Función para obtener la URL de forma lazy (evita problemas con SSR)
-const getApiUrl = () => getEndpoint('/api/currencies');
+import { apiClient } from "@/lib/api";
 
 export const currencyService = {
   async getAll(): Promise<Currency[]> {
-    const res = await fetch(getApiUrl());
-    if (!res.ok) throw new Error("Error al obtener monedas");
-    return res.json();
+    const res = await apiClient.get('/api/currencies');
+    return res.data;
   },
   async getActive(): Promise<Currency[]> {
-    const res = await fetch(`${getApiUrl()}/active`);
-    if (!res.ok) throw new Error("Error al obtener monedas activas");
-    return res.json();
+    const res = await apiClient.get('/api/currencies/active');
+    return res.data;
   },
   async getById(id: number): Promise<Currency> {
-    const res = await fetch(`${getApiUrl()}/${id}`);
-    if (!res.ok) throw new Error("Error al obtener moneda por ID");
-    return res.json();
+    const res = await apiClient.get(`/api/currencies/${id}`);
+    return res.data;
   },
   async create(currency: Omit<Currency, "id">): Promise<Currency> {
-    const res = await fetch(getApiUrl(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(currency),
-    });
-    if (!res.ok) throw new Error("Error al crear moneda");
-    return res.json();
+    const res = await apiClient.post('/api/currencies', currency);
+    return res.data;
   },
   async update(id: number, currency: Partial<Currency>): Promise<Currency> {
-    const res = await fetch(`${getApiUrl()}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(currency),
-    });
-    if (!res.ok) throw new Error("Error al actualizar moneda");
-    return res.json();
+    const res = await apiClient.put(`/api/currencies/${id}`, currency);
+    return res.data;
   },
   async delete(id: number): Promise<void> {
-    const res = await fetch(`${getApiUrl()}/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Error al eliminar moneda");
+    await apiClient.delete(`/api/currencies/${id}`);
   },
 }; 

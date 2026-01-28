@@ -5,7 +5,7 @@ import { AgentFormData } from '../types';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { paraguayUtils } from '@/lib/paraguay-config';
 import { Upload, Edit } from 'lucide-react';
-import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import ImageCropModal from '@/components/common/ImageCropModal';
 
 interface AgentFormProps {
@@ -133,20 +133,10 @@ export default function AgentForm({
         uploadFormData.append('oldPhotoUrl', originalPhotoUrl);
       }
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(getEndpoint('/api/agents/upload-photo'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: uploadFormData,
-      });
+      // axios detecta automáticamente FormData y configura el Content-Type correctamente
+      const response = await apiClient.post('/api/agents/upload-photo', uploadFormData);
 
-      if (!response.ok) {
-        throw new Error('Error al subir la foto');
-      }
-
-      const result = await response.json();
+      const result = response.data;
       // El backend sincroniza automáticamente la foto con el usuario en la base de datos
       // No necesitamos actualizar localStorage manualmente - la BD es la fuente de verdad
       return result.fileUrl;
@@ -161,20 +151,9 @@ export default function AgentForm({
     if (!originalPhotoUrl) return;
     
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(getEndpoint('/api/agents/delete-photo'), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ photoUrl: originalPhotoUrl }),
+      await apiClient.delete('/api/agents/delete-photo', {
+        data: { photoUrl: originalPhotoUrl },
       });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar la foto');
-      }
     } catch (error) {
       console.error('Error deleting file:', error);
       throw error;

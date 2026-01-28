@@ -27,6 +27,9 @@ type SortOrder = "asc" | "desc";
 type ViewMode = "grid" | "list" | "table";
 
 export default function LotsList({ lots, onLotClick }: LotsListProps) {
+  // Asegurar que lots siempre sea un array
+  const safeLots = Array.isArray(lots) ? lots : [];
+  
   const [sales, setSales] = useState<Sale[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
@@ -102,7 +105,7 @@ export default function LotsList({ lots, onLotClick }: LotsListProps) {
     setSelectedSale(null);
   };
 
-  const filteredAndSortedLots = lots
+  const filteredAndSortedLots = safeLots
     .filter((lot) => {
       // Filtro por búsqueda
       const searchMatch = 
@@ -179,10 +182,10 @@ export default function LotsList({ lots, onLotClick }: LotsListProps) {
   };
 
   const getStats = () => {
-    const total = lots.length;
-    const available = lots.filter(l => l.status === "available").length;
-    const sold = lots.filter(l => l.status === "sold").length;
-    const reserved = lots.filter(l => l.status === "reserved").length;
+    const total = safeLots.length;
+    const available = safeLots.filter(l => l.status === "available").length;
+    const sold = safeLots.filter(l => l.status === "sold").length;
+    const reserved = safeLots.filter(l => l.status === "reserved").length;
     const filtered = filteredAndSortedLots.length;
 
     return { total, available, sold, reserved, filtered };
@@ -190,7 +193,7 @@ export default function LotsList({ lots, onLotClick }: LotsListProps) {
 
   const stats = getStats();
 
-  if (!lots || lots.length === 0) {
+  if (!safeLots || safeLots.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-gray-600 dark:text-gray-400">No hay lotes disponibles.</p>

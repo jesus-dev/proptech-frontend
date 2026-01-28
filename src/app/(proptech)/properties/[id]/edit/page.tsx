@@ -752,6 +752,7 @@ export default function EditPropertyPage({ params }: PageProps) {
       case 9:
         return (
           <FloorPlansStep
+            formData={formData}
             floorPlans={formData.floorPlans || []}
             setFloorPlans={handleFloorPlansChange}
             errors={errors && 'floorPlans' in errors ? errors.floorPlans : undefined}

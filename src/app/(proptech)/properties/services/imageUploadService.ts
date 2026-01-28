@@ -1,4 +1,5 @@
 import { getEndpoint } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 
 export interface UploadResponse {
   url: string;
@@ -14,17 +15,42 @@ export class ImageUploadService {
     formData.append('file', file);
     formData.append('fileName', file.name);
 
-    const response = await fetch(getEndpoint(`/api/files/upload/${subDirectory}`), {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      // axios detecta automáticamente FormData y configura el Content-Type correctamente
+      const response = await apiClient.post(`/api/files/upload/${subDirectory}`, formData);
 
-    if (!response.ok) {
-      const errorText = await response.text();
+      return response.data;
+    } catch (error: any) {
+      let errorText = 'Unknown error';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorText = error.response.data;
+        } else if (error.response.data.message) {
+          errorText = error.response.data.message;
+        } else if (error.response.data.error) {
+          errorText = error.response.data.error;
+        } else {
+          errorText = JSON.stringify(error.response.data);
+        }
+      } else if (error.message) {
+        errorText = error.message;
+      }
+      // Si el error contiene "Resource Endpoints", significa que el endpoint no existe (404)
+      if (error.response?.status === 404 || (typeof errorText === 'string' && errorText.includes('Resource Endpoints'))) {
+        errorText = `El endpoint de subida de archivos no está disponible. Verifica que el backend esté corriendo y que el endpoint /api/files/upload/${subDirectory} exista.`;
+      }
+      
+      console.error('ImageUploadService - Upload error details:', {
+        error,
+        response: error.response,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        subDirectory
+      });
       throw new Error(`Error uploading image: ${errorText}`);
     }
-
-    return response.json();
   }
 
   /**
@@ -85,11 +111,8 @@ export class ImageUploadService {
       const subDirectory = pathParts[pathParts.length - 2];
       const fileName = pathParts[pathParts.length - 1];
 
-      const response = await fetch(getEndpoint(`/api/files/${subDirectory}/${fileName}`), {
-        method: 'DELETE',
-      });
-
-      return response.ok;
+      await apiClient.delete(`/api/files/${subDirectory}/${fileName}`);
+      return true;
     } catch (error) {
       console.error('Error deleting image:', error);
       return false;
@@ -105,33 +128,23 @@ export const uploadImage = async (file: File, propertyId: string): Promise<strin
   formData.append('file', file);
   formData.append('fileName', file.name);
 
-  const response = await fetch(getEndpoint('/api/files/upload/properties'), {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to upload image');
+  try {
+      // axios detecta automáticamente FormData y configura el Content-Type correctamente
+      const response = await apiClient.post('/api/files/upload/properties', formData);
+    return response.data.url;
+  } catch (error: any) {
+    throw new Error(error.response?.data || 'Failed to upload image');
   }
-
-  const result = await response.json();
-  return result.url;
 };
 
 export const saveImageReference = async (propertyId: string, imageUrl: string, isPrimary: boolean = false): Promise<void> => {
-  const response = await fetch(getEndpoint(`/api/properties/${propertyId}/images`), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
+  try {
+    await apiClient.post(`/api/properties/${propertyId}/images`, {
       imageUrl,
       fileName: imageUrl.split('/').pop(),
       isPrimary,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to save image reference');
+    });
+  } catch (error: any) {
+    throw new Error(error.response?.data || 'Failed to save image reference');
   }
 }; 

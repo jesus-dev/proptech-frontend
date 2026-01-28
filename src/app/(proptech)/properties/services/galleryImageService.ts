@@ -73,11 +73,8 @@ export async function uploadGalleryImage(propertyId: number | string, file: File
   console.log('📤 Subiendo imagen:', { propertyId, fileName: file.name, fileSize: file.size });
   
   try {
-    const response = await apiClient.post(`/api/gallery-images/property/${propertyId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // El interceptor de apiClient detecta FormData automáticamente y configura el Content-Type con boundary
+    const response = await apiClient.post(`/api/gallery-images/property/${propertyId}`, formData);
     
     const image = response.data;
     console.log('✅ Imagen subida, respuesta del backend:', image);

@@ -33,6 +33,46 @@ export interface DevelopmentTypeStats {
   averagePrice: number;
 }
 
+// Helper function to normalize development type from backend format to frontend format
+function normalizeDevelopmentType(type: string): string {
+  if (!type) return type;
+  // Convert backend enum values (UPPERCASE) to frontend format (lowercase)
+  const typeMap: { [key: string]: string } = {
+    'LOTEAMIENTO': 'loteamiento',
+    'EDIFICIO': 'edificio',
+    'CONDOMINIO': 'condominio',
+    'BARRIO_CERRADO': 'barrio_cerrado'
+  };
+  return typeMap[type.toUpperCase()] || type.toLowerCase();
+}
+
+// Helper function to normalize a development object
+function normalizeDevelopment(dev: any): Development {
+  if (!dev) return dev;
+  
+  // Normalizar currency si viene como objeto
+  let normalizedCurrency = dev.currency;
+  let currencyId = undefined;
+  
+  if (dev.currency && typeof dev.currency === 'object') {
+    normalizedCurrency = dev.currency.code || dev.currency.name || '';
+    currencyId = dev.currency.id;
+  }
+  
+  return {
+    ...dev,
+    type: normalizeDevelopmentType(dev.type),
+    currency: normalizedCurrency,
+    currencyId: currencyId || (dev as any).currencyId
+  };
+}
+
+// Helper function to normalize an array of developments
+function normalizeDevelopments(developments: any[]): Development[] {
+  if (!Array.isArray(developments)) return [];
+  return developments.map(normalizeDevelopment);
+}
+
 class DevelopmentService {
   // Obtener todos los desarrollos con filtros
   async getAllDevelopments(filters?: DevelopmentFilters): Promise<{ data: Development[]; total: number; page: number; size: number }> {
@@ -52,15 +92,19 @@ class DevelopmentService {
       // Si la respuesta es un array directo, convertirlo al formato esperado
       if (Array.isArray(response.data)) {
         return {
-          data: response.data,
+          data: normalizeDevelopments(response.data),
           total: response.data.length,
           page: 1,
           size: response.data.length
         };
       }
       
-      // Si ya tiene el formato correcto, devolverlo
-      return response.data as { data: Development[]; total: number; page: number; size: number };
+      // Si ya tiene el formato correcto, normalizar los datos
+      const normalizedData = {
+        ...response.data,
+        data: normalizeDevelopments(response.data.data || [])
+      };
+      return normalizedData as { data: Development[]; total: number; page: number; size: number };
     } catch (error) {
       console.error('Error fetching developments:', error);
       // Devolver un objeto vacío en lugar de lanzar error
@@ -77,7 +121,7 @@ class DevelopmentService {
   async getDevelopmentById(id: string): Promise<Development> {
     try {
       const response = await apiClient.get(`/api/developments/${id}`);
-      return response.data as Development;
+      return normalizeDevelopment(response.data) as Development;
     } catch (error) {
       console.error('Error fetching development:', error);
       throw new Error('Error al obtener el desarrollo');
@@ -87,11 +131,41 @@ class DevelopmentService {
   // Crear nuevo desarrollo
   async createDevelopment(development: Omit<Development, 'id'>): Promise<Development> {
     try {
+      console.log('📤 [developmentService] Enviando desarrollo:', {
+        type: development.type,
+        status: development.status,
+        title: development.title,
+        city: development.city,
+        address: development.address,
+        price: development.price,
+        currency: (development as any).currency
+      });
+      
       const response = await apiClient.post('/api/developments', development);
-      return response.data as Development;
-    } catch (error) {
-      console.error('Error creating development:', error);
-      throw new Error('Error al crear el desarrollo');
+      console.log('✅ [developmentService] Desarrollo creado exitosamente:', response.data);
+      return normalizeDevelopment(response.data) as Development;
+    } catch (error: any) {
+      console.error('❌ [developmentService] Error creating development:', error);
+      console.error('   - Status:', error.response?.status);
+      console.error('   - Status Text:', error.response?.statusText);
+      console.error('   - Data:', error.response?.data);
+      console.error('   - Message:', error.message);
+      
+      // Extraer mensaje de error del backend si está disponible
+      let errorMessage = 'Error al crear el desarrollo';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      throw new Error(errorMessage);
     }
   }
 
@@ -99,7 +173,7 @@ class DevelopmentService {
   async updateDevelopment(id: string, development: Partial<Development>): Promise<Development> {
     try {
       const response = await apiClient.put(`/api/developments/${id}`, development);
-      return response.data as Development;
+      return normalizeDevelopment(response.data) as Development;
     } catch (error) {
       console.error('Error updating development:', error);
       throw new Error('Error al actualizar el desarrollo');
@@ -120,7 +194,7 @@ class DevelopmentService {
   async getDevelopmentsByType(propertyTypeId: string): Promise<Development[]> {
     try {
       const response = await apiClient.get(`/api/developments/type/${propertyTypeId}`);
-      return response.data as Development[];
+      return normalizeDevelopments(response.data || []);
     } catch (error) {
       console.error('Error fetching developments by type:', error);
       throw new Error('Error al obtener desarrollos por tipo');
@@ -131,7 +205,7 @@ class DevelopmentService {
   async getDevelopmentsByCity(cityId: string): Promise<Development[]> {
     try {
       const response = await apiClient.get(`/api/developments/city/${cityId}`);
-      return response.data as Development[];
+      return normalizeDevelopments(response.data || []);
     } catch (error) {
       console.error('Error fetching developments by city:', error);
       throw new Error('Error al obtener desarrollos por ciudad');
@@ -142,7 +216,7 @@ class DevelopmentService {
   async searchDevelopmentsByPriceRange(minPrice: number, maxPrice: number): Promise<Development[]> {
     try {
       const response = await apiClient.get(`/api/developments/search?minPrice=${minPrice}&maxPrice=${maxPrice}`);
-      return response.data as Development[];
+      return normalizeDevelopments(response.data || []);
     } catch (error) {
       console.error('Error searching developments by price range:', error);
       throw new Error('Error al buscar desarrollos por rango de precio');
@@ -153,7 +227,7 @@ class DevelopmentService {
   async getFavoritesByUserId(userId: string): Promise<Development[]> {
     try {
       const response = await apiClient.get(`/api/developments/favorites/${userId}`);
-      return response.data as Development[];
+      return normalizeDevelopments(response.data || []);
     } catch (error) {
       console.error('Error fetching favorites:', error);
       throw new Error('Error al obtener favoritos');
@@ -217,7 +291,7 @@ class DevelopmentService {
   async toggleFeatured(developmentId: string, featured: boolean): Promise<Development> {
     try {
       const response = await apiClient.put(`/api/developments/${developmentId}`, { featured });
-      return response.data as Development;
+      return normalizeDevelopment(response.data) as Development;
     } catch (error) {
       console.error('Error toggling featured:', error);
       throw new Error('Error al cambiar estado destacado');
@@ -228,7 +302,7 @@ class DevelopmentService {
   async togglePremium(developmentId: string, premium: boolean): Promise<Development> {
     try {
       const response = await apiClient.put(`/api/developments/${developmentId}`, { premium });
-      return response.data as Development;
+      return normalizeDevelopment(response.data) as Development;
     } catch (error) {
       console.error('Error toggling premium:', error);
       throw new Error('Error al cambiar estado premium');
@@ -286,7 +360,7 @@ class DevelopmentService {
   async getAvailableDevelopments(): Promise<Development[]> {
     try {
       const response = await apiClient.get('/api/developments?status=available');
-      return response.data as Development[];
+      return normalizeDevelopments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching available developments:', error);
       throw new Error('Error al obtener desarrollos disponibles');
@@ -297,7 +371,7 @@ class DevelopmentService {
   async getSoldDevelopments(): Promise<Development[]> {
     try {
       const response = await apiClient.get('/api/developments?status=sold');
-      return response.data as Development[];
+      return normalizeDevelopments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching sold developments:', error);
       throw new Error('Error al obtener desarrollos vendidos');
@@ -308,7 +382,7 @@ class DevelopmentService {
   async getReservedDevelopments(): Promise<Development[]> {
     try {
       const response = await apiClient.get('/api/developments?status=reserved');
-      return response.data as Development[];
+      return normalizeDevelopments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching reserved developments:', error);
       throw new Error('Error al obtener desarrollos reservados');
@@ -319,7 +393,7 @@ class DevelopmentService {
   async getFeaturedDevelopments(): Promise<Development[]> {
     try {
       const response = await apiClient.get('/api/developments?featured=true');
-      return response.data as Development[];
+      return normalizeDevelopments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching featured developments:', error);
       throw new Error('Error al obtener desarrollos destacados');
@@ -330,7 +404,7 @@ class DevelopmentService {
   async getPremiumDevelopments(): Promise<Development[]> {
     try {
       const response = await apiClient.get('/api/developments?premium=true');
-      return response.data as Development[];
+      return normalizeDevelopments(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching premium developments:', error);
       throw new Error('Error al obtener desarrollos premium');
