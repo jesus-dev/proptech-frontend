@@ -29,28 +29,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-/** Orígenes del backend para los que usamos proxy (evita CORS/404 en galería) */
-const PROXY_ORIGINS = [
-  'https://api.proptech.com.py',
-  'http://api.proptech.com.py',
-  'http://localhost:8080',
-  'http://127.0.0.1:8080',
-];
-
-function getGalleryImageSrc(url: string): string {
-  if (!url || !url.startsWith('http')) return url;
-  try {
-    const u = new URL(url);
-    const origin = `${u.protocol}//${u.host}`;
-    if (PROXY_ORIGINS.includes(origin)) {
-      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
-    }
-  } catch {
-    // ignore
-  }
-  return url;
-}
-
 interface SortableImageItemProps {
   image: GalleryImage;
   index: number;
@@ -105,13 +83,12 @@ function SortableImageItem({
 
       <div className="relative w-full h-32 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
         <img
-          src={getGalleryImageSrc(image.url)}
+          src={image.url}
           alt={image.altText || `Imagen ${image.id}`}
           className="w-full h-full object-cover bg-white pointer-events-none"
           style={{ minHeight: '100%' }}
           onLoad={(e) => {
             console.log('✅ Imagen cargada:', image.id, image.url);
-            // Ocultar placeholder cuando carga
             const placeholder = (e.target as HTMLElement).parentElement?.querySelector('.image-placeholder') as HTMLElement;
             if (placeholder) placeholder.style.display = 'none';
           }}
@@ -119,7 +96,6 @@ function SortableImageItem({
             console.error('❌ Error cargando imagen:', image.id, image.url);
             const target = e.target as HTMLImageElement;
             target.style.display = 'none';
-            // Mostrar mensaje de error
             const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
             if (placeholder) {
               placeholder.style.display = 'flex';
@@ -559,8 +535,6 @@ export default function MultimediaStep({
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                     {galleryImages.map((image, index) => {
-                      const imgSrc = getGalleryImageSrc(image.url);
-                      console.log('🖼️ Renderizando imagen:', { id: image.id, url: image.url, src: imgSrc.startsWith('/api/proxy') ? '(proxy)' : imgSrc, index });
                       const isFeatured = image.isFeatured || formData.featuredImage === image.url;
                       return (
                         <SortableImageItem

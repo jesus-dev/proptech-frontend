@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-/** Orígenes permitidos para el proxy de imágenes (evita SSRF) */
+/** Orígenes permitidos para el proxy de imágenes (evita SSRF). Proptech, Aciapp y OnBienesRaices consumen la misma API. */
 const ALLOWED_ORIGINS = [
   'https://api.proptech.com.py',
   'http://api.proptech.com.py',
@@ -73,10 +73,13 @@ export async function GET(request: NextRequest) {
     const contentType = res.headers.get('Content-Type') || 'image/jpeg';
     const body = await res.arrayBuffer();
 
+    // Solo reenviar si el backend devolvió algo que parece imagen (evita reenviar HTML/JS por error)
+    const safeType = contentType.toLowerCase().startsWith('image/') ? contentType : 'image/jpeg';
+
     return new NextResponse(body, {
       status: 200,
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': safeType,
         'Cache-Control': 'private, max-age=3600',
       },
     });
