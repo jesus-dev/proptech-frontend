@@ -29,20 +29,8 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// En producción usamos proxy para evitar 502/CORS de Cloudflare. En dev usamos la URL directa del backend.
-const PROXY_API_ORIGINS = ['https://api.proptech.com.py', 'http://api.proptech.com.py'];
-
 function galleryImgSrc(url: string): string {
-  if (!url?.startsWith('http')) return url;
-  try {
-    const u = new URL(url);
-    const origin = `${u.protocol}//${u.host}`;
-    // Solo pasar por proxy en producción; en localhost la URL directa funciona y evita fallos del proxy
-    if (PROXY_API_ORIGINS.includes(origin)) return `/api/proxy-image?url=${encodeURIComponent(url)}`;
-  } catch {
-    /* ignore */
-  }
-  return url;
+  return url || '';
 }
 
 interface SortableImageItemProps {
@@ -54,6 +42,8 @@ interface SortableImageItemProps {
   settingFeaturedId: number | null;
   deletingImageId: number | null;
 }
+
+const STAGGER_MS = 200; // Misma lógica que la destacada: no saturar Nginx con muchas peticiones a la vez
 
 function SortableImageItem({ 
   image, 
@@ -72,6 +62,13 @@ function SortableImageItem({
     transition,
     isDragging,
   } = useSortable({ id: image.id });
+
+  // Cargar con retraso escalonado (como la destacada: una petición a la vez evita 502)
+  const [src, setSrc] = React.useState<string>('');
+  React.useEffect(() => {
+    const t = setTimeout(() => setSrc(galleryImgSrc(image.url)), index * STAGGER_MS);
+    return () => clearTimeout(t);
+  }, [image.url, index]);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -99,7 +96,7 @@ function SortableImageItem({
 
       <div className="relative w-full h-32 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
         <img
-          src={galleryImgSrc(image.url)}
+          src={src}
           alt={image.altText || `Imagen ${image.id}`}
           className="w-full h-full object-cover bg-white pointer-events-none"
           style={{ minHeight: '100%' }}
@@ -109,8 +106,18 @@ function SortableImageItem({
             if (placeholder) placeholder.style.display = 'none';
           }}
           onError={(e) => {
-            console.error('❌ Error cargando imagen:', image.id, image.url);
             const target = e.target as HTMLImageElement;
+            const alreadyRetried = target.getAttribute('data-retried') === '1';
+            if (!alreadyRetried) {
+              target.setAttribute('data-retried', '1');
+              const url = src || galleryImgSrc(image.url);
+              setTimeout(() => {
+                target.src = url.includes('?') ? `${url}&_r=${Date.now()}` : `${url}?_r=${Date.now()}`;
+                target.style.display = '';
+              }, 800);
+              return;
+            }
+            console.error('❌ Error cargando imagen:', image.id, image.url);
             target.style.display = 'none';
             const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
             if (placeholder) {
