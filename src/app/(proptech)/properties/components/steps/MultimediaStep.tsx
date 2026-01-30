@@ -65,10 +65,14 @@ function SortableImageItem({
 
   // Cargar con retraso escalonado (como la destacada: una petición a la vez evita 502)
   const [src, setSrc] = React.useState<string>('');
+  const [loaded, setLoaded] = React.useState(false);
   React.useEffect(() => {
     const t = setTimeout(() => setSrc(galleryImgSrc(image.url)), index * STAGGER_MS);
     return () => clearTimeout(t);
   }, [image.url, index]);
+  React.useEffect(() => {
+    if (!src) setLoaded(false);
+  }, [src]);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -98,12 +102,12 @@ function SortableImageItem({
         <img
           src={src}
           alt={image.altText || `Imagen ${image.id}`}
-          className="w-full h-full object-cover bg-white pointer-events-none"
+          className={`w-full h-full object-cover bg-white pointer-events-none transition-opacity duration-300 ${
+            loaded ? 'opacity-100' : 'opacity-0'
+          }`}
           style={{ minHeight: '100%' }}
-          onLoad={(e) => {
-            console.log('✅ Imagen cargada:', image.id, image.url);
-            const placeholder = (e.target as HTMLElement).parentElement?.querySelector('.image-placeholder') as HTMLElement;
-            if (placeholder) placeholder.style.display = 'none';
+          onLoad={() => {
+            setLoaded(true);
           }}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
@@ -117,10 +121,11 @@ function SortableImageItem({
               }, 800);
               return;
             }
-            console.error('❌ Error cargando imagen:', image.id, image.url);
+            setLoaded(false);
             target.style.display = 'none';
             const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
             if (placeholder) {
+              placeholder.classList.remove('shimmer-loading');
               placeholder.style.display = 'flex';
               const loadingText = placeholder.querySelector('.loading-text') as HTMLElement;
               const errorMsg = placeholder.querySelector('.error-message') as HTMLElement;
@@ -136,8 +141,14 @@ function SortableImageItem({
             }
           }}
         />
-        {/* Placeholder de fondo - visible si la imagen falla o está cargando */}
-        <div className="image-placeholder absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 pointer-events-none" style={{ zIndex: 0 }}>
+        {/* Placeholder con shimmer tipo Facebook - visible hasta que carga la imagen o hay error */}
+        <div
+          className={`image-placeholder absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 pointer-events-none transition-opacity duration-300 ${
+            loaded ? 'opacity-0' : 'opacity-100'
+          } shimmer-loading`}
+          style={{ zIndex: 0 }}
+          aria-hidden={loaded}
+        >
           <div className="text-center text-xs px-2">
             <ImageIcon className="w-6 h-6 mx-auto mb-1 text-gray-400" />
             <p className="text-[10px] loading-text">Cargando...</p>
@@ -224,6 +235,7 @@ function SortableTempImageItem({
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const [loaded, setLoaded] = React.useState(false);
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
   return (
     <div
@@ -257,17 +269,18 @@ function SortableTempImageItem({
         <img
           src={imageUrl}
           alt={`Imagen ${index + 1}`}
-          className="w-full h-full object-cover bg-white pointer-events-none"
+          className={`w-full h-full object-cover bg-white pointer-events-none transition-opacity duration-300 ${
+            loaded ? "opacity-100" : "opacity-0"
+          }`}
           style={{ minHeight: "100%" }}
-          onLoad={(e) => {
-            const placeholder = (e.target as HTMLElement).parentElement?.querySelector(".image-placeholder") as HTMLElement;
-            if (placeholder) placeholder.style.display = "none";
-          }}
+          onLoad={() => setLoaded(true)}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.style.display = "none";
+            setLoaded(false);
             const placeholder = target.parentElement?.querySelector(".image-placeholder") as HTMLElement;
             if (placeholder) {
+              placeholder.classList.remove("shimmer-loading");
               placeholder.style.display = "flex";
               const loadingText = placeholder.querySelector(".loading-text") as HTMLElement;
               const errorMsg = placeholder.querySelector(".error-message") as HTMLElement;
@@ -279,7 +292,13 @@ function SortableTempImageItem({
             }
           }}
         />
-        <div className="image-placeholder absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 pointer-events-none" style={{ zIndex: 0 }}>
+        <div
+          className={`image-placeholder absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 pointer-events-none transition-opacity duration-300 ${
+            loaded ? "opacity-0" : "opacity-100"
+          } shimmer-loading`}
+          style={{ zIndex: 0 }}
+          aria-hidden={loaded}
+        >
           <div className="text-center text-xs px-2">
             <span className="loading-text">Cargando...</span>
             <span className="error-message hidden">Error al cargar</span>
