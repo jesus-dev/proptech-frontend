@@ -568,12 +568,7 @@ export default function NewPropertyPage() {
                     : 'bg-gray-600 text-white hover:bg-gray-700 shadow-lg'
                 }`}
               >
-                {saving ? (
-                  <>
-                    <LoadingSpinner size="md" />
-                    <span className="ml-2">Guardando...</span>
-                  </>
-                ) : saveSuccess ? (
+                {saveSuccess ? (
                   <>
                     <CheckCircle className="w-5 h-5" />
                     Guardado
@@ -597,17 +592,10 @@ export default function NewPropertyPage() {
                       : 'bg-green-600 text-white hover:bg-green-700 shadow-lg'
                   }`}
                 >
-                  {saving ? (
-                    <>
-                      <LoadingSpinner size="md" />
-                      <span className="ml-2">Publicando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      {draftPropertyId ? 'Publicar Propiedad' : 'Guardar y Publicar'}
-                    </>
-                  )}
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    {draftPropertyId ? 'Publicar Propiedad' : 'Guardar y Publicar'}
+                  </>
                 </button>
               ) : (
                 <button
@@ -718,7 +706,7 @@ export default function NewPropertyPage() {
                     className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    {saving ? 'Guardando...' : 'Crear Propiedad'}
+                    Crear Propiedad
                   </button>
                   
                   {currentStep < steps.length && (

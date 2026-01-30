@@ -77,6 +77,8 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
       
       setFacilities(facilitiesData);
       setAvailableFacilities(availableData);
+      // Sincronizar con el formulario para que al guardar la propiedad se persistan las facilidades
+      onDataChange?.(facilitiesData);
     } catch (error) {
       console.error('Error loading nearby facilities:', error);
       setError('Error al cargar las facilidades cercanas');
@@ -137,7 +139,7 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
       };
 
       if (propertyId) {
-        // Guardar en el backend y luego recargar desde la API para mantener el estado consistente
+        // Guardar en el backend y recargar; loadData() sincroniza con el form vía onDataChange
         await apiClient.post(`/api/properties/${propertyId}/nearby-facilities`, facilityData);
         await loadData();
       } else {
