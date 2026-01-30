@@ -118,6 +118,7 @@ function transformPropertyResponse(backendProperty: any): Property {
 
   return {
     ...backendProperty,
+    id: backendProperty.id != null ? String(backendProperty.id) : '',
     // Convertir el objeto currency a string (código de moneda) y guardar el ID
     currency: currencyCode,
     currencyId: backendProperty.currencyId || backendProperty.currency?.id || null,

@@ -71,21 +71,21 @@ function SortableImageItem({
         isFeatured ? 'ring-2 ring-yellow-500' : ''
       }`}
     >
-      {/* Drag Handle */}
+      {/* Handle de arrastre - siempre visible para reordenar */}
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-1 left-1 bg-gray-700/80 text-white rounded p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        className="absolute top-2 left-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md p-2 cursor-grab active:cursor-grabbing z-20 shadow-lg ring-2 ring-white/30 hover:ring-white/50"
         title="Arrastra para reordenar"
       >
-        <GripVertical className="h-4 w-4" />
+        <GripVertical className="h-5 w-5 shrink-0" aria-hidden />
       </div>
 
       <div className="relative w-full h-32 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
         <img
           src={image.url}
           alt={image.altText || `Imagen ${image.id}`}
-          className="w-full h-full object-cover relative z-10 bg-white"
+          className="w-full h-full object-cover bg-white pointer-events-none"
           style={{ minHeight: '100%' }}
           onLoad={(e) => {
             console.log('✅ Imagen cargada:', image.id, image.url);
@@ -178,11 +178,103 @@ interface MultimediaStepProps {
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removeImage: (index: number) => void;
+  reorderImages?: (oldIndex: number, newIndex: number) => void;
   removeFeaturedImage: () => void;
   errors: PropertyFormErrors;
   propertyId?: string;
   setFormData?: (data: Partial<PropertyFormData>) => void;
   validate?: () => boolean;
+  isProcessingImages?: boolean;
+}
+
+function SortableTempImageItem({
+  id,
+  imageUrl,
+  index,
+  isFeatured,
+  onSetFeatured,
+  onDelete,
+}: {
+  id: string;
+  imageUrl: string;
+  index: number;
+  isFeatured: boolean;
+  onSetFeatured: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`relative group bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden ${
+        isFeatured ? "ring-2 ring-yellow-500" : ""
+      }`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-2 left-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md p-2 cursor-grab active:cursor-grabbing z-20 shadow-lg ring-2 ring-white/30 hover:ring-white/50"
+        title="Arrastra para reordenar"
+      >
+        <GripVertical className="h-5 w-5 shrink-0" aria-hidden />
+      </div>
+      <button
+        type="button"
+        onClick={onSetFeatured}
+        className={`absolute top-2 right-10 z-20 rounded-md p-2 shadow-lg transition-opacity ${
+          isFeatured
+            ? "bg-yellow-500 text-white ring-2 ring-yellow-300"
+            : "bg-gray-900/70 text-gray-300 hover:bg-gray-800 hover:text-white opacity-0 group-hover:opacity-100"
+        }`}
+        title={isFeatured ? "Imagen destacada" : "Marcar como destacada"}
+      >
+        <Star className={`h-5 w-5 shrink-0 ${isFeatured ? "fill-current" : ""}`} aria-hidden />
+      </button>
+      <div className="relative w-full h-32 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+        <img
+          src={imageUrl}
+          alt={`Imagen ${index + 1}`}
+          className="w-full h-full object-cover bg-white pointer-events-none"
+          style={{ minHeight: "100%" }}
+          onLoad={(e) => {
+            const placeholder = (e.target as HTMLElement).parentElement?.querySelector(".image-placeholder") as HTMLElement;
+            if (placeholder) placeholder.style.display = "none";
+          }}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.style.display = "none";
+            const placeholder = target.parentElement?.querySelector(".image-placeholder") as HTMLElement;
+            if (placeholder) {
+              placeholder.style.display = "flex";
+              const loadingText = placeholder.querySelector(".loading-text") as HTMLElement;
+              const errorMsg = placeholder.querySelector(".error-message") as HTMLElement;
+              if (loadingText) loadingText.style.display = "none";
+              if (errorMsg) {
+                errorMsg.classList.remove("hidden");
+                errorMsg.textContent = "Error al cargar imagen";
+              }
+            }
+          }}
+        />
+        <div className="image-placeholder absolute inset-0 bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 pointer-events-none" style={{ zIndex: 0 }}>
+          <div className="text-center text-xs px-2">
+            <span className="loading-text">Cargando...</span>
+            <span className="error-message hidden">Error al cargar</span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onDelete}
+        className="absolute bottom-2 right-2 bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg"
+        title="Eliminar"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
 }
 
 export default function MultimediaStep({ 
@@ -190,11 +282,13 @@ export default function MultimediaStep({
   handleChange, 
   handleFileChange, 
   removeImage, 
+  reorderImages, 
   removeFeaturedImage, 
   errors,
   propertyId,
   setFormData,
-  validate
+  validate,
+  isProcessingImages = false,
 }: MultimediaStepProps) {
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loadingGallery, setLoadingGallery] = useState(false);
@@ -513,58 +607,90 @@ export default function MultimediaStep({
         </div>
       )}
 
-      {/* Gallery Images - Para propiedades nuevas (sin propertyId) */}
-      {!propertyId && formData.images && formData.images.length > 0 && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Galería de Imágenes (Temporal)
-          </label>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-            Estas imágenes se subirán cuando guardes la propiedad
-          </p>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-            {formData.images.map((image, index) => (
-              <div key={index} className="relative group">
-                <img
-                  src={image}
-                  alt={`Imagen ${index + 1}`}
-                  className="w-full h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
-                  onError={(e) => {
-                    // Silenciosamente ocultar imagen si no se puede cargar
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Upload for new properties */}
+      {/* Gallery Images - Para propiedades nuevas (sin propertyId) - mismo aspecto que edición */}
       {!propertyId && (
         <div>
-          <label htmlFor="images" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Agregar Imágenes
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Galería de Imágenes
           </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Arrastra las imágenes para ordenarlas. Haz clic en la estrella para marcar como destacada.
+          </p>
+
+          {/* Procesando imágenes (evita pantalla en blanco) */}
+          {isProcessingImages && (
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-3">
+              <Loader2 className="h-6 w-6 shrink-0 animate-spin text-blue-600 dark:text-blue-400" />
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Procesando imágenes</p>
+                <p className="text-xs text-blue-600 dark:text-blue-300">Convirtiendo y preparando las imágenes. Un momento, por favor...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Grid de imágenes (misma estructura que en edición) */}
+          {formData.images && formData.images.length > 0 ? (
+            <>
+              <div className="mb-2 text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                <span>Total de imágenes: {formData.images.length}</span>
+                <span className="text-xs text-gray-500">• Arrastra para reordenar</span>
+              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => {
+                  if (!reorderImages) return;
+                  const { active, over } = event;
+                  if (!over || active.id === over.id) return;
+                  const oldIndex = formData.images!.findIndex((_, i) => `temp-${i}` === active.id);
+                  const newIndex = formData.images!.findIndex((_, i) => `temp-${i}` === over.id);
+                  if (oldIndex !== -1 && newIndex !== -1) reorderImages(oldIndex, newIndex);
+                }}
+              >
+                <SortableContext
+                  items={formData.images!.map((_, i) => `temp-${i}`)}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                    {formData.images.map((image, index) => (
+                      <SortableTempImageItem
+                        key={`temp-${index}`}
+                        id={`temp-${index}`}
+                        imageUrl={image}
+                        index={index}
+                        isFeatured={formData.featuredImage === image}
+                        onSetFeatured={() =>
+                          handleChange({
+                            target: { name: "featuredImage", value: image },
+                          } as React.ChangeEvent<HTMLInputElement>)
+                        }
+                        onDelete={() => removeImage(index)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </>
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg mb-4">
+              <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                No hay imágenes en la galería
+              </p>
+            </div>
+          )}
+
+          {/* Área de subida (mismo estilo que en edición) */}
           <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
             <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Arrastra imágenes aquí o haz clic para seleccionar
+              Agregar más imágenes a la galería
             </p>
             <input
               type="file"
               id="images"
               name="images"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.hif"
               multiple
               onChange={handleFileChange}
               className="hidden"
@@ -573,13 +699,11 @@ export default function MultimediaStep({
               htmlFor="images"
               className="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-500 hover:bg-brand-600 cursor-pointer"
             >
+              <Upload className="h-4 w-4 mr-2" />
               Seleccionar Imágenes
             </label>
           </div>
-          
-          {errors.images && (
-            <p className="mt-1 text-sm text-red-500">{errors.images}</p>
-          )}
+          {errors.images && <p className="mt-1 text-sm text-red-500">{errors.images}</p>}
         </div>
       )}
 

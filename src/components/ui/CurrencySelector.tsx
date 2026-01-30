@@ -31,8 +31,11 @@ export default function CurrencySelector({
       setLoading(true);
       const activeCurrencies = await currencyService.getActive();
       setCurrencies(activeCurrencies || []);
-    } catch (error) {
-      console.error("❌ Error loading currencies:", error);
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+      const code = error?.code;
+      console.error("❌ [CurrencySelector] Error loading currencies:", { status, data, code, message: error?.message }, error);
       setCurrencies([]);
     } finally {
       setLoading(false);
@@ -59,8 +62,16 @@ export default function CurrencySelector({
       if (currencies.length === 0) {
         return (
           <div className={`relative ${className}`}>
-            <div className="w-full h-12 px-3 py-2 border-2 border-red-300 rounded-md bg-red-50 flex items-center">
-              <span className="text-red-600 text-sm">⚠️ No hay monedas disponibles - Revisar conexión con el backend</span>
+            <div className="w-full min-h-12 px-3 py-2 border-2 border-red-300 rounded-md bg-red-50 dark:bg-red-900/20 dark:border-red-700 flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-red-600 dark:text-red-400 text-sm">⚠️ No hay monedas disponibles. Revisar conexión con el backend.</span>
+              <button
+                type="button"
+                onClick={() => loadCurrencies()}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 bg-white dark:bg-gray-800 border border-red-300 dark:border-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50"
+              >
+                Reintentar
+              </button>
             </div>
           </div>
         );

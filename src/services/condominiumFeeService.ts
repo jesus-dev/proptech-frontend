@@ -88,5 +88,23 @@ export const condominiumFeeService = {
       console.error('Error deleting fee:', error);
       throw new Error(error?.response?.data?.error || 'Error al eliminar cuota');
     }
+  },
+
+  /** Genera una cuota para el condominio y opcionalmente un pago pendiente por cada unidad activa. */
+  async generateBulk(params: {
+    condominiumId: number;
+    period: string;
+    totalAmount: number;
+    type?: string;
+    dueDate?: string;
+    createPaymentsPerUnit?: boolean;
+  }): Promise<CondominiumFee> {
+    try {
+      const response = await apiClient.post('/api/condominiums/fees/generate', params);
+      return response.data as CondominiumFee;
+    } catch (error: any) {
+      console.error('Error generating bulk fee:', error);
+      throw new Error(error?.response?.data?.error || 'Error al generar cuotas');
+    }
   }
 };

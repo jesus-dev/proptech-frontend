@@ -3,8 +3,18 @@ import { apiClient } from '@/lib/api';
 export interface Neighborhood {
   id: number;
   name: string;
-  cityId: number;
+  /** Present when API returns DTO (NeighborhoodResponse) */
+  cityId?: number;
   cityName?: string;
+  /** Present when API returns entity (objeto city anidado) */
+  city?: { id: number; name?: string };
+}
+
+/** Obtiene el ID de ciudad de un barrio (soporta DTO con cityId o entidad con city) */
+export function getNeighborhoodCityId(n: Neighborhood): number | undefined {
+  if (n.cityId != null) return Number(n.cityId);
+  if (n.city?.id != null) return Number(n.city.id);
+  return undefined;
 }
 
 // Get all neighborhoods
@@ -29,11 +39,23 @@ export const getNeighborhoodById = async (id: number): Promise<Neighborhood | nu
   }
 };
 
+// Normalizar respuesta: puede ser array directo o { content/data: [] }
+function normalizeListResponse<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as { content: T[] }).content)) {
+    return (data as { content: T[] }).content;
+  }
+  if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: T[] }).data)) {
+    return (data as { data: T[] }).data;
+  }
+  return [];
+}
+
 // Get neighborhoods by city
 export const getNeighborhoodsByCity = async (cityId: number): Promise<Neighborhood[]> => {
   try {
     const res = await apiClient.get(`/api/neighborhoods/city/${cityId}`);
-    return res.data;
+    return normalizeListResponse<Neighborhood>(res.data);
   } catch (error) {
     console.error('Error fetching neighborhoods by city:', error);
     throw new Error('Error al obtener barrios de la ciudad');

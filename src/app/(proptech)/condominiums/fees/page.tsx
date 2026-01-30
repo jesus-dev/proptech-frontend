@@ -156,7 +156,7 @@ export default function CondominiumFeesPage() {
             className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
           >
             <ArrowLeftIcon className="w-5 h-5" />
-            Volver a Condominios
+            Volver a Administración de Condominio
           </Link>
           <div className="flex items-center justify-between">
             <div>

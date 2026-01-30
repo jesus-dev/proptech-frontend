@@ -100,10 +100,6 @@ const navItems: NavItem[] = [
     icon: <BoxCubeIcon />,
     subItems: [
       {
-        name: "Dashboard",
-        path: "/developments/dashboard",
-      },
-      {
         name: "Todos los desarrollos",
         path: "/developments",
       },
@@ -116,36 +112,27 @@ const navItems: NavItem[] = [
         path: "/developments/quotas",
       },
       {
+        name: "Pagos",
+        path: "/developments/payments",
+      },
+      {
         name: "Reservas",
         path: "/developments/reservations",
       },
     ],
   },
   {
-    name: "Condominios",
+    name: "Administración de Condominio",
     path: "/condominiums",
     icon: <Building2 className="w-5 h-5" />,
     subItems: [
       {
-        name: "Todos los Condominios",
+        name: "Administrar condominios",
         path: "/condominiums",
       },
       {
-        name: "Nuevo Condominio",
-        path: "/condominiums/new",
-        nuevo: true,
-      },
-      {
-        name: "Unidades",
-        path: "/condominiums/units",
-      },
-      {
-        name: "Cuotas",
-        path: "/condominiums/fees",
-      },
-      {
-        name: "Pagos",
-        path: "/condominiums/payments",
+        name: "Mi condominio",
+        path: "/mi-condominio",
       },
     ],
   },
@@ -652,7 +639,9 @@ const AppSidebar: React.FC = () => {
                 {nav.icon}
               </span>
               {(isMobile || isExpanded || isHovered) && (
-                <span className={`text-sm font-medium`}>{nav.name}</span>
+                <span className="text-sm font-medium flex-1 text-left whitespace-normal">
+                  {nav.name}
+                </span>
               )}
               {(isMobile || isExpanded || isHovered) && (
                 <ChevronDownIcon

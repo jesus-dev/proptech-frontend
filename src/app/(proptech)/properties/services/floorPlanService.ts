@@ -17,21 +17,11 @@ export interface FloorPlan {
   description: string;
 }
 
-// Función helper para convertir URLs relativas a completas
+// Función helper para convertir URLs relativas a completas (solo para visualización)
 function getFullImageUrl(url: string | undefined): string {
   if (!url) return '';
-  
-  // Si ya es una URL completa, devolverla tal como está
-  if (url.startsWith('http')) {
-    return url;
-  }
-  
-  // Si es una URL relativa del backend, convertirla a URL completa
-  if (url.startsWith('/api/')) {
-    return getEndpoint(url);
-  }
-  
-  // Si es solo un nombre de archivo, asumir que está en la carpeta de archivos
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  if (url.startsWith('/api/') || url.startsWith('/uploads/')) return getEndpoint(url);
   return getEndpoint(`/api/files/${url}`);
 }
 
@@ -39,12 +29,8 @@ export async function getFloorPlans(propertyId: number | string): Promise<FloorP
   try {
     const response = await apiClient.get(`/api/properties/${propertyId}/floor-plans`);
     const plans = response.data || [];
-    
-    // Convertir URLs de imágenes relativas a completas
-    return plans.map((plan: FloorPlan) => ({
-      ...plan,
-      image: plan.image ? getFullImageUrl(plan.image) : undefined
-    }));
+    // Devolver planos con image tal como está en el backend (ruta relativa) para persistir correctamente al guardar
+    return plans.map((plan: FloorPlan) => ({ ...plan, image: plan.image ?? undefined }));
   } catch (error: any) {
     if (error.response?.status === 404) {
       // Si no hay planos, devolver array vacío
@@ -82,18 +68,22 @@ export async function uploadFloorPlanImage(propertyId: number | string, file: Fi
   formData.append('fileName', file.name);
   
   try {
-    // axios detecta automáticamente FormData y configura el Content-Type correctamente
     const response = await apiClient.post(`/api/files/upload/floor-plans`, formData);
-    
     const uploadedFile = response.data;
-    const imageUrl = uploadedFile.url || uploadedFile.fileName;
-    
-    // Convertir URL relativa a completa
-    return getFullImageUrl(imageUrl);
+    // Devolver la URL tal como la guarda el backend (ej: /uploads/floor-plans/xxx) para persistirla en el plano
+    const imageUrl = uploadedFile.url || uploadedFile.fileName || '';
+    return imageUrl;
   } catch (error: any) {
     console.error('Error uploading floor plan image:', error);
     throw new Error(error.response?.data || 'Error al subir imagen del plano');
   }
+}
+
+/** URL completa para mostrar la imagen del plano en la UI */
+export function getFloorPlanImageDisplayUrl(imageUrl: string | undefined): string {
+  if (!imageUrl) return '';
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('blob:')) return imageUrl;
+  return getFullImageUrl(imageUrl);
 }
 
 export async function deleteFloorPlans(propertyId: number | string): Promise<void> {

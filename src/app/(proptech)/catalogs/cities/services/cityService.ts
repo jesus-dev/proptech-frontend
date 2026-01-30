@@ -12,13 +12,30 @@ export interface City {
   state?: string;
 }
 
+// Normaliza la respuesta: puede ser array directo o { content/data: [] }
+function normalizeListResponse<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && 'content' in data && Array.isArray((data as { content: T[] }).content)) {
+    return (data as { content: T[] }).content;
+  }
+  if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: T[] }).data)) {
+    return (data as { data: T[] }).data;
+  }
+  return [];
+}
+
 // Get all cities
 export const getAllCities = async (): Promise<City[]> => {
   try {
     const res = await apiClient.get('/api/cities');
-    return res.data;
-  } catch (error) {
-    console.error('Error fetching cities:', error);
+    const list = normalizeListResponse<City>(res.data);
+    return list;
+  } catch (error: any) {
+    const status = error?.response?.status;
+    const data = error?.response?.data;
+    const code = error?.code;
+    const message = error?.message;
+    console.error('[cityService] Error fetching cities:', { status, data, code, message }, error);
     throw new Error('Error al obtener ciudades');
   }
 };

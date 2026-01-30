@@ -15,10 +15,13 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   UserGroupIcon,
-  CalendarIcon
+  CalendarIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from "@heroicons/react/24/outline";
 import { DevelopmentUnit, UnitType, UnitStatus } from "../components/types";
 import { developmentUnitService } from "../services/developmentUnitService";
+import { developmentService } from "../services/developmentService";
 
 export default function DevelopmentUnitsPage() {
   const [units, setUnits] = useState<DevelopmentUnit[]>([]);
@@ -26,6 +29,8 @@ export default function DevelopmentUnitsPage() {
   const [filterStatus, setFilterStatus] = useState<UnitStatus | "ALL">("ALL");
   const [filterType, setFilterType] = useState<UnitType | "ALL">("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [developmentTitleById, setDevelopmentTitleById] = useState<Record<number, string>>({});
+  const [expandedDevelopments, setExpandedDevelopments] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadUnits();
@@ -34,12 +39,24 @@ export default function DevelopmentUnitsPage() {
   const loadUnits = async () => {
     try {
       setLoading(true);
-      const data = await developmentUnitService.getAllUnits();
-      setUnits(data);
+      const [unitsData, developmentsResponse] = await Promise.all([
+        developmentUnitService.getAllUnits(),
+        developmentService.getAllDevelopments()
+      ]);
+
+      setUnits(unitsData);
+
+      const devMap: Record<number, string> = {};
+      (developmentsResponse.data || []).forEach((dev) => {
+        const id = Number(dev.id);
+        if (Number.isFinite(id)) devMap[id] = dev.title;
+      });
+      setDevelopmentTitleById(devMap);
     } catch (error) {
       console.error("Error loading units:", error);
       // Sin datos ficticios: dejar vacío
       setUnits([]);
+      setDevelopmentTitleById({});
     } finally {
       setLoading(false);
     }
@@ -125,12 +142,52 @@ export default function DevelopmentUnitsPage() {
   const filteredUnits = units.filter(unit => {
     const matchesStatus = filterStatus === "ALL" || unit.status === filterStatus;
     const matchesType = filterType === "ALL" || unit.type === filterType;
+    const devTitle = (developmentTitleById[unit.developmentId] || "").toLowerCase();
     const matchesSearch = unit.unitNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          unit.unitName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         unit.description?.toLowerCase().includes(searchTerm.toLowerCase());
+                         unit.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         devTitle.includes(searchTerm.toLowerCase());
     
     return matchesStatus && matchesType && matchesSearch;
   });
+
+  const groupedUnits = React.useMemo(() => {
+    const groups = new Map<number, { developmentId: number; developmentTitle: string; units: DevelopmentUnit[] }>();
+    for (const unit of filteredUnits) {
+      const developmentId = unit.developmentId;
+      const developmentTitle = developmentTitleById[developmentId] || `Desarrollo #${developmentId}`;
+      const existing = groups.get(developmentId);
+      if (existing) {
+        existing.units.push(unit);
+      } else {
+        groups.set(developmentId, { developmentId, developmentTitle, units: [unit] });
+      }
+    }
+
+    const sortedGroups = Array.from(groups.values()).sort((a, b) =>
+      a.developmentTitle.localeCompare(b.developmentTitle, "es", { sensitivity: "base" })
+    );
+
+    sortedGroups.forEach((g) => {
+      g.units.sort((a, b) => a.unitNumber.localeCompare(b.unitNumber, "es", { numeric: true, sensitivity: "base" }));
+    });
+
+    return sortedGroups;
+  }, [filteredUnits, developmentTitleById]);
+
+  const toggleDevelopment = (developmentId: number) => {
+    setExpandedDevelopments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(developmentId)) {
+        newSet.delete(developmentId);
+      } else {
+        newSet.add(developmentId);
+      }
+      return newSet;
+    });
+  };
+
+  const isExpanded = (developmentId: number) => expandedDevelopments.has(developmentId);
 
   if (loading) {
     return (
@@ -269,116 +326,168 @@ export default function DevelopmentUnitsPage() {
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Unidades ({filteredUnits.length})
+              Unidades ({filteredUnits.length}) • Desarrollos ({groupedUnits.length})
             </h3>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Unidad
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Precio
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Características
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredUnits.map((unit) => (
-                  <tr key={unit.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {unit.unitNumber}
+          {/* Lista de Unidades Agrupadas por Desarrollo (accordion) */}
+          <div className="p-4 space-y-4">
+            {groupedUnits.map((group) => {
+              const expanded = isExpanded(group.developmentId);
+
+              return (
+                <div
+                  key={group.developmentId}
+                  className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-200"
+                >
+                  <button
+                    onClick={() => toggleDevelopment(group.developmentId)}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 border-b border-gray-200 dark:border-gray-700 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center space-x-3 min-w-0">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg shrink-0">
+                          <BuildingOfficeIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                         </div>
-                        {unit.unitName && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {unit.unitName}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {getTypeIcon(unit.type)}
-                        <span className="ml-2 text-sm text-gray-900 dark:text-white">
-                          {getTypeLabel(unit.type)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(unit.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {formatCurrency(unit.price)}
-                      </div>
-                      {unit.discountPrice && unit.discountPrice < unit.price && (
-                        <div className="text-sm text-red-600 dark:text-red-400">
-                          {formatCurrency(unit.discountPrice)} (Oferta)
+                        <div className="text-left min-w-0">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                            {group.developmentTitle}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {group.units.length} {group.units.length === 1 ? "unidad" : "unidades"}
+                          </p>
                         </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-white">
-                        {unit.area && `${unit.area} ${unit.areaUnit}`}
-                        {unit.bedrooms && unit.bathrooms && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {unit.bedrooms} dorm. • {unit.bathrooms} baños
-                          </div>
-                        )}
-                        {unit.floor && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Piso {unit.floor}
-                          </div>
+                      </div>
+
+                      <div className="flex items-center space-x-3 shrink-0">
+                        <Link
+                          href={`/developments/${group.developmentId}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs font-semibold text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
+                        >
+                          Ver desarrollo
+                        </Link>
+                        {expanded ? (
+                          <ChevronUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                        ) : (
+                          <ChevronDownIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                         )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/developments/${unit.developmentId}/units/${unit.id}`}
-                          className="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
-                        >
-                          <EyeIcon className="w-5 h-5" />
-                        </Link>
-                        <Link
-                          href={`/developments/${unit.developmentId}/units/${unit.id}/edit`}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          <PencilIcon className="w-5 h-5" />
-                        </Link>
-                        <button
-                          onClick={() => {
-                            // TODO: Implementar eliminación
-                            if (confirm("¿Estás seguro de que quieres eliminar esta unidad?")) {
-                              console.log("Eliminar unidad:", unit.id);
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </button>
+
+                  {expanded && (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Unidad
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Tipo
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Estado
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Precio
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Características
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                              Acciones
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                          {group.units.map((unit) => (
+                            <tr key={unit.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {unit.unitNumber}
+                                  </div>
+                                  {unit.unitName && (
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                      {unit.unitName}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  {getTypeIcon(unit.type)}
+                                  <span className="ml-2 text-sm text-gray-900 dark:text-white">
+                                    {getTypeLabel(unit.type)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {getStatusBadge(unit.status)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {formatCurrency(unit.price)}
+                                </div>
+                                {unit.discountPrice && unit.discountPrice < unit.price && (
+                                  <div className="text-sm text-red-600 dark:text-red-400">
+                                    {formatCurrency(unit.discountPrice)} (Oferta)
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900 dark:text-white">
+                                  {unit.area && `${unit.area} ${unit.areaUnit}`}
+                                  {unit.bedrooms && unit.bathrooms && (
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                      {unit.bedrooms} dorm. • {unit.bathrooms} baños
+                                    </div>
+                                  )}
+                                  {unit.floor && (
+                                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                                      Piso {unit.floor}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div className="flex space-x-2">
+                                  <Link
+                                    href={`/developments/${unit.developmentId}/units/${unit.id}`}
+                                    className="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
+                                  >
+                                    <EyeIcon className="w-5 h-5" />
+                                  </Link>
+                                  <Link
+                                    href={`/developments/${unit.developmentId}/units/${unit.id}/edit`}
+                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                  >
+                                    <PencilIcon className="w-5 h-5" />
+                                  </Link>
+                                  <button
+                                    onClick={() => {
+                                      // TODO: Implementar eliminación
+                                      if (confirm("¿Estás seguro de que quieres eliminar esta unidad?")) {
+                                        console.log("Eliminar unidad:", unit.id);
+                                      }
+                                    }}
+                                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                  >
+                                    <TrashIcon className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {filteredUnits.length === 0 && (

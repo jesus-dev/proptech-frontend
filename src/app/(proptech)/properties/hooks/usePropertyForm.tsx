@@ -1,5 +1,5 @@
 "use client";
-import { useState, ChangeEvent, useEffect, useCallback } from "react";
+import { useState, ChangeEvent, useEffect, useCallback, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Property } from "../components/types";
 import { propertyService } from "../services/propertyService";
@@ -10,9 +10,12 @@ import { getEndpoint } from '@/lib/api-config';
 import { apiClient } from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
 import { FloorPlanForm } from "../components/steps/FloorPlansStep";
+import { uploadFloorPlanImage } from "../services/floorPlanService";
 import { useAuthContext } from "@/context/AuthContext";
 import { rentalPropertyService } from "@/app/(proptech)/rentals/services/rentalPropertyService";
+import { getAllPropertyStatuses } from "@/app/(proptech)/catalogs/property-status/services/propertyStatusService";
 import { debug } from "@/lib/logger";
+import { processImageFiles } from "@/lib/image-utils";
 
 export type PropertyFormData = Omit<Property, "id"> & { 
   propertyStatusId?: number;
@@ -26,9 +29,9 @@ export type PropertyFormData = Omit<Property, "id"> & {
 };
 export type PropertyFormErrors = Partial<Record<keyof PropertyFormData, string>>;
 
-export function usePropertyForm(initialData?: PropertyFormData & { id?: string }) {
+export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?: string }) {
   const { toast } = useToast();
-  const { user } = useAuthContext();
+  const { user, getUserContext } = useAuthContext();
   const pathname = usePathname();
   const [formData, setFormData] = useState<PropertyFormData>({
     title: "",
@@ -60,6 +63,10 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     floors: 0,
     availableFrom: "",
     additionalDetails: "",
+    balconyArea: 0,
+    gardenArea: 0,
+    laundry: "",
+    storage: "",
     country: "Paraguay",
     neighborhood: "",
     locationDescription: "",
@@ -133,6 +140,10 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     galleryImages: []
   });
   const [uploadedFloorPlanImages, setUploadedFloorPlanImages] = useState<{ [key: number]: File | null }>({});
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
+
+  const uploadedFilesRef = useRef(uploadedFiles);
+  uploadedFilesRef.current = uploadedFiles;
 
   const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080')).replace(/\/$/, '');
 
@@ -163,89 +174,312 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     return undefined;
   };
 
-  // Actualizar el formulario cuando cambie initialData
+  // Actualizar el formulario cuando cambie initialData (merge para soportar datos parciales, ej. new con agentId)
   useEffect(() => {
-    if (initialData) {
-      setFormData(initialData);
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prev => ({ ...prev, ...initialData }));
     }
   }, [initialData]);
 
-  // Guardar borrador SIN validación (reutilizado por autosave manual / botón "Guardar borrador")
-  const saveDraft = useCallback(async () => {
-    try {
-      // Preparar datos mínimos - SIN validaciones
-      // IMPORTANTE: ahora SÍ enviamos agentId (y agencyId) para que el backend valide coherencia
-      const {
-        currency,
-        propertyStatusId,
-        additionalPropertyTypes,
-        ...propertyDataWithoutCurrency
-      } = formData;
+  /**
+   * Construye el payload para create/update. UNA sola función para ambos flujos.
+   * Solo campos que PropertyCreateDTO espera; sin ...rest para no enviar basura ni romper nada.
+   */
+  const buildPropertyPayload = useCallback((
+    data: PropertyFormData,
+    opts: { asDraft: boolean; propertyStatusId: number | undefined; additionalPropertyTypes: (string | number)[]; fallbackFeatured: string | undefined; isEditing: boolean }
+  ) => {
+    const { asDraft, propertyStatusId, additionalPropertyTypes, fallbackFeatured, isEditing } = opts;
+    const num = (v: unknown): number | undefined => (v != null && v !== '') ? Number(v) : undefined;
+    const int = (v: unknown): number | undefined => (v != null && v !== '') ? Math.floor(Number(v)) : undefined;
+    const str = (v: unknown): string | undefined => (v != null ? String(v).trim() : undefined) || undefined;
+    const payload: Record<string, unknown> = {
+      title: data.title || (asDraft ? '' : data.title),
+      images: [],
+      operacion: data.operacion || '',
+      propertyStatusId,
+      agentId: data.agentId ?? undefined,
+      agencyId: data.agencyId ?? undefined,
+      description: str(data.description) || undefined,
+      price: data.price != null ? Number(data.price) : 0,
+      currencyId: data.currencyId,
+      address: str(data.address) || undefined,
+      cityId: data.cityId,
+      departmentId: (data as any).departmentId,
+      neighborhoodId: (data as any).neighborhoodId,
+      countryId: (data as any).countryId,
+      bedrooms: int(data.bedrooms) ?? 0,
+      bathrooms: int(data.bathrooms) ?? 0,
+      rooms: int(data.rooms) ?? 0,
+      kitchens: int(data.kitchens) ?? 0,
+      floors: int(data.floors) ?? 0,
+      yearBuilt: int(data.yearBuilt),
+      garage: int(data.parking) ?? 0,
+      area: num(data.area) ?? 0,
+      lotSize: num(data.lotSize) ?? 0,
+      availableFrom: str(data.availableFrom) || undefined,
+      additionalDetails: str(data.additionalDetails) || undefined,
+      balconyArea: num((data as any).balconyArea) ?? 0,
+      gardenArea: num((data as any).gardenArea) ?? 0,
+      laundry: str((data as any).laundry) || undefined,
+      storage: str((data as any).storage) || undefined,
+      propertyTypeId: data.propertyTypeId,
+      additionalPropertyTypeIds: Array.isArray(additionalPropertyTypes)
+        ? additionalPropertyTypes.map((id: any) => Number(id)).filter((n: number) => !isNaN(n))
+        : [],
+      latitude: num(data.latitude),
+      longitude: num(data.longitude),
+      featured: data.featured ?? false,
+      premium: data.premium ?? false,
+      virtualTourUrl: str(data.virtualTourUrl) || undefined,
+      reelVideoUrl: str(data.reelVideoUrl) || undefined,
+      fullVideoUrl: str(data.fullVideoUrl) || undefined,
+      amenities: Array.isArray(data.amenities) ? data.amenities.map((a: unknown) => Number(a)).filter((n: number) => !isNaN(n)) : undefined,
+      services: Array.isArray(data.services) ? data.services.map((s: unknown) => Number(s)).filter((n: number) => !isNaN(n)) : undefined,
+      propietarioId: data.propietarioId ?? undefined,
+      privateFiles: isEditing ? undefined : (data.privateFiles?.length
+        ? data.privateFiles.map((file: any) => ({
+            url: file.url || file,
+            fileName: file.fileName || file.name || (typeof file === 'string' ? file.split('/').pop() : 'unknown')
+          }))
+        : undefined),
+    };
+    if (fallbackFeatured) payload.featuredImage = fallbackFeatured;
+    return payload as any;
+  }, []);
 
-      const propertyData: any = {
-        ...propertyDataWithoutCurrency,
-        // El título puede estar vacío (el backend pone "Borrador sin título")
-        title: formData.title || '',
-        images: [],
-        // operacion se enviará con valor por defecto en backend si está vacío
-        operacion: formData.operacion || '',
-        // Mapear additionalPropertyTypes a additionalPropertyTypeIds para el backend
-        // Siempre enviar el campo, incluso si está vacío, para que el backend pueda limpiar la lista
-        additionalPropertyTypeIds: additionalPropertyTypes && Array.isArray(additionalPropertyTypes)
-          ? additionalPropertyTypes.map((id: any) => Number(id)).filter((id: number) => !isNaN(id))
-          : [],
-        // Mapear privateFiles al formato esperado por el backend
-        privateFiles: formData.privateFiles && Array.isArray(formData.privateFiles)
-          ? formData.privateFiles.map((file: any) => ({
-              url: file.url || file,
-              fileName: file.fileName || file.name || (typeof file === 'string' ? file.split('/').pop() : 'unknown')
-            }))
-          : undefined,
-      };
-
-      const fallbackFeatured = selectFallbackFeaturedImage();
-      if (fallbackFeatured) {
-        propertyData.featuredImage = fallbackFeatured;
-      } else {
-        delete propertyData.featuredImage;
+  /**
+   * Lógica de guardado unificada para "Guardar" y "Guardar borrador".
+   * Create y update usan el mismo payload (buildPropertyPayload).
+   */
+  const performSave = useCallback(async (asDraft: boolean): Promise<{ success: boolean; propertyId?: string }> => {
+    let propertyStatusId = formData.propertyStatusId;
+    if (asDraft) {
+      try {
+        const statuses = await getAllPropertyStatuses();
+        const draftStatus = statuses.find((s: { code?: string; name?: string }) =>
+          (s.code && s.code.toUpperCase() === 'DRAFT') || (s.name && s.name.toLowerCase() === 'borrador')
+        );
+        if (draftStatus) propertyStatusId = draftStatus.id;
+      } catch (e) {
+        debug('No se pudo obtener estado DRAFT:', e);
       }
+    }
 
-      let savedProperty;
-      if (draftPropertyId) {
-        // Actualizar borrador existente
-        savedProperty = await propertyService.updateProperty(draftPropertyId, propertyData);
+    const additionalPropertyTypes = (formData.additionalPropertyTypes && Array.isArray(formData.additionalPropertyTypes))
+      ? formData.additionalPropertyTypes
+      : [];
+    const fallbackFeatured = selectFallbackFeaturedImage();
+    const isEditing = Boolean(initialData?.id);
+
+    // En CREATE: si el usuario es AGENT y no tiene agentId en el form, el backend lo exige → rellenar desde contexto
+    const effectiveId = initialData?.id ?? draftPropertyId;
+    const isCreate = !(effectiveId != null ? String(effectiveId) : '');
+    let dataForPayload = formData;
+    if (isCreate) {
+      const ctx = getUserContext();
+      const resolvedAgentId = formData.agentId ?? (ctx.isAgent && ctx.agentId != null ? Number(ctx.agentId) : undefined);
+      const resolvedAgencyId = formData.agencyId ?? (ctx.isAgent && ctx.agencyId != null ? Number(ctx.agencyId) : undefined);
+      if (resolvedAgentId !== undefined || resolvedAgencyId !== undefined) {
+        dataForPayload = { ...formData, agentId: resolvedAgentId ?? formData.agentId, agencyId: resolvedAgencyId ?? formData.agencyId };
+      }
+    }
+
+    const propertyData = buildPropertyPayload(dataForPayload, {
+      asDraft,
+      propertyStatusId,
+      additionalPropertyTypes,
+      fallbackFeatured,
+      isEditing,
+    });
+
+    const effectiveIdStr = effectiveId != null ? String(effectiveId) : '';
+    let savedProperty;
+    if (effectiveIdStr) {
+      savedProperty = await propertyService.updateProperty(effectiveIdStr, propertyData);
+    } else {
+      savedProperty = await propertyService.createProperty(propertyData);
+      if (savedProperty?.id != null) setDraftPropertyId(String(savedProperty.id));
+    }
+    const propertyId = savedProperty?.id != null ? String(savedProperty.id) : '';
+    if (!propertyId) return { success: false };
+
+    const files = uploadedFilesRef.current;
+    if (files.featuredImage || files.galleryImages.length > 0) {
+      try {
+        const imageResults = await imageUploadService.uploadPropertyImages(
+          files.featuredImage,
+          files.galleryImages,
+          String(propertyId)
+        );
+        const normalizedGalleryUrls = (imageResults.galleryImageUrls || [])
+          .map((url: string) => normalizeImagePathForBackend(url))
+          .filter((url): url is string => Boolean(url));
+        const normalizedFeaturedUrl =
+          normalizeImagePathForBackend(imageResults.featuredImageUrl) ||
+          normalizeImagePathForBackend(formData.featuredImage) ||
+          normalizedGalleryUrls[0];
+        const payload: Record<string, unknown> = { imageUrls: normalizedGalleryUrls };
+        if (normalizedFeaturedUrl) payload.featuredImageUrl = normalizedFeaturedUrl;
+        await apiClient.put(`/api/properties/${propertyId}/images`, payload);
+      } catch (imageError) {
+        console.warn('⚠️ performSave: Error subiendo fotos:', imageError);
+      }
+    }
+
+    // Planos de planta
+    try {
+      const plans = formData.floorPlans ?? [];
+      if (plans.length > 0) {
+        const plansWithUploadedImages = await Promise.all(
+          plans.map(async (plan, index) => {
+            let imageUrl = typeof plan.image === 'string' ? plan.image : '';
+            if (imageUrl.startsWith('blob:')) {
+              try {
+                const res = await fetch(imageUrl);
+                const blob = await res.blob();
+                const ext = blob.type?.split('/')[1] || 'jpg';
+                const file = new File([blob], `floor-plan-${index}.${ext}`, { type: blob.type });
+                imageUrl = await uploadFloorPlanImage(propertyId, file);
+              } catch (e) {
+                console.error('Error uploading floor plan image from blob:', e);
+                imageUrl = '';
+              }
+            }
+            return {
+              id: null,
+              title: plan.title ?? '',
+              bedrooms: plan.bedrooms ?? 0,
+              bathrooms: plan.bathrooms ?? 0,
+              price: plan.price ?? 0,
+              priceSuffix: plan.priceSuffix ?? '',
+              size: plan.size ?? 0,
+              image: imageUrl,
+              description: plan.description ?? '',
+              propertyId,
+            };
+          })
+        );
+        await apiClient.post(`/api/properties/${propertyId}/floor-plans`, plansWithUploadedImages);
       } else {
-        // Crear nuevo borrador
-        savedProperty = await propertyService.createProperty(propertyData);
-        if (savedProperty && savedProperty.id) {
-          setDraftPropertyId(savedProperty.id);
+        await apiClient.delete(`/api/properties/${propertyId}/floor-plans`);
+      }
+    } catch (floorPlanError: any) {
+      console.error('❌ performSave: Error saving floor plans:', floorPlanError);
+      if (!asDraft) {
+        toast({
+          variant: 'destructive',
+          title: 'Error al guardar planos',
+          description: floorPlanError?.response?.data ?? 'No se pudieron guardar los planos de planta.',
+        });
+      }
+    }
+
+    // Cercanías (nearby facilities): sincronizar siempre (create y edit) para que el formulario sea la fuente de verdad
+    const nearbyFacilities = (formData as any).nearbyFacilities;
+    if (Array.isArray(nearbyFacilities)) {
+      try {
+        const existingRes = await apiClient.get(`/api/properties/${propertyId}/nearby-facilities`);
+        const existingList = Array.isArray(existingRes?.data) ? existingRes.data : [];
+        for (const ex of existingList) {
+          const facilityId = ex.nearbyFacilityId ?? ex.nearbyFacility?.id;
+          if (facilityId != null) {
+            try {
+              await apiClient.delete(`/api/properties/${propertyId}/nearby-facilities/${facilityId}`);
+            } catch (delErr: any) {
+              if (delErr?.response?.status !== 404) console.warn('⚠️ performSave: Error eliminando cercanía:', delErr);
+            }
+          }
+        }
+        for (const f of nearbyFacilities) {
+          const payload = {
+            nearbyFacilityId: f.nearbyFacilityId,
+            distanceKm: f.distanceKm,
+            walkingTimeMinutes: f.walkingTimeMinutes,
+            drivingTimeMinutes: f.drivingTimeMinutes,
+            isFeatured: f.isFeatured === true,
+            notes: f.notes ?? '',
+          };
+          await apiClient.post(`/api/properties/${propertyId}/nearby-facilities`, payload);
+        }
+      } catch (nearbyErr: any) {
+        if (nearbyErr?.response?.status !== 404) {
+          console.warn('⚠️ performSave: Error guardando cercanías:', nearbyErr);
         }
       }
-      
-      setHasUnsavedChanges(false);
-      setLastSaved(new Date());
-      
-      // Mostrar notificación sutil
+    }
+
+    // Alquiler temporal
+    if ((formData as any).rentalConfig?.enabled) {
+      try {
+        const rentalConfig = (formData as any).rentalConfig;
+        const rentalData = {
+          propertyId: parseInt(propertyId),
+          pricePerNight: rentalConfig.pricePerNight,
+          pricePerWeek: rentalConfig.pricePerWeek,
+          pricePerMonth: rentalConfig.pricePerMonth,
+          cleaningFee: rentalConfig.cleaningFee,
+          currency: rentalConfig.currency || formData.currency,
+          minNights: rentalConfig.minNights || 1,
+          maxNights: rentalConfig.maxNights,
+          maxGuests: rentalConfig.maxGuests || 2,
+          checkInTime: rentalConfig.checkInTime || '14:00',
+          checkOutTime: rentalConfig.checkOutTime || '11:00',
+          instantBooking: rentalConfig.instantBooking || false,
+          rentalType: rentalConfig.rentalType || 'APARTMENT',
+          petsAllowed: rentalConfig.petsAllowed || false,
+          petFee: rentalConfig.petFee,
+          smokingAllowed: rentalConfig.smokingAllowed || false,
+          eventsAllowed: rentalConfig.eventsAllowed || false,
+          wifiAvailable: rentalConfig.wifiAvailable !== false,
+          cancellationPolicy: rentalConfig.cancellationPolicy || 'MODERATE',
+          houseRules: rentalConfig.houseRules,
+          alwaysAvailable: rentalConfig.alwaysAvailable !== false,
+        };
+        const existingRental = await rentalPropertyService.getRentalPropertyByPropertyId(parseInt(propertyId));
+        if (existingRental) {
+          await rentalPropertyService.updateRentalProperty(existingRental.id, rentalData);
+        } else {
+          await rentalPropertyService.createRentalProperty(rentalData);
+        }
+      } catch (rentalError) {
+        console.error('❌ performSave: Error saving rental config:', rentalError);
+        if (!asDraft) {
+          toast({
+            variant: 'warning',
+            title: 'Advertencia',
+            description: 'La propiedad se guardó, pero hubo un error al configurar el alquiler temporal. Por favor, intenta configurarlo nuevamente.',
+          });
+        }
+      }
+    }
+
+    setHasUnsavedChanges(false);
+    setLastSaved(new Date());
+    return { success: true, propertyId };
+  }, [formData, initialData?.id, draftPropertyId, setDraftPropertyId, selectFallbackFeaturedImage, toast, buildPropertyPayload, getUserContext]);
+
+  // Guardar borrador: misma lógica que guardar pero siempre con estado DRAFT
+  const saveDraft = useCallback(async () => {
+    try {
+      const result = await performSave(true);
+      if (!result.success) return false;
       toast({
         variant: 'default',
         title: '💾 Guardado automático',
         description: `Borrador ${draftPropertyId ? 'actualizado' : 'creado'}.`,
         duration: 2000,
       });
-
       return true;
     } catch (error: any) {
-      // Manejar explícitamente el 403 para que no entre en bucle ni rompa la página
       const message = error?.response?.data?.message || error?.response?.data?.error || error?.message;
       if (error?.response?.status === 403) {
-        console.error('❌ Error 403 al guardar borrador:', message);
         toast({
           variant: 'destructive',
           title: 'Error de permisos',
           description: message || 'No tienes permisos para asignar este agente o crear la propiedad.',
         });
       } else {
-        console.error('❌ Error al guardar borrador:', error);
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -254,7 +488,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
       }
       return false;
     }
-  }, [formData, draftPropertyId, selectFallbackFeaturedImage, toast]);
+  }, [performSave, draftPropertyId, toast]);
 
   useEffect(() => {
     return;
@@ -366,7 +600,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     }
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
     if (!files) return;
 
@@ -380,27 +614,29 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
           ...prev,
           featuredImage: URL.createObjectURL(file)
         }));
-        // Limpia el input para permitir volver a seleccionar la misma imagen
         e.target.value = "";
-        // Validar automáticamente después de cambiar la imagen destacada
         setTimeout(() => validate(['featuredImage']), 0);
       }
     } else if (name === "images") {
       const fileArray = Array.from(files);
-      const newImageUrls = fileArray.map(file => URL.createObjectURL(file));
-      setUploadedFiles(prev => ({ ...prev, galleryImages: [...prev.galleryImages, ...fileArray] }));
-      setFormData(prev => ({
-        ...prev,
-        images: [...(prev.images || []), ...newImageUrls]
-      }));
+      setIsProcessingImages(true);
+      try {
+        const processedFiles = await processImageFiles(fileArray);
+        const newImageUrls = processedFiles.map(file => URL.createObjectURL(file));
+        setUploadedFiles(prev => ({ ...prev, galleryImages: [...prev.galleryImages, ...processedFiles] }));
+        setFormData(prev => ({
+          ...prev,
+          images: [...(prev.images || []), ...newImageUrls]
+        }));
+        setTimeout(() => validate(['images']), 0);
+      } finally {
+        setIsProcessingImages(false);
+      }
       e.target.value = "";
-      // Validar automáticamente después de cambiar las imágenes de galería
-      setTimeout(() => validate(['images']), 0);
     }
   };
 
   const removeImage = (index: number) => {
-    // Libera la memoria del objeto URL
     const urlToRemove = formData.images[index];
     if (urlToRemove) URL.revokeObjectURL(urlToRemove);
 
@@ -412,8 +648,20 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
       ...prev,
       galleryImages: prev.galleryImages.filter((_, i) => i !== index)
     }));
-    // Validar automáticamente después de eliminar una imagen
     setTimeout(() => validate(['images']), 0);
+  };
+
+  /** Reordenar imágenes de la galería (propiedad nueva). */
+  const reorderImages = (oldIndex: number, newIndex: number) => {
+    if (oldIndex === newIndex) return;
+    const moveInArray = <T,>(arr: T[]) => {
+      const result = [...arr];
+      const [removed] = result.splice(oldIndex, 1);
+      result.splice(newIndex, 0, removed);
+      return result;
+    };
+    setFormData(prev => ({ ...prev, images: moveInArray(prev.images || []) }));
+    setUploadedFiles(prev => ({ ...prev, galleryImages: moveInArray(prev.galleryImages) }));
   };
 
   const removeFeaturedImage = () => {
@@ -581,235 +829,8 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const validationErrors = validate();
-    
-    if (Object.keys(validationErrors).length === 0) {
-      try {
-        // Preparar datos de la propiedad sin las imágenes
-        debug('🔍 formData completo antes de preparar:', formData);
-        debug('🔍 formData.additionalPropertyTypes:', formData.additionalPropertyTypes);
-        const { currency, additionalPropertyTypes, ...propertyDataWithoutCurrency } = formData;
-        debug('🔍 additionalPropertyTypes extraído:', additionalPropertyTypes);
-        const propertyData: any = {
-          ...propertyDataWithoutCurrency,
-          images: [], // Las imágenes se manejarán por separado
-          // Enviar currencyId en lugar del código de moneda
-          currencyId: formData.currencyId,
-          // Mapear additionalPropertyTypes a additionalPropertyTypeIds para el backend
-          // Siempre enviar el campo, incluso si está vacío, para que el backend pueda limpiar la lista
-          additionalPropertyTypeIds: (() => {
-            const ids = additionalPropertyTypes && Array.isArray(additionalPropertyTypes)
-              ? additionalPropertyTypes.map((id: any) => Number(id)).filter((id: number) => !isNaN(id))
-              : [];
-            debug('🔍 Enviando additionalPropertyTypeIds:', ids, 'desde additionalPropertyTypes:', additionalPropertyTypes);
-            return ids;
-          })(),
-          // Mapear privateFiles al formato esperado por el backend
-          privateFiles: formData.privateFiles && Array.isArray(formData.privateFiles)
-            ? formData.privateFiles.map((file: any) => ({
-                url: file.url || file,
-                fileName: file.fileName || file.name || (typeof file === 'string' ? file.split('/').pop() : 'unknown')
-              }))
-            : undefined,
-        };
-
-        const fallbackFeatured = selectFallbackFeaturedImage();
-        if (fallbackFeatured) {
-          propertyData.featuredImage = fallbackFeatured;
-        } else {
-          delete propertyData.featuredImage;
-        }
-
-        let propertyId: string;
-
-        if (initialData?.id) {
-          const updatedProperty = await propertyService.updateProperty(initialData.id, propertyData);
-          if (updatedProperty) {
-            propertyId = updatedProperty.id;
-            // Mostrar notificación de éxito
-            if (typeof window !== 'undefined') {
-              toast({
-                variant: 'success',
-                title: '¡Excelente!',
-                description: 'La propiedad ha sido actualizada correctamente. Los cambios están ahora disponibles en el sistema.'
-              });
-            }
-          } else {
-            throw new Error('No se pudo actualizar la propiedad');
-          }
-        } else {
-          const newProperty = await propertyService.createProperty(propertyData);
-          if (newProperty) {
-            propertyId = newProperty.id;
-            setDraftPropertyId(propertyId); // Guardar ID para poder publicar después
-            // Mostrar notificación de éxito
-            if (typeof window !== 'undefined') {
-              toast({
-                variant: 'success',
-                title: '¡Excelente!',
-                description: 'La propiedad ha sido guardada como borrador. Podrás publicarla cuando esté lista.'
-              });
-            }
-          } else {
-            throw new Error('No se pudo crear la propiedad');
-          }
-        }
-
-        // Guardar floor plans si existen
-        if (formData.floorPlans && formData.floorPlans.length > 0) {
-          try {
-            
-            // Mapear los floor plans al formato esperado por el backend
-            const mappedFloorPlans = formData.floorPlans.map(plan => ({
-              id: null, // Nuevo plano
-              title: plan.title,
-              bedrooms: plan.bedrooms,
-              bathrooms: plan.bathrooms,
-              price: plan.price,
-              priceSuffix: plan.priceSuffix,
-              size: plan.size,
-              image: typeof plan.image === 'string' ? plan.image : null,
-              description: plan.description,
-              propertyId: propertyId
-            }));
-            
-            
-            await apiClient.post(`/api/properties/${propertyId}/floor-plans`, mappedFloorPlans);
-          } catch (floorPlanError) {
-            console.error('❌ usePropertyForm: Error saving floor plans:', floorPlanError);
-            // No fallar el formulario si hay error con los floor plans
-          }
-        }
-
-        // Ahora subir las imágenes y guardar las referencias en la base de datos
-        if (uploadedFiles.featuredImage || uploadedFiles.galleryImages.length > 0) {
-          try {
-            
-            // Subir imágenes al servidor
-            const imageResults = await imageUploadService.uploadPropertyImages(
-              uploadedFiles.featuredImage,
-              uploadedFiles.galleryImages,
-              propertyId
-            );
-
-            // Guardar referencias en la base de datos
-            const normalizedGalleryUrls = (imageResults.galleryImageUrls || [])
-              .map((url) => normalizeImagePathForBackend(url))
-              .filter((url): url is string => Boolean(url));
-
-            const normalizedFeaturedUrl =
-              normalizeImagePathForBackend(imageResults.featuredImageUrl) ||
-              normalizeImagePathForBackend(formData.featuredImage) ||
-              normalizedGalleryUrls[0];
-
-            const payload: Record<string, unknown> = {
-              imageUrls: normalizedGalleryUrls
-            };
-
-            if (normalizedFeaturedUrl) {
-              payload.featuredImageUrl = normalizedFeaturedUrl;
-            }
-
-            // Llamar al endpoint para actualizar las imágenes en la base de datos
-            try {
-              await apiClient.put(`/api/properties/${propertyId}/images`, payload);
-            } catch (error) {
-              console.warn('⚠️ usePropertyForm: Failed to update images, but property was saved', error);
-            }
-
-          } catch (imageError) {
-            console.error("❌ usePropertyForm: Error handling images:", imageError);
-            // No fallar el formulario si hay error con las imágenes
-          }
-        }
-
-        // Guardar configuración de alquiler temporal si está habilitada
-        debug("🔍 Verificando configuración de alquiler temporal...");
-        console.log("📦 formData completo:", formData);
-        console.log("🏠 rentalConfig:", (formData as any).rentalConfig);
-            debug("✅ enabled?", (formData as any).rentalConfig?.enabled);
-        
-        if ((formData as any).rentalConfig?.enabled) {
-          try {
-            debug("🏠 ✅ Configuración de alquiler temporal ACTIVADA - Procediendo a guardar para propertyId:", propertyId);
-            const rentalConfig = (formData as any).rentalConfig;
-            console.log("📋 Datos del rental config:", rentalConfig);
-            
-            // Mapear los datos del formulario al formato del backend
-            const rentalData = {
-              propertyId: parseInt(propertyId),
-              pricePerNight: rentalConfig.pricePerNight,
-              pricePerWeek: rentalConfig.pricePerWeek,
-              pricePerMonth: rentalConfig.pricePerMonth,
-              cleaningFee: rentalConfig.cleaningFee,
-              currency: rentalConfig.currency || formData.currency,
-              minNights: rentalConfig.minNights || 1,
-              maxNights: rentalConfig.maxNights,
-              maxGuests: rentalConfig.maxGuests || 2,
-              checkInTime: rentalConfig.checkInTime || "14:00",
-              checkOutTime: rentalConfig.checkOutTime || "11:00",
-              instantBooking: rentalConfig.instantBooking || false,
-              rentalType: rentalConfig.rentalType || "APARTMENT",
-              petsAllowed: rentalConfig.petsAllowed || false,
-              petFee: rentalConfig.petFee,
-              smokingAllowed: rentalConfig.smokingAllowed || false,
-              eventsAllowed: rentalConfig.eventsAllowed || false,
-              wifiAvailable: rentalConfig.wifiAvailable !== false,
-              cancellationPolicy: rentalConfig.cancellationPolicy || "MODERATE",
-              houseRules: rentalConfig.houseRules,
-              alwaysAvailable: rentalConfig.alwaysAvailable !== false,
-            };
-
-            debug("📝 Datos a enviar al backend:", rentalData);
-
-            // Verificar si ya existe una configuración para esta propiedad
-            debug("🔍 Verificando si ya existe configuración de rental...");
-            const existingRental = await rentalPropertyService.getRentalPropertyByPropertyId(parseInt(propertyId));
-            
-            if (existingRental) {
-              // Actualizar existente
-              debug("📝 Configuración existente encontrada:", existingRental.id);
-              await rentalPropertyService.updateRentalProperty(existingRental.id, rentalData);
-              debug("✅ Configuración actualizada exitosamente");
-            } else {
-              // Crear nueva
-              console.log("✨ No existe configuración - Creando nueva configuración de rental");
-              const result = await rentalPropertyService.createRentalProperty(rentalData);
-              debug("✅ Configuración creada exitosamente:", result);
-            }
-            
-            console.log("🎉 Configuración de alquiler temporal guardada exitosamente");
-          } catch (rentalError) {
-            console.error("❌ usePropertyForm: Error saving rental config:", rentalError);
-            console.error("❌ Error details:", rentalError);
-            toast({
-              variant: 'warning',
-              title: 'Advertencia',
-              description: 'La propiedad se guardó, pero hubo un error al configurar el alquiler temporal. Por favor, intenta configurarlo nuevamente.',
-            });
-          }
-        } else {
-          console.log("⚠️ Configuración de alquiler temporal NO ACTIVADA o no existe");
-          console.log("   rentalConfig:", (formData as any).rentalConfig);
-          console.log("   enabled:", (formData as any).rentalConfig?.enabled);
-        }
-
-        return true;
-      } catch (error) {
-        console.error('❌ usePropertyForm: Error submitting form:', error);
-        // Mostrar notificación de error
-        if (typeof window !== 'undefined') {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: error instanceof Error ? error.message : 'Error desconocido al guardar la propiedad'
-          });
-        }
-        return false;
-      }
-    } else {
-      // Mostrar notificación de error de validación
+    if (Object.keys(validationErrors).length > 0) {
       toast({
         variant: 'warning',
         title: 'Errores de validación',
@@ -821,6 +842,30 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
           </ul>
         )
       });
+      return false;
+    }
+    try {
+      const result = await performSave(false);
+      if (!result.success) return false;
+      if (typeof window !== 'undefined') {
+        toast({
+          variant: 'success',
+          title: '¡Excelente!',
+          description: initialData?.id
+            ? 'La propiedad ha sido actualizada correctamente. Los cambios están ahora disponibles en el sistema.'
+            : 'La propiedad ha sido guardada. Podrás publicarla cuando esté lista.',
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error('❌ usePropertyForm: Error submitting form:', error);
+      if (typeof window !== 'undefined') {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Error desconocido al guardar la propiedad',
+        });
+      }
       return false;
     }
   };
@@ -854,6 +899,10 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
       floors: 0,
       availableFrom: "",
       additionalDetails: "",
+      balconyArea: 0,
+      gardenArea: 0,
+      laundry: "",
+      storage: "",
       country: "",
       neighborhood: "",
       locationDescription: "",
@@ -967,6 +1016,7 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     handleChange,
     handleFileChange,
     removeImage,
+    reorderImages,
     removeFeaturedImage,
     toggleAmenity,
     toggleService,
@@ -981,5 +1031,6 @@ export function usePropertyForm(initialData?: PropertyFormData & { id?: string }
     handleNearbyFacilitiesChange,
     publishProperty,
     saveDraft,
+    isProcessingImages,
   };
 } 

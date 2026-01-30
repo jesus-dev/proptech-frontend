@@ -100,6 +100,7 @@ export default function EditPropertyPage({ params }: PageProps) {
     handleChange, 
     handleFileChange, 
     removeImage, 
+    reorderImages, 
     removeFeaturedImage, 
     toggleAmenity, 
     toggleService, 
@@ -113,6 +114,7 @@ export default function EditPropertyPage({ params }: PageProps) {
     handleNearbyFacilitiesChange,
     publishProperty,
     saveDraft,
+    isProcessingImages,
   } = usePropertyForm(initialPropertyData);
 
   // Sin promesas: params ya viene resuelto
@@ -478,7 +480,14 @@ export default function EditPropertyPage({ params }: PageProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Step configuration with icons and validation
+  // Detectar tipo de propiedad para ajustar validaciones (terreno vs casa/departamento)
+  const typeName = ((formData as any).type || (formData as any).propertyType || '').toString().toLowerCase();
+  const isLand =
+    typeName.includes('terreno') ||
+    typeName.includes('lote') ||
+    typeName.includes('loteo');
+
+  // Step configuration with icons and validation (dinámico según tipo)
   const steps: StepInfo[] = [
     {
       id: 1,
@@ -494,7 +503,7 @@ export default function EditPropertyPage({ params }: PageProps) {
       title: "Características",
       description: "Detalles físicos de la propiedad",
       icon: <Settings className="h-5 w-5" />,
-      requiredFields: ['area', 'bedrooms', 'bathrooms'],
+      requiredFields: isLand ? ['lotSize'] : ['area', 'bedrooms', 'bathrooms'],
       isCompleted: false,
       hasErrors: false
     },
@@ -723,10 +732,12 @@ export default function EditPropertyPage({ params }: PageProps) {
             errors={errors}
             handleFileChange={handleFileChange}
             removeImage={removeImage}
+            reorderImages={reorderImages}
             removeFeaturedImage={removeFeaturedImage}
             propertyId={propertyId}
             setFormData={data => handleChange({ target: { name: 'images', value: data.images } } as any)}
             validate={validate}
+            isProcessingImages={isProcessingImages}
           />
         );
       case 5:
@@ -940,8 +951,8 @@ export default function EditPropertyPage({ params }: PageProps) {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm font-medium truncate">{step.title}</p>
-                      <p className="text-xs opacity-75 truncate hidden sm:block">{step.description}</p>
+                      <p className="text-xs sm:text-sm font-medium">{step.title}</p>
+                      <p className="text-xs opacity-75 hidden sm:block">{step.description}</p>
                     </div>
                   </button>
                 ))}

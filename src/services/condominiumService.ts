@@ -2,6 +2,8 @@ import { apiClient } from '@/lib/api';
 
 export interface Condominium {
   id: number;
+  developmentId?: number | null;
+  developmentName?: string | null;
   name: string;
   description?: string;
   address: string;
@@ -12,6 +14,8 @@ export interface Condominium {
   administratorName?: string;
   administratorEmail?: string;
   administratorPhone?: string;
+  currencyId?: number | null;
+  currencyCode?: string | null;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -110,6 +114,16 @@ export const condominiumService = {
     } catch (error: any) {
       console.error('Error deleting condominium:', error);
       throw new Error(error?.response?.data?.error || 'Error al eliminar condominio');
+    }
+  },
+
+  async getCities(): Promise<string[]> {
+    try {
+      const response = await apiClient.get('/api/condominiums/cities');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error: any) {
+      console.error('Error fetching condominium cities:', error);
+      return [];
     }
   }
 };

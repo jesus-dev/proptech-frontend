@@ -107,21 +107,18 @@ class OwnerService {
     try {
       const response = await apiClient.get(`/api/owners-property/owners/${ownerId}`);
       return response.data;
-    } catch (error) {
-      console.error('Error fetching owner:', error);
+    } catch (error: any) {
+      if (error?.response?.status !== 404) {
+        console.error('Error fetching owner:', error);
+      }
       return null;
     }
   }
 
-  // Crear nuevo propietario
+  // Crear nuevo propietario (lanza si falla para que el llamador muestre el mensaje)
   async createOwner(ownerData: CreateOwnerRequest): Promise<Owner | null> {
-    try {
-      const response = await apiClient.post('/api/owners-property/owners', ownerData);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating owner:', error);
-      return null;
-    }
+    const response = await apiClient.post('/api/owners-property/owners', ownerData);
+    return response.data;
   }
 
   // Actualizar propietario

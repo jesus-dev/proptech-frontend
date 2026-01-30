@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyForm";
 import { Contact } from "@/app/(proptech)/contacts/types";
-import { contactService } from "@/app/(proptech)/contacts/services/contactService";
+import { ownerService, Owner } from "@/services/ownerService";
 import SelectOwnerModal from "../SelectOwnerModal";
 import { 
   User, 
@@ -29,18 +29,52 @@ export default function OwnerInfoStep({ formData, handleChange, errors }: OwnerI
   const [loadingOwners, setLoadingOwners] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Cargar datos de los propietarios cuando cambie propietarioId
+  // Convertir Owner (API owners-property) a Contact para la UI
+  const ownerToContact = (owner: Owner): Contact => {
+    const nameParts = (owner.name || '').split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    return {
+      id: owner.id.toString(),
+      firstName,
+      lastName,
+      email: owner.email || '',
+      phone: owner.phone || '',
+      type: 'owner',
+      status: owner.status === 'active' ? 'active' : 'inactive',
+      company: '',
+      position: '',
+      address: owner.address || '',
+      city: '',
+      state: '',
+      zip: '',
+      country: '',
+      notes: owner.notes || '',
+      source: '',
+      budget: { min: undefined, max: undefined, currency: 'USD' },
+      createdAt: '',
+      updatedAt: ''
+    };
+  };
+
+  // Cargar propietario asignado cuando cambie propietarioId (Owner ID desde API owners-property)
   useEffect(() => {
     const loadOwners = async () => {
-      if (formData.propietarioId) {
+      const ownerId = formData.propietarioId != null ? Number(formData.propietarioId) : null;
+      if (ownerId != null && !isNaN(ownerId)) {
         setLoadingOwners(true);
         try {
-          const contact = await contactService.getContactById(formData.propietarioId.toString());
-          if (contact) {
-            setOwners([contact]);
+          const owner = await ownerService.getOwnerById(ownerId);
+          if (owner) {
+            setOwners([ownerToContact(owner)]);
+          } else {
+            // Propietario no existe (404 o borrado): limpiar ID inválido
+            setOwners([]);
+            handleChange({ target: { name: 'propietarioId', value: '' } } as React.ChangeEvent<HTMLInputElement>);
           }
         } catch (error) {
-          console.error('Error loading owner:', error);
+          setOwners([]);
+          handleChange({ target: { name: 'propietarioId', value: '' } } as React.ChangeEvent<HTMLInputElement>);
         } finally {
           setLoadingOwners(false);
         }

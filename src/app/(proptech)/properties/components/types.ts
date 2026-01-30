@@ -56,6 +56,10 @@ export interface Property {
   floors?: number;
   availableFrom?: string;
   additionalDetails?: string;
+  balconyArea?: number;
+  gardenArea?: number;
+  laundry?: string;
+  storage?: string;
   country?: string;
   neighborhood?: string;
   locationDescription?: string;

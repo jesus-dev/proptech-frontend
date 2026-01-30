@@ -1,16 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BuildingOfficeIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { condominiumService, Condominium } from "@/services/condominiumService";
+import { developmentService } from "@/app/(proptech)/developments/services/developmentService";
+import { currencyService } from "@/app/(proptech)/catalogs/currencies/services/currencyService";
+import type { Development } from "@/app/(proptech)/developments/components/types";
+import type { Currency } from "@/app/(proptech)/catalogs/currencies/services/types";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 export default function NewCondominiumPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [developments, setDevelopments] = useState<Development[]>([]);
+  const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [formData, setFormData] = useState<Partial<Condominium>>({
     name: "",
     description: "",
@@ -25,11 +31,19 @@ export default function NewCondominiumPage() {
     isActive: true,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  useEffect(() => {
+    developmentService.getAllDevelopments().then((res) => {
+      if (res.data?.length) setDevelopments(res.data);
+    }).catch(() => {});
+    currencyService.getActive().then(setCurrencies).catch(() => setCurrencies([]));
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    const numericFields = ["developmentId", "currencyId"];
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: numericFields.includes(name) ? (value === "" ? undefined : Number(value)) : value,
     }));
   };
 
@@ -65,7 +79,7 @@ export default function NewCondominiumPage() {
             className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
           >
             <ArrowLeftIcon className="w-5 h-5" />
-            Volver a Condominios
+            Volver a Administración de Condominio
           </Link>
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-lg">
@@ -116,6 +130,50 @@ export default function NewCondominiumPage() {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Descripción del condominio..."
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Desarrollo asociado (opcional)
+                  </label>
+                  <select
+                    name="developmentId"
+                    value={formData.developmentId ?? ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Ninguno</option>
+                    {developments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.title} {d.city ? `— ${d.city}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Si este condominio proviene de un desarrollo, selecciónalo para vincularlo.
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Moneda (opcional)
+                  </label>
+                  <select
+                    name="currencyId"
+                    value={formData.currencyId ?? ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">PYG (por defecto)</option>
+                    {currencies.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} — {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Moneda para cuotas y pagos del condominio.
+                  </p>
                 </div>
               </div>
             </div>

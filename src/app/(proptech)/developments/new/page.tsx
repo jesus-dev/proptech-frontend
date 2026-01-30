@@ -6,6 +6,7 @@ import { useDevelopmentForm, DevelopmentFormData } from "../hooks/useDevelopment
 import TypeStep from "../components/steps/TypeStep";
 import GeneralInfoStep from "../components/steps/GeneralInfoStep";
 import MultimediaStep from "../components/steps/MultimediaStep";
+import AdvancedInfoStep from "../components/steps/AdvancedInfoStep";
 import LoteamientoSpecificStep from "../components/steps/LoteamientoSpecificStep";
 import EdificioSpecificStep from "../components/steps/EdificioSpecificStep";
 import CondominioSpecificStep from "../components/steps/CondominioSpecificStep";
@@ -25,6 +26,8 @@ import {
 } from "lucide-react";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useToast } from "@/components/ui/use-toast";
+import { apiClient } from "@/lib/api";
+import { apiConfig } from "@/lib/api-config";
 
 interface StepInfo {
   id: number;
@@ -47,6 +50,49 @@ export default function NewDevelopmentPage() {
 
   useEffect(() => {
     setIsInitializing(false);
+  }, []);
+
+  // Diagnóstico API: al montar la página, probar ciudades y monedas y loguear resultado (para depurar "no carga nada")
+  useEffect(() => {
+    const baseUrl = apiConfig.getApiUrl();
+    console.log("[API Diagnóstico] Base URL:", baseUrl, "| NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL ?? "(no definida)");
+    const run = async () => {
+      try {
+        const citiesRes = await apiClient.get("/api/cities").catch((err: any) => {
+          console.error("[API Diagnóstico] GET /api/cities falló:", {
+            status: err.response?.status,
+            data: err.response?.data,
+            code: err.code,
+            message: err.message,
+          });
+          return null;
+        });
+        if (citiesRes) {
+          const data = citiesRes.data;
+          const isArray = Array.isArray(data);
+          const len = isArray ? data.length : (data && typeof data === "object" && "content" in data ? (data as { content: unknown[] }).content?.length : "?");
+          console.log("[API Diagnóstico] GET /api/cities → status", citiesRes.status, "| es array:", isArray, "| cantidad:", len);
+        }
+      } catch (_) {}
+      try {
+        const currRes = await apiClient.get("/api/currencies/active").catch((err: any) => {
+          console.error("[API Diagnóstico] GET /api/currencies/active falló:", {
+            status: err.response?.status,
+            data: err.response?.data,
+            code: err.code,
+            message: err.message,
+          });
+          return null;
+        });
+        if (currRes) {
+          const data = currRes.data;
+          const isArray = Array.isArray(data);
+          const len = isArray ? data.length : (data && typeof data === "object" && "content" in data ? (data as { content: unknown[] }).content?.length : "?");
+          console.log("[API Diagnóstico] GET /api/currencies/active → status", currRes.status, "| es array:", isArray, "| cantidad:", len);
+        }
+      } catch (_) {}
+    };
+    run();
   }, []);
 
   // Step configuration with icons and validation
@@ -92,6 +138,15 @@ export default function NewDevelopmentPage() {
           requiredFields: ['numberOfLots', 'totalArea', 'availableLots', 'lotSizes', 'services'],
           isCompleted: false,
           hasErrors: false
+        },
+        {
+          id: 5,
+          title: "Info Avanzada",
+          description: "Financiamiento, políticas, contactos y multimedia avanzada",
+          icon: <Settings className="h-5 w-5" />,
+          requiredFields: [],
+          isCompleted: false,
+          hasErrors: false
         }
       ];
     }
@@ -103,7 +158,7 @@ export default function NewDevelopmentPage() {
           title: "Detalles de Edificio",
           description: "Detalles específicos del edificio",
           icon: <Settings className="h-5 w-5" />,
-          requiredFields: ['numberOfFloors', 'numberOfUnits', 'availableUnits', 'unitTypes'],
+          requiredFields: ['numberOfFloors', 'numberOfUnits', 'availableUnits'],
           isCompleted: false,
           hasErrors: false
         },
@@ -113,6 +168,15 @@ export default function NewDevelopmentPage() {
           description: "Amenidades del edificio",
           icon: <Star className="h-5 w-5" />,
           requiredFields: ['amenities'],
+          isCompleted: false,
+          hasErrors: false
+        },
+        {
+          id: 6,
+          title: "Info Avanzada",
+          description: "Financiamiento, políticas, contactos y multimedia avanzada",
+          icon: <Settings className="h-5 w-5" />,
+          requiredFields: [],
           isCompleted: false,
           hasErrors: false
         }
@@ -126,7 +190,25 @@ export default function NewDevelopmentPage() {
           title: "Detalles de Condominio",
           description: "Detalles específicos del condominio",
           icon: <Settings className="h-5 w-5" />,
-          requiredFields: ['numberOfUnits', 'availableUnits', 'unitTypes', 'lotSizes', 'totalArea', 'commonAreas', 'securityFeatures', 'maintenanceFee', 'amenities'],
+          requiredFields: ['numberOfUnits', 'availableUnits', 'unitTypes', 'lotSizes', 'totalArea', 'maintenanceFee'],
+          isCompleted: false,
+          hasErrors: false
+        },
+        {
+          id: 5,
+          title: "Áreas Comunes y Amenidades",
+          description: "Áreas comunes, seguridad y amenidades",
+          icon: <Star className="h-5 w-5" />,
+          requiredFields: ['commonAreas', 'securityFeatures', 'amenities'],
+          isCompleted: false,
+          hasErrors: false
+        },
+        {
+          id: 6,
+          title: "Info Avanzada",
+          description: "Financiamiento, políticas, contactos y multimedia avanzada",
+          icon: <Settings className="h-5 w-5" />,
+          requiredFields: [],
           isCompleted: false,
           hasErrors: false
         }
@@ -150,6 +232,15 @@ export default function NewDevelopmentPage() {
           description: "Infraestructura, seguridad y amenidades",
           icon: <Star className="h-5 w-5" />,
           requiredFields: ['services', 'securityFeatures', 'commonAreas', 'amenities'],
+          isCompleted: false,
+          hasErrors: false
+        },
+        {
+          id: 6,
+          title: "Info Avanzada",
+          description: "Financiamiento, políticas, contactos y multimedia avanzada",
+          icon: <Settings className="h-5 w-5" />,
+          requiredFields: [],
           isCompleted: false,
           hasErrors: false
         }
@@ -311,6 +402,7 @@ export default function NewDevelopmentPage() {
 
     // Map step id to component
     const stepId = currentStepInfo.id;
+    const lastStepId = updatedSteps[updatedSteps.length - 1]?.id;
     
     if (stepId === 1) {
       return <TypeStep formData={formData} handleChange={handleChange} errors={errors} />;
@@ -338,8 +430,13 @@ export default function NewDevelopmentPage() {
         return <CommonAmenitiesStep formData={formData} handleChange={handleChange} errors={errors} toggleAmenity={toggleAmenity} />;
       }
     }
-    if (formData.type === "condominio" && stepId === 4) {
-      return <CondominioSpecificStep formData={formData} handleChange={handleChange} errors={errors} />;
+    if (formData.type === "condominio") {
+      if (stepId === 4) {
+        return <CondominioSpecificStep formData={formData} handleChange={handleChange} errors={errors} />;
+      }
+      if (stepId === 5) {
+        return <InfraAmenitiesStep formData={formData} handleChange={handleChange} errors={errors} />;
+      }
     }
     if (formData.type === "barrio_cerrado") {
       if (stepId === 4) {
@@ -348,6 +445,11 @@ export default function NewDevelopmentPage() {
       if (stepId === 5) {
         return <InfraAmenitiesStep formData={formData} handleChange={handleChange} errors={errors} />;
       }
+    }
+
+    // Último step siempre es Info Avanzada
+    if (stepId === lastStepId) {
+      return <AdvancedInfoStep formData={formData} handleChange={handleChange} errors={errors} />;
     }
     
     return null;
@@ -443,14 +545,14 @@ export default function NewDevelopmentPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Steps navigation */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-8">
-          <div className="mb-4 border-b border-gray-200 dark:border-gray-700 pb-4">
-            <nav className="flex space-x-8 overflow-x-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-6">
+          {/* Steps navigation (sidebar) */}
+          <aside className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 h-fit">
+            <nav className="space-y-3">
               {updatedSteps.map((step, index) => (
                 <div
                   key={step.id}
-                  className="flex items-center space-x-2 cursor-pointer group flex-shrink-0"
+                  className="flex items-center space-x-2 cursor-pointer group"
                   onClick={() => handleStepClick(index)}
                 >
                   <div
@@ -468,78 +570,110 @@ export default function NewDevelopmentPage() {
                       step.id
                     )}
                   </div>
-                  <span
-                    className={`text-sm font-medium transition-colors duration-200 ${
-                      currentStep === step.id
-                        ? "text-brand-600 dark:text-brand-400"
-                        : "text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300"
-                    }`}
-                  >
-                    {step.title}
-                  </span>
-                </div>
-              ))}
-            </nav>
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-              {/* Step header */}
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {updatedSteps.find(s => s.id === currentStep)?.title}
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {updatedSteps.find(s => s.id === currentStep)?.description}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-sm font-medium ${
+                        currentStep === step.id
+                          ? "text-brand-600 dark:text-brand-400"
+                          : "text-gray-600 dark:text-gray-300"
+                      }`}
+                    >
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {step.description}
                     </p>
                   </div>
                 </div>
-              </div>
+              ))}
+            </nav>
+          </aside>
 
-              {/* Step content */}
-              <div className="p-6">
-                {renderStepContent()}
-              </div>
-
-              {/* Navigation buttons */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={currentStep === 1}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  Anterior
-                </button>
-                
+          {/* Main content */}
+          <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+            {/* Step header + top buttons */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {updatedSteps.find(s => s.id === currentStep)?.title}
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {updatedSteps.find(s => s.id === currentStep)?.description}
+                  </p>
+                </div>
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={onSubmit}
-                    disabled={saving || isInitializing}
-                    className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    type="button"
+                    onClick={handleBack}
+                    disabled={currentStep === 1}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saving ? 'Guardando...' : 'Crear Desarrollo'}
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
                   </button>
-                  
                   {currentStep < updatedSteps.length && (
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
+                      className="inline-flex items-center px-3 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
                     >
                       Siguiente
-                      <ChevronRight className="h-4 w-4 ml-2" />
+                      <ChevronRight className="h-4 w-4 ml-1" />
                     </button>
                   )}
+                  <button
+                    onClick={onSubmit}
+                    disabled={saving || isInitializing}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {saving ? 'Guardando...' : 'Crear Desarrollo'}
+                  </button>
                 </div>
               </div>
             </div>
+
+            {/* Step content */}
+            <div className="p-6">
+              {renderStepContent()}
+            </div>
+
+            {/* Bottom navigation buttons */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={handleBack}
+                disabled={currentStep === 1}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </button>
+              
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={onSubmit}
+                  disabled={saving || isInitializing}
+                  className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? 'Guardando...' : 'Crear Desarrollo'}
+                </button>
+                
+                {currentStep < updatedSteps.length && (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
+                  >
+                    Siguiente
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>

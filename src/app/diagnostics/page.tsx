@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiConfig } from '@/lib/api-config';
+import { apiClient } from '@/lib/api';
 import { publicPropertyService } from '@/services/publicPropertyService';
 
 interface DiagnosticResult {
@@ -66,6 +67,97 @@ export default function DiagnosticsPage() {
         status: 'error',
         message: `No se pudo conectar al backend: ${error.message}`,
         details: error
+      });
+    }
+
+    // 2b. Verificar catálogos (ciudades y monedas) - usados en Nuevo Desarrollo
+    try {
+      const citiesRes = await apiClient.get('/api/cities').catch((err: any) => ({ err }));
+      if ('err' in citiesRes) {
+        diagnostics.push({
+          check: 'API Ciudades (/api/cities)',
+          status: 'error',
+          message: `Error: ${(citiesRes as any).err?.response?.status ?? (citiesRes as any).err?.code ?? (citiesRes as any).err?.message}`,
+          details: (citiesRes as any).err?.response?.data ?? (citiesRes as any).err
+        });
+      } else {
+        const data = (citiesRes as any).data;
+        const count = Array.isArray(data) ? data.length : (data?.content?.length ?? data?.data?.length ?? '?');
+        diagnostics.push({
+          check: 'API Ciudades (/api/cities)',
+          status: 'success',
+          message: `${count} ciudades`,
+          details: { status: (citiesRes as any).status, count, isArray: Array.isArray(data) }
+        });
+      }
+    } catch (e: any) {
+      diagnostics.push({
+        check: 'API Ciudades (/api/cities)',
+        status: 'error',
+        message: e?.message ?? String(e),
+        details: e
+      });
+    }
+    try {
+      const currRes = await apiClient.get('/api/currencies/active').catch((err: any) => ({ err }));
+      if ('err' in currRes) {
+        diagnostics.push({
+          check: 'API Monedas (/api/currencies/active)',
+          status: 'error',
+          message: `Error: ${(currRes as any).err?.response?.status ?? (currRes as any).err?.code ?? (currRes as any).err?.message}`,
+          details: (currRes as any).err?.response?.data ?? (currRes as any).err
+        });
+      } else {
+        const data = (currRes as any).data;
+        const count = Array.isArray(data) ? data.length : (data?.content?.length ?? data?.data?.length ?? '?');
+        diagnostics.push({
+          check: 'API Monedas (/api/currencies/active)',
+          status: 'success',
+          message: `${count} monedas activas`,
+          details: { status: (currRes as any).status, count, isArray: Array.isArray(data) }
+        });
+      }
+    } catch (e: any) {
+      diagnostics.push({
+        check: 'API Monedas (/api/currencies/active)',
+        status: 'error',
+        message: e?.message ?? String(e),
+        details: e
+      });
+    }
+
+    // 2c. Verificar desarrollos (requiere sesión)
+    try {
+      const devRes = await apiClient.get('/api/developments').catch((err: any) => ({ err }));
+      if ('err' in devRes) {
+        const err = (devRes as any).err;
+        const status = err?.response?.status;
+        diagnostics.push({
+          check: 'API Desarrollos (/api/developments)',
+          status: 'error',
+          message: status === 401
+            ? '401 - Inicia sesión para ver desarrollos'
+            : status === 403
+            ? '403 - Sin permiso'
+            : `Error: ${status ?? err?.code ?? err?.message}`,
+          details: err?.response?.data ?? err
+        });
+      } else {
+        const data = (devRes as any).data;
+        const count = Array.isArray(data) ? data.length : (data?.data?.length ?? data?.content?.length ?? '?');
+        diagnostics.push({
+          check: 'API Desarrollos (/api/developments)',
+          status: 'success',
+          message: `${count} desarrollos`,
+          details: { status: (devRes as any).status, count, isArray: Array.isArray(data) }
+        });
+      }
+    } catch (e: any) {
+      diagnostics.push({
+        check: 'API Desarrollos (/api/developments)',
+        status: 'error',
+        message: e?.message ?? String(e),
+        details: e
       });
     }
 

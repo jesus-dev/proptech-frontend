@@ -6,6 +6,7 @@ import { useDevelopmentForm, DevelopmentFormData } from "../../hooks/useDevelopm
 import TypeStep from "../../components/steps/TypeStep";
 import GeneralInfoStep from "../../components/steps/GeneralInfoStep";
 import MultimediaStep from "../../components/steps/MultimediaStep";
+import AdvancedInfoStep from "../../components/steps/AdvancedInfoStep";
 import LoteamientoSpecificStep from "../../components/steps/LoteamientoSpecificStep";
 import EdificioSpecificStep from "../../components/steps/EdificioSpecificStep";
 import CondominioSpecificStep from "../../components/steps/CondominioSpecificStep";
@@ -67,26 +68,33 @@ export default function EditDevelopmentPage() {
     ];
 
     if (formData.type === "loteamiento") {
-      return [...baseSteps, { id: "loteamiento_details", title: "Detalles de Loteamiento" }];
+      return [...baseSteps, { id: "loteamiento_details", title: "Detalles de Loteamiento" }, { id: "advanced", title: "Info Avanzada" }];
     }
     if (formData.type === "edificio") {
       return [
         ...baseSteps,
         { id: "edificio_details", title: "Detalles de Edificio" },
         { id: "common_amenities", title: "Amenidades Comunes" },
+        { id: "advanced", title: "Info Avanzada" },
       ];
     }
     if (formData.type === "condominio") {
-      return [...baseSteps, { id: "condominio_details", title: "Detalles de Condominio" }];
+      return [
+        ...baseSteps,
+        { id: "condominio_details", title: "Detalles de Condominio" },
+        { id: "condominio_amenities", title: "Áreas Comunes y Amenidades" },
+        { id: "advanced", title: "Info Avanzada" },
+      ];
     }
     if (formData.type === "barrio_cerrado") {
       return [
         ...baseSteps,
         { id: "barrio_details", title: "Detalles Principales" },
         { id: "infra_amenities", title: "Infraestructura y Amenidades" },
+        { id: "advanced", title: "Info Avanzada" },
       ];
     }
-    return baseSteps;
+    return [...baseSteps, { id: "advanced", title: "Info Avanzada" }];
   }, [formData.type]);
 
   const handleNext = async () => {
@@ -98,7 +106,7 @@ export default function EditDevelopmentPage() {
         fieldsToValidate = ['type'];
         break;
       case 'general':
-        fieldsToValidate = ['title', 'description', 'address', 'city', 'status'];
+        fieldsToValidate = ['title', 'description', 'address', 'city', 'currency', 'status'];
         break;
       case 'multimedia':
         fieldsToValidate = ['images'];
@@ -107,16 +115,19 @@ export default function EditDevelopmentPage() {
         fieldsToValidate = ['numberOfLots', 'totalArea', 'availableLots', 'lotSizes', 'services'];
         break;
       case 'edificio_details':
-        fieldsToValidate = ['numberOfFloors', 'numberOfUnits', 'availableUnits', 'unitTypes'];
+        fieldsToValidate = ['numberOfFloors', 'numberOfUnits', 'availableUnits'];
         break;
       case 'common_amenities':
         fieldsToValidate = ['amenities'];
         break;
       case 'condominio_details':
-        fieldsToValidate = ['numberOfUnits', 'availableUnits', 'unitTypes', 'lotSizes', 'totalArea', 'commonAreas', 'securityFeatures', 'maintenanceFee', 'amenities'];
+        fieldsToValidate = ['numberOfUnits', 'availableUnits', 'unitTypes', 'lotSizes', 'totalArea', 'maintenanceFee'];
         break;
       case 'barrio_details':
         fieldsToValidate = ['numberOfLots', 'availableLots', 'totalArea', 'lotSizes', 'buildingRegulations', 'maintenanceFee'];
+        break;
+      case 'condominio_amenities':
+        fieldsToValidate = ['commonAreas', 'securityFeatures', 'amenities'];
         break;
       case 'infra_amenities':
         fieldsToValidate = ['services', 'securityFeatures', 'commonAreas', 'amenities'];
@@ -141,9 +152,8 @@ export default function EditDevelopmentPage() {
   };
 
   const handleStepClick = (step: number) => {
-    if (step <= currentStep) {
-      setCurrentStep(step);
-    }
+    // En edición permitimos navegación libre entre steps sin validación previa
+    setCurrentStep(step);
   };
 
   const renderStepContent = () => {
@@ -159,6 +169,8 @@ export default function EditDevelopmentPage() {
         );
       case 'multimedia':
         return <MultimediaStep formData={formData} errors={errors} addImages={addImages} removeImage={removeImage} />;
+      case 'advanced':
+        return <AdvancedInfoStep formData={formData} handleChange={handleChange} errors={errors} />;
       case 'loteamiento_details':
         return <LoteamientoSpecificStep formData={formData} handleChange={handleChange} errors={errors} />;
       case 'edificio_details':
@@ -172,6 +184,8 @@ export default function EditDevelopmentPage() {
         return <CommonAmenitiesStep formData={formData} handleChange={handleChange} errors={errors} toggleAmenity={toggleAmenity} />;
       case 'condominio_details':
         return <CondominioSpecificStep formData={formData} handleChange={handleChange} errors={errors} />;
+      case 'condominio_amenities':
+        return <InfraAmenitiesStep formData={formData} handleChange={handleChange} errors={errors} />;
       case 'barrio_details':
         return <BarrioCerradoDetailsStep formData={formData} handleChange={handleChange} errors={errors} />;
       case 'infra_amenities':
@@ -183,7 +197,8 @@ export default function EditDevelopmentPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     if (await handleSubmit(e)) {
-      router.push("/developments");
+      // Después de guardar, volver al detalle del desarrollo
+      router.push(`/developments/${developmentId}`);
     }
   };
 
@@ -196,6 +211,7 @@ export default function EditDevelopmentPage() {
     common_amenities: "Edite las amenidades comunes del edificio.",
     condominio_details: "Edite los detalles específicos del condominio.",
     barrio_details: "Edite los detalles principales de su barrio cerrado.",
+    condominio_amenities: "Edite las áreas comunes, seguridad y amenidades del condominio.",
     infra_amenities: "Edite la infraestructura, seguridad, áreas comunes y otras amenidades."
   };
 
@@ -225,81 +241,139 @@ export default function EditDevelopmentPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          Editar Emprendimiento
-        </h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          {stepDescriptions[steps[currentStep - 1]?.id] || ''}
-        </p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Editar Emprendimiento
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            {stepDescriptions[steps[currentStep - 1]?.id] || ''}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => router.push(`/developments/${developmentId}`)}
+            className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+          >
+            Ver desarrollo
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/developments")}
+            className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+          >
+            Volver a la lista
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
-          <nav className="flex space-x-8 overflow-x-auto">
-            {steps.map((step, index) => (
-              <div
-                key={step.id}
-                className={`flex items-center space-x-2 cursor-pointer group flex-shrink-0 ${
-                  index < currentStep ? "" : "opacity-50"
-                }`}
-                onClick={() => handleStepClick(index + 1)}
-              >
+        <div className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-6">
+          {/* Sidebar steps */}
+          <aside className="border-r border-gray-200 dark:border-gray-700 pr-0 lg:pr-4">
+            <nav className="space-y-3">
+              {steps.map((step, index) => (
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
-                    currentStep === index + 1
-                      ? "bg-brand-600 text-white"
-                      : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:group-hover:bg-gray-600"
+                  key={step.id}
+                  className={`flex items-center space-x-2 cursor-pointer group ${
+                    index < currentStep ? "" : "opacity-70"
                   }`}
+                  onClick={() => handleStepClick(index + 1)}
                 >
-                  {index + 1}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+                      currentStep === index + 1
+                        ? "bg-brand-600 text-white"
+                        : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:group-hover:bg-gray-600"
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={`text-sm font-medium ${
+                        currentStep === index + 1
+                          ? "text-brand-600 dark:text-brand-400"
+                          : "text-gray-600 dark:text-gray-300"
+                      }`}
+                    >
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {stepDescriptions[step.id] || ''}
+                    </p>
+                  </div>
                 </div>
-                <span
-                  className={`text-sm font-medium transition-colors duration-200 ${
-                    currentStep === index + 1
-                      ? "text-brand-600 dark:text-brand-400"
-                      : "text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300"
-                  }`}
+              ))}
+            </nav>
+          </aside>
+
+          {/* Main content */}
+          <section>
+            <form onSubmit={handleFormSubmit} noValidate>
+              {/* Top buttons */}
+              <div className="flex justify-end gap-3 pb-4 border-b dark:border-gray-700 mb-4">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                  >
+                    Anterior
+                  </button>
+                )}
+                {currentStep < steps.length && (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="px-3 py-2 text-xs sm:text-sm font-medium text-white bg-brand-500 border border-transparent rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
+                  >
+                    Siguiente
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="px-3 py-2 text-xs sm:text-sm font-medium text-white bg-brand-500 border border-transparent rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
                 >
-                  {step.title}
-                </span>
+                  Guardar Cambios
+                </button>
               </div>
-            ))}
-          </nav>
+
+              {renderStepContent()}
+
+              {/* Bottom buttons */}
+              <div className="flex justify-end gap-4 pt-6 border-t dark:border-gray-700 mt-6">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
+                  >
+                    Anterior
+                  </button>
+                )}
+                {currentStep < steps.length && (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="px-4 py-2 text-sm font-medium text-white bg-brand-500 border border-transparent rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
+                  >
+                    Siguiente
+                  </button>
+                )}
+                {currentStep === steps.length && (
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-brand-500 border border-transparent rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
+                  >
+                    Guardar Cambios
+                  </button>
+                )}
+              </div>
+            </form>
+          </section>
         </div>
-
-        <form onSubmit={handleFormSubmit} noValidate>
-          {renderStepContent()}
-
-          <div className="flex justify-end gap-4 pt-6 border-t dark:border-gray-700 mt-6">
-            {currentStep > 1 && (
-              <button
-                type="button"
-                onClick={handleBack}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-              >
-                Anterior
-              </button>
-            )}
-            {currentStep < steps.length && (
-              <button
-                type="button"
-                onClick={handleNext}
-                className="px-4 py-2 text-sm font-medium text-white bg-brand-500 border border-transparent rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
-              >
-                Siguiente
-              </button>
-            )}
-            {currentStep === steps.length && (
-              <button
-                type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-brand-500 border border-transparent rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500"
-              >
-                Guardar Cambios
-              </button>
-            )}
-          </div>
-        </form>
       </div>
     </div>
   );

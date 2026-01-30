@@ -38,6 +38,11 @@ export interface DevelopmentFormData {
   amenities?: string[]; // e.g., "Gym", "Pool", "24/7 Security"
   buildingFeatures?: string;
   additionalAmenities?: string[];
+  // Edificio opcionales (se envían dentro de buildingFeatures)
+  numberOfElevators?: number;
+  parkingPerUnit?: string;
+  commercialGroundFloor?: boolean;
+  estimatedDeliveryYear?: number;
   units?: Unit[];
 
   // Condominio specific (optional, only applicable if type is "condominio")
@@ -47,6 +52,52 @@ export interface DevelopmentFormData {
 
   // Barrio Cerrado specific (optional, only applicable if type is "barrio_cerrado")
   buildingRegulations?: string; // Reglamento de construcción
+
+  // Información avanzada - financiamiento / legal
+  financingOptions?: string;
+  paymentPlans?: string;
+  legalStatus?: string;
+  permits?: string;
+
+  // Información avanzada - infraestructura / servicios
+  utilities?: string;
+  infrastructure?: string;
+  environmentalImpact?: string;
+  sustainabilityFeatures?: string;
+  // Para infraestructura avanzada podemos reutilizar securityFeatures existente (solo usamos como texto en AdvancedInfoStep)
+  parkingSpaces?: string;
+  storageSpaces?: string;
+
+  // Políticas y costos
+  petPolicy?: string;
+  rentalPolicy?: string;
+  propertyTax?: string;
+  insurance?: string;
+  hoaFees?: string;
+  hoaRules?: string;
+  hoaContact?: string;
+
+  // Contactos y gestión
+  propertyManager?: string;
+  managerContact?: string;
+  emergencyContact?: string;
+
+  // Multimedia avanzada
+  virtualTourUrl?: string;
+  videoUrl?: string;
+  brochureUrl?: string;
+  floorPlanUrl?: string;
+  sitePlanUrl?: string;
+  masterPlanUrl?: string;
+  specificationsUrl?: string;
+
+  // Garantía y notas
+  warrantyInfo?: string;
+  warrantyPeriod?: string;
+  warrantyCoverage?: string;
+  warrantyContact?: string;
+  notes?: string;
+  internalNotes?: string;
 }
 
 type FormErrors = { [K in keyof DevelopmentFormData]?: string };
@@ -79,6 +130,41 @@ export const useDevelopmentForm = (initialData?: Development) => {
     buildingFeatures: (initialData as Edificio)?.buildingFeatures || "",
     additionalAmenities: (initialData as Edificio)?.additionalAmenities || [],
     units: (initialData as Edificio)?.units || [],
+    // Advanced info defaults
+    financingOptions: "",
+    paymentPlans: "",
+    legalStatus: "",
+    permits: "",
+    utilities: "",
+    infrastructure: "",
+    environmentalImpact: "",
+    sustainabilityFeatures: "",
+    securityFeatures: [],
+    parkingSpaces: "",
+    storageSpaces: "",
+    petPolicy: "",
+    rentalPolicy: "",
+    propertyTax: "",
+    insurance: "",
+    hoaFees: "",
+    hoaRules: "",
+    hoaContact: "",
+    propertyManager: "",
+    managerContact: "",
+    emergencyContact: "",
+    virtualTourUrl: "",
+    videoUrl: "",
+    brochureUrl: "",
+    floorPlanUrl: "",
+    sitePlanUrl: "",
+    masterPlanUrl: "",
+    specificationsUrl: "",
+    warrantyInfo: "",
+    warrantyPeriod: "",
+    warrantyCoverage: "",
+    warrantyContact: "",
+    notes: "",
+    internalNotes: "",
   };
 
   const [formData, setFormData] = useState<DevelopmentFormData>(initialFormData);
@@ -115,12 +201,46 @@ export const useDevelopmentForm = (initialData?: Development) => {
         buildingFeatures: (initialData as Edificio)?.buildingFeatures || "",
         additionalAmenities: (initialData as Edificio)?.additionalAmenities || [],
         units: (initialData as Edificio)?.units || [],
-        // Condominio specific fields
-        commonAreas: (initialData as Condominio)?.commonAreas || [],
-        securityFeatures: (initialData as Condominio)?.securityFeatures || [],
-        maintenanceFee: (initialData as Condominio)?.maintenanceFee || 0,
-        // Barrio Cerrado specific fields
+        // Condominio / Barrio (comparten commonAreas y securityFeatures)
+        commonAreas: (initialData as Condominio)?.commonAreas || (initialData as BarrioCerrado)?.commonAreas || [],
+        securityFeatures: (initialData as Condominio)?.securityFeatures || (initialData as BarrioCerrado)?.securityFeatures || [],
+        maintenanceFee: (initialData as Condominio)?.maintenanceFee || (initialData as BarrioCerrado)?.maintenanceFee || 0,
+        // Barrio Cerrado specific
         buildingRegulations: (initialData as BarrioCerrado)?.buildingRegulations || "",
+        // Advanced info from backend (cuando esté disponible en DTO)
+        financingOptions: (initialData as any).financingOptions || "",
+        paymentPlans: (initialData as any).paymentPlans || "",
+        legalStatus: (initialData as any).legalStatus || "",
+        permits: (initialData as any).permits || "",
+        utilities: (initialData as any).utilities || "",
+        infrastructure: (initialData as any).infrastructure || "",
+        environmentalImpact: (initialData as any).environmentalImpact || "",
+        sustainabilityFeatures: (initialData as any).sustainabilityFeatures || "",
+        parkingSpaces: (initialData as any).parkingSpaces || "",
+        storageSpaces: (initialData as any).storageSpaces || "",
+        petPolicy: (initialData as any).petPolicy || "",
+        rentalPolicy: (initialData as any).rentalPolicy || "",
+        propertyTax: (initialData as any).propertyTax || "",
+        insurance: (initialData as any).insurance || "",
+        hoaFees: (initialData as any).hoaFees || "",
+        hoaRules: (initialData as any).hoaRules || "",
+        hoaContact: (initialData as any).hoaContact || "",
+        propertyManager: (initialData as any).propertyManager || "",
+        managerContact: (initialData as any).managerContact || "",
+        emergencyContact: (initialData as any).emergencyContact || "",
+        virtualTourUrl: (initialData as any).virtualTourUrl || "",
+        videoUrl: (initialData as any).videoUrl || "",
+        brochureUrl: (initialData as any).brochureUrl || "",
+        floorPlanUrl: (initialData as any).floorPlanUrl || "",
+        sitePlanUrl: (initialData as any).sitePlanUrl || "",
+        masterPlanUrl: (initialData as any).masterPlanUrl || "",
+        specificationsUrl: (initialData as any).specificationsUrl || "",
+        warrantyInfo: (initialData as any).warrantyInfo || "",
+        warrantyPeriod: (initialData as any).warrantyPeriod || "",
+        warrantyCoverage: (initialData as any).warrantyCoverage || "",
+        warrantyContact: (initialData as any).warrantyContact || "",
+        notes: (initialData as any).notes || "",
+        internalNotes: (initialData as any).internalNotes || "",
       };
       setFormData(updatedFormData);
       setErrors({}); // Clear errors when loading new data
@@ -170,7 +290,12 @@ export const useDevelopmentForm = (initialData?: Development) => {
             isValid = false;
           }
           break;
-        // Currency se maneja solo en DevelopmentUnit, no en Development
+        case 'currency':
+          if (!formData.currency?.trim()) {
+            newErrors.currency = "Moneda es requerida.";
+            isValid = false;
+          }
+          break;
         case 'status':
           if (!formData.status) {
             newErrors.status = "Estado es requerido.";
@@ -234,10 +359,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
           }
           break;
         case 'unitTypes':
-          if (formData.type === "edificio" && !formData.unitTypes?.trim()) {
-            newErrors.unitTypes = "Tipos de unidades es requerido.";
-            isValid = false;
-          }
+          // Edificio: opcional (puede tener varios tipos, no es relevante obligarlo)
           break;
         case 'amenities':
           if (formData.type === "edificio" && (!formData.amenities || formData.amenities.length === 0)) {
@@ -246,10 +368,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
           }
           break;
         case 'additionalAmenities':
-          if (formData.type === "edificio" && (!formData.additionalAmenities || formData.additionalAmenities.length === 0)) {
-            newErrors.additionalAmenities = "Se requiere al menos una amenidad adicional.";
-            isValid = false;
-          }
+          // Opcional para edificio (solo amenities es requerido en el paso)
           break;
         // Condominio specific validations
         case 'numberOfUnits':
@@ -402,7 +521,9 @@ export const useDevelopmentForm = (initialData?: Development) => {
       // For loteamiento and barrio cerrado array fields
       setFormData(prev => ({ ...prev, [name]: value.split(',').map(s => s.trim()).filter(s => s) }));
     } else if (type === 'number') {
-      setFormData(prev => ({ ...prev, [name]: Number(value) }));
+      setFormData(prev => ({ ...prev, [name]: value === "" ? undefined : Number(value) }));
+    } else if (type === 'checkbox') {
+      setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
     } else if (name === 'currencyId') {
       setFormData(prev => ({ ...prev, currencyId: Number(value) }));
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -496,7 +617,7 @@ export const useDevelopmentForm = (initialData?: Development) => {
     if (formData.type === "loteamiento") {
       allFieldsToValidate.push('numberOfLots', 'totalArea', 'availableLots', 'lotSizes', 'services');
     } else if (formData.type === "edificio") {
-      allFieldsToValidate.push('numberOfFloors', 'numberOfUnits', 'availableUnits', 'unitTypes', 'amenities', 'additionalAmenities');
+      allFieldsToValidate.push('numberOfFloors', 'numberOfUnits', 'availableUnits', 'amenities');
     } else if (formData.type === "condominio") {
       allFieldsToValidate.push('numberOfUnits', 'availableUnits', 'unitTypes', 'lotSizes', 'totalArea', 'commonAreas', 'securityFeatures', 'maintenanceFee', 'amenities');
     } else if (formData.type === "barrio_cerrado") {

@@ -10,7 +10,7 @@ import {
   PhotoIcon,
   DocumentTextIcon
 } from "@heroicons/react/24/outline";
-import { getFloorPlans, uploadFloorPlanImage, saveFloorPlans, FloorPlan } from '../../services/floorPlanService';
+import { getFloorPlans, uploadFloorPlanImage, saveFloorPlans, getFloorPlanImageDisplayUrl, FloorPlan } from '../../services/floorPlanService';
 import { PropertyFormData } from '../../hooks/usePropertyForm';
 
 export type FloorPlanForm = {
@@ -307,11 +307,10 @@ export default function FloorPlansStep({ formData, floorPlans, setFloorPlans, er
                   {plan.image && typeof plan.image === 'string' && (
                     <div className="mt-2 relative">
                       <img 
-                        src={plan.image} 
+                        src={getFloorPlanImageDisplayUrl(plan.image)} 
                         alt={`Plano ${idx + 1}`} 
                         className="w-32 h-32 object-cover rounded-lg border border-gray-200"
                         onError={(e) => {
-                          // Si la imagen falla al cargar, ocultarla
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />

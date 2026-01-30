@@ -5,7 +5,7 @@ import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyFor
 import { getAllCountries, Country } from "@/app/(proptech)/catalogs/countries/services/countryService";
 import { getDepartmentsByCountry } from "@/app/(proptech)/catalogs/departments/services/departmentService";
 import { getAllCities, City, createCity } from "@/app/(proptech)/catalogs/cities/services/cityService";
-import { getAllNeighborhoods, Neighborhood, createNeighborhood } from "@/app/(proptech)/catalogs/neighborhoods/services/neighborhoodService";
+import { getAllNeighborhoods, getNeighborhoodsByCity, Neighborhood, createNeighborhood, getNeighborhoodCityId } from "@/app/(proptech)/catalogs/neighborhoods/services/neighborhoodService";
 import ValidatedInput from "@/components/form/input/ValidatedInput";
 import ValidatedTextArea from "@/components/form/input/ValidatedTextArea";
 import { Search, MapPin, ChevronDown, X, Plus, Building, Home } from "lucide-react";
@@ -31,6 +31,8 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
   const [countries, setCountries] = useState<Country[]>([]);
   const [allCities, setAllCities] = useState<City[]>([]);
   const [allNeighborhoods, setAllNeighborhoods] = useState<Neighborhood[]>([]);
+  const [neighborhoodsForSelectedCity, setNeighborhoodsForSelectedCity] = useState<Neighborhood[]>([]);
+  const [loadingNeighborhoods, setLoadingNeighborhoods] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedCityId, setSelectedCityId] = useState<string>("");
   
@@ -112,6 +114,28 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
       setSearchTerm('');
     }
   }, [formData.cityId, allCities]);
+
+  // Cargar barrios de la ciudad seleccionada desde la API
+  const cityIdForFetch = formData.cityId != null ? Number(formData.cityId) : 0;
+  useEffect(() => {
+    if (!cityIdForFetch) {
+      setNeighborhoodsForSelectedCity([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingNeighborhoods(true);
+    getNeighborhoodsByCity(cityIdForFetch)
+      .then((list) => {
+        if (!cancelled) setNeighborhoodsForSelectedCity(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!cancelled) setNeighborhoodsForSelectedCity([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingNeighborhoods(false);
+      });
+    return () => { cancelled = true; };
+  }, [cityIdForFetch]);
 
   // Manejar cuando se carga un barrio existente
   useEffect(() => {
@@ -232,7 +256,8 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
       }
     } else {
       const neighborhoodId = result.id.replace('neighborhood-', '');
-      const neighborhood = allNeighborhoods.find(n => n.id === Number(neighborhoodId));
+      const neighborhood = neighborhoodsForSelectedCity.find(n => n.id === Number(neighborhoodId))
+        ?? allNeighborhoods.find(n => n.id === Number(neighborhoodId));
       if (neighborhood) {
         setSearchTerm(neighborhood.name);
         setSelectedNeighborhoodName(neighborhood.name);
@@ -316,6 +341,9 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
 
         // Actualizar la lista de barrios
         setAllNeighborhoods(prev => [...prev, newNeighborhood]);
+        if (Number(registerFormData.cityId) === cityIdForNeighborhoods) {
+          setNeighborhoodsForSelectedCity(prev => [...prev, newNeighborhood]);
+        }
         
         // Seleccionar automáticamente el nuevo barrio
         setSelectedNeighborhoodName(newNeighborhood.name);
@@ -378,6 +406,9 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
   const departmentName = selectedCity?.departmentName || '';
   const countryName = selectedCity?.countryName || '';
 
+  // Ciudad activa para filtrar barrios (formData.cityId es la fuente de verdad)
+  const cityIdForNeighborhoods = formData.cityId != null ? Number(formData.cityId) : Number(selectedCityId) || 0;
+
   // Filtrar resultados según el modo de búsqueda
   const filteredResults = useMemo(() => {
     if (searchMode === 'city') {
@@ -408,46 +439,31 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
           };
         });
     } else {
-      // Búsqueda de barrios - filtrar automáticamente por ciudad seleccionada
-      return allNeighborhoods
+      // Barrios ya vienen filtrados por ciudad (neighborhoodsForSelectedCity desde API)
+      const list = neighborhoodsForSelectedCity;
+      return list
         .filter(neighborhood => {
-          // Filtrar por ciudad seleccionada (obligatorio para barrios)
-          if (selectedCityId && neighborhood.cityId !== Number(selectedCityId)) return false;
-          
-          // Filtrar por país si está seleccionado
-          if (selectedCountry) {
-            const neighborhoodCity = allCities.find(c => c.id === neighborhood.cityId);
-            if (neighborhoodCity && neighborhoodCity.countryId !== selectedCountry.id) return false;
-          }
-          
-          // Filtrar por departamento si está seleccionado
-          if (selectedDepartment) {
-            const neighborhoodCity = allCities.find(c => c.id === neighborhood.cityId);
-            if (neighborhoodCity && neighborhoodCity.departmentId !== selectedDepartment.id) return false;
-          }
-          
-          // Filtrar por término de búsqueda
           if (searchTerm) {
             return neighborhood.name.toLowerCase().includes(searchTerm.toLowerCase());
           }
-          
           return true;
         })
         .map(neighborhood => {
-          const city = allCities.find(c => c.id === neighborhood.cityId);
+          const nCityId = getNeighborhoodCityId(neighborhood);
+          const city = nCityId != null ? allCities.find(c => Number(c.id) === Number(nCityId)) : null;
           const department = city ? departments.find(d => d.id === city.departmentId) : null;
           const country = city ? countries.find(c => c.id === city.countryId) : null;
           return {
             id: `neighborhood-${neighborhood.id}`,
             name: neighborhood.name,
-            cityName: city?.name,
+            cityName: city?.name ?? neighborhood.cityName,
             departmentName: department?.name,
             countryName: country?.name,
             type: 'neighborhood' as const
           };
         });
     }
-  }, [searchMode, allCities, allNeighborhoods, departments, countries, selectedCountry, selectedDepartment, searchTerm, selectedCityId]);
+  }, [searchMode, allCities, allNeighborhoods, neighborhoodsForSelectedCity, departments, countries, selectedCountry, selectedDepartment, searchTerm, selectedCityId, formData.cityId, cityIdForNeighborhoods]);
 
   return (
     <div className="space-y-6">
@@ -731,9 +747,9 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 value={selectedNeighborhoodName || ""}
                 onClick={() => startSearch('neighborhood')}
                 readOnly
-                placeholder={selectedCityId ? "Haz clic para buscar barrio..." : "Selecciona una ciudad primero"}
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${selectedCityId ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
-                disabled={!selectedCityId}
+                placeholder={cityIdForNeighborhoods ? "Haz clic para buscar barrio..." : "Selecciona una ciudad primero"}
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${cityIdForNeighborhoods ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                disabled={!cityIdForNeighborhoods}
               />
             </div>
 
@@ -741,6 +757,12 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
             {showDropdown && searchMode === 'neighborhood' && (
               isMobile ? createPortal(
               <div style={dropdownStyle} className="location-dropdown-portal bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl pointer-events-auto">
+                {!cityIdForNeighborhoods ? (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    Selecciona primero una ciudad arriba para ver los barrios disponibles.
+                  </div>
+                ) : (
+                  <>
                 {/* Campo de búsqueda */}
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                   <div className="relative">
@@ -756,8 +778,11 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                   </div>
                 </div>
                 
+                {loadingNeighborhoods && (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">Cargando barrios...</div>
+                )}
                 {/* Resultados */}
-                {filteredResults.length > 0 && (
+                {!loadingNeighborhoods && filteredResults.length > 0 && (
                   <div className="max-h-60 overflow-y-auto">
                     {filteredResults.slice(0, 10).map((result) => (
                       <button
@@ -790,7 +815,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 )}
 
                 {/* Mensaje cuando no hay resultados */}
-                {searchTerm && filteredResults.length === 0 && (
+                {!loadingNeighborhoods && searchTerm && filteredResults.length === 0 && (
                   <div className="p-4 text-center">
                     <div className="text-gray-500 dark:text-gray-400 mb-3">
                       No se encontraron barrios que coincidan con "{searchTerm}"
@@ -806,7 +831,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 )}
 
                 {/* Mensaje cuando no hay barrios para la ciudad seleccionada */}
-                {!searchTerm && filteredResults.length === 0 && (
+                {!loadingNeighborhoods && !searchTerm && filteredResults.length === 0 && (
                   <div className="p-4 text-center">
                     <div className="text-gray-500 dark:text-gray-400 mb-3">
                       No hay barrios registrados para esta ciudad
@@ -819,9 +844,17 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                       Registrar nuevo barrio
                     </button>
                   </div>
+                )}
+                </>
                 )}
               </div>, document.body) : (
               <div className="absolute z-[9999] w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl pointer-events-auto">
+                {!cityIdForNeighborhoods ? (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                    Selecciona primero una ciudad arriba para ver los barrios disponibles.
+                  </div>
+                ) : (
+                  <>
                 {/* Campo de búsqueda */}
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700">
                   <div className="relative">
@@ -837,8 +870,11 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                   </div>
                 </div>
                 
+                {loadingNeighborhoods && (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">Cargando barrios...</div>
+                )}
                 {/* Resultados */}
-                {filteredResults.length > 0 && (
+                {!loadingNeighborhoods && filteredResults.length > 0 && (
                   <div className="max-h-60 overflow-y-auto">
                     {filteredResults.slice(0, 10).map((result) => (
                       <button
@@ -871,7 +907,7 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                 )}
 
                 {/* Mensaje cuando no hay resultados */}
-                {searchTerm && filteredResults.length === 0 && (
+                {!loadingNeighborhoods && searchTerm && filteredResults.length === 0 && (
                   <div className="p-4 text-center">
                     <div className="text-gray-500 dark:text-gray-400 mb-3">
                       No se encontraron barrios que coincidan con "{searchTerm}"
@@ -900,6 +936,8 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
                       Registrar nuevo barrio
                     </button>
                   </div>
+                )}
+                </>
                 )}
               </div>
               )

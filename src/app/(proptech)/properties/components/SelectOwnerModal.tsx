@@ -100,9 +100,13 @@ export default function SelectOwnerModal({
   const handleCreateOwner = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validación básica
-    if (!newOwnerForm.name || !newOwnerForm.phone) {
-      alert("Por favor complete los campos obligatorios: Nombre y Teléfono");
+    // Validación: nombre y teléfono obligatorios (email opcional)
+    if (!newOwnerForm.name?.trim()) {
+      alert("Por favor complete el nombre del propietario.");
+      return;
+    }
+    if (!newOwnerForm.phone?.trim()) {
+      alert("Por favor complete el teléfono del propietario.");
       return;
     }
 
@@ -111,18 +115,11 @@ export default function SelectOwnerModal({
       const newOwner = await ownerService.createOwner(newOwnerForm);
       
       if (newOwner) {
-        // Actualizar la lista de owners
         await loadOwners();
-        
-        // Convertir Owner a Contact y seleccionar
         const contact = ownerToContact(newOwner);
         onSelect(contact);
-        
-        // Cerrar popups
         setShowCreatePopup(false);
         onClose();
-        
-        // Resetear formulario
         setNewOwnerForm({
           name: "",
           email: "",
@@ -133,9 +130,10 @@ export default function SelectOwnerModal({
           notes: ""
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating owner:", error);
-      alert("Error al crear el propietario. Por favor intente nuevamente.");
+      const msg = error?.response?.data ?? error?.message ?? "Error al crear el propietario. Por favor intente nuevamente.";
+      alert(typeof msg === "string" ? msg : msg?.error ?? JSON.stringify(msg));
     } finally {
       setCreating(false);
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyForm";
 import ValidatedInput from "@/components/form/input/ValidatedInput";
 import ValidatedTextArea from "@/components/form/input/ValidatedTextArea";
@@ -27,10 +27,20 @@ interface CharacteristicsStepProps {
 }
 
 export default function CharacteristicsStep({ formData, handleChange, errors }: CharacteristicsStepProps) {
-  const [activeSection, setActiveSection] = useState('basic');
+  // Detectar tipo de propiedad por nombre para adaptar campos (terreno vs casa/departamento)
+  const typeName = ((formData as any).type || (formData as any).propertyType || '').toString().toLowerCase();
+  const isLand =
+    typeName.includes('terreno') ||
+    typeName.includes('lote') ||
+    typeName.includes('loteo');
 
-  // Nota: La detección de terreno se manejará más adelante
-  // Por ahora, todos los campos se muestran siempre y nada es obligatorio
+  // Sección activa: para terrenos arrancamos en "dimensions", para el resto en "basic"
+  const [activeSection, setActiveSection] = useState<'basic' | 'spaces' | 'dimensions' | 'details'>(isLand ? 'dimensions' : 'basic');
+
+  // Cuando cambia el tipo (casa ↔ terreno), ajustamos la sección activa
+  useEffect(() => {
+    setActiveSection(isLand ? 'dimensions' : 'basic');
+  }, [isLand]);
 
   const handleNumberChange = (name: string, value: string) => {
     const numValue = value === '' ? '' : Math.max(0, parseInt(value) || 0).toString();
@@ -48,12 +58,22 @@ export default function CharacteristicsStep({ formData, handleChange, errors }: 
     handleChange(event);
   };
 
-  const sections = [
-    { id: 'basic', name: 'Básicas', icon: HomeIcon, color: 'blue' },
-    { id: 'spaces', name: 'Espacios', icon: BuildingOfficeIcon, color: 'green' },
-    { id: 'dimensions', name: 'Dimensiones', icon: Square2StackIcon, color: 'purple' },
-    { id: 'details', name: 'Detalles', icon: DocumentTextIcon, color: 'orange' }
-  ];
+  // Secciones visibles: para terrenos sólo Dimensiones y Detalles
+  const sections = useMemo(
+    () =>
+      isLand
+        ? [
+            { id: 'dimensions', name: 'Dimensiones', icon: Square2StackIcon, color: 'purple' },
+            { id: 'details', name: 'Detalles', icon: DocumentTextIcon, color: 'orange' }
+          ]
+        : [
+            { id: 'basic', name: 'Básicas', icon: HomeIcon, color: 'blue' },
+            { id: 'spaces', name: 'Espacios', icon: BuildingOfficeIcon, color: 'green' },
+            { id: 'dimensions', name: 'Dimensiones', icon: Square2StackIcon, color: 'purple' },
+            { id: 'details', name: 'Detalles', icon: DocumentTextIcon, color: 'orange' }
+          ],
+    [isLand]
+  );
 
   const getColorClasses = (color: string) => {
     const colors = {
@@ -103,156 +123,160 @@ export default function CharacteristicsStep({ formData, handleChange, errors }: 
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Habitaciones - Siempre visible, no obligatorio */}
-            <div className="relative group">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Habitaciones
-              </label>
-              <div className="relative">
-                <HomeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="number"
-                  id="bedrooms"
-                  name="bedrooms"
-                  value={formData.bedrooms || ''}
-                  onChange={(e) => handleNumberChange('bedrooms', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
-                    errors.bedrooms ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
-                  } bg-white dark:bg-gray-700 dark:text-white`}
-                />
-              </div>
-              {errors.bedrooms && (
-                <p className="text-sm text-red-500 mt-1">{errors.bedrooms}</p>
-              )}
-            </div>
+            {!isLand && (
+              <>
+                {/* Habitaciones */}
+                <div className="relative group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Habitaciones
+                  </label>
+                  <div className="relative">
+                    <HomeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      id="bedrooms"
+                      name="bedrooms"
+                      value={formData.bedrooms || ''}
+                      onChange={(e) => handleNumberChange('bedrooms', e.target.value)}
+                      placeholder="0"
+                      min="0"
+                      className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
+                        errors.bedrooms ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 dark:text-white`}
+                    />
+                  </div>
+                  {errors.bedrooms && (
+                    <p className="text-sm text-red-500 mt-1">{errors.bedrooms}</p>
+                  )}
+                </div>
 
-            {/* Baños - Siempre visible, no obligatorio */}
-            <div className="relative group">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Baños
-              </label>
-              <div className="relative">
-                <WrenchScrewdriverIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="number"
-                  id="bathrooms"
-                  name="bathrooms"
-                  value={formData.bathrooms || ''}
-                  onChange={(e) => handleNumberChange('bathrooms', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
-                    errors.bathrooms ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
-                  } bg-white dark:bg-gray-700 dark:text-white`}
-                />
-              </div>
-              {errors.bathrooms && (
-                <p className="text-sm text-red-500 mt-1">{errors.bathrooms}</p>
-              )}
-            </div>
+                {/* Baños */}
+                <div className="relative group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Baños
+                  </label>
+                  <div className="relative">
+                    <WrenchScrewdriverIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      id="bathrooms"
+                      name="bathrooms"
+                      value={formData.bathrooms || ''}
+                      onChange={(e) => handleNumberChange('bathrooms', e.target.value)}
+                      placeholder="0"
+                      min="0"
+                      className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
+                        errors.bathrooms ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 dark:text-white`}
+                    />
+                  </div>
+                  {errors.bathrooms && (
+                    <p className="text-sm text-red-500 mt-1">{errors.bathrooms}</p>
+                  )}
+                </div>
 
-            {/* Habitaciones Totales */}
-            <div className="relative group">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Habitaciones Totales
-              </label>
-              <div className="relative">
-                <Square3Stack3DIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="number"
-                  id="rooms"
-                  name="rooms"
-                  value={formData.rooms || ''}
-                  onChange={(e) => handleNumberChange('rooms', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
-                    errors.rooms ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
-                  } bg-white dark:bg-gray-700 dark:text-white`}
-                />
-              </div>
-              {errors.rooms && (
-                <p className="text-sm text-red-500 mt-1">{errors.rooms}</p>
-              )}
-            </div>
+                {/* Habitaciones Totales */}
+                <div className="relative group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Habitaciones Totales
+                  </label>
+                  <div className="relative">
+                    <Square3Stack3DIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      id="rooms"
+                      name="rooms"
+                      value={formData.rooms || ''}
+                      onChange={(e) => handleNumberChange('rooms', e.target.value)}
+                      placeholder="0"
+                      min="0"
+                      className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
+                        errors.rooms ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 dark:text-white`}
+                    />
+                  </div>
+                  {errors.rooms && (
+                    <p className="text-sm text-red-500 mt-1">{errors.rooms}</p>
+                  )}
+                </div>
 
-            {/* Cocinas */}
-            <div className="relative group">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Cocinas
-              </label>
-              <div className="relative">
-                <BuildingOfficeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="number"
-                  id="kitchens"
-                  name="kitchens"
-                  value={formData.kitchens || ''}
-                  onChange={(e) => handleNumberChange('kitchens', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
-                    errors.kitchens ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
-                  } bg-white dark:bg-gray-700 dark:text-white`}
-                />
-              </div>
-              {errors.kitchens && (
-                <p className="text-sm text-red-500 mt-1">{errors.kitchens}</p>
-              )}
-            </div>
+                {/* Cocinas */}
+                <div className="relative group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cocinas
+                  </label>
+                  <div className="relative">
+                    <BuildingOfficeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      id="kitchens"
+                      name="kitchens"
+                      value={formData.kitchens || ''}
+                      onChange={(e) => handleNumberChange('kitchens', e.target.value)}
+                      placeholder="0"
+                      min="0"
+                      className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
+                        errors.kitchens ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 dark:text-white`}
+                    />
+                  </div>
+                  {errors.kitchens && (
+                    <p className="text-sm text-red-500 mt-1">{errors.kitchens}</p>
+                  )}
+                </div>
 
-            {/* Pisos */}
-            <div className="relative group">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Pisos
-              </label>
-              <div className="relative">
-                <BuildingOfficeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="number"
-                  id="floors"
-                  name="floors"
-                  value={formData.floors || ''}
-                  onChange={(e) => handleNumberChange('floors', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
-                    errors.floors ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
-                  } bg-white dark:bg-gray-700 dark:text-white`}
-                />
-              </div>
-              {errors.floors && (
-                <p className="text-sm text-red-500 mt-1">{errors.floors}</p>
-              )}
-            </div>
+                {/* Pisos */}
+                <div className="relative group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Pisos
+                  </label>
+                  <div className="relative">
+                    <BuildingOfficeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      id="floors"
+                      name="floors"
+                      value={formData.floors || ''}
+                      onChange={(e) => handleNumberChange('floors', e.target.value)}
+                      placeholder="0"
+                      min="0"
+                      className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
+                        errors.floors ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 dark:text-white`}
+                    />
+                  </div>
+                  {errors.floors && (
+                    <p className="text-sm text-red-500 mt-1">{errors.floors}</p>
+                  )}
+                </div>
 
-            {/* Año de Construcción */}
-            <div className="relative group">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Año de Construcción
-              </label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="number"
-                  id="yearBuilt"
-                  name="yearBuilt"
-                  value={formData.yearBuilt || ''}
-                  onChange={(e) => handleNumberChange('yearBuilt', e.target.value)}
-                  placeholder="2024"
-                  min="1900"
-                  max="2030"
-                  className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
-                    errors.yearBuilt ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
-                  } bg-white dark:bg-gray-700 dark:text-white`}
-                />
-              </div>
-              {errors.yearBuilt && (
-                <p className="text-sm text-red-500 mt-1">{errors.yearBuilt}</p>
-              )}
-            </div>
+                {/* Año de Construcción */}
+                <div className="relative group">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Año de Construcción
+                  </label>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      id="yearBuilt"
+                      name="yearBuilt"
+                      value={formData.yearBuilt || ''}
+                      onChange={(e) => handleNumberChange('yearBuilt', e.target.value)}
+                      placeholder="2024"
+                      min="1900"
+                      max="2030"
+                      className={`w-full h-12 pl-10 pr-4 border-2 rounded-xl focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 ${
+                        errors.yearBuilt ? 'border-red-500 ring-red-500/20' : 'border-gray-300 dark:border-gray-600'
+                      } bg-white dark:bg-gray-700 dark:text-white`}
+                    />
+                  </div>
+                  {errors.yearBuilt && (
+                    <p className="text-sm text-red-500 mt-1">{errors.yearBuilt}</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

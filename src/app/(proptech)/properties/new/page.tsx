@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePropertyForm, PropertyFormData } from "../hooks/usePropertyForm";
+import { useAuthContext } from "@/context/AuthContext";
 import TypeAndOperationStep from "../components/steps/TypeAndOperationStep";
 import CharacteristicsStep from "../components/steps/CharacteristicsStep";
 import LocationStep from "../components/steps/LocationStep";
@@ -50,10 +51,24 @@ interface StepInfo {
 export default function NewPropertyPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, getUserContext } = useAuthContext();
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // Si el usuario es AGENT, el formulario debe tener agentId/agencyId desde el inicio (el backend lo exige)
+  const initialDataForNew = useMemo(() => {
+    const ctx = getUserContext();
+    if (ctx.isAgent && ctx.agentId != null) {
+      return {
+        agentId: Number(ctx.agentId),
+        agencyId: ctx.agencyId != null ? Number(ctx.agencyId) : undefined,
+      };
+    }
+    return undefined;
+  }, [user, getUserContext]);
+
   const { 
     formData, 
     errors,
@@ -64,6 +79,7 @@ export default function NewPropertyPage() {
     handleChange, 
     handleFileChange, 
     removeImage, 
+    reorderImages, 
     removeFeaturedImage, 
     toggleAmenity, 
     toggleService, 
@@ -77,7 +93,8 @@ export default function NewPropertyPage() {
     handleNearbyFacilitiesChange,
       publishProperty,
       saveDraft,
-  } = usePropertyForm();
+      isProcessingImages,
+  } = usePropertyForm(initialDataForNew);
 
   useEffect(() => {
     // No inicializar/sembrear datos ficticios
@@ -191,7 +208,14 @@ export default function NewPropertyPage() {
     }
   };
 
-  // Step configuration with icons and validation
+  // Detectar tipo de propiedad (por nombre) para ajustar pasos dinámicamente
+  const typeName = (formData.type || "").toString().toLowerCase();
+  const isLand =
+    typeName.includes("terreno") ||
+    typeName.includes("lote") ||
+    typeName.includes("loteo");
+
+  // Step configuration with icons and validation (dinámico según tipo)
   const steps: StepInfo[] = [
     {
       id: 1,
@@ -207,7 +231,7 @@ export default function NewPropertyPage() {
       title: "Características",
       description: "Detalles físicos de la propiedad",
       icon: <Settings className="h-5 w-5" />,
-      requiredFields: ['area', 'bedrooms', 'bathrooms'],
+      requiredFields: isLand ? ['lotSize'] : ['area', 'bedrooms', 'bathrooms'],
       isCompleted: false,
       hasErrors: false
     },
@@ -407,8 +431,10 @@ export default function NewPropertyPage() {
             handleChange={handleChange}
             handleFileChange={handleFileChange}
             removeImage={removeImage}
+            reorderImages={reorderImages}
             removeFeaturedImage={removeFeaturedImage}
             errors={errors}
+            isProcessingImages={isProcessingImages}
           />
         );
       case 5:
@@ -642,8 +668,8 @@ export default function NewPropertyPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{step.title}</p>
-                      <p className="text-xs opacity-75 truncate">{step.description}</p>
+                      <p className="text-sm font-medium">{step.title}</p>
+                      <p className="text-xs opacity-75">{step.description}</p>
                     </div>
                   </button>
                 ))}

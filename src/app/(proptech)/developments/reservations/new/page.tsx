@@ -21,6 +21,8 @@ import { developmentReservationService } from "../../services/developmentReserva
 import { developmentService } from "../../services/developmentService";
 import { developmentUnitService } from "../../services/developmentUnitService";
 import { DevelopmentReservation, ReservationStatus } from "../../components/types";
+import CurrencySelector from "@/components/ui/CurrencySelector";
+import PriceInput from "@/components/ui/PriceInput";
 
 // Componente Combobox moderno
 function ModernCombobox({ 
@@ -141,6 +143,7 @@ export default function NewReservationPage() {
     status: "PENDING",
     reservationAmount: 0,
     totalPrice: 0,
+    currencyId: undefined,
     reservationDate: new Date().toISOString().split('T')[0],
     expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 días por defecto
     notes: "",
@@ -149,6 +152,7 @@ export default function NewReservationPage() {
     paymentReference: "",
     active: true
   });
+  const [selectedCurrencyCode, setSelectedCurrencyCode] = useState<string>("");
 
   useEffect(() => {
     loadDevelopments();
@@ -381,6 +385,21 @@ export default function NewReservationPage() {
               </div>
             </div>
 
+            {/* Moneda */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Moneda
+              </label>
+              <CurrencySelector
+                selectedCurrencyId={formData.currencyId}
+                onCurrencyChange={(currencyId, currencyCode) => {
+                  setFormData(prev => ({ ...prev, currencyId }));
+                  setSelectedCurrencyCode(currencyCode);
+                }}
+                className="w-full"
+              />
+            </div>
+
             {/* Montos */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -388,41 +407,25 @@ export default function NewReservationPage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Monto de Reserva
-                  </label>
-                  <div className="relative">
-                    <CurrencyDollarIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="reservationAmount"
-                      value={formData.reservationAmount}
-                      onChange={handleChange}
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
+                  <PriceInput
+                    value={formData.reservationAmount || 0}
+                    onChange={(value) => setFormData(prev => ({ ...prev, reservationAmount: value }))}
+                    currencyCode={selectedCurrencyCode}
+                    label="Monto de Reserva"
+                    placeholder="0"
+                    className="w-full"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Precio Total
-                  </label>
-                  <div className="relative">
-                    <CurrencyDollarIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                    <input
-                      type="number"
-                      name="totalPrice"
-                      value={formData.totalPrice}
-                      onChange={handleChange}
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
+                  <PriceInput
+                    value={formData.totalPrice || 0}
+                    onChange={(value) => setFormData(prev => ({ ...prev, totalPrice: value }))}
+                    currencyCode={selectedCurrencyCode}
+                    label="Precio Total"
+                    placeholder="0"
+                    className="w-full"
+                  />
                 </div>
               </div>
             </div>

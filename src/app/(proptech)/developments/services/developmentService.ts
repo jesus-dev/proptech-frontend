@@ -46,6 +46,18 @@ function normalizeDevelopmentType(type: string): string {
   return typeMap[type.toUpperCase()] || type.toLowerCase();
 }
 
+// Helper function to normalize development status from backend format to frontend format
+function normalizeDevelopmentStatus(status: string): string {
+  if (!status) return status;
+  const statusMap: { [key: string]: string } = {
+    'AVAILABLE': 'available',
+    'SOLD': 'sold',
+    'RESERVED': 'reserved',
+    'RENTED': 'rented',
+  };
+  return statusMap[status.toUpperCase()] || status.toLowerCase();
+}
+
 // Helper function to normalize a development object
 function normalizeDevelopment(dev: any): Development {
   if (!dev) return dev;
@@ -62,6 +74,7 @@ function normalizeDevelopment(dev: any): Development {
   return {
     ...dev,
     type: normalizeDevelopmentType(dev.type),
+    status: normalizeDevelopmentStatus(dev.status),
     currency: normalizedCurrency,
     currencyId: currencyId || (dev as any).currencyId
   };
@@ -73,9 +86,19 @@ function normalizeDevelopments(developments: any[]): Development[] {
   return developments.map(normalizeDevelopment);
 }
 
+export interface GetAllDevelopmentsResult {
+  data: Development[];
+  total: number;
+  page: number;
+  size: number;
+  error?: boolean;
+  statusCode?: number;
+  message?: string;
+}
+
 class DevelopmentService {
   // Obtener todos los desarrollos con filtros
-  async getAllDevelopments(filters?: DevelopmentFilters): Promise<{ data: Development[]; total: number; page: number; size: number }> {
+  async getAllDevelopments(filters?: DevelopmentFilters): Promise<GetAllDevelopmentsResult> {
     try {
       const searchParams = new URLSearchParams();
       if (filters) {
@@ -89,7 +112,7 @@ class DevelopmentService {
       const query = searchParams.toString();
       const response = await apiClient.get(`/api/developments${query ? `?${query}` : ''}`);
       
-      // Si la respuesta es un array directo, convertirlo al formato esperado
+      // Backend devuelve array directo (Response.ok(developments).build())
       if (Array.isArray(response.data)) {
         return {
           data: normalizeDevelopments(response.data),
@@ -99,20 +122,25 @@ class DevelopmentService {
         };
       }
       
-      // Si ya tiene el formato correcto, normalizar los datos
+      // Si viene con formato { data: [] }, normalizar
       const normalizedData = {
         ...response.data,
-        data: normalizeDevelopments(response.data.data || [])
+        data: normalizeDevelopments(response.data?.data || [])
       };
-      return normalizedData as { data: Development[]; total: number; page: number; size: number };
-    } catch (error) {
-      console.error('Error fetching developments:', error);
-      // Devolver un objeto vacío en lugar de lanzar error
+      return normalizedData as GetAllDevelopmentsResult;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+      const code = error?.code;
+      console.error('[developmentService] Error fetching developments:', { status, data, code, message: error?.message }, error);
       return {
         data: [],
         total: 0,
         page: 1,
-        size: 0
+        size: 0,
+        error: true,
+        statusCode: status,
+        message: error?.message
       };
     }
   }

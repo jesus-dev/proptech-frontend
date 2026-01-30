@@ -89,10 +89,6 @@ const navItems: NavItem[] = [
     icon: <BoxCubeIcon />,
     subItems: [
       {
-        name: "Dashboard",
-        path: "/developments/dashboard",
-      },
-      {
         name: "Todos los desarrollos",
         path: "/developments",
       },
@@ -105,8 +101,27 @@ const navItems: NavItem[] = [
         path: "/developments/quotas",
       },
       {
+        name: "Pagos",
+        path: "/developments/payments",
+      },
+      {
         name: "Reservas",
         path: "/developments/reservations",
+      },
+    ],
+  },
+  {
+    name: "Administración de Condominio",
+    path: "/condominiums",
+    icon: <Building2 className="w-5 h-5" />,
+    subItems: [
+      {
+        name: "Administrar condominios",
+        path: "/condominiums",
+      },
+      {
+        name: "Mi condominio",
+        path: "/mi-condominio",
       },
     ],
   },
@@ -114,34 +129,6 @@ const navItems: NavItem[] = [
     name: "Gestión de Propiedades de Propietarios",
     path: "/owners-property",
     icon: <UserCircleIcon />,
-  },
-  {
-    name: "Condominios",
-    path: "/condominiums",
-    icon: <Building2 className="w-5 h-5" />,
-    subItems: [
-      {
-        name: "Todos los Condominios",
-        path: "/condominiums",
-      },
-      {
-        name: "Nuevo Condominio",
-        path: "/condominiums/new",
-        nuevo: true,
-      },
-      {
-        name: "Unidades",
-        path: "/condominiums/units",
-      },
-      {
-        name: "Cuotas",
-        path: "/condominiums/fees",
-      },
-      {
-        name: "Pagos",
-        path: "/condominiums/payments",
-      },
-    ],
   },
   {
     name: "Gestión Comercial",
@@ -671,7 +658,9 @@ const MobileSidebar: React.FC = () => {
               >
                 {nav.icon}
               </span>
-              <span className={`text-sm font-medium`}>{nav.name}</span>
+              <span className="text-sm font-medium flex-1 text-left whitespace-normal">
+                {nav.name}
+              </span>
               <ChevronDownIcon
                 className={`ml-auto w-5 h-5 transition-transform duration-200  ${
                   openSubmenu?.type === menuType &&

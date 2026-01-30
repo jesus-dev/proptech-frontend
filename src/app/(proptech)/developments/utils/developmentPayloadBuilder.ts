@@ -68,7 +68,7 @@ export interface DevelopmentPayload {
   infrastructure?: string;
   environmentalImpact?: string;
   sustainabilityFeatures?: string;
-  securityFeatures?: string;
+  securityFeatures?: string[];
   
   // Campos que irán a DevelopmentPolicies (cuando backend esté refactorizado)
   petPolicy?: string;
@@ -123,7 +123,11 @@ export interface DevelopmentPayload {
   buildingFeatures?: string;
   amenities?: string[];
   additionalAmenities?: string[];
-  
+  numberOfElevators?: number;
+  parkingPerUnit?: string;
+  commercialGroundFloor?: boolean;
+  estimatedDeliveryYear?: number;
+
   // Condominio
   commonAreas?: string[];
   maintenanceFee?: number;
@@ -158,6 +162,39 @@ export function buildDevelopmentPayload(
     premium: false,
     active: true,
     published: false,
+    // Info avanzada común a todos los tipos
+    financingOptions: formData.financingOptions,
+    paymentPlans: formData.paymentPlans,
+    legalStatus: formData.legalStatus,
+    permits: formData.permits,
+    utilities: formData.utilities,
+    infrastructure: formData.infrastructure,
+    environmentalImpact: formData.environmentalImpact,
+    sustainabilityFeatures: formData.sustainabilityFeatures,
+    securityFeatures: Array.isArray(formData.securityFeatures)
+      ? (formData.securityFeatures || [])
+      : (formData.securityFeatures ? [formData.securityFeatures] : []),
+    petPolicy: formData.petPolicy,
+    rentalPolicy: formData.rentalPolicy,
+    hoaFees: formData.hoaFees,
+    hoaRules: formData.hoaRules,
+    hoaContact: formData.hoaContact,
+    propertyManager: formData.propertyManager,
+    managerContact: formData.managerContact,
+    emergencyContact: formData.emergencyContact,
+    virtualTourUrl: formData.virtualTourUrl,
+    videoUrl: formData.videoUrl,
+    brochureUrl: formData.brochureUrl,
+    floorPlanUrl: formData.floorPlanUrl,
+    sitePlanUrl: formData.sitePlanUrl,
+    masterPlanUrl: formData.masterPlanUrl,
+    specificationsUrl: formData.specificationsUrl,
+    warrantyInfo: formData.warrantyInfo,
+    warrantyPeriod: formData.warrantyPeriod,
+    warrantyCoverage: formData.warrantyCoverage,
+    warrantyContact: formData.warrantyContact,
+    notes: formData.notes,
+    internalNotes: formData.internalNotes,
   };
 
   // Agregar campos específicos según el tipo
@@ -180,6 +217,11 @@ export function buildDevelopmentPayload(
       amenities: formData.amenities,
       buildingFeatures: formData.buildingFeatures || "",
       additionalAmenities: formData.additionalAmenities,
+      // Campos opcionales edificio (backend los aceptará cuando los implementen)
+      numberOfElevators: formData.numberOfElevators,
+      parkingPerUnit: formData.parkingPerUnit,
+      commercialGroundFloor: formData.commercialGroundFloor,
+      estimatedDeliveryYear: formData.estimatedDeliveryYear,
     };
   } else if (formData.type === "condominio") {
     return {
@@ -190,7 +232,7 @@ export function buildDevelopmentPayload(
       lotSizes: formData.lotSizes,
       totalArea: formData.totalArea,
       commonAreas: formData.commonAreas,
-      securityFeatures: formData.securityFeatures,
+      securityFeatures: formData.securityFeatures ?? [],
       maintenanceFee: formData.maintenanceFee,
       amenities: formData.amenities,
     };
@@ -202,7 +244,7 @@ export function buildDevelopmentPayload(
       totalArea: formData.totalArea,
       lotSizes: formData.lotSizes,
       services: formData.services,
-      securityFeatures: formData.securityFeatures,
+      securityFeatures: formData.securityFeatures ?? [],
       commonAreas: formData.commonAreas,
       maintenanceFee: formData.maintenanceFee,
       buildingRegulations: formData.buildingRegulations,

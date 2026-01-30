@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { 
   CurrencyDollarIcon,
   PlusIcon,
@@ -12,31 +13,61 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   CalendarIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from "@heroicons/react/24/outline";
 import { DevelopmentQuota, QuotaType, QuotaStatus } from "../components/types";
 import { developmentQuotaService } from "../services/developmentQuotaService";
+import { developmentService } from "../services/developmentService";
+import { BuildingOfficeIcon } from "@heroicons/react/24/outline";
+
+interface DevelopmentGroup {
+  developmentId: number;
+  developmentTitle: string;
+  quotas: DevelopmentQuota[];
+}
 
 export default function DevelopmentQuotasPage() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const returnTo = `${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ""}`;
+
   const [quotas, setQuotas] = useState<DevelopmentQuota[]>([]);
+  const [developments, setDevelopments] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
+  const [quickStatus, setQuickStatus] = useState<"ALL" | "PENDING" | "PAID">("ALL");
   const [filterStatus, setFilterStatus] = useState<QuotaStatus | "ALL">("ALL");
   const [filterType, setFilterType] = useState<QuotaType | "ALL">("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedDevelopments, setExpandedDevelopments] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    loadQuotas();
+    loadData();
   }, []);
 
-  const loadQuotas = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await developmentQuotaService.getAllQuotas();
-      setQuotas(data);
+      const [quotasData, developmentsData] = await Promise.all([
+        developmentQuotaService.getAllQuotas(),
+        developmentService.getAllDevelopments()
+      ]);
+      
+      setQuotas(quotasData);
+      
+      // Crear mapa de developmentId -> developmentTitle
+      const devMap: Record<number, string> = {};
+      if (developmentsData?.data) {
+        developmentsData.data.forEach((dev: any) => {
+          devMap[dev.id] = dev.title || `Desarrollo ${dev.id}`;
+        });
+      }
+      setDevelopments(devMap);
     } catch (error) {
-      console.error("Error loading quotas:", error);
-      // Sin datos ficticios: dejar vacío
+      console.error("Error loading data:", error);
       setQuotas([]);
+      setDevelopments({});
     } finally {
       setLoading(false);
     }
@@ -120,14 +151,52 @@ export default function DevelopmentQuotasPage() {
   };
 
   const filteredQuotas = quotas.filter(quota => {
+    // Filtro rápido (pestañas): Pendientes = todo lo no pagado (incluye vencidas y parciales)
+    const matchesQuickStatus =
+      quickStatus === "ALL"
+        ? true
+        : quickStatus === "PAID"
+          ? quota.status === "PAID"
+          : quota.status !== "PAID";
+
     const matchesStatus = filterStatus === "ALL" || quota.status === filterStatus;
     const matchesType = filterType === "ALL" || quota.type === filterType;
     const matchesSearch = quota.quotaNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          quota.quotaName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          quota.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchesStatus && matchesType && matchesSearch;
+    return matchesQuickStatus && matchesStatus && matchesType && matchesSearch;
   });
+
+  // Agrupar cuotas por desarrollo
+  const groupedQuotas: DevelopmentGroup[] = Object.entries(
+    filteredQuotas.reduce((acc, quota) => {
+      const devId = quota.developmentId;
+      if (!acc[devId]) {
+        acc[devId] = [];
+      }
+      acc[devId].push(quota);
+      return acc;
+    }, {} as Record<number, DevelopmentQuota[]>)
+  ).map(([devId, quotas]) => ({
+    developmentId: Number(devId),
+    developmentTitle: developments[Number(devId)] || `Desarrollo ${devId}`,
+    quotas: quotas.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+  })).sort((a, b) => a.developmentTitle.localeCompare(b.developmentTitle));
+
+  const toggleDevelopment = (developmentId: number) => {
+    setExpandedDevelopments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(developmentId)) {
+        newSet.delete(developmentId);
+      } else {
+        newSet.add(developmentId);
+      }
+      return newSet;
+    });
+  };
+
+  const isExpanded = (developmentId: number) => expandedDevelopments.has(developmentId);
 
   if (loading) {
     return (
@@ -180,6 +249,53 @@ export default function DevelopmentQuotasPage() {
 
         {/* Enhanced Filtros */}
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-5 lg:p-6 mb-6">
+          {/* Filtro rápido */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 mb-4 border-b border-gray-200/70 dark:border-gray-700/70">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Ver cuotas
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Cambiá rápido entre todas, pendientes o pagadas.
+              </p>
+            </div>
+            <div className="inline-flex rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
+              <button
+                type="button"
+                onClick={() => setQuickStatus("ALL")}
+                className={`px-4 py-2 text-sm font-semibold ${
+                  quickStatus === "ALL"
+                    ? "bg-brand-600 text-white"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickStatus("PENDING")}
+                className={`px-4 py-2 text-sm font-semibold border-l border-gray-200 dark:border-gray-700 ${
+                  quickStatus === "PENDING"
+                    ? "bg-brand-600 text-white"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              >
+                Pendientes
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickStatus("PAID")}
+                className={`px-4 py-2 text-sm font-semibold border-l border-gray-200 dark:border-gray-700 ${
+                  quickStatus === "PAID"
+                    ? "bg-brand-600 text-white"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              >
+                Pagadas
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-2">
@@ -246,6 +362,7 @@ export default function DevelopmentQuotasPage() {
               <button
                 onClick={() => {
                   setSearchTerm("");
+                  setQuickStatus("ALL");
                   setFilterStatus("ALL");
                   setFilterType("ALL");
                 }}
@@ -257,115 +374,165 @@ export default function DevelopmentQuotasPage() {
           </div>
         </div>
 
-        {/* Enhanced Lista de Cuotas */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-              Cuotas ({filteredQuotas.length})
-            </h3>
-          </div>
+        {/* Enhanced Lista de Cuotas Agrupadas por Desarrollo */}
+        <div className="space-y-4">
+          {groupedQuotas.map((group) => {
+            const expanded = isExpanded(group.developmentId);
+            return (
+              <div 
+                key={group.developmentId} 
+                className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transition-all duration-200"
+              >
+                {/* Encabezado del Desarrollo - Clickable */}
+                <button
+                  onClick={() => toggleDevelopment(group.developmentId)}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 border-b border-gray-200 dark:border-gray-700 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-gray-600 dark:hover:to-gray-500 transition-all duration-200"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <BuildingOfficeIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {group.developmentTitle}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {group.quotas.length} {group.quotas.length === 1 ? 'cuota' : 'cuotas'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Link
+                        href={`/developments/${group.developmentId}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                      >
+                        Ver desarrollo →
+                      </Link>
+                      {expanded ? (
+                        <ChevronUpIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      ) : (
+                        <ChevronDownIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                </button>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Cuota
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Monto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Fecha Vencimiento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredQuotas.map((quota) => {
-                  const daysUntilDue = getDaysUntilDue(quota.dueDate);
-                  const isOverdue = daysUntilDue < 0;
-                  const isDueSoon = daysUntilDue <= 7 && daysUntilDue >= 0;
-                  
-                  return (
-                    <tr key={quota.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {quota.quotaNumber}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {quota.quotaName}
-                          </div>
-                          {quota.installmentNumber && quota.totalInstallments && (
-                            <div className="text-xs text-gray-400 dark:text-gray-500">
-                              {quota.installmentNumber} de {quota.totalInstallments}
+                {/* Tabla de Cuotas del Desarrollo - Colapsable */}
+                {expanded && (
+                  <div className="overflow-x-auto animate-in slide-in-from-top-2 duration-200">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Cuota
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Tipo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Monto
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Fecha Vencimiento
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {group.quotas.map((quota) => {
+                      const daysUntilDue = getDaysUntilDue(quota.dueDate);
+                      const isOverdue = daysUntilDue < 0;
+                      const isDueSoon = daysUntilDue <= 7 && daysUntilDue >= 0;
+                      
+                      return (
+                        <tr key={quota.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {quota.quotaNumber}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {quota.quotaName}
+                              </div>
+                              {quota.installmentNumber && quota.totalInstallments && (
+                                <div className="text-xs text-gray-400 dark:text-gray-500">
+                                  {quota.installmentNumber} de {quota.totalInstallments}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900 dark:text-white">
-                          {getTypeLabel(quota.type)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(quota.status)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(quota.amount)}
-                        </div>
-                        {quota.paidAmount && quota.paidAmount > 0 && (
-                          <div className="text-sm text-green-600 dark:text-green-400">
-                            Pagado: {formatCurrency(quota.paidAmount)}
-                          </div>
-                        )}
-                        {quota.discountAmount && quota.discountAmount > 0 && (
-                          <div className="text-sm text-blue-600 dark:text-blue-400">
-                            Descuento: {formatCurrency(quota.discountAmount)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          {formatDate(quota.dueDate)}
-                        </div>
-                        {isOverdue && (
-                          <div className="text-sm text-red-600 dark:text-red-400">
-                            Vencido hace {Math.abs(daysUntilDue)} días
-                          </div>
-                        )}
-                        {isDueSoon && (
-                          <div className="text-sm text-yellow-600 dark:text-yellow-400">
-                            Vence en {daysUntilDue} días
-                          </div>
-                        )}
-                        {quota.paidDate && (
-                          <div className="text-sm text-green-600 dark:text-green-400">
-                            Pagado: {formatDate(quota.paidDate)}
-                          </div>
-                        )}
-                      </td>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-gray-900 dark:text-white">
+                              {getTypeLabel(quota.type)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {getStatusBadge(quota.status)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {formatCurrency(quota.amount)}
+                            </div>
+                            {quota.paidAmount && quota.paidAmount > 0 && (
+                              <div className="text-sm text-green-600 dark:text-green-400">
+                                Pagado: {formatCurrency(quota.paidAmount)}
+                              </div>
+                            )}
+                            {quota.discountAmount && quota.discountAmount > 0 && (
+                              <div className="text-sm text-blue-600 dark:text-blue-400">
+                                Descuento: {formatCurrency(quota.discountAmount)}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {formatDate(quota.dueDate)}
+                            </div>
+                            {isOverdue && (
+                              <div className="text-sm text-red-600 dark:text-red-400">
+                                Vencido hace {Math.abs(daysUntilDue)} días
+                              </div>
+                            )}
+                            {isDueSoon && (
+                              <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                                Vence en {daysUntilDue} días
+                              </div>
+                            )}
+                            {quota.paidDate && (
+                              <div className="text-sm text-green-600 dark:text-green-400">
+                                Pagado: {formatDate(quota.paidDate)}
+                              </div>
+                            )}
+                          </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
+                          {quota.status !== "PAID" && (
+                            <Link
+                              href={`/developments/quotas/${quota.id}/payment?returnTo=${encodeURIComponent(returnTo)}`}
+                              className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                              title="Registrar pago"
+                            >
+                              <CurrencyDollarIcon className="w-5 h-5" />
+                            </Link>
+                          )}
                           <Link
                             href={`/developments/${quota.developmentId}/quotas/${quota.id}`}
                             className="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
+                            title="Ver detalles"
                           >
                             <EyeIcon className="w-5 h-5" />
                           </Link>
                           <Link
                             href={`/developments/${quota.developmentId}/quotas/${quota.id}/edit`}
                             className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            title="Editar"
                           >
                             <PencilIcon className="w-5 h-5" />
                           </Link>
@@ -377,19 +544,24 @@ export default function DevelopmentQuotasPage() {
                               }
                             }}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            title="Eliminar"
                           >
                             <TrashIcon className="w-5 h-5" />
                           </button>
                         </div>
                       </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              )}
+            </div>
+            );
+          })}
 
-          {filteredQuotas.length === 0 && (
+          {groupedQuotas.length === 0 && (
             <div className="text-center py-16 px-6">
               <div className="relative w-32 h-32 mx-auto mb-8">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-2xl animate-pulse"></div>

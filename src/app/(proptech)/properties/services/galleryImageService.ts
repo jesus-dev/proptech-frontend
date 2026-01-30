@@ -13,29 +13,56 @@ export interface GalleryImage {
   isFeatured?: boolean;
 }
 
-// Función helper para convertir URLs relativas a completas
+// Base URL del API (sin barra final) para montar URLs de imágenes
+function getBaseUrl(): string {
+  const url = getApiUrl();
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
+// Función helper para convertir URLs relativas a completas.
+// Siempre usar /uploads/ para mostrar imágenes (el backend las sirve en GET /uploads/{path}).
 function getFullImageUrl(url: string): string {
   if (!url) return '';
-  
-  // Si ya es una URL completa, devolverla tal como está
-  if (url.startsWith('http')) {
-    return url;
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+
+  const base = getBaseUrl();
+
+  // Si ya es una URL completa
+  if (trimmed.startsWith('http')) {
+    try {
+      const u = new URL(trimmed);
+      const path = u.pathname;
+      // Reescribir .../api/files/67/... a .../uploads/properties/67/... para que carguen
+      if (path.startsWith('/api/files/')) {
+        const afterFiles = path.slice('/api/files/'.length);
+        const rel = afterFiles.startsWith('properties/') ? afterFiles : `properties/${afterFiles}`;
+        return `${u.origin}/uploads/${rel}`;
+      }
+      if (path.startsWith('/uploads/')) return trimmed;
+    } catch {
+      // ignorar
+    }
+    return trimmed;
   }
-  
-  // Si es una URL relativa del backend (como /uploads/gallery/...), convertir a /api/files/
-  if (url.startsWith('/uploads/')) {
-    // Convertir /uploads/gallery/64/file.HEIC a /api/files/gallery/64/file.HEIC
-    const pathWithoutUploads = url.substring('/uploads/'.length);
-    return getEndpoint(`/api/files/${pathWithoutUploads}`);
+
+  // Rutas /uploads/ — NUNCA convertir a /api/files/; solo añadir base (el backend sirve GET /uploads/...)
+  if (trimmed.startsWith('/uploads/')) {
+    return `${base}${trimmed}`;
   }
-  
-  // Si ya es una URL de API, usar getEndpoint
-  if (url.startsWith('/api/')) {
-    return getEndpoint(url);
+
+  // Paths /api/files/... — reescribir a /uploads/ para que carguen
+  if (trimmed.startsWith('/api/files/')) {
+    const afterFiles = trimmed.slice('/api/files/'.length);
+    const rel = afterFiles.startsWith('properties/') ? afterFiles : `properties/${afterFiles}`;
+    return `${base}/uploads/${rel}`;
   }
-  
-  // Si es solo un nombre de archivo, asumir que está en la carpeta de archivos
-  return getEndpoint(`/api/files/${url}`);
+
+  if (trimmed.startsWith('/api/')) {
+    return `${base}${trimmed}`;
+  }
+
+  return `${base}/uploads/${trimmed}`;
 }
 
 export async function getGalleryImages(propertyId: number | string): Promise<GalleryImage[]> {

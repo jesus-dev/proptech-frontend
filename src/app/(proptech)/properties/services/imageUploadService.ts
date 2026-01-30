@@ -72,21 +72,16 @@ export class ImageUploadService {
     const results: { featuredImageUrl?: string; galleryImageUrls: string[] } = {
       galleryImageUrls: []
     };
-
-    // Upload featured image if provided
     if (featuredImage) {
       const subDirectory = propertyId ? `properties/${propertyId}` : 'properties';
       const featuredResult = await this.uploadImage(featuredImage, subDirectory);
       results.featuredImageUrl = featuredResult.url;
     }
-
-    // Upload gallery images
     if (galleryImages.length > 0) {
       const subDirectory = propertyId ? `gallery/${propertyId}` : 'gallery';
       const galleryResults = await this.uploadMultipleImages(galleryImages, subDirectory);
       results.galleryImageUrls = galleryResults.map(result => result.url);
     }
-
     return results;
   }
 

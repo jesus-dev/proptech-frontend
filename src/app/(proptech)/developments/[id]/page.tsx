@@ -6,8 +6,10 @@ import { ChevronLeft, Eye, Star, Zap, FileText, MapPin, Calendar, Clock } from "
 import React, { useState, useEffect } from "react";
 import Image from 'next/image';
 import { useParams, useRouter } from "next/navigation";
-import { Development, Loteamiento, Condominio, BarrioCerrado, Edificio } from "../components/types";
+import { Development, Loteamiento, Condominio, BarrioCerrado, Edificio, DevelopmentUnit, Lot } from "../components/types";
 import { developmentService } from "../services/developmentService";
+import { developmentUnitService } from "../services/developmentUnitService";
+import { getDevelopmentStatusBadgeClasses, getDevelopmentStatusLabel } from "../constants/developmentStatus";
 import dynamic from 'next/dynamic';
 import LotsList from '../components/LotsList';
 import LotsStats from '../components/LotsStats';
@@ -31,6 +33,9 @@ export default function DevelopmentDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
+  const [lots, setLots] = useState<Lot[]>([]);
+  const [units, setUnits] = useState<Edificio["units"]>([]);
+  const [isLoadingLots, setIsLoadingLots] = useState(false);
 
   // Helper para construir URL de imagen (igual que en DevelopmentCard)
   const getImageUrl = (imagePath: string | null | undefined): string => {
@@ -58,6 +63,80 @@ export default function DevelopmentDetailsPage() {
     return fullUrl;
   };
 
+  // Función para convertir DevelopmentUnit a Lot
+  const convertUnitToLot = (unit: DevelopmentUnit): Lot => {
+    // Normalizar el status de UnitStatus a DevelopmentStatus
+    const normalizeStatus = (status: string): "available" | "sold" | "reserved" | "rented" => {
+      const normalized = (status || "").toLowerCase();
+      if (normalized === "available") return "available";
+      if (normalized === "sold") return "sold";
+      if (normalized === "reserved") return "reserved";
+      if (normalized === "rented") return "rented";
+      return "available";
+    };
+
+    return {
+      id: unit.id.toString(),
+      number: unit.unitNumber || unit.unitName || unit.id.toString(),
+      area: unit.area ? Number(unit.area) : 0,
+      price: unit.price ? Number(unit.price) : 0,
+      status: normalizeStatus(unit.status),
+      coordinates: [], // Las coordenadas se pueden agregar después si están disponibles
+      description: unit.description || unit.specifications || undefined,
+    };
+  };
+
+  // Función para convertir DevelopmentUnit a Unit (para edificios)
+  const convertUnitToUnit = (unit: DevelopmentUnit): Edificio["units"][0] => {
+    const normalizeStatus = (status: string): "available" | "sold" | "reserved" | "rented" => {
+      const normalized = (status || "").toLowerCase();
+      if (normalized === "available") return "available";
+      if (normalized === "sold") return "sold";
+      if (normalized === "reserved") return "reserved";
+      if (normalized === "rented") return "rented";
+      return "available";
+    };
+
+    return {
+      id: unit.id.toString(),
+      floor: unit.floor ? parseInt(unit.floor) : 0,
+      unitNumber: unit.unitNumber || unit.unitName || unit.id.toString(),
+      bedrooms: unit.bedrooms || 0,
+      bathrooms: unit.bathrooms || 0,
+      area: unit.area ? Number(unit.area) : 0,
+      price: unit.price ? Number(unit.price) : 0,
+      status: normalizeStatus(unit.status),
+      description: unit.description || unit.specifications || undefined,
+    };
+  };
+
+  // Función para cargar las unidades del desarrollo
+  const loadUnits = async (devId: string, devType?: string) => {
+    try {
+      setIsLoadingLots(true);
+      const backendUnits = await developmentUnitService.getUnitsByDevelopmentId(devId);
+      
+      // Usar el tipo pasado como parámetro o el del desarrollo actual
+      const typeToUse = devType || development?.type;
+      
+      if (typeToUse === "loteamiento" || typeToUse === "condominio" || typeToUse === "barrio_cerrado") {
+        // Convertir DevelopmentUnit[] a Lot[]
+        const convertedLots = backendUnits.map(convertUnitToLot);
+        setLots(convertedLots);
+      } else if (typeToUse === "edificio") {
+        // Convertir DevelopmentUnit[] a Unit[]
+        const convertedUnits = backendUnits.map(convertUnitToUnit);
+        setUnits(convertedUnits);
+      }
+    } catch (err) {
+      console.error("Error loading units:", err);
+      setLots([]);
+      setUnits([]);
+    } finally {
+      setIsLoadingLots(false);
+    }
+  };
+
   useEffect(() => {
     const loadDevelopment = async () => {
       if (!developmentId) return;
@@ -68,6 +147,9 @@ export default function DevelopmentDetailsPage() {
         if (dev) {
           setDevelopment(dev);
           setCurrentImageIndex(0); // Resetear índice de imagen al cargar nuevo desarrollo
+          
+          // Cargar unidades para todos los tipos de desarrollo
+          await loadUnits(developmentId, dev.type);
         } else {
           setError("Desarrollo no encontrado");
         }
@@ -140,9 +222,9 @@ export default function DevelopmentDetailsPage() {
             </div>
           </div>
 
-          {/* Título y Badges */}
+          {/* Título, badges y resumen */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-            <div className="flex items-center space-x-3 mb-4">
+            <div className="flex items-center flex-wrap gap-2 mb-4">
               <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
                 development.type === "loteamiento" 
                   ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
@@ -156,20 +238,49 @@ export default function DevelopmentDetailsPage() {
                  development.type === "edificio" ? "Edificio" : 
                  development.type === "condominio" ? "Condominio" : "Barrio Cerrado"}
               </span>
-              <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
-                development.status === "available" 
-                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                  : development.status === "sold"
-                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-              }`}>
-                {development.status === "available" ? "Disponible" : 
-                 development.status === "sold" ? "Vendido" : "Reservado"}
-              </span>
+              {development.status && (
+                <span
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full ${getDevelopmentStatusBadgeClasses(
+                    development.status
+                  )} text-gray-900 dark:text-gray-900`}
+                >
+                  {getDevelopmentStatusLabel(development.status)}
+                </span>
+              )}
             </div>
             
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">{development.title}</h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">{development.description}</p>
+            <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+              {development.description}
+            </p>
+
+            {/* Resumen rápido: ubicación, creado, estado */}
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex items-start gap-2">
+                <MapPin className="h-5 w-5 text-brand-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Ubicación</p>
+                  <p>
+                    {development.address}
+                    {development.city && `, ${development.city}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Calendar className="h-5 w-5 text-brand-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Creado</p>
+                  <p>{new Date(development.createdAt).toLocaleDateString('es-ES')}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <Clock className="h-5 w-5 text-brand-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Estado actual</p>
+                  <p>{getDevelopmentStatusLabel(development.status) || 'Disponible'}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -386,10 +497,12 @@ export default function DevelopmentDetailsPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">Unidades Disponibles</p>
                     <p className="font-semibold text-gray-900 dark:text-white">{development.availableUnits}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tipos de Unidades</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{development.unitTypes}</p>
-                  </div>
+                  {(development as Edificio).unitTypes?.trim() && (
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Tipos de Unidades</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{(development as Edificio).unitTypes}</p>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -624,43 +737,40 @@ export default function DevelopmentDetailsPage() {
       {/* Lista de Lotes (solo para loteamientos, condominios y barrios cerrados) */}
       {development && (development.type === "loteamiento" || development.type === "condominio" || development.type === "barrio_cerrado") && (
         <div className="mt-8 space-y-6">
-          {/* Debug button */}
-          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
-            <p>Debug: Development type: {development.type}</p>
-            <p>Debug: Has coordinates: {development.coordinates ? 'Yes' : 'No'}</p>
-            <p>Debug: Lots count: {(development as Loteamiento | Condominio | BarrioCerrado).lots?.length || 0}</p>
-            <button 
-              onClick={() => {
-                localStorage.removeItem('developments');
-                window.location.reload();
-              }}
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Regenerar datos
-            </button>
-          </div>
+          {/* Estado de carga / vacío */}
+          {isLoadingLots ? (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Cargando lotes...</p>
+            </div>
+          ) : lots.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                No hay lotes cargados para este desarrollo. Si recién agregaste uno, usa <span className="font-semibold">🔄 Recargar Unidades</span>.
+              </p>
+            </div>
+          ) : null}
           
           {/* Quick Actions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Acciones Rápidas</h3>
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/clients/new"
+                href="/contacts/new"
                 className="inline-flex items-center px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                Agregar Cliente
+                Agregar Contacto
               </Link>
               <Link
-                href="/clients"
+                href="/contacts"
                 className="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                Ver Clientes
+                Ver Contactos
               </Link>
               <Link
                 href="/sales"
@@ -674,12 +784,33 @@ export default function DevelopmentDetailsPage() {
             </div>
           </div>
           
+          {/* Botón de recarga */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={async () => {
+                if (developmentId) {
+                  // Recargar el desarrollo completo primero
+                  const dev = await developmentService.getDevelopmentById(developmentId);
+                  if (dev) {
+                    setDevelopment(dev);
+                    // Luego cargar las unidades
+                    await loadUnits(developmentId, dev.type);
+                  }
+                }
+              }}
+              disabled={isLoadingLots}
+              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingLots ? "Cargando..." : "🔄 Recargar Unidades"}
+            </button>
+          </div>
+
           {/* Estadísticas */}
-          <LotsStats lots={(development as Loteamiento | Condominio | BarrioCerrado).lots || []} />
+          <LotsStats lots={lots} />
           
           {/* Lista de Lotes */}
           <LotsList 
-            lots={(development as Loteamiento | Condominio | BarrioCerrado).lots || []}
+            lots={lots}
             onLotClick={(lot) => {
               // Aquí puedes manejar el clic en un lote desde la lista
               console.log('Lote seleccionado desde lista:', lot);
@@ -696,22 +827,22 @@ export default function DevelopmentDetailsPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Acciones Rápidas</h3>
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/clients/new"
+                href="/contacts/new"
                 className="inline-flex items-center px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                Agregar Cliente
+                Agregar Contacto
               </Link>
               <Link
-                href="/clients"
+                href="/contacts"
                 className="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                Ver Clientes
+                Ver Contactos
               </Link>
               <Link
                 href="/sales"
@@ -725,12 +856,33 @@ export default function DevelopmentDetailsPage() {
             </div>
           </div>
           
+          {/* Botón de recarga */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={async () => {
+                if (developmentId) {
+                  // Recargar el desarrollo completo primero
+                  const dev = await developmentService.getDevelopmentById(developmentId);
+                  if (dev) {
+                    setDevelopment(dev);
+                    // Luego cargar las unidades
+                    await loadUnits(developmentId, dev.type);
+                  }
+                }
+              }}
+              disabled={isLoadingLots}
+              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingLots ? "Cargando..." : "🔄 Recargar Unidades"}
+            </button>
+          </div>
+
           {/* Estadísticas de Unidades */}
-          <UnitsStats units={(development as Edificio).units || []} />
+          <UnitsStats units={units} />
           
           {/* Lista de Unidades */}
           <UnitsList 
-            units={(development as Edificio).units || []}
+            units={units}
             onUnitClick={(unit) => {
               // Aquí puedes manejar el clic en una unidad desde la lista
               console.log('Unidad seleccionada desde lista:', unit);

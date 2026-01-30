@@ -1,6 +1,6 @@
 "use client";
 
-import { BuildingOfficeIcon, HomeIcon, MapPinIcon, UserIcon, ChartBarIcon, PlusIcon, ArrowRightIcon, ChartBarSquareIcon, StarIcon, BuildingOffice2Icon, MapPinIcon as MapPin, CalendarDaysIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { BuildingOfficeIcon, HomeIcon, MapPinIcon, UserIcon, PlusIcon, ArrowRightIcon, ChartBarSquareIcon, StarIcon, BuildingOffice2Icon, MapPinIcon as MapPin, CalendarDaysIcon, EyeIcon } from "@heroicons/react/24/outline";
 
 import React, { useState, useEffect } from "react";
 import Image from 'next/image';
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { GridIcon, ListIcon } from "@/icons";
 import { Development } from "./components/types";
+import { getDevelopmentStatusLabel, getDevelopmentStatusBadgeClasses } from "./constants/developmentStatus";
 import { developmentService } from "./services/developmentService";
 import { getImageBaseUrl } from '@/config/environment';
 
@@ -27,11 +28,23 @@ const DevelopmentCard: React.FC<{ development: Development }> = ({ development }
     }
   };
 
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "loteamiento": return "bg-gradient-to-r from-green-500 to-emerald-600";
+      case "edificio": return "bg-gradient-to-r from-blue-500 to-indigo-600";
+      case "condominio": return "bg-gradient-to-r from-purple-500 to-violet-600";
+      case "barrio_cerrado": return "bg-gradient-to-r from-orange-500 to-amber-600";
+      default: return "bg-gradient-to-r from-gray-500 to-slate-600";
+    }
+  };
+
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const normalized = (status || "").toLowerCase();
+    switch (normalized) {
       case "available": return "bg-gradient-to-r from-emerald-500 to-green-500";
       case "sold": return "bg-gradient-to-r from-red-500 to-rose-500";
-      default: return "bg-gradient-to-r from-yellow-500 to-amber-500";
+      case "reserved": return "bg-gradient-to-r from-yellow-500 to-amber-500";
+      default: return "bg-gradient-to-r from-slate-500 to-slate-600";
     }
   };
 
@@ -79,17 +92,14 @@ const DevelopmentCard: React.FC<{ development: Development }> = ({ development }
   // Obtener la imagen principal (igual que PropertyCard)
   const mainImage = development.images && development.images.length > 0 ? development.images[0] : null;
   const fullImageUrl = getImageUrl(mainImage);
+  const normalizedStatus = (development.status || "").toLowerCase();
+  const statusLabel = getDevelopmentStatusLabel(development.status);
 
   return (
     <>
-      <Card className="group relative overflow-hidden bg-white dark:bg-slate-800 border-0 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02]">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-20 dark:opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-        
-        {/* Image with overlay and preview */}
-        <div className="relative overflow-hidden rounded-t-xl h-64 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+      <Card className="group relative overflow-hidden bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-sm hover:shadow-xl hover:border-slate-300/80 dark:hover:border-slate-600/80 transition-all duration-300">
+        {/* Image */}
+        <div className="relative overflow-hidden rounded-t-2xl h-48 sm:h-52 bg-slate-100 dark:bg-slate-700/50">
           {(() => {
             // Usar la primera imagen si existe (igual que PropertyCard)
             const imageToShow = mainImage ? getImageUrl(mainImage) : null;
@@ -111,14 +121,12 @@ const DevelopmentCard: React.FC<{ development: Development }> = ({ development }
             ) : null;
           })()}
           {/* Fallback image */}
-          <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 flex items-center justify-center text-gray-500" style={{ display: mainImage ? 'none' : 'flex' }}>
+          <div className="w-full h-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center" style={{ display: mainImage ? 'none' : 'flex' }}>
             <div className="text-center p-4">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center shadow-lg">
-                <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                </svg>
+              <div className="w-14 h-14 mx-auto rounded-xl bg-slate-200/80 dark:bg-slate-600/50 flex items-center justify-center">
+                <BuildingOffice2Icon className="w-7 h-7 text-slate-400 dark:text-slate-500" />
               </div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Sin imagen</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2">Sin imagen</p>
             </div>
           </div>
           
@@ -137,8 +145,8 @@ const DevelopmentCard: React.FC<{ development: Development }> = ({ development }
           )}
           
           {/* Type Badge */}
-          <div className="absolute top-4 left-4 z-10">
-            <Badge className={`${getStatusColor(development.status)} text-white border-0 shadow-lg backdrop-blur-sm flex items-center gap-1.5`}>
+          <div className="absolute top-3 left-3 z-10">
+            <Badge className={`${getTypeColor(development.type)} text-white border-0 text-xs font-medium shadow-md rounded-lg flex items-center gap-1.5 px-2.5 py-1`}>
               {getTypeIcon(development.type)}
               {development.type === "loteamiento" ? "Loteamiento" : 
                development.type === "edificio" ? "Edificio" : 
@@ -147,46 +155,45 @@ const DevelopmentCard: React.FC<{ development: Development }> = ({ development }
           </div>
 
           {/* Status Badge */}
-          <div className="absolute top-4 right-4 z-10">
-            <Badge variant="secondary" className="bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-0 shadow-lg backdrop-blur-sm">
-              {development.status === "available" ? "Disponible" : 
-               development.status === "sold" ? "Vendido" : "Reservado"}
-            </Badge>
-          </div>
+          {statusLabel && (
+            <div className="absolute top-3 right-3 z-10">
+              <Badge
+                className={`${getDevelopmentStatusBadgeClasses(development.status)} border-0 text-xs font-medium shadow-md rounded-lg !text-gray-900 !dark:text-gray-900 px-2.5 py-1`}
+              >
+                {statusLabel}
+              </Badge>
+            </div>
+          )}
 
           {/* Image Counter */}
           {development.images && development.images.length > 1 && (
-            <div className="absolute bottom-4 right-4 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full">
+            <div className="absolute bottom-2 right-2 z-10 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full">
               {development.images.length} {development.images.length === 1 ? 'imagen' : 'imágenes'}
             </div>
           )}
         </div>
 
-        <div className="p-6 relative">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            <Link href={`/developments/${development.id}`} className="hover:underline">
+        <div className="p-5 relative">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors line-clamp-1">
+            <Link href={`/developments/${development.id}`} className="hover:underline decoration-2 underline-offset-2">
               {development.title}
             </Link>
           </h3>
-          
-          <div className="flex items-center text-slate-600 dark:text-slate-400 mb-3">
-            <MapPin className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0" />
+          <div className="flex items-center text-slate-500 dark:text-slate-400 mb-2">
+            <MapPin className="w-4 h-4 mr-2 text-slate-400 dark:text-slate-500 flex-shrink-0" />
             <span className="text-sm truncate">{development.address}, {development.city}</span>
           </div>
-
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
             {development.description}
           </p>
-
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
-            <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
-              <CalendarDaysIcon className="w-4 h-4 mr-1" />
-              {new Date(development.createdAt).toLocaleDateString('es-ES')}
-            </div>
-            
+          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/80">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {new Date(development.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
             <Link href={`/developments/${development.id}`}>
-              <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                <ArrowRightIcon className="w-4 h-4" />
+              <Button variant="outline" size="sm" className="rounded-xl h-8 px-3 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:border-slate-300 dark:hover:border-slate-500">
+                <ArrowRightIcon className="w-4 h-4 mr-1" />
+                Ver
               </Button>
             </Link>
           </div>
@@ -231,25 +238,27 @@ const DevelopmentListItem: React.FC<{ development: Development }> = ({ developme
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "available": return "bg-gradient-to-r from-emerald-500 to-green-500";
-      case "sold": return "bg-gradient-to-r from-red-500 to-rose-500";
-      default: return "bg-gradient-to-r from-yellow-500 to-amber-500";
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "loteamiento": return "bg-gradient-to-r from-green-500 to-emerald-600";
+      case "edificio": return "bg-gradient-to-r from-blue-500 to-indigo-600";
+      case "condominio": return "bg-gradient-to-r from-purple-500 to-violet-600";
+      case "barrio_cerrado": return "bg-gradient-to-r from-orange-500 to-amber-600";
+      default: return "bg-gradient-to-r from-gray-500 to-slate-600";
     }
   };
 
   return (
-    <Card className="group relative overflow-hidden bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-      <div className="flex items-center space-x-6 p-6">
+    <Card className="group relative overflow-hidden bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-sm hover:shadow-lg hover:border-slate-300/80 dark:hover:border-slate-600/80 transition-all duration-300">
+      <div className="flex items-center gap-5 p-5">
         <div className="relative flex-shrink-0">
           <img
             src={development.images?.[0] || "/images/placeholder.jpg"}
             alt={development.title}
-            className="w-32 h-32 object-cover rounded-xl shadow-lg group-hover:shadow-xl transition-shadow duration-300"
+            className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl shadow-sm"
           />
-          <div className="absolute -top-2 -right-2">
-            <Badge className={`${getStatusColor(development.status)} text-white border-0 shadow-lg backdrop-blur-sm flex items-center gap-1.5 text-xs`}>
+          <div className="absolute -top-1 -right-1">
+            <Badge className={`${getTypeColor(development.type)} text-white border-0 text-[10px] font-medium shadow rounded-md flex items-center gap-0.5 px-2 py-0.5`}>
               {getTypeIcon(development.type)}
               {development.type === "loteamiento" ? "Loteamiento" : 
                development.type === "edificio" ? "Edificio" : 
@@ -259,37 +268,31 @@ const DevelopmentListItem: React.FC<{ development: Development }> = ({ developme
         </div>
 
         <div className="flex-grow min-w-0">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              <Link href={`/developments/${development.id}`} className="hover:underline">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors line-clamp-1">
+              <Link href={`/developments/${development.id}`} className="hover:underline decoration-2 underline-offset-2">
                 {development.title}
               </Link>
             </h3>
-            
-            <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-0">
-              {development.status === "available" ? "Disponible" : 
-               development.status === "sold" ? "Vendido" : "Reservado"}
+            <Badge className={`${getDevelopmentStatusBadgeClasses(development.status)} border-0 text-[10px] font-medium !text-gray-900 !dark:text-gray-900 shrink-0 rounded-lg px-2 py-0.5`}>
+              {getDevelopmentStatusLabel(development.status) || "Sin estado"}
             </Badge>
           </div>
-
-          <div className="flex items-center text-slate-600 dark:text-slate-400 mb-3">
-            <MapPin className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0" />
+          <div className="flex items-center text-slate-500 dark:text-slate-400 mb-2">
+            <MapPin className="w-4 h-4 mr-2 text-slate-400 dark:text-slate-500 flex-shrink-0" />
             <span className="text-sm truncate">{development.address}, {development.city}</span>
           </div>
-
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 hidden md:block">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2 hidden sm:block leading-relaxed">
             {development.description}
           </p>
-
           <div className="flex items-center justify-between">
-            <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
-              <CalendarDaysIcon className="w-4 h-4 mr-1" />
-              {new Date(development.createdAt).toLocaleDateString('es-ES')}
-            </div>
-            
-            <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-              <ArrowRightIcon className="w-4 h-4" />
-            </Button>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{new Date(development.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            <Link href={`/developments/${development.id}`}>
+              <Button variant="outline" size="sm" className="rounded-xl h-8 px-3 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                <ArrowRightIcon className="w-4 h-4 mr-1" />
+                Ver
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -300,12 +303,15 @@ const DevelopmentListItem: React.FC<{ development: Development }> = ({ developme
 export default function DevelopmentsPage() {
   const [developments, setDevelopments] = useState<Development[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<boolean | null>(null);
+  const [loadErrorDetail, setLoadErrorDetail] = useState<{ statusCode?: number; message?: string } | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "loteamiento" | "edificio" | "condominio" | "barrio_cerrado">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "available" | "sold" | "reserved">("all");
   const [sortBy, setSortBy] = useState<"date" | "price" | "name">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [stats, setStats] = useState({
     totalDevelopments: 0,
     availableDevelopments: 0,
@@ -313,48 +319,68 @@ export default function DevelopmentsPage() {
     reservedDevelopments: 0
   });
 
-  useEffect(() => {
-    const loadDevelopments = async () => {
-      try {
-        setIsLoading(true);
-        const response = await developmentService.getAllDevelopments();
-        const data = response.data || [];
-        setDevelopments(data);
-        
-        // Calculate stats
-        const total = data.length;
-        const available = data.filter((dev: Development) => dev.status === "available").length;
-        const sold = data.filter((dev: Development) => dev.status === "sold").length;
-        const reserved = data.filter((dev: Development) => dev.status === "reserved").length;
-        
-        setStats({
-          totalDevelopments: total,
-          availableDevelopments: available,
-          soldDevelopments: sold,
-          reservedDevelopments: reserved
+  const loadDevelopments = async () => {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      setLoadErrorDetail(null);
+      const response = await developmentService.getAllDevelopments();
+      if (response.error) {
+        setLoadError(true);
+        setLoadErrorDetail({
+          statusCode: response.statusCode,
+          message: response.message
         });
-      } catch (error) {
-        console.error("Error loading developments:", error);
         setDevelopments([]);
-      } finally {
-        setIsLoading(false);
+        setStats({ totalDevelopments: 0, availableDevelopments: 0, soldDevelopments: 0, reservedDevelopments: 0 });
+        return;
       }
-    };
+      const data = response.data || [];
+      setDevelopments(data);
+      setLoadError(false);
+      setLoadErrorDetail(null);
 
+      const total = data.length;
+      const available = data.filter((dev: Development) => dev.status === "available").length;
+      const sold = data.filter((dev: Development) => dev.status === "sold").length;
+      const reserved = data.filter((dev: Development) => dev.status === "reserved").length;
+
+      setStats({
+        totalDevelopments: total,
+        availableDevelopments: available,
+        soldDevelopments: sold,
+        reservedDevelopments: reserved
+      });
+    } catch (error: any) {
+      console.error("Error loading developments:", error);
+      setLoadError(true);
+      setLoadErrorDetail({
+        statusCode: error?.response?.status,
+        message: error?.message
+      });
+      setDevelopments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadDevelopments();
   }, []);
 
   const filteredAndSortedDevelopments = developments
     .filter((development) => {
-    const matchesSearch = development.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         development.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         development.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         development.city.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = filterType === "all" || development.type === filterType;
-    const matchesStatus = filterStatus === "all" || development.status === filterStatus;
+      const matchesSearch = development.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           development.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           development.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           development.city.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesType = filterType === "all" || development.type === filterType;
 
-    return matchesSearch && matchesType && matchesStatus;
+      const devStatus = (development.status || "").toLowerCase();
+      const matchesStatus = filterStatus === "all" || devStatus === filterStatus;
+
+      return matchesSearch && matchesType && matchesStatus;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -384,213 +410,121 @@ export default function DevelopmentsPage() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 w-full min-w-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-red-200 dark:border-red-800 shadow-2xl overflow-hidden">
+            <div className="text-center py-16 px-6">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <BuildingOffice2Icon className="w-10 h-10 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                No se pudieron cargar los desarrollos
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-lg mx-auto">
+                Verifica que estés iniciado sesión y que el backend esté en marcha. Si el problema continúa, revisa la consola del navegador (F12) para más detalles.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={loadDevelopments}
+                  className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3"
+                >
+                  Reintentar
+                </Button>
+                <Link href="/login">
+                  <Button variant="outline" className="px-6 py-3">
+                    Ir a iniciar sesión
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setFilterType("all");
+    setFilterStatus("all");
+    setSortBy("date");
+    setSortOrder("desc");
+    setShowAdvancedFilters(false);
+  };
+
+  const hasActiveFilters = searchTerm || filterType !== "all" || filterStatus !== "all";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 w-full min-w-0">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        {/* Enhanced Modern Header */}
-        <div className="mb-8 relative">
-          {/* Animated background glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-indigo-600/20 rounded-3xl blur-3xl animate-pulse"></div>
-          <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-6 lg:p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-2xl">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-50 animate-pulse"></div>
-                    <div className="relative p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl">
-                      <BuildingOffice2Icon className="w-7 h-7 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <h1 className="text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-gray-900 via-blue-600 to-purple-600 dark:from-white dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                      Desarrollos
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm lg:text-base font-medium">
-                      Gestiona y administra tus emprendimientos inmobiliarios
-                    </p>
-                  </div>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 w-full min-w-0">
+      {/* Header — igual que Propiedades */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
+            <div className="flex items-center gap-4">
+              <span className="bg-blue-100 text-blue-600 rounded-2xl p-3 shadow-sm">
+                <BuildingOffice2Icon className="h-10 w-10" />
+              </span>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  Desarrollos
+                </h1>
+                <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+                  Administra tus emprendimientos inmobiliarios
+                </p>
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/developments/dashboard">
-                  <Button className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 px-6 py-3">
-                    <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                    <ChartBarIcon className="w-5 h-5 mr-2 relative z-10" />
-                    <span className="relative z-10 font-semibold">Dashboard</span>
-                  </Button>
-                </Link>
-                <Link href="/developments/new">
-                  <Button className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 px-6 py-3">
-                    <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                    <PlusIcon className="w-5 h-5 mr-2 relative z-10" />
-                    <span className="relative z-10 font-semibold">Nuevo Desarrollo</span>
-                  </Button>
-                </Link>
-              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+              <Link
+                href="/developments/new"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-all duration-200 shadow-lg hover:shadow-xl sm:gap-3 sm:px-6 sm:py-3 sm:text-base"
+              >
+                <BuildingOffice2Icon className="size-5" />
+                Nuevo Desarrollo
+              </Link>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            <div className="relative p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
-                  <BuildingOffice2Icon className="w-6 h-6" />
-                </div>
-                <div className="text-right">
-                  <p className="text-blue-100 text-xs font-semibold uppercase tracking-wide">Total</p>
-                  <p className="text-3xl font-extrabold mt-1">{stats.totalDevelopments}</p>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Filtros — mismo estilo que Propiedades */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className="relative flex-1 max-w-md w-full">
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Buscar por título, dirección, ciudad..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white transition-colors"
+                />
               </div>
-              <p className="text-blue-100/80 text-xs font-medium">Desarrollos registrados</p>
-            </div>
-          </Card>
-
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            <div className="relative p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
-                  <ChartBarSquareIcon className="w-6 h-6" />
-                </div>
-                <div className="text-right">
-                  <p className="text-emerald-100 text-xs font-semibold uppercase tracking-wide">Disponibles</p>
-                  <p className="text-3xl font-extrabold mt-1">{stats.availableDevelopments}</p>
-                </div>
-              </div>
-              <p className="text-emerald-100/80 text-xs font-medium">Listos para venta</p>
-            </div>
-          </Card>
-
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-red-500 via-rose-500 to-pink-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            <div className="relative p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
-                  <StarIcon className="w-6 h-6" />
-                </div>
-                <div className="text-right">
-                  <p className="text-red-100 text-xs font-semibold uppercase tracking-wide">Vendidos</p>
-                  <p className="text-3xl font-extrabold mt-1">{stats.soldDevelopments}</p>
-                </div>
-              </div>
-              <p className="text-red-100/80 text-xs font-medium">Emprendimientos vendidos</p>
-            </div>
-          </Card>
-
-          <Card className="group relative overflow-hidden bg-gradient-to-br from-yellow-500 via-amber-500 to-orange-600 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            <div className="relative p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm shadow-lg">
-                  <CalendarDaysIcon className="w-6 h-6" />
-                </div>
-                <div className="text-right">
-                  <p className="text-yellow-100 text-xs font-semibold uppercase tracking-wide">Reservados</p>
-                  <p className="text-3xl font-extrabold mt-1">{stats.reservedDevelopments}</p>
-                </div>
-              </div>
-              <p className="text-yellow-100/80 text-xs font-medium">Con reserva activa</p>
-            </div>
-          </Card>
-        </div>
-
-        {/* Enhanced Modern Filters */}
-        <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl mb-6">
-          <div className="p-5 lg:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Buscar</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar desarrollos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Tipo</label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as "all" | "loteamiento" | "edificio" | "condominio" | "barrio_cerrado")}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
-                >
-                  <option value="all">Todos los tipos</option>
-                  <option value="loteamiento">Loteamientos</option>
-                  <option value="edificio">Edificios</option>
-                  <option value="condominio">Condominios</option>
-                  <option value="barrio_cerrado">Barrio Cerrado</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Estado</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as "all" | "available" | "sold" | "reserved")}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
-                >
-                  <option value="all">Todos los estados</option>
-                  <option value="available">Disponible</option>
-                  <option value="sold">Vendido</option>
-                  <option value="reserved">Reservado</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ordenar</label>
-                <select
-                  value={`${sortBy}-${sortOrder}`}
-                  onChange={(e) => {
-                    const [newSortBy, newSortOrder] = e.target.value.split('-') as [typeof sortBy, typeof sortOrder];
-                    setSortBy(newSortBy);
-                    setSortOrder(newSortOrder);
-                  }}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
-                >
-                  <option value="date-desc">Más recientes</option>
-                  <option value="date-asc">Más antiguos</option>
-                  <option value="price-desc">Precio mayor</option>
-                  <option value="price-asc">Precio menor</option>
-                  <option value="name-asc">A-Z</option>
-                  <option value="name-desc">Z-A</option>
-                </select>
-              </div>
-            </div>
-            
-            {/* Enhanced View Controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-5 border-t border-gray-200/50 dark:border-gray-700/50">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Mostrando
-                </p>
-                <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                  {filteredAndSortedDevelopments.length}
-                </span>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  desarrollo{filteredAndSortedDevelopments.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700/50 rounded-xl p-1.5 shadow-inner">
+              <button
+                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                className={`inline-flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  showAdvancedFilters
+                    ? "bg-brand-600 text-white shadow-lg"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M3 4C3 3.44772 3.44772 3 4 3H20C20.5523 3 21 3.44772 21 4V6.58579C21 6.851 20.8946 7.10536 20.7071 7.29289L14 14V21C14 21.5523 13.5523 22 13 22H11C10.4477 22 10 21.5523 10 21V14L3.29289 7.29289C3.10536 7.10536 3 6.851 3 6.58579V4Z" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                {showAdvancedFilters ? "Ocultar filtros" : "Mostrar filtros"}
+              </button>
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                 <button
                   onClick={() => setView("grid")}
-                  className={`p-2.5 rounded-lg transition-all duration-300 ${
+                  className={`p-2 rounded-md transition-all duration-200 ${
                     view === "grid"
-                      ? "bg-white dark:bg-gray-600 text-blue-600 shadow-lg transform scale-105"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-600/50"
+                      ? "bg-white dark:bg-gray-600 text-brand-600 dark:text-brand-400 shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                   title="Vista de cuadrícula"
                 >
@@ -598,10 +532,10 @@ export default function DevelopmentsPage() {
                 </button>
                 <button
                   onClick={() => setView("list")}
-                  className={`p-2.5 rounded-lg transition-all duration-300 ${
+                  className={`p-2 rounded-md transition-all duration-200 ${
                     view === "list"
-                      ? "bg-white dark:bg-gray-600 text-blue-600 shadow-lg transform scale-105"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-600/50"
+                      ? "bg-white dark:bg-gray-600 text-brand-600 dark:text-brand-400 shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                   title="Vista de lista"
                 >
@@ -609,14 +543,77 @@ export default function DevelopmentsPage() {
                 </button>
               </div>
             </div>
-          </div>
-        </Card>
 
-        {/* Enhanced Content */}
+            {showAdvancedFilters && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo</label>
+                      <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value as "all" | "loteamiento" | "edificio" | "condominio" | "barrio_cerrado")}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white transition-colors"
+                      >
+                        <option value="all">Todos los tipos</option>
+                        <option value="loteamiento">Loteamientos</option>
+                        <option value="edificio">Edificios</option>
+                        <option value="condominio">Condominio</option>
+                        <option value="barrio_cerrado">Barrio Cerrado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado</label>
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value as "all" | "available" | "sold" | "reserved")}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white transition-colors"
+                      >
+                        <option value="all">Todos los estados</option>
+                        <option value="available">Disponible</option>
+                        <option value="sold">Vendido</option>
+                        <option value="reserved">Reservado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ordenar</label>
+                      <select
+                        value={`${sortBy}-${sortOrder}`}
+                        onChange={(e) => {
+                          const [newSortBy, newSortOrder] = e.target.value.split('-') as [typeof sortBy, typeof sortOrder];
+                          setSortBy(newSortBy);
+                          setSortOrder(newSortOrder);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white transition-colors"
+                      >
+                        <option value="date-desc">Más recientes</option>
+                        <option value="date-asc">Más antiguos</option>
+                        <option value="price-desc">Precio mayor</option>
+                        <option value="price-asc">Precio menor</option>
+                        <option value="name-asc">A-Z</option>
+                        <option value="name-desc">Z-A</option>
+                      </select>
+                    </div>
+                  </div>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors w-fit"
+                    >
+                      Limpiar todos los filtros
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Contenido */}
         {filteredAndSortedDevelopments.length > 0 ? (
-          <div className={view === "grid" 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" 
-            : "space-y-6"
+          <div className={view === "grid"
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            : "space-y-4"
           }>
             {filteredAndSortedDevelopments.map((dev: Development) =>
               view === "grid" ? (
@@ -627,29 +624,28 @@ export default function DevelopmentsPage() {
             )}
           </div>
         ) : (
-          <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-2xl overflow-hidden">
-            <div className="text-center py-20 px-6">
-              <div className="relative w-32 h-32 mx-auto mb-8">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-2xl animate-pulse"></div>
-                <div className="relative w-32 h-32 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform duration-300">
-                  <BuildingOffice2Icon className="w-16 h-16 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-3">
-                No se encontraron desarrollos
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-lg mx-auto text-base leading-relaxed">
-                No hay emprendimientos que coincidan con los criterios de búsqueda actuales. Intenta ajustar los filtros o crear un nuevo desarrollo.
-              </p>
-              <Link href="/developments/new">
-                <Button className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 px-8 py-4 text-base font-semibold">
-                  <div className="absolute inset-0 bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
-                  <PlusIcon className="w-5 h-5 mr-2 relative z-10" />
-                  <span className="relative z-10">Crear Nuevo Desarrollo</span>
-                </Button>
-              </Link>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BuildingOffice2Icon className="w-8 h-8 text-gray-400" />
             </div>
-          </Card>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No se encontraron desarrollos
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              {hasActiveFilters
+                ? "No hay desarrollos que coincidan con los criterios de búsqueda seleccionados."
+                : "Aún no tienes desarrollos registrados. Comienza agregando tu primer emprendimiento."}
+            </p>
+            {!hasActiveFilters && (
+              <Link
+                href="/developments/new"
+                className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 transition-colors"
+              >
+                <BuildingOffice2Icon className="size-5" />
+                Nuevo Desarrollo
+              </Link>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -22,8 +22,21 @@ export const developmentQuotaService = {
 
   // Crear nueva cuota
   async createQuota(developmentId: string, quota: Partial<DevelopmentQuota>): Promise<DevelopmentQuota> {
-    const response = await apiClient.post<DevelopmentQuota>(`/api/developments/${developmentId}/quotas`, quota);
-    return response.data!;
+    // Si tiene unitId, usar endpoint de unidad, sino endpoint de desarrollo
+    const unitId = quota.unitId;
+    if (unitId) {
+      const response = await apiClient.post<DevelopmentQuota>(
+        `/api/developments/${developmentId}/units/${unitId}/quotas`, 
+        quota
+      );
+      return response.data!;
+    } else {
+      const response = await apiClient.post<DevelopmentQuota>(
+        `/api/developments/${developmentId}/quotas`, 
+        quota
+      );
+      return response.data!;
+    }
   },
 
   // Actualizar cuota

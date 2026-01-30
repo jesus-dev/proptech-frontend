@@ -16,6 +16,13 @@ export default function AmenitiesStep({ formData, toggleAmenity, errors }: Ameni
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Detectar si la propiedad es un terreno para adaptar el contenido
+  const typeName = ((formData as any).type || (formData as any).propertyType || '').toString().toLowerCase();
+  const isLand =
+    typeName.includes('terreno') ||
+    typeName.includes('lote') ||
+    typeName.includes('loteo');
+
   useEffect(() => {
     loadAmenities();
   }, []);
@@ -82,6 +89,21 @@ export default function AmenitiesStep({ formData, toggleAmenity, errors }: Ameni
             Reintentar
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // Para terrenos no mostramos selector de amenidades, solo mensaje informativo
+  if (isLand) {
+    return (
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
+        <h3 className="text-base font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+          Amenidades en terrenos
+        </h3>
+        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+          Para propiedades de tipo <strong>terreno / lote</strong> normalmente no se gestionan amenidades internas como en casas o departamentos.
+          Usa la pestaña <strong>Servicios</strong> para indicar disponibilidad de agua, luz, asfaltado u otros servicios importantes del lote.
+        </p>
       </div>
     );
   }

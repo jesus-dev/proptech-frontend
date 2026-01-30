@@ -2,24 +2,41 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { PlusIcon, BuildingOfficeIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { useSearchParams } from "next/navigation";
+import { PlusIcon, BuildingOfficeIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, EyeIcon, MapPinIcon, UserCircleIcon, CurrencyDollarIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { condominiumService, Condominium } from "@/services/condominiumService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { toast } from "sonner";
 import Pagination from "@/components/common/Pagination";
 
 export default function CondominiumsPage() {
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "";
+  const tabLabels: Record<string, string> = {
+    documents: "Documentos",
+    assemblies: "Asambleas",
+    commonSpaces: "Espacios comunes",
+    announcements: "Comunicados",
+    emergencyContacts: "Contactos de emergencia",
+  };
+  const sectionLabel = tabFromUrl ? tabLabels[tabFromUrl] : null;
   const [condominiums, setCondominiums] = useState<Condominium[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState<string>("");
+  const [cities, setCities] = useState<string[]>([]);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(12);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+
+  // Load cities for filter
+  useEffect(() => {
+    condominiumService.getCities().then(setCities).catch(() => setCities([]));
+  }, []);
 
   // Debounce search
   useEffect(() => {
@@ -82,9 +99,6 @@ export default function CondominiumsPage() {
     }
   };
 
-  // Get unique cities for filter
-  const cities = Array.from(new Set(condominiums.map(c => c.city).filter(Boolean))).sort();
-
   if (loading && condominiums.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -106,12 +120,19 @@ export default function CondominiumsPage() {
                   <BuildingOfficeIcon className="h-6 w-6 text-white" />
                 </div>
                 <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
-                  Gestión de Condominios
+                  Administración de Condominio
                 </h1>
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-lg">
-                Administra condominios y sus unidades de manera eficiente
+                {sectionLabel
+                  ? `Seleccione un condominio para gestionar: ${sectionLabel}`
+                  : "Administra condominios y sus unidades de manera eficiente"}
               </p>
+              {sectionLabel && (
+                <p className="mt-1 text-sm text-blue-600 dark:text-blue-400 font-medium">
+                  Al hacer clic en un condominio se abrirá directamente la pestaña «{sectionLabel}».
+                </p>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -121,12 +142,6 @@ export default function CondominiumsPage() {
                   <PlusIcon className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-200" />
                   Nuevo Condominio
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
-                </button>
-              </Link>
-              <Link href="/condominiums/units">
-                <button className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-500/30">
-                  <BuildingOfficeIcon className="mr-2 h-5 w-5" />
-                  Ver Todas las Unidades
                 </button>
               </Link>
             </div>
@@ -183,60 +198,115 @@ export default function CondominiumsPage() {
 
         {/* Condominiums Display */}
         {condominiums.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {condominiums.map((condominium) => (
               <div
                 key={condominium.id}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6 hover:shadow-2xl transition-all duration-200 group"
+                className="group relative bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 overflow-hidden shadow-lg hover:shadow-xl hover:border-blue-300/50 dark:hover:border-blue-500/30 transition-all duration-300"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {condominium.name}
-                    </h3>
-                    {condominium.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
-                        {condominium.description}
-                      </p>
+                {/* Top accent bar */}
+                <div className={`h-1.5 ${condominium.isActive ? "bg-gradient-to-r from-blue-500 to-indigo-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+
+                <div className="p-5">
+                  {/* Header: icon + name + status */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                      <BuildingOfficeIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          href={tabFromUrl ? `/condominiums/${condominium.id}?tab=${tabFromUrl}` : `/condominiums/${condominium.id}`}
+                          className="font-bold text-lg text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1"
+                        >
+                          {condominium.name}
+                        </Link>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            condominium.isActive
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                              : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                          }`}
+                        >
+                          {condominium.isActive ? "Activo" : "Inactivo"}
+                        </span>
+                      </div>
+                      {condominium.description && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                          {condominium.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Meta: city, address, development, admin, currency */}
+                  <div className="space-y-2.5 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <MapPinIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                      <span className="truncate">{condominium.address}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <MapPinIcon className="w-4 h-4 flex-shrink-0 text-gray-400 opacity-70" />
+                      <span>{condominium.city}{condominium.state ? `, ${condominium.state}` : ""}</span>
+                    </div>
+                    {condominium.developmentName && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <BuildingOfficeIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                        <Link
+                          href={condominium.developmentId ? `/developments/${condominium.developmentId}` : "#"}
+                          className="text-blue-600 dark:text-blue-400 hover:underline truncate"
+                        >
+                          {condominium.developmentName}
+                        </Link>
+                      </div>
+                    )}
+                    {condominium.administratorName && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <UserCircleIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                        <span className="truncate">{condominium.administratorName}</span>
+                      </div>
+                    )}
+                    {condominium.currencyCode && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <CurrencyDollarIcon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                        <span>{condominium.currencyCode}</span>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Ciudad:</span>
-                    <span>{condominium.city}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Dirección:</span>
-                    <span className="truncate">{condominium.address}</span>
-                  </div>
-                  {condominium.administratorName && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="font-medium">Administrador:</span>
-                      <span>{condominium.administratorName}</span>
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <Link
+                      href={tabFromUrl ? `/condominiums/${condominium.id}?tab=${tabFromUrl}` : `/condominiums/${condominium.id}`}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Ver detalles
+                      <ChevronRightIcon className="w-4 h-4" />
+                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={tabFromUrl ? `/condominiums/${condominium.id}?tab=${tabFromUrl}` : `/condominiums/${condominium.id}`}
+                        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title="Ver detalles"
+                      >
+                        <EyeIcon className="w-5 h-5" />
+                      </Link>
+                      <Link
+                        href={`/condominiums/${condominium.id}/edit`}
+                        className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(condominium.id)}
+                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Eliminar"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <Link href={`/condominiums/${condominium.id}`}>
-                    <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Ver detalles">
-                      <EyeIcon className="w-5 h-5" />
-                    </button>
-                  </Link>
-                  <Link href={`/condominiums/${condominium.id}/edit`}>
-                    <button className="px-4 py-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors" title="Editar">
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(condominium.id)}
-                    className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Eliminar"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
+                  </div>
                 </div>
               </div>
             ))}

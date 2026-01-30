@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   BuildingOfficeIcon, 
@@ -16,27 +16,43 @@ import {
   CurrencyDollarIcon,
   DocumentTextIcon,
   ChartBarIcon,
-  PlusIcon
+  PlusIcon,
+  MegaphoneIcon,
+  UserGroupIcon,
+  CalendarIcon
 } from "@heroicons/react/24/outline";
 import { condominiumService, Condominium } from "@/services/condominiumService";
 import { condominiumUnitService, CondominiumUnit } from "@/services/condominiumUnitService";
 import { condominiumFeeService, CondominiumFee } from "@/services/condominiumFeeService";
 import { condominiumPaymentService, CondominiumFeePayment } from "@/services/condominiumPaymentService";
+import { condominiumDocumentService, CondominiumDocument } from "@/services/condominiumDocumentService";
+import { condominiumAssemblyService, CondominiumAssembly } from "@/services/condominiumAssemblyService";
+import { commonSpaceService, CommonSpace } from "@/services/commonSpaceService";
+import { condominiumAnnouncementService, CondominiumAnnouncement } from "@/services/condominiumAnnouncementService";
+import { condominiumEmergencyContactService, CondominiumEmergencyContact } from "@/services/condominiumEmergencyContactService";
+import { condominiumUnitOccupantService, CondominiumUnitOccupant } from "@/services/condominiumUnitOccupantService";
+import { authService } from "@/services/authService";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import Pagination from "@/components/common/Pagination";
 import ModernPopup from "@/components/ui/ModernPopup";
 
-type TabType = 'info' | 'units' | 'fees' | 'payments' | 'stats';
+type TabType = 'info' | 'units' | 'fees' | 'payments' | 'stats' | 'documents' | 'assemblies' | 'commonSpaces' | 'announcements' | 'emergencyContacts' | 'occupants';
+
+const VALID_TABS: TabType[] = ['info', 'units', 'fees', 'payments', 'stats', 'documents', 'assemblies', 'commonSpaces', 'announcements', 'emergencyContacts', 'occupants'];
 
 export default function CondominiumDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = Number(params.id);
-  
+  const tabFromUrl = searchParams.get("tab") || "";
+
   const [loading, setLoading] = useState(true);
   const [condominium, setCondominium] = useState<Condominium | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('info');
+  const [activeTab, setActiveTab] = useState<TabType>(() =>
+    tabFromUrl && VALID_TABS.includes(tabFromUrl as TabType) ? (tabFromUrl as TabType) : 'info'
+  );
   
   // Units state
   const [units, setUnits] = useState<CondominiumUnit[]>([]);
@@ -63,6 +79,15 @@ export default function CondominiumDetailPage() {
   const [showUnitModal, setShowUnitModal] = useState(false);
   const [showFeeModal, setShowFeeModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showGenerateBulkModal, setShowGenerateBulkModal] = useState(false);
+  const [generateBulkLoading, setGenerateBulkLoading] = useState(false);
+  const [generateBulkForm, setGenerateBulkForm] = useState({
+    period: new Date().toISOString().slice(0, 7),
+    totalAmount: 0,
+    type: 'COMMON',
+    dueDate: '',
+    createPaymentsPerUnit: true
+  });
   const [editingUnit, setEditingUnit] = useState<CondominiumUnit | null>(null);
   const [editingFee, setEditingFee] = useState<CondominiumFee | null>(null);
   const [editingPayment, setEditingPayment] = useState<CondominiumFeePayment | null>(null);
@@ -109,9 +134,59 @@ export default function CondominiumDetailPage() {
     totalCollected: 0
   });
 
+  // Documents state
+  const [documents, setDocuments] = useState<CondominiumDocument[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<CondominiumDocument | null>(null);
+  const [documentForm, setDocumentForm] = useState<Partial<CondominiumDocument>>({ condominiumId: id, title: '', documentType: 'OTHER', description: '', fileUrl: '', fileName: '' });
+
+  // Assemblies state
+  const [assemblies, setAssemblies] = useState<CondominiumAssembly[]>([]);
+  const [assembliesLoading, setAssembliesLoading] = useState(false);
+  const [showAssemblyModal, setShowAssemblyModal] = useState(false);
+  const [editingAssembly, setEditingAssembly] = useState<CondominiumAssembly | null>(null);
+  const [assemblyForm, setAssemblyForm] = useState<Partial<CondominiumAssembly>>({ condominiumId: id, title: '', assemblyDate: '', location: '', description: '', minutes: '', status: 'SCHEDULED' });
+
+  // Common spaces state
+  const [commonSpaces, setCommonSpaces] = useState<CommonSpace[]>([]);
+  const [commonSpacesLoading, setCommonSpacesLoading] = useState(false);
+  const [showCommonSpaceModal, setShowCommonSpaceModal] = useState(false);
+  const [editingCommonSpace, setEditingCommonSpace] = useState<CommonSpace | null>(null);
+  const [commonSpaceForm, setCommonSpaceForm] = useState<Partial<CommonSpace>>({ condominiumId: id, name: '', description: '', capacity: undefined, isActive: true });
+
+  // Announcements state
+  const [announcements, setAnnouncements] = useState<CondominiumAnnouncement[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<CondominiumAnnouncement | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState<Partial<CondominiumAnnouncement>>({ condominiumId: id, title: '', content: '', publishedAt: '', isActive: true });
+
+  // Emergency contacts state
+  const [emergencyContacts, setEmergencyContacts] = useState<CondominiumEmergencyContact[]>([]);
+  const [emergencyContactsLoading, setEmergencyContactsLoading] = useState(false);
+  const [showEmergencyContactModal, setShowEmergencyContactModal] = useState(false);
+  const [editingEmergencyContact, setEditingEmergencyContact] = useState<CondominiumEmergencyContact | null>(null);
+  const [emergencyContactForm, setEmergencyContactForm] = useState<Partial<CondominiumEmergencyContact>>({ condominiumId: id, name: '', role: '', phone: '', email: '', notes: '', sortOrder: 0 });
+
+  // Occupants (residentes/propietarios por unidad)
+  const [occupants, setOccupants] = useState<CondominiumUnitOccupant[]>([]);
+  const [occupantsLoading, setOccupantsLoading] = useState(false);
+  const [occupantUsers, setOccupantUsers] = useState<{ id: number; email: string; fullName?: string }[]>([]);
+  const [occupantUsersLoading, setOccupantUsersLoading] = useState(false);
+  const [showOccupantModal, setShowOccupantModal] = useState(false);
+  const [occupantForm, setOccupantForm] = useState({ userId: 0, condominiumUnitId: 0, role: 'RESIDENT' });
+
   useEffect(() => {
     loadCondominium();
   }, [id]);
+
+  // Abrir la pestaña indicada en la URL (ej. desde el menú Documentos, Asambleas, etc.)
+  useEffect(() => {
+    if (tabFromUrl && VALID_TABS.includes(tabFromUrl as TabType)) {
+      setActiveTab(tabFromUrl as TabType);
+    }
+  }, [tabFromUrl]);
 
   useEffect(() => {
     if (condominium && activeTab === 'units') {
@@ -136,6 +211,49 @@ export default function CondominiumDetailPage() {
       loadStats();
     }
   }, [condominium, activeTab]);
+
+  useEffect(() => {
+    if (condominium && activeTab === 'documents') loadDocuments();
+  }, [condominium, activeTab]);
+  useEffect(() => {
+    if (condominium && activeTab === 'assemblies') loadAssemblies();
+  }, [condominium, activeTab]);
+  useEffect(() => {
+    if (condominium && activeTab === 'commonSpaces') loadCommonSpaces();
+  }, [condominium, activeTab]);
+  useEffect(() => {
+    if (condominium && activeTab === 'announcements') loadAnnouncements();
+  }, [condominium, activeTab]);
+  useEffect(() => {
+    if (condominium && activeTab === 'emergencyContacts') loadEmergencyContacts();
+  }, [condominium, activeTab]);
+  useEffect(() => {
+    if (condominium && activeTab === 'occupants') {
+      loadOccupants();
+      loadUnits();
+      loadOccupantUsers();
+    }
+  }, [condominium, activeTab]);
+
+  const loadOccupantUsers = async () => {
+    try {
+      setOccupantUsersLoading(true);
+      const list = await authService.getUsers();
+      setOccupantUsers(
+        (list || []).map((u: any) => ({
+          id: u.id,
+          email: u.email ?? '',
+          fullName: u.fullName ?? u.name ?? u.email ?? `Usuario #${u.id}`,
+        }))
+      );
+    } catch (e: any) {
+      console.error("Error loading users for occupants:", e);
+      toast.error(e?.message || "Error al cargar usuarios");
+      setOccupantUsers([]);
+    } finally {
+      setOccupantUsersLoading(false);
+    }
+  };
 
   const loadCondominium = async () => {
     try {
@@ -289,6 +407,111 @@ export default function CondominiumDetailPage() {
     }
   };
 
+  const loadDocuments = async () => {
+    if (!condominium) return;
+    try {
+      setDocumentsLoading(true);
+      const list = await condominiumDocumentService.list(id);
+      setDocuments(list);
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar documentos");
+    } finally {
+      setDocumentsLoading(false);
+    }
+  };
+  const loadAssemblies = async () => {
+    if (!condominium) return;
+    try {
+      setAssembliesLoading(true);
+      const list = await condominiumAssemblyService.list(id);
+      setAssemblies(list);
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar asambleas");
+    } finally {
+      setAssembliesLoading(false);
+    }
+  };
+  const loadCommonSpaces = async () => {
+    if (!condominium) return;
+    try {
+      setCommonSpacesLoading(true);
+      const list = await commonSpaceService.list(id);
+      setCommonSpaces(list);
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar espacios comunes");
+    } finally {
+      setCommonSpacesLoading(false);
+    }
+  };
+  const loadAnnouncements = async () => {
+    if (!condominium) return;
+    try {
+      setAnnouncementsLoading(true);
+      const list = await condominiumAnnouncementService.list(id);
+      setAnnouncements(list);
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar comunicados");
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  };
+  const loadOccupants = async () => {
+    if (!condominium) return;
+    try {
+      setOccupantsLoading(true);
+      const list = await condominiumUnitOccupantService.listByCondominium(id);
+      setOccupants(list);
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar ocupantes");
+    } finally {
+      setOccupantsLoading(false);
+    }
+  };
+
+  const loadEmergencyContacts = async () => {
+    if (!condominium) return;
+    try {
+      setEmergencyContactsLoading(true);
+      const list = await condominiumEmergencyContactService.list(id);
+      setEmergencyContacts(list);
+    } catch (error: any) {
+      toast.error(error?.message || "Error al cargar contactos de emergencia");
+    } finally {
+      setEmergencyContactsLoading(false);
+    }
+  };
+
+  const handleOccupantSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!occupantForm.userId || !occupantForm.condominiumUnitId) {
+      toast.error("Usuario y unidad requeridos");
+      return;
+    }
+    try {
+      await condominiumUnitOccupantService.create({
+        userId: occupantForm.userId,
+        condominiumUnitId: occupantForm.condominiumUnitId,
+        role: occupantForm.role,
+      });
+      toast.success("Ocupante asignado");
+      setShowOccupantModal(false);
+      loadOccupants();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al asignar");
+    }
+  };
+
+  const handleDeleteOccupant = async (occupantId: number) => {
+    if (!confirm("¿Quitar a esta persona de la unidad?")) return;
+    try {
+      await condominiumUnitOccupantService.delete(occupantId);
+      toast.success("Ocupante eliminado");
+      loadOccupants();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al eliminar");
+    }
+  };
+
   const handleDeleteUnit = async (unitId: number) => {
     if (!confirm("¿Estás seguro de eliminar esta unidad?")) return;
     try {
@@ -321,6 +544,196 @@ export default function CondominiumDetailPage() {
       if (activeTab === 'stats') loadStats();
     } catch (error: any) {
       toast.error(error?.message || "Error al eliminar pago");
+    }
+  };
+
+  // Documents
+  const openDocumentModal = (doc?: CondominiumDocument) => {
+    if (doc) {
+      setEditingDocument(doc);
+      setDocumentForm({ condominiumId: id, title: doc.title, documentType: doc.documentType || 'OTHER', description: doc.description, fileUrl: doc.fileUrl, fileName: doc.fileName });
+    } else {
+      setEditingDocument(null);
+      setDocumentForm({ condominiumId: id, title: '', documentType: 'OTHER', description: '', fileUrl: '', fileName: '' });
+    }
+    setShowDocumentModal(true);
+  };
+  const handleDocumentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingDocument) {
+        await condominiumDocumentService.update(editingDocument.id, documentForm);
+        toast.success("Documento actualizado");
+      } else {
+        await condominiumDocumentService.create(documentForm);
+        toast.success("Documento creado");
+      }
+      setShowDocumentModal(false);
+      loadDocuments();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al guardar documento");
+    }
+  };
+  const handleDeleteDocument = async (docId: number) => {
+    if (!confirm("¿Eliminar este documento?")) return;
+    try {
+      await condominiumDocumentService.delete(docId);
+      toast.success("Documento eliminado");
+      loadDocuments();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al eliminar");
+    }
+  };
+
+  // Assemblies
+  const openAssemblyModal = (a?: CondominiumAssembly) => {
+    if (a) {
+      setEditingAssembly(a);
+      setAssemblyForm({ condominiumId: id, title: a.title, assemblyDate: a.assemblyDate || '', location: a.location, description: a.description, minutes: a.minutes, status: a.status || 'SCHEDULED' });
+    } else {
+      setEditingAssembly(null);
+      setAssemblyForm({ condominiumId: id, title: '', assemblyDate: '', location: '', description: '', minutes: '', status: 'SCHEDULED' });
+    }
+    setShowAssemblyModal(true);
+  };
+  const handleAssemblySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingAssembly) {
+        await condominiumAssemblyService.update(editingAssembly.id, assemblyForm);
+        toast.success("Asamblea actualizada");
+      } else {
+        await condominiumAssemblyService.create(assemblyForm);
+        toast.success("Asamblea creada");
+      }
+      setShowAssemblyModal(false);
+      loadAssemblies();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al guardar asamblea");
+    }
+  };
+  const handleDeleteAssembly = async (aId: number) => {
+    if (!confirm("¿Eliminar esta asamblea?")) return;
+    try {
+      await condominiumAssemblyService.delete(aId);
+      toast.success("Asamblea eliminada");
+      loadAssemblies();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al eliminar");
+    }
+  };
+
+  // Common spaces
+  const openCommonSpaceModal = (s?: CommonSpace) => {
+    if (s) {
+      setEditingCommonSpace(s);
+      setCommonSpaceForm({ condominiumId: id, name: s.name, description: s.description, capacity: s.capacity, isActive: s.isActive ?? true });
+    } else {
+      setEditingCommonSpace(null);
+      setCommonSpaceForm({ condominiumId: id, name: '', description: '', capacity: undefined, isActive: true });
+    }
+    setShowCommonSpaceModal(true);
+  };
+  const handleCommonSpaceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingCommonSpace) {
+        await commonSpaceService.update(editingCommonSpace.id, commonSpaceForm);
+        toast.success("Espacio común actualizado");
+      } else {
+        await commonSpaceService.create(commonSpaceForm);
+        toast.success("Espacio común creado");
+      }
+      setShowCommonSpaceModal(false);
+      loadCommonSpaces();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al guardar espacio");
+    }
+  };
+  const handleDeleteCommonSpace = async (sId: number) => {
+    if (!confirm("¿Eliminar este espacio común?")) return;
+    try {
+      await commonSpaceService.delete(sId);
+      toast.success("Espacio eliminado");
+      loadCommonSpaces();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al eliminar");
+    }
+  };
+
+  // Announcements
+  const openAnnouncementModal = (a?: CondominiumAnnouncement) => {
+    if (a) {
+      setEditingAnnouncement(a);
+      setAnnouncementForm({ condominiumId: id, title: a.title, content: a.content, publishedAt: a.publishedAt || '', isActive: a.isActive ?? true });
+    } else {
+      setEditingAnnouncement(null);
+      setAnnouncementForm({ condominiumId: id, title: '', content: '', publishedAt: '', isActive: true });
+    }
+    setShowAnnouncementModal(true);
+  };
+  const handleAnnouncementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingAnnouncement) {
+        await condominiumAnnouncementService.update(editingAnnouncement.id, announcementForm);
+        toast.success("Comunicado actualizado");
+      } else {
+        await condominiumAnnouncementService.create(announcementForm);
+        toast.success("Comunicado creado");
+      }
+      setShowAnnouncementModal(false);
+      loadAnnouncements();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al guardar comunicado");
+    }
+  };
+  const handleDeleteAnnouncement = async (aId: number) => {
+    if (!confirm("¿Eliminar este comunicado?")) return;
+    try {
+      await condominiumAnnouncementService.delete(aId);
+      toast.success("Comunicado eliminado");
+      loadAnnouncements();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al eliminar");
+    }
+  };
+
+  // Emergency contacts
+  const openEmergencyContactModal = (c?: CondominiumEmergencyContact) => {
+    if (c) {
+      setEditingEmergencyContact(c);
+      setEmergencyContactForm({ condominiumId: id, name: c.name, role: c.role, phone: c.phone, email: c.email, notes: c.notes, sortOrder: c.sortOrder ?? 0 });
+    } else {
+      setEditingEmergencyContact(null);
+      setEmergencyContactForm({ condominiumId: id, name: '', role: '', phone: '', email: '', notes: '', sortOrder: 0 });
+    }
+    setShowEmergencyContactModal(true);
+  };
+  const handleEmergencyContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingEmergencyContact) {
+        await condominiumEmergencyContactService.update(editingEmergencyContact.id, emergencyContactForm);
+        toast.success("Contacto actualizado");
+      } else {
+        await condominiumEmergencyContactService.create(emergencyContactForm);
+        toast.success("Contacto creado");
+      }
+      setShowEmergencyContactModal(false);
+      loadEmergencyContacts();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al guardar contacto");
+    }
+  };
+  const handleDeleteEmergencyContact = async (cId: number) => {
+    if (!confirm("¿Eliminar este contacto de emergencia?")) return;
+    try {
+      await condominiumEmergencyContactService.delete(cId);
+      toast.success("Contacto eliminado");
+      loadEmergencyContacts();
+    } catch (error: any) {
+      toast.error(error?.message || "Error al eliminar");
     }
   };
 
@@ -479,6 +892,38 @@ export default function CondominiumDetailPage() {
     return null;
   }
 
+  const currencyCode = condominium.currencyCode || 'PYG';
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('es-PY', { style: 'currency', currency: currencyCode, maximumFractionDigits: 0 }).format(amount);
+
+  const handleGenerateBulk = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!generateBulkForm.totalAmount || generateBulkForm.totalAmount <= 0) {
+      toast.error('El monto total debe ser mayor a cero.');
+      return;
+    }
+    try {
+      setGenerateBulkLoading(true);
+      await condominiumFeeService.generateBulk({
+        condominiumId: id,
+        period: generateBulkForm.period,
+        totalAmount: generateBulkForm.totalAmount,
+        type: generateBulkForm.type,
+        dueDate: generateBulkForm.dueDate || undefined,
+        createPaymentsPerUnit: generateBulkForm.createPaymentsPerUnit
+      });
+      toast.success('Cuota generada. Se crearon pagos pendientes por unidad.');
+      setShowGenerateBulkModal(false);
+      loadFees();
+      if (activeTab === 'payments') loadPayments();
+      if (activeTab === 'stats') loadStats();
+    } catch (error: any) {
+      toast.error(error?.message || 'Error al generar cuotas');
+    } finally {
+      setGenerateBulkLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -489,7 +934,7 @@ export default function CondominiumDetailPage() {
             className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
           >
             <ArrowLeftIcon className="w-5 h-5" />
-            Volver a Condominios
+            Volver a Administración de Condominio
           </Link>
           
           <div className="flex items-center justify-between">
@@ -534,64 +979,133 @@ export default function CondominiumDetailPage() {
           </div>
         </div>
 
-        {/* Tabs Navigation */}
+        {/* Tabs Navigation - compacto, dos filas sin scroll */}
         <div className="mb-6">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="flex space-x-8" aria-label="Tabs">
+            <nav
+              className="flex flex-wrap gap-1 pb-px"
+              aria-label="Tabs"
+            >
               <button
                 onClick={() => setActiveTab('info')}
                 className={`${
                   activeTab === 'info'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
               >
-                <BuildingOfficeIcon className="w-5 h-5" />
-                Información
+                <BuildingOfficeIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Info</span>
               </button>
               <button
                 onClick={() => setActiveTab('units')}
                 className={`${
                   activeTab === 'units'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
               >
-                <HomeIcon className="w-5 h-5" />
-                Unidades
+                <HomeIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Unidades</span>
               </button>
               <button
                 onClick={() => setActiveTab('fees')}
                 className={`${
                   activeTab === 'fees'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
               >
-                <CurrencyDollarIcon className="w-5 h-5" />
-                Cuotas
+                <CurrencyDollarIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Cuotas</span>
               </button>
               <button
                 onClick={() => setActiveTab('payments')}
                 className={`${
                   activeTab === 'payments'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
               >
-                <DocumentTextIcon className="w-5 h-5" />
-                Pagos
+                <DocumentTextIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Pagos</span>
               </button>
               <button
                 onClick={() => setActiveTab('stats')}
                 className={`${
                   activeTab === 'stats'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
               >
-                <ChartBarIcon className="w-5 h-5" />
-                Estadísticas
+                <ChartBarIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Estadísticas</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('documents')}
+                className={`${
+                  activeTab === 'documents'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
+              >
+                <DocumentTextIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Documentos</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('assemblies')}
+                className={`${
+                  activeTab === 'assemblies'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
+              >
+                <CalendarIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Asambleas</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('commonSpaces')}
+                className={`${
+                  activeTab === 'commonSpaces'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
+              >
+                <HomeIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Esp. comunes</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('announcements')}
+                className={`${
+                  activeTab === 'announcements'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
+              >
+                <MegaphoneIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Comunicados</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('emergencyContacts')}
+                className={`${
+                  activeTab === 'emergencyContacts'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
+              >
+                <UserGroupIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Contactos</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('occupants')}
+                className={`${
+                  activeTab === 'occupants'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-white/5'
+                } py-2 px-2.5 border-b-2 font-medium text-sm flex items-center gap-1.5 rounded-t transition-colors`}
+              >
+                <UserGroupIcon className="w-4 h-4 flex-shrink-0" />
+                <span>Ocupantes</span>
               </button>
             </nav>
           </div>
@@ -655,6 +1169,25 @@ export default function CondominiumDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Desarrollo asociado */}
+            {(condominium.developmentId || condominium.developmentName) && (
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Desarrollo asociado
+                </h2>
+                <Link
+                  href={`/developments/${condominium.developmentId}`}
+                  className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                >
+                  <BuildingOfficeIcon className="w-5 h-5" />
+                  {condominium.developmentName || `Desarrollo #${condominium.developmentId}`}
+                </Link>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  Ver ficha del desarrollo en el módulo de desarrollos
+                </p>
+              </div>
+            )}
+
             {/* Administrador */}
             {(condominium.administratorName || condominium.administratorEmail || condominium.administratorPhone) && (
               <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
@@ -842,15 +1375,33 @@ export default function CondominiumDetailPage() {
 
         {activeTab === 'fees' && (
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Cuotas de Mantenimiento</h2>
-              <button
-                onClick={() => openFeeModal()}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-              >
-                <PlusIcon className="w-5 h-5" />
-                Nueva Cuota
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setGenerateBulkForm({
+                      period: new Date().toISOString().slice(0, 7),
+                      totalAmount: 0,
+                      type: 'COMMON',
+                      dueDate: '',
+                      createPaymentsPerUnit: true
+                    });
+                    setShowGenerateBulkModal(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                >
+                  <CurrencyDollarIcon className="w-5 h-5" />
+                  Generar cuotas del mes
+                </button>
+                <button
+                  onClick={() => openFeeModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  Nueva Cuota
+                </button>
+              </div>
             </div>
 
             {feesLoading ? (
@@ -882,7 +1433,7 @@ export default function CondominiumDetailPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(fee.totalAmount)}
+                              {formatCurrency(fee.totalAmount)}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -993,7 +1544,7 @@ export default function CondominiumDetailPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">
-                              {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(payment.amount || 0)}
+                              {formatCurrency(payment.amount || 0)}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1119,12 +1670,7 @@ export default function CondominiumDetailPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Recaudado</p>
                     <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-                      {new Intl.NumberFormat('es-PY', { 
-                        style: 'currency', 
-                        currency: 'PYG',
-                        notation: 'compact',
-                        maximumFractionDigits: 0
-                      }).format(stats.totalCollected)}
+                      {formatCurrency(stats.totalCollected)}
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400 mt-1">Pagado</p>
                   </div>
@@ -1159,7 +1705,334 @@ export default function CondominiumDetailPage() {
             </div>
           </div>
         )}
+
+        {activeTab === 'documents' && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Documentos</h2>
+              <button onClick={() => openDocumentModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                <PlusIcon className="w-5 h-5" /> Nuevo documento
+              </button>
+            </div>
+            {documentsLoading ? (
+              <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            ) : documents.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Título</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descripción</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {documents.map((d) => (
+                      <tr key={d.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{d.title}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{d.documentType || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">{d.description || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button onClick={() => openDocumentModal(d)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-2"><PencilIcon className="w-5 h-5 inline" /></button>
+                          <button onClick={() => handleDeleteDocument(d.id)} className="text-red-600 hover:text-red-900 dark:text-red-400"><TrashIcon className="w-5 h-5 inline" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 mb-4">No hay documentos</p>
+                <button onClick={() => openDocumentModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"> <PlusIcon className="w-5 h-5" /> Crear documento</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'assemblies' && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Asambleas</h2>
+              <button onClick={() => openAssemblyModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                <PlusIcon className="w-5 h-5" /> Nueva asamblea
+              </button>
+            </div>
+            {assembliesLoading ? (
+              <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            ) : assemblies.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Título</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Fecha</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Lugar</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {assemblies.map((a) => (
+                      <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{a.title}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{a.assemblyDate ? new Date(a.assemblyDate).toLocaleDateString('es-PY') : '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate">{a.location || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{a.status || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button onClick={() => openAssemblyModal(a)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-2"><PencilIcon className="w-5 h-5 inline" /></button>
+                          <button onClick={() => handleDeleteAssembly(a.id)} className="text-red-600 hover:text-red-900 dark:text-red-400"><TrashIcon className="w-5 h-5 inline" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <CalendarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 mb-4">No hay asambleas</p>
+                <button onClick={() => openAssemblyModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"> <PlusIcon className="w-5 h-5" /> Crear asamblea</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'commonSpaces' && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Espacios comunes</h2>
+              <button onClick={() => openCommonSpaceModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                <PlusIcon className="w-5 h-5" /> Nuevo espacio
+              </button>
+            </div>
+            {commonSpacesLoading ? (
+              <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            ) : commonSpaces.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nombre</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Capacidad</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {commonSpaces.map((s) => (
+                      <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{s.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{s.capacity ?? '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 rounded-md text-xs font-medium ${s.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'}`}>{s.isActive ? 'Activo' : 'Inactivo'}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button onClick={() => openCommonSpaceModal(s)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-2"><PencilIcon className="w-5 h-5 inline" /></button>
+                          <button onClick={() => handleDeleteCommonSpace(s.id)} className="text-red-600 hover:text-red-900 dark:text-red-400"><TrashIcon className="w-5 h-5 inline" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <HomeIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 mb-4">No hay espacios comunes</p>
+                <button onClick={() => openCommonSpaceModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"> <PlusIcon className="w-5 h-5" /> Crear espacio</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'announcements' && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Comunicados</h2>
+              <button onClick={() => openAnnouncementModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                <PlusIcon className="w-5 h-5" /> Nuevo comunicado
+              </button>
+            </div>
+            {announcementsLoading ? (
+              <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            ) : announcements.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Título</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Publicado</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Estado</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {announcements.map((a) => (
+                      <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{a.title}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{a.publishedAt ? new Date(a.publishedAt).toLocaleDateString('es-PY') : '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap"><span className={`inline-flex px-2 py-1 rounded-md text-xs font-medium ${a.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'}`}>{a.isActive ? 'Activo' : 'Inactivo'}</span></td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button onClick={() => openAnnouncementModal(a)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-2"><PencilIcon className="w-5 h-5 inline" /></button>
+                          <button onClick={() => handleDeleteAnnouncement(a.id)} className="text-red-600 hover:text-red-900 dark:text-red-400"><TrashIcon className="w-5 h-5 inline" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <MegaphoneIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 mb-4">No hay comunicados</p>
+                <button onClick={() => openAnnouncementModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"> <PlusIcon className="w-5 h-5" /> Crear comunicado</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'emergencyContacts' && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Contactos de emergencia</h2>
+              <button onClick={() => openEmergencyContactModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                <PlusIcon className="w-5 h-5" /> Nuevo contacto
+              </button>
+            </div>
+            {emergencyContactsLoading ? (
+              <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            ) : emergencyContacts.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nombre</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Rol</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Teléfono</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Email</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {emergencyContacts.map((c) => (
+                      <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{c.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{c.role || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{c.phone || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{c.email || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button onClick={() => openEmergencyContactModal(c)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-2"><PencilIcon className="w-5 h-5 inline" /></button>
+                          <button onClick={() => handleDeleteEmergencyContact(c.id)} className="text-red-600 hover:text-red-900 dark:text-red-400"><TrashIcon className="w-5 h-5 inline" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <UserGroupIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 mb-4">No hay contactos de emergencia</p>
+                <button onClick={() => openEmergencyContactModal()} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"> <PlusIcon className="w-5 h-5" /> Crear contacto</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'occupants' && (
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Ocupantes (residentes / propietarios)</h2>
+              <button onClick={() => { setOccupantForm({ userId: 0, condominiumUnitId: units[0]?.id ?? 0, role: 'RESIDENT' }); setShowOccupantModal(true); }} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                <PlusIcon className="w-5 h-5" /> Asignar ocupante
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Usuarios asociados a unidades de este condominio. Ellos verán «Mi condominio» con datos de su unidad.</p>
+            {occupantsLoading ? (
+              <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            ) : occupants.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Email / Usuario</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unidad</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Rol</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {occupants.map((o) => (
+                      <tr key={o.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{o.userEmail ?? `Usuario #${o.userId}`}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{o.unitNumber ?? '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{o.role === 'OWNER' ? 'Propietario' : 'Residente'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <button onClick={() => handleDeleteOccupant(o.id)} className="text-red-600 hover:text-red-900 dark:text-red-400" title="Quitar de la unidad"><TrashIcon className="w-5 h-5 inline" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <UserGroupIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400 mb-4">No hay ocupantes asignados</p>
+                <button onClick={() => { setOccupantForm({ userId: 0, condominiumUnitId: units[0]?.id ?? 0, role: 'RESIDENT' }); setShowOccupantModal(true); }} className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"> <PlusIcon className="w-5 h-5" /> Asignar ocupante</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Occupant Modal */}
+      <ModernPopup isOpen={showOccupantModal} onClose={() => setShowOccupantModal(false)} title="Asignar ocupante a unidad" subtitle="El usuario podrá ver Mi condominio con datos de esta unidad" icon={<UserGroupIcon className="w-6 h-6 text-white" />} maxWidth="max-w-md">
+        <form onSubmit={handleOccupantSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Usuario *</label>
+            {occupantUsersLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 py-2">Cargando usuarios...</p>
+            ) : (
+              <select
+                value={occupantForm.userId || ''}
+                onChange={(e) => setOccupantForm({ ...occupantForm, userId: parseInt(e.target.value) || 0 })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required
+              >
+                <option value={0}>Seleccionar usuario...</option>
+                {occupantUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.fullName || u.email} {u.email ? `(${u.email})` : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Usuarios de tu tenant. Así podrás probar «Mi condominio» con tu usuario.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Unidad *</label>
+            <select value={occupantForm.condominiumUnitId || ''} onChange={(e) => setOccupantForm({ ...occupantForm, condominiumUnitId: parseInt(e.target.value) })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required>
+              <option value={0}>Seleccionar unidad...</option>
+              {units.map((u) => (<option key={u.id} value={u.id}>{u.unitNumber}</option>))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Rol</label>
+            <select value={occupantForm.role} onChange={(e) => setOccupantForm({ ...occupantForm, role: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              <option value="RESIDENT">Residente</option>
+              <option value="OWNER">Propietario</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setShowOccupantModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">Cancelar</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Asignar</button>
+          </div>
+        </form>
+      </ModernPopup>
 
       {/* Unit Modal */}
       <ModernPopup
@@ -1400,7 +2273,7 @@ export default function CondominiumDetailPage() {
                 <option value={0}>Seleccionar cuota...</option>
                 {fees.map((fee) => (
                   <option key={fee.id} value={fee.id}>
-                    {fee.period} - {fee.type} - {new Intl.NumberFormat('es-PY', { style: 'currency', currency: 'PYG' }).format(fee.totalAmount)}
+                    {fee.period} - {fee.type} - {formatCurrency(fee.totalAmount)}
                   </option>
                 ))}
               </select>
@@ -1520,6 +2393,257 @@ export default function CondominiumDetailPage() {
             >
               {editingPayment ? 'Actualizar' : 'Registrar'}
             </button>
+          </div>
+        </form>
+      </ModernPopup>
+
+      {/* Generate Bulk Fee Modal */}
+      <ModernPopup
+        isOpen={showGenerateBulkModal}
+        onClose={() => setShowGenerateBulkModal(false)}
+        title="Generar cuotas del mes"
+        subtitle="Crea una cuota y opcionalmente un pago pendiente por cada unidad activa"
+        icon={<CurrencyDollarIcon className="w-6 h-6 text-white" />}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleGenerateBulk} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Período (YYYY-MM) *</label>
+              <input
+                type="text"
+                pattern="[0-9]{4}-[0-9]{2}"
+                value={generateBulkForm.period}
+                onChange={(e) => setGenerateBulkForm({ ...generateBulkForm, period: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="2024-01"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Monto total *</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={generateBulkForm.totalAmount || ''}
+                onChange={(e) => setGenerateBulkForm({ ...generateBulkForm, totalAmount: parseFloat(e.target.value) || 0 })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tipo</label>
+              <select
+                value={generateBulkForm.type}
+                onChange={(e) => setGenerateBulkForm({ ...generateBulkForm, type: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="COMMON">Ordinaria</option>
+                <option value="EXTRAORDINARY">Extraordinaria</option>
+                <option value="SPECIAL">Especial</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Vencimiento</label>
+              <input
+                type="date"
+                value={generateBulkForm.dueDate}
+                onChange={(e) => setGenerateBulkForm({ ...generateBulkForm, dueDate: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+            <div className="md:col-span-2 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="createPaymentsPerUnit"
+                checked={generateBulkForm.createPaymentsPerUnit}
+                onChange={(e) => setGenerateBulkForm({ ...generateBulkForm, createPaymentsPerUnit: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <label htmlFor="createPaymentsPerUnit" className="text-sm text-gray-700 dark:text-gray-300">
+                Crear un pago pendiente por cada unidad activa (monto repartido por unidad)
+              </label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setShowGenerateBulkModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+              Cancelar
+            </button>
+            <button type="submit" disabled={generateBulkLoading} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+              {generateBulkLoading ? 'Generando...' : 'Generar'}
+            </button>
+          </div>
+        </form>
+      </ModernPopup>
+
+      {/* Document Modal */}
+      <ModernPopup isOpen={showDocumentModal} onClose={() => setShowDocumentModal(false)} title={editingDocument ? 'Editar documento' : 'Nuevo documento'} subtitle={editingDocument ? 'Modifica el documento' : 'Agrega un documento o reglamento'} icon={<DocumentTextIcon className="w-6 h-6 text-white" />} maxWidth="max-w-2xl">
+        <form onSubmit={handleDocumentSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Título *</label>
+            <input type="text" value={documentForm.title || ''} onChange={(e) => setDocumentForm({ ...documentForm, title: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Tipo</label>
+            <select value={documentForm.documentType || 'OTHER'} onChange={(e) => setDocumentForm({ ...documentForm, documentType: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              <option value="REGULATION">Reglamento</option>
+              <option value="CONTRACT">Contrato</option>
+              <option value="MINUTES">Acta</option>
+              <option value="OTHER">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
+            <textarea value={documentForm.description || ''} onChange={(e) => setDocumentForm({ ...documentForm, description: e.target.value })} rows={3} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">URL del archivo</label>
+            <input type="text" value={documentForm.fileUrl || ''} onChange={(e) => setDocumentForm({ ...documentForm, fileUrl: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="https://..." />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre del archivo</label>
+            <input type="text" value={documentForm.fileName || ''} onChange={(e) => setDocumentForm({ ...documentForm, fileName: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setShowDocumentModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">Cancelar</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{editingDocument ? 'Actualizar' : 'Crear'}</button>
+          </div>
+        </form>
+      </ModernPopup>
+
+      {/* Assembly Modal */}
+      <ModernPopup isOpen={showAssemblyModal} onClose={() => setShowAssemblyModal(false)} title={editingAssembly ? 'Editar asamblea' : 'Nueva asamblea'} subtitle={editingAssembly ? 'Modifica la asamblea' : 'Registra una asamblea'} icon={<CalendarIcon className="w-6 h-6 text-white" />} maxWidth="max-w-2xl">
+        <form onSubmit={handleAssemblySubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Título *</label>
+            <input type="text" value={assemblyForm.title || ''} onChange={(e) => setAssemblyForm({ ...assemblyForm, title: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Fecha</label>
+              <input type="date" value={assemblyForm.assemblyDate ? String(assemblyForm.assemblyDate).slice(0, 10) : ''} onChange={(e) => setAssemblyForm({ ...assemblyForm, assemblyDate: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Estado</label>
+              <select value={assemblyForm.status || 'SCHEDULED'} onChange={(e) => setAssemblyForm({ ...assemblyForm, status: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="SCHEDULED">Programada</option>
+                <option value="HELD">Realizada</option>
+                <option value="CANCELLED">Cancelada</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Lugar</label>
+            <input type="text" value={assemblyForm.location || ''} onChange={(e) => setAssemblyForm({ ...assemblyForm, location: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
+            <textarea value={assemblyForm.description || ''} onChange={(e) => setAssemblyForm({ ...assemblyForm, description: e.target.value })} rows={2} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Acta / Minutas</label>
+            <textarea value={assemblyForm.minutes || ''} onChange={(e) => setAssemblyForm({ ...assemblyForm, minutes: e.target.value })} rows={4} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setShowAssemblyModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">Cancelar</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{editingAssembly ? 'Actualizar' : 'Crear'}</button>
+          </div>
+        </form>
+      </ModernPopup>
+
+      {/* Common Space Modal */}
+      <ModernPopup isOpen={showCommonSpaceModal} onClose={() => setShowCommonSpaceModal(false)} title={editingCommonSpace ? 'Editar espacio común' : 'Nuevo espacio común'} subtitle={editingCommonSpace ? 'Modifica el espacio' : 'Registra un espacio común'} icon={<HomeIcon className="w-6 h-6 text-white" />} maxWidth="max-w-2xl">
+        <form onSubmit={handleCommonSpaceSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre *</label>
+            <input type="text" value={commonSpaceForm.name || ''} onChange={(e) => setCommonSpaceForm({ ...commonSpaceForm, name: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
+            <textarea value={commonSpaceForm.description || ''} onChange={(e) => setCommonSpaceForm({ ...commonSpaceForm, description: e.target.value })} rows={2} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Capacidad</label>
+            <input type="number" min={0} value={commonSpaceForm.capacity ?? ''} onChange={(e) => setCommonSpaceForm({ ...commonSpaceForm, capacity: e.target.value ? parseInt(e.target.value) : undefined })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Estado</label>
+            <select value={commonSpaceForm.isActive ? 'true' : 'false'} onChange={(e) => setCommonSpaceForm({ ...commonSpaceForm, isActive: e.target.value === 'true' })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setShowCommonSpaceModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">Cancelar</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{editingCommonSpace ? 'Actualizar' : 'Crear'}</button>
+          </div>
+        </form>
+      </ModernPopup>
+
+      {/* Announcement Modal */}
+      <ModernPopup isOpen={showAnnouncementModal} onClose={() => setShowAnnouncementModal(false)} title={editingAnnouncement ? 'Editar comunicado' : 'Nuevo comunicado'} subtitle={editingAnnouncement ? 'Modifica el comunicado' : 'Publica un comunicado'} icon={<MegaphoneIcon className="w-6 h-6 text-white" />} maxWidth="max-w-2xl">
+        <form onSubmit={handleAnnouncementSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Título *</label>
+            <input type="text" value={announcementForm.title || ''} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Contenido</label>
+            <textarea value={announcementForm.content || ''} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} rows={5} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Fecha de publicación</label>
+              <input type="datetime-local" value={announcementForm.publishedAt ? String(announcementForm.publishedAt).slice(0, 16) : ''} onChange={(e) => setAnnouncementForm({ ...announcementForm, publishedAt: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Estado</label>
+              <select value={announcementForm.isActive ? 'true' : 'false'} onChange={(e) => setAnnouncementForm({ ...announcementForm, isActive: e.target.value === 'true' })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setShowAnnouncementModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">Cancelar</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{editingAnnouncement ? 'Actualizar' : 'Crear'}</button>
+          </div>
+        </form>
+      </ModernPopup>
+
+      {/* Emergency Contact Modal */}
+      <ModernPopup isOpen={showEmergencyContactModal} onClose={() => setShowEmergencyContactModal(false)} title={editingEmergencyContact ? 'Editar contacto' : 'Nuevo contacto de emergencia'} subtitle={editingEmergencyContact ? 'Modifica el contacto' : 'Agrega un contacto de emergencia'} icon={<UserGroupIcon className="w-6 h-6 text-white" />} maxWidth="max-w-2xl">
+        <form onSubmit={handleEmergencyContactSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Nombre *</label>
+              <input type="text" value={emergencyContactForm.name || ''} onChange={(e) => setEmergencyContactForm({ ...emergencyContactForm, name: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Rol / Cargo</label>
+              <input type="text" value={emergencyContactForm.role || ''} onChange={(e) => setEmergencyContactForm({ ...emergencyContactForm, role: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Teléfono</label>
+              <input type="text" value={emergencyContactForm.phone || ''} onChange={(e) => setEmergencyContactForm({ ...emergencyContactForm, phone: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email</label>
+              <input type="email" value={emergencyContactForm.email || ''} onChange={(e) => setEmergencyContactForm({ ...emergencyContactForm, email: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Notas</label>
+            <textarea value={emergencyContactForm.notes || ''} onChange={(e) => setEmergencyContactForm({ ...emergencyContactForm, notes: e.target.value })} rows={2} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Orden</label>
+            <input type="number" min={0} value={emergencyContactForm.sortOrder ?? 0} onChange={(e) => setEmergencyContactForm({ ...emergencyContactForm, sortOrder: parseInt(e.target.value) || 0 })} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setShowEmergencyContactModal(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200">Cancelar</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">{editingEmergencyContact ? 'Actualizar' : 'Crear'}</button>
           </div>
         </form>
       </ModernPopup>

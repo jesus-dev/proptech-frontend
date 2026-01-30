@@ -470,41 +470,48 @@ export default function LotsList({ lots, onLotClick }: LotsListProps) {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex justify-end space-x-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onLotClick?.(lot);
-                          }}
-                          className="p-1 text-gray-400 hover:text-brand-500 transition-colors"
-                          title="Ver detalles"
-                        >
-                          <EyeIcon className="h-4 w-4" />
-                        </button>
-                        {lot.status === "available" && (
+                      <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex flex-wrap gap-2 justify-end">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleSaleClick(lot);
+                              onLotClick?.(lot);
                             }}
-                            className="p-1 text-gray-400 hover:text-green-500 transition-colors"
-                            title="Registrar venta"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white/60 dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                            title="Ver detalles"
                           >
-                            <CurrencyDollarIcon className="h-4 w-4" />
+                            <EyeIcon className="h-4 w-4" />
+                            Ver detalles
                           </button>
-                        )}
-                        {sale && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePaymentClick(lot);
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                            title="Ver pagos"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        )}
+
+                          {lot.status === "available" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaleClick(lot);
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border border-emerald-200 dark:border-emerald-700/60 text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-900/20 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/30 transition-colors"
+                              title="Registrar venta"
+                            >
+                              <CurrencyDollarIcon className="h-4 w-4" />
+                              Registrar venta
+                            </button>
+                          )}
+
+                          {sale && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePaymentClick(lot);
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border border-blue-200 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-900/20 hover:bg-blue-100/70 dark:hover:bg-blue-900/30 transition-colors"
+                              title="Ver pagos"
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                              Ver pagos
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
