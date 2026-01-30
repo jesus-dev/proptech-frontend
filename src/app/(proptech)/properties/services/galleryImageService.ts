@@ -19,6 +19,18 @@ function getBaseUrl(): string {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
 
+// Normaliza path de galería: /uploads/67/xxx -> /uploads/gallery/67/xxx (el backend guarda en gallery/{propertyId}/)
+function normalizeGalleryPath(path: string): string {
+  if (!path || !path.startsWith('/uploads/')) return path;
+  const afterUploads = path.slice('/uploads/'.length);
+  // Si es /uploads/{número}/{filename} sin "gallery", reescribir a /uploads/gallery/{número}/{filename}
+  const galleryMatch = afterUploads.match(/^(\d+)\/([^/]+)$/);
+  if (galleryMatch) {
+    return `/uploads/gallery/${galleryMatch[1]}/${galleryMatch[2]}`;
+  }
+  return path;
+}
+
 // Función helper para convertir URLs relativas a completas.
 // Siempre usar /uploads/ para mostrar imágenes (el backend las sirve en GET /uploads/{path}).
 function getFullImageUrl(url: string): string {
@@ -32,23 +44,27 @@ function getFullImageUrl(url: string): string {
   if (trimmed.startsWith('http')) {
     try {
       const u = new URL(trimmed);
-      const path = u.pathname;
+      let path = u.pathname;
       // Reescribir .../api/files/67/... a .../uploads/properties/67/... para que carguen
       if (path.startsWith('/api/files/')) {
         const afterFiles = path.slice('/api/files/'.length);
         const rel = afterFiles.startsWith('properties/') ? afterFiles : `properties/${afterFiles}`;
         return `${u.origin}/uploads/${rel}`;
       }
-      if (path.startsWith('/uploads/')) return trimmed;
+      if (path.startsWith('/uploads/')) {
+        path = normalizeGalleryPath(path);
+        return `${u.origin}${path}`;
+      }
     } catch {
       // ignorar
     }
     return trimmed;
   }
 
-  // Rutas /uploads/ — NUNCA convertir a /api/files/; solo añadir base (el backend sirve GET /uploads/...)
+  // Rutas /uploads/ — normalizar gallery y añadir base
   if (trimmed.startsWith('/uploads/')) {
-    return `${base}${trimmed}`;
+    const path = normalizeGalleryPath(trimmed);
+    return `${base}${path}`;
   }
 
   // Paths /api/files/... — reescribir a /uploads/ para que carguen

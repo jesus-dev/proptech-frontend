@@ -559,7 +559,8 @@ export default function MultimediaStep({
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                     {galleryImages.map((image, index) => {
-                      console.log('🖼️ Renderizando imagen:', { id: image.id, url: image.url, index });
+                      const imgSrc = getGalleryImageSrc(image.url);
+                      console.log('🖼️ Renderizando imagen:', { id: image.id, url: image.url, src: imgSrc.startsWith('/api/proxy') ? '(proxy)' : imgSrc, index });
                       const isFeatured = image.isFeatured || formData.featuredImage === image.url;
                       return (
                         <SortableImageItem
