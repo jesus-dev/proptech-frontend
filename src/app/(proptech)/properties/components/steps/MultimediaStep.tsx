@@ -29,6 +29,22 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// En producción usamos proxy para evitar 502/CORS de Cloudflare. En dev usamos la URL directa del backend.
+const PROXY_API_ORIGINS = ['https://api.proptech.com.py', 'http://api.proptech.com.py'];
+
+function galleryImgSrc(url: string): string {
+  if (!url?.startsWith('http')) return url;
+  try {
+    const u = new URL(url);
+    const origin = `${u.protocol}//${u.host}`;
+    // Solo pasar por proxy en producción; en localhost la URL directa funciona y evita fallos del proxy
+    if (PROXY_API_ORIGINS.includes(origin)) return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+  } catch {
+    /* ignore */
+  }
+  return url;
+}
+
 interface SortableImageItemProps {
   image: GalleryImage;
   index: number;
@@ -83,7 +99,7 @@ function SortableImageItem({
 
       <div className="relative w-full h-32 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
         <img
-          src={image.url}
+          src={galleryImgSrc(image.url)}
           alt={image.altText || `Imagen ${image.id}`}
           className="w-full h-full object-cover bg-white pointer-events-none"
           style={{ minHeight: '100%' }}

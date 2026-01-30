@@ -42,12 +42,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'URL not allowed' }, { status: 403 });
   }
 
+  const fetchOpts: RequestInit = {
+    method: 'GET',
+    headers: {
+      Accept: 'image/*,*/*',
+      'User-Agent': 'Proptech-Image-Proxy/1.0',
+    },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(25000), // 25s timeout para evitar 502 por espera
+  };
+
   try {
-    let res = await fetch(decodedUrl, {
-      method: 'GET',
-      headers: { Accept: 'image/*,*/*' },
-      cache: 'no-store',
-    });
+    let res = await fetch(decodedUrl, fetchOpts);
 
     // Si 404 y la ruta es /uploads/{número}/{file} sin "gallery", reintentar con /uploads/gallery/...
     if (res.status === 404) {
@@ -57,7 +63,7 @@ export async function GET(request: NextRequest) {
         const match = path.match(/^\/uploads\/(\d+)\/([^/]+)$/);
         if (match) {
           const retryUrl = `${u.origin}/uploads/gallery/${match[1]}/${match[2]}`;
-          res = await fetch(retryUrl, { method: 'GET', headers: { Accept: 'image/*,*/*' }, cache: 'no-store' });
+          res = await fetch(retryUrl, fetchOpts);
           if (res.ok) decodedUrl = retryUrl;
         }
       } catch {
