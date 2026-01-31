@@ -434,8 +434,8 @@ export default function PropertiesPage() {
     if (statusFilter.trim()) {
       const filterValue = statusFilter.trim().toUpperCase();
       filtered = filtered.filter(property => {
-        const code = (property.propertyStatusCode || property.propertyStatus || property.status || '').toUpperCase();
-        const name = (property.propertyStatusLabel || property.propertyStatusName || property.statusLabel || property.statusName || '').toUpperCase();
+        const code = (property.propertyStatusCode ?? property.propertyStatus ?? property.status ?? '').toString().toUpperCase();
+        const name = (property.propertyStatusLabel ?? property.propertyStatusName ?? property.statusLabel ?? property.statusName ?? '').toString().toUpperCase();
         const filterValueLower = filterValue.toLowerCase();
         const nameLower = name.toLowerCase();
         
@@ -444,7 +444,7 @@ export default function PropertiesPage() {
         // Comparar por nombre (case-insensitive, parcial)
         if (name && (nameLower.includes(filterValueLower) || filterValueLower.includes(nameLower))) return true;
         // Comparar código original (case-insensitive)
-        const originalCode = (property.propertyStatusCode || property.propertyStatus || property.status || '').toUpperCase();
+        const originalCode = (property.propertyStatusCode ?? property.propertyStatus ?? property.status ?? '').toString().toUpperCase();
         if (originalCode === filterValue) return true;
         
         return false;

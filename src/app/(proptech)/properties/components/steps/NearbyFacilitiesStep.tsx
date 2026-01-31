@@ -21,7 +21,6 @@ interface PropertyNearbyFacility {
 
 interface NearbyFacilitiesStepProps {
   propertyId?: string;
-  /** En nueva propiedad (sin propertyId), usa las facilidades ya guardadas en el formulario para mostrar/evitar sobrescribir */
   initialFacilities?: Array<PropertyNearbyFacility | { nearbyFacilityId: number; nearbyFacility?: unknown; [k: string]: unknown }>;
   onDataChange?: (facilities: PropertyNearbyFacility[]) => void;
 }
@@ -70,8 +69,6 @@ export default function NearbyFacilitiesStep({ propertyId, initialFacilities, on
     try {
       const response = await apiClient.get(`/api/properties/${propertyId}/nearby-facilities`);
       const data = Array.isArray(response.data) ? response.data : [];
-
-      // Normalizar el shape que viene del backend a lo que espera el frontend
       return data.map((item: any) => ({
         id: item.id,
         nearbyFacilityId: item.nearbyFacilityId ?? item.nearbyFacility?.id,

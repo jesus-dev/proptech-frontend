@@ -26,6 +26,7 @@ export type FloorPlanForm = {
 };
 
 interface FloorPlansStepProps {
+  propertyId?: string;
   formData?: PropertyFormData;
   floorPlans: FloorPlanForm[];
   setFloorPlans: (plans: FloorPlanForm[]) => void;
@@ -33,43 +34,37 @@ interface FloorPlansStepProps {
   handleFloorPlanImageUpload?: (planIndex: number, file: File) => Promise<string>;
 }
 
-export default function FloorPlansStep({ formData, floorPlans, setFloorPlans, errors, handleFloorPlanImageUpload }: FloorPlansStepProps) {
+export default function FloorPlansStep({ propertyId: propertyIdProp, formData, floorPlans, setFloorPlans, errors, handleFloorPlanImageUpload }: FloorPlansStepProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState<{ [key: number]: boolean }>({});
-  const propertyId = formData ? ((formData as any).id || formData.propertyId) : undefined;
+  const propertyId = propertyIdProp ?? (formData ? ((formData as any).id || formData.propertyId) : undefined);
 
-  // Cargar planos desde el backend cuando hay propertyId
   useEffect(() => {
-    if (propertyId) {
-      setLoading(true);
-      getFloorPlans(propertyId)
-        .then((plans) => {
-          // Convertir FloorPlan a FloorPlanForm
-          const formPlans: FloorPlanForm[] = plans.map(plan => ({
-            title: plan.title || '',
-            bedrooms: plan.bedrooms || 0,
-            bathrooms: plan.bathrooms || 0,
-            price: plan.price || 0,
-            priceSuffix: plan.priceSuffix || '',
-            size: plan.size || 0,
-            image: plan.image,
-            description: plan.description || ''
-          }));
-          setFloorPlans(formPlans);
-        })
-        .catch(() => {
-          // Si no hay planos o hay error, mantener los planos del formData
-          console.error('Error loading floor plans');
-        })
-        .finally(() => setLoading(false));
-    }
+    if (!propertyId) return;
+    setLoading(true);
+    getFloorPlans(propertyId)
+      .then((plans) => {
+        const formPlans: FloorPlanForm[] = plans.map(plan => ({
+          title: plan.title || '',
+          bedrooms: plan.bedrooms || 0,
+          bathrooms: plan.bathrooms || 0,
+          price: plan.price || 0,
+          priceSuffix: plan.priceSuffix || '',
+          size: plan.size || 0,
+          image: plan.image,
+          description: plan.description || ''
+        }));
+        setFloorPlans(formPlans);
+      })
+      .catch(() => {
+        console.error('Error loading floor plans');
+      })
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId]);
 
-  // Guardar planos en el backend cuando cambian y hay propertyId
   useEffect(() => {
     if (propertyId && floorPlans.length >= 0) {
-      // Debounce: esperar 1 segundo después del último cambio antes de guardar
       const timeoutId = setTimeout(() => {
         saveFloorPlans(propertyId, floorPlans).catch((error) => {
           console.error('Error auto-saving floor plans:', error);
@@ -93,15 +88,12 @@ export default function FloorPlansStep({ formData, floorPlans, setFloorPlans, er
     setUploading({ ...uploading, [idx]: true });
     try {
       if (propertyId) {
-        // Si hay propertyId, subir directamente al backend
         const imageUrl = await uploadFloorPlanImage(propertyId, file);
         handleChange(idx, "image", imageUrl);
       } else if (handleFloorPlanImageUpload) {
-        // Si no hay propertyId pero hay handler, usarlo
         const imageUrl = await handleFloorPlanImageUpload(idx, file);
         handleChange(idx, "image", imageUrl);
       } else {
-        // Fallback: crear URL temporal para preview
         const imageUrl = URL.createObjectURL(file);
         handleChange(idx, "image", imageUrl);
       }
@@ -122,19 +114,16 @@ export default function FloorPlansStep({ formData, floorPlans, setFloorPlans, er
 
   const handleRemove = async (idx: number) => {
     if (propertyId) {
-      // Si hay propertyId, actualizar la lista y guardar en el backend
       const updated = floorPlans.filter((_, i) => i !== idx);
       setFloorPlans(updated);
       try {
         await saveFloorPlans(propertyId, updated);
       } catch (error) {
         console.error('Error saving floor plans after removal:', error);
-        // Revertir el cambio si falla
         setFloorPlans(floorPlans);
         alert('Error al eliminar plano. Por favor, intenta nuevamente.');
       }
     } else {
-      // Si no hay propertyId, solo actualizar el estado local
       setFloorPlans(floorPlans.filter((_, i) => i !== idx));
     }
   };

@@ -359,9 +359,9 @@ export default function PrivateFilesStep({ formData, handleChange, errors, remov
                            {file.fileSize && (
                              <span>{formatFileSize(file.fileSize)}</span>
                            )}
-                           {file.fileType && (
+                           {(file.fileType ?? '') && (
                              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-600 rounded text-xs">
-                               {file.fileType.toUpperCase()}
+                               {(file.fileType ?? '').toUpperCase()}
                              </span>
                            )}
                          </div>

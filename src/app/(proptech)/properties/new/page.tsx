@@ -460,6 +460,7 @@ export default function NewPropertyPage() {
       case 9:
         return (
           <FloorPlansStep
+            propertyId={undefined}
             formData={formData}
             floorPlans={formData.floorPlans || []}
             setFloorPlans={handleFloorPlansChange}

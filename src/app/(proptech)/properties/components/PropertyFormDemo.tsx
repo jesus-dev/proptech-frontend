@@ -115,6 +115,7 @@ export default function PropertyFormDemo() {
         </div>
         {/* Step: Planos de planta */}
         <FloorPlansStep
+          propertyId={undefined}
           floorPlans={formData.floorPlans}
           setFloorPlans={plans => setFormData(prev => ({ ...prev, floorPlans: plans }))}
         />

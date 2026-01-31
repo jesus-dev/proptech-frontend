@@ -911,7 +911,7 @@ export default function PropertyDetailsPage({ params }: PageProps) {
                               <div>
                                 <h4 className="font-medium text-gray-900 dark:text-white">{file.fileName}</h4>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {file.fileType.toUpperCase()} • {formatFileSize(file.fileSize)}
+                                  {(file.fileType ?? '').toUpperCase()} • {formatFileSize(file.fileSize)}
                                 </p>
                               </div>
                             </div>

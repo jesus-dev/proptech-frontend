@@ -800,6 +800,7 @@ export default function EditPropertyPage({ params }: PageProps) {
       case 9:
         return (
           <FloorPlansStep
+            propertyId={propertyId}
             formData={formData}
             floorPlans={formData.floorPlans || []}
             setFloorPlans={handleFloorPlansChange}

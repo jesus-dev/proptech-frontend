@@ -313,8 +313,8 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                               property.statusName ||
                               (normalizedStatus === "active" ? "Activa" : normalizedStatus === "draft" ? "Borrador" : "Inactiva");
             // Determinar color según el estado real
-            const statusCode = property.propertyStatusCode || property.statusCode || property.status || '';
-            const statusCodeUpper = statusCode.toUpperCase();
+            const statusCode = property.propertyStatusCode ?? property.statusCode ?? property.status ?? '';
+            const statusCodeUpper = (statusCode ?? '').toString().toUpperCase();
             const isActive = normalizedStatus === "active";
             const isDraft = normalizedStatus === "draft";
             const isRented = statusCodeUpper.includes('ALQUILADO') || statusCodeUpper.includes('RENTED') || statusCodeUpper.includes('RENT');
@@ -582,8 +582,8 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                                   property.statusName ||
                                   (normalizedStatus === "active" ? "Activa" : normalizedStatus === "draft" ? "Borrador" : "Inactiva");
                 // Determinar color según el estado real
-                const statusCode = property.propertyStatusCode || property.statusCode || property.status || '';
-                const statusCodeUpper = statusCode.toUpperCase();
+                const statusCode = property.propertyStatusCode ?? property.statusCode ?? property.status ?? '';
+                const statusCodeUpper = (statusCode ?? '').toString().toUpperCase();
                 const isActive = normalizedStatus === "active";
                 const isDraft = normalizedStatus === "draft";
                 const isRented = statusCodeUpper.includes('ALQUILADO') || statusCodeUpper.includes('RENTED') || statusCodeUpper.includes('RENT');

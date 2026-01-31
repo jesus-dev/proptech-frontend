@@ -41,12 +41,12 @@ const computeStatusLabel = (sourceProperty: Property, normalizedStatus: CardStat
 
   // Si no hay label claro, inferir por código / estado para casos como ALQUILADO, VENDIDO, etc.
   const rawCode =
-    sourceProperty.propertyStatusCode ||
-    (typeof sourceProperty.propertyStatus === "string" ? sourceProperty.propertyStatus : "") ||
-    (typeof sourceProperty.status === "string" ? sourceProperty.status : "") ||
+    sourceProperty.propertyStatusCode ??
+    (typeof sourceProperty.propertyStatus === "string" ? sourceProperty.propertyStatus : "") ??
+    (typeof sourceProperty.status === "string" ? sourceProperty.status : "") ??
     "";
 
-  const upperCode = rawCode.toUpperCase();
+  const upperCode = (rawCode ?? "").toString().toUpperCase();
 
   // Si la operación es RENT y el estado está inactivo, asumir \"Alquilado\"
   if (
@@ -170,11 +170,11 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
           {(() => {
             const statusCode =
-              property.propertyStatusCode ||
-              (typeof property.propertyStatus === "string" ? property.propertyStatus : "") ||
-              (typeof property.status === "string" ? property.status : "") ||
+              property.propertyStatusCode ??
+              (typeof property.propertyStatus === "string" ? property.propertyStatus : "") ??
+              (typeof property.status === "string" ? property.status : "") ??
               "";
-            const upperCode = statusCode.toUpperCase();
+            const upperCode = (statusCode ?? "").toString().toUpperCase();
 
             const isDraft = status === "draft";
             const isRented =

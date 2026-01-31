@@ -145,6 +145,9 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
   const uploadedFilesRef = useRef(uploadedFiles);
   uploadedFilesRef.current = uploadedFiles;
 
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
   const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.proptech.com.py' : 'http://localhost:8080')).replace(/\/$/, '');
 
   const normalizeImagePathForBackend = (value?: string | null): string | undefined => {
@@ -174,7 +177,6 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     return undefined;
   };
 
-  // Actualizar el formulario cuando cambie initialData (merge para soportar datos parciales, ej. new con agentId)
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       setFormData(prev => ({ ...prev, ...initialData }));
@@ -271,8 +273,6 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
       : [];
     const fallbackFeatured = selectFallbackFeaturedImage();
     const isEditing = Boolean(initialData?.id);
-
-    // En CREATE: si el usuario es AGENT y no tiene agentId en el form, el backend lo exige → rellenar desde contexto
     const effectiveId = initialData?.id ?? draftPropertyId;
     const isCreate = !(effectiveId != null ? String(effectiveId) : '');
     let dataForPayload = formData;
@@ -327,9 +327,8 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
       }
     }
 
-    // Planos de planta
     try {
-      const plans = formData.floorPlans ?? [];
+      const plans = (formDataRef.current.floorPlans ?? formData.floorPlans) ?? [];
       if (plans.length > 0) {
         const plansWithUploadedImages = await Promise.all(
           plans.map(async (plan, index) => {
@@ -375,7 +374,6 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
       }
     }
 
-    // Cercanías (nearby facilities): sincronizar siempre (create y edit) para que el formulario sea la fuente de verdad
     const nearbyFacilities = (formData as any).nearbyFacilities;
     if (Array.isArray(nearbyFacilities)) {
       try {
@@ -459,7 +457,6 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     return { success: true, propertyId };
   }, [formData, initialData?.id, draftPropertyId, setDraftPropertyId, selectFallbackFeaturedImage, toast, buildPropertyPayload, getUserContext]);
 
-  // Guardar borrador: misma lógica que guardar pero siempre con estado DRAFT
   const saveDraft = useCallback(async () => {
     try {
       const result = await performSave(true);
@@ -494,10 +491,6 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     return;
   }, []);
 
-  // Nota: La validación de bedrooms y bathrooms se manejará más adelante
-  // Por ahora, estos campos no son obligatorios
-
-  // Obtener automáticamente el agente del usuario logueado
   useEffect(() => {
     const getAgentFromUser = async () => {
       if (user?.email && !formData.agentId) {
@@ -510,9 +503,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
               agencyId: agent.agencyId || undefined
             }));
           }
-          // No generar error si no hay agente - es esperado que algunos usuarios no tengan agente asociado
         } catch (error: any) {
-          // Solo registrar errores que no sean 404 (que es esperado cuando no hay agente)
           if (error?.response?.status !== 404 && error?.status !== 404) {
             console.error('❌ Error obteniendo agente del usuario:', error);
           }
@@ -981,7 +972,6 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     }
   };
 
-  // Método para publicar propiedad (cambiar de DRAFT a ACTIVE)
   const publishProperty = async () => {
     if (!draftPropertyId) {
       throw new Error('No hay propiedad en borrador para publicar');
