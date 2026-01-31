@@ -18,6 +18,7 @@ import RentalConfigStep from "../../components/steps/RentalConfigStep";
 import { propertyService } from "../../services/propertyService";
 import { getActivePropertyTypes } from '@/services/publicPropertyTypeService';
 import { rentalPropertyService } from "@/app/(proptech)/rentals/services/rentalPropertyService";
+import { apiClient } from "@/lib/api";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -187,6 +188,25 @@ export default function EditPropertyPage({ params }: PageProps) {
             // Silenciosamente ignorar errores 404 - es esperado que no todas las propiedades tengan rental config
           }
 
+          // Cargar facilidades cercanas para que el formulario las tenga desde el inicio (evita borrarlas al guardar sin abrir el paso)
+          let nearbyFacilities: Array<{ id?: number; nearbyFacilityId: number; nearbyFacility?: unknown; distanceKm?: number; walkingTimeMinutes?: number; drivingTimeMinutes?: number; isFeatured: boolean; notes?: string }> = [];
+          try {
+            const nearbyRes = await apiClient.get(`/api/properties/${propertyId}/nearby-facilities`);
+            const nearbyList = Array.isArray(nearbyRes?.data) ? nearbyRes.data : [];
+            nearbyFacilities = nearbyList.map((item: any) => ({
+              id: item.id,
+              nearbyFacilityId: item.nearbyFacilityId ?? item.nearbyFacility?.id,
+              nearbyFacility: item.nearbyFacility,
+              distanceKm: item.distanceKm,
+              walkingTimeMinutes: item.walkingTimeMinutes,
+              drivingTimeMinutes: item.drivingTimeMinutes,
+              isFeatured: item.isFeatured ?? false,
+              notes: item.notes,
+            }));
+          } catch {
+            // 404 o error: dejar lista vacía
+          }
+
           const initialData = {
             ...propertyData,
             id: propertyId,
@@ -195,9 +215,10 @@ export default function EditPropertyPage({ params }: PageProps) {
             propertyTypeId: propertyData.propertyTypeId,
             featuredImage: processedFeaturedImage,
             rentalConfig: rentalConfig,
+            nearbyFacilities: nearbyFacilities as PropertyFormData['nearbyFacilities'],
           };
           
-          setInitialPropertyData(initialData);
+          setInitialPropertyData(initialData as PropertyFormData & { id?: string });
         } else {
           // Create a new property with the requested ID
           const newPropertyData: PropertyFormData = {
@@ -367,14 +388,30 @@ export default function EditPropertyPage({ params }: PageProps) {
         if (updatedProperty) {
           const { id, ...propertyData } = updatedProperty;
           const amenitiesIds = propertyData.amenities?.map((a: unknown) => typeof a === 'number' ? a : (a as any).id).filter((id: unknown) => !isNaN(id as number)) || [];
-          
+          let nearbyFacilitiesReload: NonNullable<PropertyFormData['nearbyFacilities']> = [];
+          try {
+            const nearbyRes = await apiClient.get(`/api/properties/${propertyId}/nearby-facilities`);
+            const nearbyList = Array.isArray(nearbyRes?.data) ? nearbyRes.data : [];
+            nearbyFacilitiesReload = nearbyList.map((item: any) => ({
+              id: item.id,
+              nearbyFacilityId: item.nearbyFacilityId ?? item.nearbyFacility?.id,
+              nearbyFacility: item.nearbyFacility,
+              distanceKm: item.distanceKm,
+              walkingTimeMinutes: item.walkingTimeMinutes,
+              drivingTimeMinutes: item.drivingTimeMinutes,
+              isFeatured: item.isFeatured ?? false,
+              notes: item.notes,
+            })) as NonNullable<PropertyFormData['nearbyFacilities']>;
+          } catch {
+            // ignorar
+          }
           const newInitialData = {
             ...propertyData,
             id: propertyId,
-            amenities: amenitiesIds
+            amenities: amenitiesIds,
+            nearbyFacilities: nearbyFacilitiesReload,
           };
-          
-          setInitialPropertyData(newInitialData);
+          setInitialPropertyData(newInitialData as PropertyFormData & { id?: string });
           resetForm(); // Reset form data to reflect new property data
         }
         

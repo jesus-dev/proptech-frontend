@@ -21,10 +21,12 @@ interface PropertyNearbyFacility {
 
 interface NearbyFacilitiesStepProps {
   propertyId?: string;
+  /** En nueva propiedad (sin propertyId), usa las facilidades ya guardadas en el formulario para mostrar/evitar sobrescribir */
+  initialFacilities?: Array<PropertyNearbyFacility | { nearbyFacilityId: number; nearbyFacility?: unknown; [k: string]: unknown }>;
   onDataChange?: (facilities: PropertyNearbyFacility[]) => void;
 }
 
-export default function NearbyFacilitiesStep({ propertyId, onDataChange }: NearbyFacilitiesStepProps) {
+export default function NearbyFacilitiesStep({ propertyId, initialFacilities, onDataChange }: NearbyFacilitiesStepProps) {
   const [facilities, setFacilities] = useState<PropertyNearbyFacility[]>([]);
   const [availableFacilities, setAvailableFacilities] = useState<NearbyFacility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,14 +73,16 @@ export default function NearbyFacilitiesStep({ propertyId, onDataChange }: Nearb
       setError(null);
       
       const [facilitiesData, availableData] = await Promise.all([
-        propertyId ? loadPropertyFacilities() : Promise.resolve([]),
+        propertyId ? loadPropertyFacilities() : Promise.resolve((initialFacilities ?? []) as PropertyNearbyFacility[]),
         nearbyFacilityService.getActive()
       ]);
       
       setFacilities(facilitiesData);
       setAvailableFacilities(availableData);
-      // Sincronizar con el formulario para que al guardar la propiedad se persistan las facilidades
-      onDataChange?.(facilitiesData);
+      // Solo sincronizar desde API al formulario cuando estamos editando; en nueva propiedad no sobrescribir
+      if (propertyId) {
+        onDataChange?.(facilitiesData);
+      }
     } catch (error) {
       console.error('Error loading nearby facilities:', error);
       setError('Error al cargar las facilidades cercanas');

@@ -470,6 +470,7 @@ export default function NewPropertyPage() {
       case 10:
         return (
           <NearbyFacilitiesStep
+            initialFacilities={formData.nearbyFacilities ?? []}
             onDataChange={handleNearbyFacilitiesChange}
           />
         );
