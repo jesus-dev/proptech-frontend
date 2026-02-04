@@ -19,6 +19,7 @@ import { propertyService } from "../../services/propertyService";
 import { getActivePropertyTypes } from '@/services/publicPropertyTypeService';
 import { rentalPropertyService } from "@/app/(proptech)/rentals/services/rentalPropertyService";
 import { apiClient } from "@/lib/api";
+import { isPropertyTypeLand } from "../../utils/propertyTypeUtils";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -212,6 +213,7 @@ export default function EditPropertyPage({ params }: PageProps) {
             id: propertyId,
             amenities: amenitiesIds,
             type: typeName,
+            propertyType: typeName,
             propertyTypeId: propertyData.propertyTypeId,
             featuredImage: processedFeaturedImage,
             rentalConfig: rentalConfig,
@@ -410,6 +412,7 @@ export default function EditPropertyPage({ params }: PageProps) {
             id: propertyId,
             amenities: amenitiesIds,
             nearbyFacilities: nearbyFacilitiesReload,
+            floorPlans: propertyData.floorPlans ?? [],
           };
           setInitialPropertyData(newInitialData as PropertyFormData & { id?: string });
           resetForm(); // Reset form data to reflect new property data
@@ -517,12 +520,8 @@ export default function EditPropertyPage({ params }: PageProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Detectar tipo de propiedad para ajustar validaciones (terreno vs casa/departamento)
-  const typeName = ((formData as any).type || (formData as any).propertyType || '').toString().toLowerCase();
-  const isLand =
-    typeName.includes('terreno') ||
-    typeName.includes('lote') ||
-    typeName.includes('loteo');
+  // Lógica común: mismo criterio que FloorPlansStep, AmenitiesStep y new
+  const isLand = isPropertyTypeLand(formData);
 
   // Step configuration with icons and validation (dinámico según tipo)
   const steps: StepInfo[] = [
@@ -802,10 +801,8 @@ export default function EditPropertyPage({ params }: PageProps) {
           <FloorPlansStep
             propertyId={propertyId}
             formData={formData}
-            floorPlans={formData.floorPlans || []}
-            setFloorPlans={handleFloorPlansChange}
-            errors={errors && 'floorPlans' in errors ? errors.floorPlans : undefined}
-            handleFloorPlanImageUpload={handleFloorPlanImageUpload}
+            initialPlans={formData.floorPlans ?? []}
+            onDataChange={handleFloorPlansChange}
           />
         );
       case 10:

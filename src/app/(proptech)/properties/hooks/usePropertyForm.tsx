@@ -38,6 +38,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     address: "",
     city: "Ciudad del Este",
     cityId: undefined, // ID de la ciudad seleccionada
+    neighborhoodId: initialData?.neighborhoodId,
     state: "Alto Paraná",
     zip: "",
     price: 0,
@@ -177,10 +178,18 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     return undefined;
   };
 
+  // Aplicar initialData solo cuando cambia la identidad (id) o la primera vez que hay datos.
+  // Así no se pisa el tipo de propiedad (ni otros campos) que el usuario ya eligió al re-renderizar.
+  const lastInitialIdRef = useRef<string | number | null | undefined>(undefined);
   useEffect(() => {
-    if (initialData && Object.keys(initialData).length > 0) {
-      setFormData(prev => ({ ...prev, ...initialData }));
+    if (!initialData || Object.keys(initialData).length === 0) {
+      lastInitialIdRef.current = null;
+      return;
     }
+    const id = (initialData as any).id ?? null;
+    if (lastInitialIdRef.current === id) return;
+    lastInitialIdRef.current = id;
+    setFormData(prev => ({ ...prev, ...initialData }));
   }, [initialData]);
 
   /**
@@ -206,9 +215,10 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
       price: data.price != null ? Number(data.price) : 0,
       currencyId: data.currencyId,
       address: str(data.address) || undefined,
-      cityId: data.cityId,
+      locationDescription: str(data.locationDescription) || undefined,
+      cityId: num(data.cityId),
       departmentId: (data as any).departmentId,
-      neighborhoodId: (data as any).neighborhoodId,
+      neighborhoodId: num((data as any).neighborhoodId ?? data.neighborhoodId),
       countryId: (data as any).countryId,
       bedrooms: int(data.bedrooms) ?? 0,
       bathrooms: int(data.bathrooms) ?? 0,
@@ -328,7 +338,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     }
 
     try {
-      const plans = (formDataRef.current.floorPlans ?? formData.floorPlans) ?? [];
+      const plans = (formDataRef.current?.floorPlans ?? formData.floorPlans ?? []) as FloorPlanForm[];
       if (plans.length > 0) {
         const plansWithUploadedImages = await Promise.all(
           plans.map(async (plan, index) => {
@@ -345,15 +355,21 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
                 imageUrl = '';
               }
             }
+            const toNum = (v: unknown): number | null => {
+              if (v == null || v === '') return null;
+              if (typeof v === 'number') return v;
+              const n = parseFloat(String(v).replace(',', '.'));
+              return Number.isNaN(n) ? null : n;
+            };
             return {
               id: null,
               title: plan.title ?? '',
-              bedrooms: plan.bedrooms ?? 0,
-              bathrooms: plan.bathrooms ?? 0,
-              price: plan.price ?? 0,
+              bedrooms: plan.bedrooms ?? null,
+              bathrooms: plan.bathrooms ?? null,
+              price: toNum(plan.price),
               priceSuffix: plan.priceSuffix ?? '',
-              size: plan.size ?? 0,
-              image: imageUrl,
+              size: toNum(plan.size),
+              image: imageUrl || null,
               description: plan.description ?? '',
               propertyId,
             };
@@ -365,13 +381,12 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
       }
     } catch (floorPlanError: any) {
       console.error('❌ performSave: Error saving floor plans:', floorPlanError);
-      if (!asDraft) {
-        toast({
-          variant: 'destructive',
-          title: 'Error al guardar planos',
-          description: floorPlanError?.response?.data ?? 'No se pudieron guardar los planos de planta.',
-        });
-      }
+      toast({
+        variant: 'destructive',
+        title: 'Error al guardar planos',
+        description: floorPlanError?.response?.data ?? 'No se pudieron guardar los planos de planta.',
+      });
+      throw floorPlanError;
     }
 
     const nearbyFacilities = (formData as any).nearbyFacilities;
@@ -549,7 +564,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
       // Lista de campos que deben ser convertidos a números
       const numericFields = [
         'price', 'bedrooms', 'bathrooms', 'area', 'propertyStatusId', 'propertyTypeId',
-        'agentId', 'agencyId', 'propietarioId', 'lotSize', 'rooms', 'kitchens', 'floors', 'yearBuilt', 'parking', 'latitude', 'longitude'
+        'agentId', 'agencyId', 'propietarioId', 'lotSize', 'rooms', 'kitchens', 'floors', 'yearBuilt', 'parking', 'latitude', 'longitude', 'neighborhoodId'
       ];
       
       // Campos que son arrays
@@ -713,10 +728,8 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
   };
 
   const handleFloorPlansChange = (floorPlans: FloorPlanForm[]) => {
-    setFormData(prev => ({
-      ...prev,
-      floorPlans
-    }));
+    formDataRef.current = { ...formDataRef.current, floorPlans };
+    setFormData(prev => ({ ...prev, floorPlans }));
   };
 
   const handleFloorPlanImageUpload = async (planIndex: number, file: File) => {
@@ -938,6 +951,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
         photo: ""
       },
       department: "",
+      neighborhoodId: undefined,
       propertyStatusId: initialData?.propertyStatusId,
       propertyTypeId: initialData?.propertyTypeId,
       agentId: initialData?.agentId,

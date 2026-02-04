@@ -8,12 +8,12 @@ export interface FloorPlan {
   id?: number;
   propertyId: number;
   title: string;
-  bedrooms: number;
-  bathrooms: number;
-  price: number;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  price: number | null;
   priceSuffix: string;
-  size: number;
-  image?: string;
+  size: number | null;
+  image?: string | null;
   description: string;
 }
 
@@ -30,7 +30,14 @@ export async function getFloorPlans(propertyId: number | string): Promise<FloorP
     const response = await apiClient.get(`/api/properties/${propertyId}/floor-plans`);
     const plans = response.data || [];
     // Devolver planos con image tal como está en el backend (ruta relativa) para persistir correctamente al guardar
-    return plans.map((plan: FloorPlan) => ({ ...plan, image: plan.image ?? undefined }));
+    return plans.map((plan: FloorPlan) => ({
+      ...plan,
+      bedrooms: plan.bedrooms != null ? Number(plan.bedrooms) : null,
+      bathrooms: plan.bathrooms != null ? Number(plan.bathrooms) : null,
+      price: plan.price != null ? Number(plan.price) : null,
+      size: plan.size != null ? Number(plan.size) : null,
+      image: plan.image ?? undefined,
+    }));
   } catch (error: any) {
     if (error.response?.status === 404) {
       // Si no hay planos, devolver array vacío
@@ -42,23 +49,29 @@ export async function getFloorPlans(propertyId: number | string): Promise<FloorP
 }
 
 export async function saveFloorPlans(propertyId: number | string, floorPlans: FloorPlanForm[]): Promise<void> {
+  const toNum = (v: number | string | null | undefined): number | null => {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number') return v;
+    const n = parseFloat(String(v).replace(',', '.'));
+    return Number.isNaN(n) ? null : n;
+  };
+
   try {
-    // Mapear FloorPlanForm a FloorPlan (backend espera FloorPlanDTO)
     const mappedPlans = floorPlans.map(plan => ({
       title: plan.title || '',
-      bedrooms: plan.bedrooms || 0,
-      bathrooms: plan.bathrooms || 0,
-      price: plan.price || 0,
+      bedrooms: plan.bedrooms ?? null,
+      bathrooms: plan.bathrooms ?? null,
+      price: toNum(plan.price),
       priceSuffix: plan.priceSuffix || '',
-      size: plan.size || 0,
-      image: plan.image || '',
+      size: toNum(plan.size),
+      image: plan.image ? plan.image : null,
       description: plan.description || ''
     }));
     
     await apiClient.post(`/api/properties/${propertyId}/floor-plans`, mappedPlans);
   } catch (error: any) {
     console.error('Error saving floor plans:', error);
-    throw new Error(error.response?.data || 'Error al guardar planos de planta');
+    throw error;
   }
 }
 

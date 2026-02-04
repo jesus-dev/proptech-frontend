@@ -148,6 +148,23 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
     }
   }, [formData.neighborhood, selectedCityId]);
 
+  useEffect(() => {
+    if (!formData.neighborhoodId) {
+      if (!formData.neighborhood || formData.neighborhood.trim() === '') {
+        setSelectedNeighborhoodName('');
+      }
+      return;
+    }
+    const neighborhoodId = Number(formData.neighborhoodId);
+    if (Number.isNaN(neighborhoodId)) return;
+    const neighborhood =
+      neighborhoodsForSelectedCity.find((n) => n.id === neighborhoodId) ??
+      allNeighborhoods.find((n) => n.id === neighborhoodId);
+    if (neighborhood) {
+      setSelectedNeighborhoodName(neighborhood.name);
+    }
+  }, [formData.neighborhoodId, neighborhoodsForSelectedCity, allNeighborhoods, formData.neighborhood]);
+
   // Cerrar dropdown cuando se hace clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -249,6 +266,13 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
           },
         } as unknown as React.ChangeEvent<HTMLInputElement>;
         handleChange(neighborhoodEvent);
+        const neighborhoodIdResetEvent = {
+          target: {
+            name: "neighborhoodId",
+            value: "",
+          },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        handleChange(neighborhoodIdResetEvent);
         
         // Limpiar searchTerm del barrio y nombre del barrio
         setSearchTerm('');
@@ -270,6 +294,13 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
           },
         } as unknown as React.ChangeEvent<HTMLInputElement>;
         handleChange(neighborhoodEvent);
+        const neighborhoodIdEvent = {
+          target: {
+            name: "neighborhoodId",
+            value: neighborhood.id ?? Number(neighborhoodId),
+          },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        handleChange(neighborhoodIdEvent);
       }
     }
     
@@ -356,6 +387,13 @@ export default function LocationStep({ formData, handleChange, errors }: Locatio
           },
         } as unknown as React.ChangeEvent<HTMLInputElement>;
         handleChange(neighborhoodEvent);
+        const neighborhoodIdEvent = {
+          target: {
+            name: "neighborhoodId",
+            value: newNeighborhood.id,
+          },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        handleChange(neighborhoodIdEvent);
       }
 
       setShowRegisterModal(false);

@@ -47,7 +47,6 @@ export interface PaginatedPropertiesResponse {
 
 // Función para transformar la respuesta del backend al formato del frontend
 function transformPropertyResponse(backendProperty: any): Property {
-  // Mapear galleryImages a images
   const mappedImages = backendProperty.images || 
     (backendProperty.galleryImages && Array.isArray(backendProperty.galleryImages) 
       ? backendProperty.galleryImages.map((img: any) => img.url) 
@@ -116,6 +115,23 @@ function transformPropertyResponse(backendProperty: any): Property {
   const rawStatus = statusCandidates.find((candidate) => typeof candidate === 'string' && candidate.trim().length > 0);
   const normalizedStatus = normalizePropertyStatusValue(rawStatus);
 
+  const resolvedNeighborhoodId: number | undefined = (() => {
+    if (backendProperty.neighborhoodId != null) return Number(backendProperty.neighborhoodId);
+    if (backendProperty.neighborhood?.id != null) return Number(backendProperty.neighborhood.id);
+    if (typeof backendProperty.neighborhood === 'object' && backendProperty.neighborhood !== null && backendProperty.neighborhood.neighborhoodId != null) {
+      return Number(backendProperty.neighborhood.neighborhoodId);
+    }
+    return undefined;
+  })();
+
+  const resolvedNeighborhoodName: string = (() => {
+    if (typeof backendProperty.neighborhood === 'string') return backendProperty.neighborhood;
+    if (backendProperty.neighborhood?.name) return backendProperty.neighborhood.name;
+    if (backendProperty.neighborhoodName) return backendProperty.neighborhoodName;
+    if (backendProperty.neighborhood?.nombre) return backendProperty.neighborhood.nombre;
+    return '';
+  })();
+
   return {
     ...backendProperty,
     id: backendProperty.id != null ? String(backendProperty.id) : '',
@@ -144,10 +160,24 @@ function transformPropertyResponse(backendProperty: any): Property {
     // Mapear campos del backend a campos del frontend
     city: backendProperty.city || backendProperty.cityName || "",
     cityId: backendProperty.cityId || undefined,
-    neighborhood: backendProperty.neighborhood || "",
+    neighborhood: resolvedNeighborhoodName,
+    neighborhoodId: resolvedNeighborhoodId,
     zip: backendProperty.zip || backendProperty.postalCode || "",
     // Asegurar que el tipo sea string
     type: backendProperty.type || backendProperty.propertyTypeName || "",
+    floorPlans: Array.isArray(backendProperty.floorPlans)
+      ? backendProperty.floorPlans.map((plan: any) => ({
+          id: plan.id,
+          title: plan.title ?? '',
+          bedrooms: plan.bedrooms != null ? Number(plan.bedrooms) : 0,
+          bathrooms: plan.bathrooms != null ? Number(plan.bathrooms) : 0,
+          price: plan.price != null ? Number(plan.price) : 0,
+          priceSuffix: plan.priceSuffix ?? '',
+          size: plan.size != null ? Number(plan.size) : 0,
+          image: plan.image ?? undefined,
+          description: plan.description ?? ''
+        }))
+      : [],
     statusRaw: rawStatus || backendProperty.status || backendProperty.propertyStatus || null,
     status: normalizedStatus
   };

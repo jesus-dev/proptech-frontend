@@ -37,6 +37,7 @@ import {
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { currencyService } from "@/app/(proptech)/catalogs/services/catalogService";
 import { useToast } from "@/components/ui/use-toast";
+import { isPropertyTypeLand } from "../utils/propertyTypeUtils";
 
 interface StepInfo {
   id: number;
@@ -208,12 +209,8 @@ export default function NewPropertyPage() {
     }
   };
 
-  // Detectar tipo de propiedad (por nombre) para ajustar pasos dinámicamente
-  const typeName = (formData.type || "").toString().toLowerCase();
-  const isLand =
-    typeName.includes("terreno") ||
-    typeName.includes("lote") ||
-    typeName.includes("loteo");
+  // Lógica común: mismo criterio que FloorPlansStep, AmenitiesStep y edit
+  const isLand = isPropertyTypeLand(formData);
 
   // Step configuration with icons and validation (dinámico según tipo)
   const steps: StepInfo[] = [
@@ -293,7 +290,7 @@ export default function NewPropertyPage() {
       id: 9,
       title: "Planos de Planta",
       description: "Agrega uno o más planos de planta para la propiedad",
-      icon: <FileText className="h-5 w-5" aria-label="Icono de planos de planta" />, // Puedes cambiar el icono si lo deseas
+      icon: <FileText className="h-5 w-5" aria-label="Icono de planos de planta" />,
       requiredFields: [],
       isCompleted: false,
       hasErrors: false
@@ -460,12 +457,10 @@ export default function NewPropertyPage() {
       case 9:
         return (
           <FloorPlansStep
-            propertyId={undefined}
+            propertyId={draftPropertyId ?? formData.propertyId ?? undefined}
             formData={formData}
-            floorPlans={formData.floorPlans || []}
-            setFloorPlans={handleFloorPlansChange}
-            errors={errors && 'floorPlans' in errors ? errors.floorPlans : undefined}
-            handleFloorPlanImageUpload={handleFloorPlanImageUpload}
+            initialPlans={formData.floorPlans ?? []}
+            onDataChange={handleFloorPlansChange}
           />
         );
       case 10:

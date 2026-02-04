@@ -119,18 +119,19 @@ export interface Property {
   propertyStatusId?: number;
   propertyTypeId?: number;
   cityId?: number;
+  neighborhoodId?: number;
   agentId?: number;
   agencyId?: number;
   additionalPropertyTypes?: string[];
   floorPlans?: Array<{
     id?: number;
     title: string;
-    bedrooms: number;
-    bathrooms: number;
-    price: number;
+    bedrooms: number | null | undefined;
+    bathrooms: number | null | undefined;
+    price: number | string | null | undefined;
     priceSuffix: string;
-    size: number;
-    image?: string;
+    size: number | string | null | undefined;
+    image?: string | null;
     description: string;
   }>;
   // Campos de detalles de amenities y servicios

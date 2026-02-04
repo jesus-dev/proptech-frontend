@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyForm";
+import { isPropertyTypeLand } from "../../utils/propertyTypeUtils";
 import ValidatedInput from "@/components/form/input/ValidatedInput";
 import ValidatedTextArea from "@/components/form/input/ValidatedTextArea";
 import { 
@@ -27,12 +28,8 @@ interface CharacteristicsStepProps {
 }
 
 export default function CharacteristicsStep({ formData, handleChange, errors }: CharacteristicsStepProps) {
-  // Detectar tipo de propiedad por nombre para adaptar campos (terreno vs casa/departamento)
-  const typeName = ((formData as any).type || (formData as any).propertyType || '').toString().toLowerCase();
-  const isLand =
-    typeName.includes('terreno') ||
-    typeName.includes('lote') ||
-    typeName.includes('loteo');
+  // Lógica común: mismo criterio que FloorPlansStep, AmenitiesStep y edit/new
+  const isLand = isPropertyTypeLand(formData);
 
   // Sección activa: para terrenos arrancamos en "dimensions", para el resto en "basic"
   const [activeSection, setActiveSection] = useState<'basic' | 'spaces' | 'dimensions' | 'details'>(isLand ? 'dimensions' : 'basic');

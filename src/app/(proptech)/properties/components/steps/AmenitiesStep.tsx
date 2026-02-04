@@ -4,6 +4,7 @@ import { PropertyFormData, PropertyFormErrors } from "../../hooks/usePropertyFor
 import { getAllAmenities, Amenity } from "@/app/(proptech)/catalogs/amenities/services/amenityService";
 import EnhancedMultiSelect, { MultiSelectOption } from "@/components/form/EnhancedMultiSelect";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { isPropertyTypeLand } from "../../utils/propertyTypeUtils";
 
 interface AmenitiesStepProps {
   formData: PropertyFormData;
@@ -16,12 +17,8 @@ export default function AmenitiesStep({ formData, toggleAmenity, errors }: Ameni
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Detectar si la propiedad es un terreno para adaptar el contenido
-  const typeName = ((formData as any).type || (formData as any).propertyType || '').toString().toLowerCase();
-  const isLand =
-    typeName.includes('terreno') ||
-    typeName.includes('lote') ||
-    typeName.includes('loteo');
+  // Lógica común: mismo criterio que FloorPlansStep y edit/new
+  const isLand = isPropertyTypeLand(formData);
 
   useEffect(() => {
     loadAmenities();
