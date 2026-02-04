@@ -172,10 +172,11 @@ function transformPropertyResponse(backendProperty: any): Property {
           bedrooms: plan.bedrooms != null ? Number(plan.bedrooms) : 0,
           bathrooms: plan.bathrooms != null ? Number(plan.bathrooms) : 0,
           price: plan.price != null ? Number(plan.price) : 0,
-          priceSuffix: plan.priceSuffix ?? '',
           size: plan.size != null ? Number(plan.size) : 0,
           image: plan.image ?? undefined,
-          description: plan.description ?? ''
+          description: plan.description ?? '',
+          currencyId: plan.currencyId != null ? Number(plan.currencyId) : undefined,
+          currency: plan.currencyCode ?? plan.currency ?? undefined,
         }))
       : [],
     statusRaw: rawStatus || backendProperty.status || backendProperty.propertyStatus || null,
@@ -269,9 +270,11 @@ class PropertyService {
       const response = await apiClient.post('/api/properties', property);
       const backendProperty = response.data as any;
       return transformPropertyResponse(backendProperty);
-    } catch (error) {
-      console.error('Error creating property:', error);
-      throw new Error('Error al crear la propiedad');
+    } catch (error: any) {
+      const data = error?.response?.data;
+      const msg = typeof data === 'string' ? data : (data?.error ?? data?.message ?? error?.message);
+      console.error('Error creating property:', { status: error?.response?.status, data }, error);
+      throw new Error(typeof msg === 'string' ? msg : 'Error al crear la propiedad');
     }
   }
 
@@ -281,9 +284,20 @@ class PropertyService {
       const response = await apiClient.put(`/api/properties/${id}`, property);
       const backendProperty = response.data as any;
       return transformPropertyResponse(backendProperty);
-    } catch (error) {
-      console.error('Error updating property:', error);
-      throw new Error('Error al actualizar la propiedad');
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+      let msg: string = '';
+      if (typeof data === 'string') {
+        msg = data.length > 200 ? data.slice(0, 200) + '…' : data;
+      } else if (data && typeof data === 'object') {
+        msg = (data.error ?? data.message ?? data.details ?? data.msg) ?? '';
+        if (typeof msg !== 'string') msg = JSON.stringify(msg);
+      }
+      if (!msg) msg = error?.message ?? '';
+      if (!msg) msg = `Error al actualizar la propiedad (${status ?? 'sin respuesta'})`;
+      console.error('Error updating property:', { status, data }, error);
+      throw new Error(msg);
     }
   }
 

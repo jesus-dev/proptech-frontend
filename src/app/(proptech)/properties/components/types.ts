@@ -129,10 +129,11 @@ export interface Property {
     bedrooms: number | null | undefined;
     bathrooms: number | null | undefined;
     price: number | string | null | undefined;
-    priceSuffix: string;
     size: number | string | null | undefined;
     image?: string | null;
     description: string;
+    currencyId?: number | null;
+    currency?: string | null;
   }>;
   // Campos de detalles de amenities y servicios
   amenitiesDetails?: Array<{

@@ -189,7 +189,11 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     const id = (initialData as any).id ?? null;
     if (lastInitialIdRef.current === id) return;
     lastInitialIdRef.current = id;
-    setFormData(prev => ({ ...prev, ...initialData }));
+    setFormData((prev) => {
+      const next = { ...prev, ...initialData };
+      formDataRef.current = next;
+      return next;
+    });
   }, [initialData]);
 
   /**
@@ -340,6 +344,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
     try {
       const plans = (formDataRef.current?.floorPlans ?? formData.floorPlans ?? []) as FloorPlanForm[];
       if (plans.length > 0) {
+        const propertyIdForPlans = String(propertyId);
         const plansWithUploadedImages = await Promise.all(
           plans.map(async (plan, index) => {
             let imageUrl = typeof plan.image === 'string' ? plan.image : '';
@@ -349,7 +354,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
                 const blob = await res.blob();
                 const ext = blob.type?.split('/')[1] || 'jpg';
                 const file = new File([blob], `floor-plan-${index}.${ext}`, { type: blob.type });
-                imageUrl = await uploadFloorPlanImage(propertyId, file);
+                imageUrl = await uploadFloorPlanImage(propertyIdForPlans, file);
               } catch (e) {
                 console.error('Error uploading floor plan image from blob:', e);
                 imageUrl = '';
@@ -361,22 +366,23 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
               const n = parseFloat(String(v).replace(',', '.'));
               return Number.isNaN(n) ? null : n;
             };
+            const planCurrencyId = plan.currencyId != null && plan.currencyId !== '' ? Number(plan.currencyId) : (formData.currencyId != null ? Number(formData.currencyId) : null);
             return {
               id: null,
               title: plan.title ?? '',
               bedrooms: plan.bedrooms ?? null,
               bathrooms: plan.bathrooms ?? null,
               price: toNum(plan.price),
-              priceSuffix: plan.priceSuffix ?? '',
               size: toNum(plan.size),
               image: imageUrl || null,
               description: plan.description ?? '',
-              propertyId,
+              currencyId: planCurrencyId,
+              propertyId: propertyIdForPlans,
             };
           })
         );
-        await apiClient.post(`/api/properties/${propertyId}/floor-plans`, plansWithUploadedImages);
-      } else {
+        await apiClient.post(`/api/properties/${propertyIdForPlans}/floor-plans`, plansWithUploadedImages);
+      } else if (effectiveIdStr) {
         await apiClient.delete(`/api/properties/${propertyId}/floor-plans`);
       }
     } catch (floorPlanError: any) {
@@ -593,6 +599,7 @@ export function usePropertyForm(initialData?: Partial<PropertyFormData> & { id?:
           ...prev,
           [name]: processedValue,
         };
+        formDataRef.current = newData;
         
         if (name === 'additionalPropertyTypes') {
           debug('🔍 Nuevo formData.additionalPropertyTypes:', newData.additionalPropertyTypes);

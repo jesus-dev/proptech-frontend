@@ -4,6 +4,7 @@ import { Square3Stack3DIcon, HomeIcon, TrashIcon, PlusIcon, PhotoIcon } from "@h
 import { getFloorPlans, uploadFloorPlanImage, saveFloorPlans, getFloorPlanImageDisplayUrl } from '../../services/floorPlanService';
 import { useToast } from "@/components/ui/use-toast";
 import { isPropertyTypeLand } from "../../utils/propertyTypeUtils";
+import CurrencySelector from "@/components/ui/CurrencySelector";
 
 export type FloorPlanForm = {
   id?: number;
@@ -11,10 +12,11 @@ export type FloorPlanForm = {
   bedrooms: number | undefined;
   bathrooms: number | undefined;
   price: number | string | undefined;
-  priceSuffix: string;
   size: number | string | undefined;
   image?: string | null;
   description: string;
+  currencyId?: number | null;
+  currency?: string | null;
 };
 
 interface FloorPlansStepProps {
@@ -60,10 +62,11 @@ export default function FloorPlansStep({ propertyId, formData, initialPlans, onD
             bedrooms: p.bedrooms ?? undefined,
             bathrooms: p.bathrooms ?? undefined,
             price: p.price ?? undefined,
-            priceSuffix: p.priceSuffix || '',
             size: p.size ?? undefined,
             image: p.image,
-            description: p.description || ''
+            description: p.description || '',
+            currencyId: p.currencyId ?? undefined,
+            currency: p.currency ?? p.currencyCode ?? undefined,
           })))
         : (initialPlans ?? []);
       setPlans(data);
@@ -83,7 +86,12 @@ export default function FloorPlansStep({ propertyId, formData, initialPlans, onD
     onDataChange?.(updated);
     if (propertyId) {
       try {
-        await saveFloorPlans(propertyId, updated);
+        const propertyCurrencyId = (formData as any)?.currencyId != null ? Number((formData as any).currencyId) : undefined;
+        const plansWithCurrency = updated.map(p => ({
+          ...p,
+          currencyId: p.currencyId != null ? Number(p.currencyId) : propertyCurrencyId,
+        }));
+        await saveFloorPlans(propertyId, plansWithCurrency);
       } catch (e: any) {
         console.error('Error saving floor plans:', e);
         toast({
@@ -144,14 +152,22 @@ export default function FloorPlansStep({ propertyId, formData, initialPlans, onD
   };
 
   const handleAdd = () => {
+    const defaultCurrencyId = (formData as any)?.currencyId != null ? Number((formData as any).currencyId) : undefined;
+    const defaultCurrencyCode = (formData as any)?.currency ?? undefined;
     syncAndSave([
       ...plans,
-      { title: '', bedrooms: undefined, bathrooms: undefined, price: undefined, priceSuffix: '', size: undefined, image: undefined, description: '' }
+      { title: '', bedrooms: undefined, bathrooms: undefined, price: undefined, size: undefined, image: undefined, description: '', currencyId: defaultCurrencyId, currency: defaultCurrencyCode }
     ]);
   };
 
   const handleRemove = async (idx: number) => {
     const u = plans.filter((_, i) => i !== idx);
+    syncAndSave(u);
+  };
+
+  const handleCurrencyForPlan = (idx: number, currencyId: number, currencyCode: string) => {
+    const u = [...plans];
+    u[idx] = { ...u[idx], currencyId, currency: currencyCode };
     syncAndSave(u);
   };
 
@@ -226,8 +242,12 @@ export default function FloorPlansStep({ propertyId, formData, initialPlans, onD
                 <input type="text" inputMode="decimal" value={formatDec(plan.price)} onChange={e => handleNumeric(idx, 'price', e.target.value, true)} placeholder="0" className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-white" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sufijo precio</label>
-                <input type="text" value={plan.priceSuffix} onChange={e => handleChange(idx, 'priceSuffix', e.target.value)} placeholder="/mes, /m²" className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-white" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Moneda</label>
+                <CurrencySelector
+                  selectedCurrencyId={plan.currencyId ?? (formData as any)?.currencyId}
+                  onCurrencyChange={(currencyId, currencyCode) => handleCurrencyForPlan(idx, currencyId, currencyCode)}
+                  className="w-full"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tamaño (m²)</label>

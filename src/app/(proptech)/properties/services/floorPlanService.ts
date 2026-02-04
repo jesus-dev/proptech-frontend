@@ -4,17 +4,21 @@ import { FloorPlanForm } from '../components/steps/FloorPlansStep';
 
 // Servicio para manejar planos de planta asociados a propiedades
 
+/** Respuesta del API: mismo shape que FloorPlanForm para mapeo consistente */
 export interface FloorPlan {
   id?: number;
-  propertyId: number;
+  propertyId?: number;
   title: string;
   bedrooms: number | null;
   bathrooms: number | null;
   price: number | null;
-  priceSuffix: string;
   size: number | null;
   image?: string | null;
   description: string;
+  currencyId?: number | null;
+  currencyCode?: string | null;
+  /** Código de moneda (alias de currencyCode para UI) */
+  currency?: string | null;
 }
 
 // Función helper para convertir URLs relativas a completas (solo para visualización)
@@ -31,12 +35,16 @@ export async function getFloorPlans(propertyId: number | string): Promise<FloorP
     const plans = response.data || [];
     // Devolver planos con image tal como está en el backend (ruta relativa) para persistir correctamente al guardar
     return plans.map((plan: FloorPlan) => ({
-      ...plan,
+      id: plan.id,
+      title: plan.title ?? '',
       bedrooms: plan.bedrooms != null ? Number(plan.bedrooms) : null,
       bathrooms: plan.bathrooms != null ? Number(plan.bathrooms) : null,
       price: plan.price != null ? Number(plan.price) : null,
       size: plan.size != null ? Number(plan.size) : null,
       image: plan.image ?? undefined,
+      description: plan.description ?? '',
+      currencyId: plan.currencyId != null ? Number(plan.currencyId) : null,
+      currency: plan.currencyCode ?? plan.currency ?? undefined,
     }));
   } catch (error: any) {
     if (error.response?.status === 404) {
@@ -57,17 +65,19 @@ export async function saveFloorPlans(propertyId: number | string, floorPlans: Fl
   };
 
   try {
-    const mappedPlans = floorPlans.map(plan => ({
-      title: plan.title || '',
-      bedrooms: plan.bedrooms ?? null,
-      bathrooms: plan.bathrooms ?? null,
-      price: toNum(plan.price),
-      priceSuffix: plan.priceSuffix || '',
-      size: toNum(plan.size),
-      image: plan.image ? plan.image : null,
-      description: plan.description || ''
-    }));
-    
+    const mappedPlans = floorPlans.map(plan => {
+      const currencyId = plan.currencyId != null && plan.currencyId !== '' ? Number(plan.currencyId) : null;
+      return {
+        title: plan.title || '',
+        bedrooms: plan.bedrooms ?? null,
+        bathrooms: plan.bathrooms ?? null,
+        price: toNum(plan.price),
+        size: toNum(plan.size),
+        image: plan.image ? plan.image : null,
+        description: plan.description || '',
+        currencyId,
+      };
+    });
     await apiClient.post(`/api/properties/${propertyId}/floor-plans`, mappedPlans);
   } catch (error: any) {
     console.error('Error saving floor plans:', error);
