@@ -155,36 +155,36 @@ export default function ImageCropModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[80%] max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center bg-black/80 pt-4 sm:pt-0">
+      <div className="bg-white dark:bg-gray-800 w-full sm:w-[95%] sm:max-w-lg rounded-2xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col mx-2 sm:mx-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Editar Imagen
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+            Editar Foto
           </h3>
           <button
             onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Crop Area */}
-        <div className="relative w-full" style={{ height: '400px', backgroundColor: '#000' }}>
+        <div className="relative w-full h-[250px] sm:h-[300px] flex-shrink-0" style={{ backgroundColor: '#000' }}>
           {imageError ? (
             <div className="w-full h-full flex items-center justify-center text-white">
-              <p className="text-red-400">Error al cargar la imagen</p>
+              <p className="text-red-400 text-sm">Error al cargar la imagen</p>
             </div>
           ) : !imageSrc ? (
             <div className="w-full h-full flex items-center justify-center text-white">
-              <p>No hay imagen seleccionada</p>
+              <p className="text-sm">No hay imagen seleccionada</p>
             </div>
           ) : !imageLoaded || !cropperLoaded ? (
             <div className="w-full h-full flex items-center justify-center text-white">
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p>Cargando...</p>
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-sm">Cargando...</p>
               </div>
             </div>
           ) : (
@@ -204,73 +204,70 @@ export default function ImageCropModal({
         </div>
 
         {/* Controls */}
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-4 py-3 space-y-3 flex-shrink-0 bg-gray-50 dark:bg-gray-900/50">
           {/* Zoom */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <ZoomOut className="w-4 h-4" />
-                Zoom
-              </label>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {Math.round(zoom * 100)}%
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.1}
-                value={zoom}
-                onChange={(e) => setZoom(Number(e.target.value))}
-                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-              />
-              <ZoomIn className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setZoom(Math.max(1, zoom - 0.1))}
+              className="p-2 rounded-full bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600"
+            >
+              <ZoomOut className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            </button>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.1}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="flex-1 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer dark:bg-gray-700 accent-brand-500"
+            />
+            <button 
+              onClick={() => setZoom(Math.min(3, zoom + 0.1))}
+              className="p-2 rounded-full bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600"
+            >
+              <ZoomIn className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            </button>
           </div>
 
           {/* Rotation */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <RotateCw className="w-4 h-4" />
-                Rotación
-              </label>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {rotation}°
-              </span>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setRotation((rotation - 90 + 360) % 360)}
+              className="p-2 rounded-full bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600"
+            >
+              <RotateCw className="w-4 h-4 text-gray-600 dark:text-gray-300 transform -scale-x-100" />
+            </button>
+            <div className="flex-1 text-center">
+              <span className="text-xs text-gray-500 dark:text-gray-400">{rotation}°</span>
             </div>
-            <input
-              type="range"
-              min={0}
-              max={360}
-              step={1}
-              value={rotation}
-              onChange={(e) => setRotation(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-            />
+            <button 
+              onClick={() => setRotation((rotation + 90) % 360)}
+              className="p-2 rounded-full bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600"
+            >
+              <RotateCw className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+            </button>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex gap-3 p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={onCancel}
             disabled={isProcessing}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={isProcessing}
-            className="px-4 py-2 text-sm font-medium text-white bg-brand-600 border border-transparent rounded-lg hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-brand-600 rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
           >
             {isProcessing ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Procesando...</span>
+                <span>...</span>
               </>
             ) : (
               <>

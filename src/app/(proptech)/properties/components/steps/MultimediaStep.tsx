@@ -607,12 +607,15 @@ export default function MultimediaStep({
             </div>
           )}
 
-          {/* Upload Button */}
-          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
-            <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {uploadingImage ? 'Subiendo imágenes...' : 'Agregar más imágenes a la galería'}
-            </p>
+          {/* Upload Button - Toda el área clicable */}
+          <label
+            htmlFor="galleryImages"
+            className={`block border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 sm:p-6 text-center transition-colors ${
+              uploadingImage 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:border-brand-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
+            }`}
+          >
             <input
               type="file"
               id="galleryImages"
@@ -622,27 +625,26 @@ export default function MultimediaStep({
               disabled={uploadingImage}
               className="hidden"
             />
-            <label
-              htmlFor="galleryImages"
-              className={`mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
-                uploadingImage 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-brand-500 hover:bg-brand-600 cursor-pointer'
-              }`}
-            >
-              {uploadingImage ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Subiendo...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Seleccionar Imágenes
-                </>
-              )}
-            </label>
-          </div>
+            {uploadingImage ? (
+              <>
+                <Loader2 className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-brand-500 animate-spin" />
+                <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  Subiendo imágenes...
+                </p>
+              </>
+            ) : (
+              <>
+                <ImageIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+                <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-brand-600">Toca para subir</span>
+                  <span className="hidden sm:inline"> o arrastra imágenes</span>
+                </p>
+                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  PNG, JPG, GIF, HEIC hasta 10MB
+                </p>
+              </>
+            )}
+          </label>
         </div>
       )}
 
@@ -719,12 +721,11 @@ export default function MultimediaStep({
             </div>
           )}
 
-          {/* Área de subida (mismo estilo que en edición) */}
-          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-brand-500 transition-colors">
-            <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Agregar más imágenes a la galería
-            </p>
+          {/* Área de subida - Toda el área clicable */}
+          <label
+            htmlFor="images"
+            className="block border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 sm:p-6 text-center hover:border-brand-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+          >
             <input
               type="file"
               id="images"
@@ -734,14 +735,15 @@ export default function MultimediaStep({
               onChange={handleFileChange}
               className="hidden"
             />
-            <label
-              htmlFor="images"
-              className="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-500 hover:bg-brand-600 cursor-pointer"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Seleccionar Imágenes
-            </label>
-          </div>
+            <ImageIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+            <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <span className="font-medium text-brand-600">Toca para subir</span>
+              <span className="hidden sm:inline"> o arrastra imágenes</span>
+            </p>
+            <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1">
+              PNG, JPG, GIF, HEIC hasta 10MB
+            </p>
+          </label>
           {errors.images && <p className="mt-1 text-sm text-red-500">{errors.images}</p>}
         </div>
       )}

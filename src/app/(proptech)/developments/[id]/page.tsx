@@ -192,40 +192,32 @@ export default function DevelopmentDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header con Botones */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           {/* Botones de Acción - Arriba */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
             <button
               onClick={() => router.push("/developments")}
-              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              <ArrowLeftIcon className="h-5 w-5" />
-              <span>Volver a Desarrollos</span>
+              <ArrowLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Volver</span>
             </button>
             
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => router.push(`/developments/${development.id}/edit`)}
-                className="flex items-center space-x-2 px-6 py-2.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
-              >
-                <PencilIcon className="h-5 w-5" />
-                <span>Editar Desarrollo</span>
-              </button>
-              <button
-                onClick={() => router.push("/developments")}
-                className="px-6 py-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-700 font-medium shadow-sm hover:shadow-md"
-              >
-                Volver a la Lista
-              </button>
-            </div>
+            <button
+              onClick={() => router.push(`/developments/${development.id}/edit`)}
+              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium text-sm sm:text-base"
+            >
+              <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span>Editar</span>
+            </button>
           </div>
 
           {/* Título, badges y resumen */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-            <div className="flex items-center flex-wrap gap-2 mb-4">
-              <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-4 sm:mb-6">
+            <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 mb-2 sm:mb-4">
+              <span className={`text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full ${
                 development.type === "loteamiento" 
                   ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                   : development.type === "edificio"
@@ -240,7 +232,7 @@ export default function DevelopmentDetailsPage() {
               </span>
               {development.status && (
                 <span
-                  className={`text-xs font-semibold px-3 py-1.5 rounded-full ${getDevelopmentStatusBadgeClasses(
+                  className={`text-[10px] sm:text-xs font-semibold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full ${getDevelopmentStatusBadgeClasses(
                     development.status
                   )} text-gray-900 dark:text-gray-900`}
                 >
@@ -249,36 +241,26 @@ export default function DevelopmentDetailsPage() {
               )}
             </div>
             
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">{development.title}</h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-3">{development.title}</h1>
+            <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-3 sm:mb-4">
               {development.description}
             </p>
 
             {/* Resumen rápido: ubicación, creado, estado */}
-            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-300">
-              <div className="flex items-start gap-2">
-                <MapPin className="h-5 w-5 text-brand-500 mt-0.5" />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Ubicación</p>
-                  <p>
-                    {development.address}
-                    {development.city && `, ${development.city}`}
-                  </p>
-                </div>
+            <div className="mt-2 flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700/50 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-500 flex-shrink-0" />
+                <span className="truncate max-w-[150px] sm:max-w-none">
+                  {development.address}{development.city && `, ${development.city}`}
+                </span>
               </div>
-              <div className="flex items-start gap-2">
-                <Calendar className="h-5 w-5 text-brand-500 mt-0.5" />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Creado</p>
-                  <p>{new Date(development.createdAt).toLocaleDateString('es-ES')}</p>
-                </div>
+              <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700/50 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-500 flex-shrink-0" />
+                <span>{new Date(development.createdAt).toLocaleDateString('es-ES')}</span>
               </div>
-              <div className="flex items-start gap-2">
-                <Clock className="h-5 w-5 text-brand-500 mt-0.5" />
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Estado actual</p>
-                  <p>{getDevelopmentStatusLabel(development.status) || 'Disponible'}</p>
-                </div>
+              <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-700/50 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg">
+                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-brand-500 flex-shrink-0" />
+                <span>{getDevelopmentStatusLabel(development.status) || 'Disponible'}</span>
               </div>
             </div>
           </div>

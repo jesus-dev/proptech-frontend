@@ -904,19 +904,19 @@ loadUserData();
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 w-full min-w-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 space-y-8">
       {/* Header con avatar editable - Mejorado */}
-      <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="flex items-center gap-8 mb-4 lg:mb-0">
-            <div className="relative group">
+      <div className="bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 lg:gap-8 mb-4 lg:mb-0">
+            <div className="relative group flex-shrink-0">
               {(previewUrl || avatarUrl || profileUser?.photoUrl) ? (
                 <div className="relative">
-                  <div className="h-28 w-28 rounded-full overflow-hidden border-4 border-white shadow-lg relative">
+                  <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-white shadow-lg relative">
                     {(() => {
                       // Si hay error de imagen, mostrar avatar con iniciales
                       if (imageError) {
                         return (
-                          <div className="h-28 w-28 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg">
-                            <span className="text-4xl font-bold text-white">
+                          <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg">
+                            <span className="text-3xl sm:text-4xl font-bold text-white">
                               {(profileUser?.fullName || profileUser?.email || 'U').charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -962,59 +962,59 @@ loadUserData();
                   </div>
                   <label
                     htmlFor="avatar-upload"
-                    className="absolute -bottom-2 -right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-2 sm:p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-2 sm:border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Editar foto"
                   >
-                    <Edit className="h-6 w-6" />
+                    <Edit className="h-4 w-4 sm:h-6 sm:w-6" />
                   </label>
                   {avatarUrl && !uploadingPhoto && (
                     <button
                       type="button"
                       onClick={handleDeletePhoto}
-                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-xl transition-all duration-300 opacity-90 hover:opacity-100 border-2 border-white hover:scale-110"
+                      className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 sm:p-2 shadow-xl transition-all duration-300 opacity-90 hover:opacity-100 border-2 border-white hover:scale-110"
                       title="Eliminar foto"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
                     </button>
                   )}
                 </div>
               ) : (
                 <div className="relative">
-                  <AvatarText name={profileUser?.fullName || profileUser?.email || 'Usuario'} className="h-28 w-28 text-4xl" />
-                  <label htmlFor="avatar-upload" className="absolute -bottom-2 -right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Camera className="h-6 w-6" />
+                  <AvatarText name={profileUser?.fullName || profileUser?.email || 'Usuario'} className="h-24 w-24 sm:h-28 sm:w-28 text-3xl sm:text-4xl" />
+                  <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full p-2 sm:p-3 shadow-xl cursor-pointer transition-all duration-300 opacity-90 group-hover:opacity-100 border-2 sm:border-4 border-white hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Camera className="h-4 w-4 sm:h-6 sm:w-6" />
                   </label>
                 </div>
               )}
             </div>
-            <div>
-              <div className="flex items-center gap-4 mb-3">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
-                  Mi Perfil
+            <div className="text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 mb-2 sm:mb-3">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+                  {profileUser?.fullName || `${profileData.firstName} ${profileData.lastName}`.trim() || 'Mi Perfil'}
                 </h1>
                 {getStatusBadge(profileUser.status || 'ACTIVE')}
               </div>
-              <p className="text-lg text-slate-600 dark:text-slate-400">Gestiona tu información personal y configuración de cuenta</p>
-              <div className="flex items-center gap-4 mt-3">
-                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                  <UserTypeIcon className="h-4 w-4" />
+              <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-400">Gestiona tu información personal y configuración</p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 mt-2 sm:mt-3">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                  <UserTypeIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span>{primaryRole ? (USER_TYPE_LABELS[primaryRole as keyof typeof USER_TYPE_LABELS] || primaryRole) : 'Sin rol'}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                  <Calendar className="h-4 w-4" />
-                  <span>Miembro desde {profileUser.createdAt ? new Date(profileUser.createdAt).toLocaleDateString('es-ES') : 'N/A'}</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span>Desde {profileUser.createdAt ? new Date(profileUser.createdAt).toLocaleDateString('es-ES') : 'N/A'}</span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button
               variant="outline"
               onClick={() => setShowPasswordDialog(true)}
-              className="group flex items-center gap-3 px-6 py-3.5 border-2 border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-300 rounded-xl"
+              className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3.5 border-2 border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-300 rounded-xl"
             >
-              <Key className="h-5 w-5 text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300" />
-              <span className="font-medium text-base text-slate-700 dark:text-slate-300 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors duration-300">
+              <Key className="h-4 w-4 sm:h-5 sm:w-5 text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300" />
+              <span className="font-medium text-sm sm:text-base text-slate-700 dark:text-slate-300 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors duration-300">
                 Contraseña
               </span>
             </Button>

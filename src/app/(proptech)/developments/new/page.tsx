@@ -461,42 +461,39 @@ export default function NewDevelopmentPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <button
                 onClick={() => router.push('/developments')}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors flex-shrink-0"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    Nuevo Desarrollo
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Paso {currentStep} de {updatedSteps.length} • {progressPercentage.toFixed(0)}% completado
-                  </p>
-                </div>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white truncate">
+                  Nuevo Desarrollo
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  <span className="hidden sm:inline">Paso {currentStep} de {updatedSteps.length} • </span>
+                  <span>{progressPercentage.toFixed(0)}%</span>
+                </p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              {/* Save status indicator */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              {/* Save status indicator - hidden on mobile */}
               {saving && (
-                <div className="flex items-center text-brand-600 dark:text-brand-400">
+                <div className="hidden sm:flex items-center text-brand-600 dark:text-brand-400">
                   <LoadingSpinner size="md" />
                   <span className="text-sm ml-2">Guardando...</span>
                 </div>
               )}
               
               {saveSuccess && (
-                <div className="flex items-center text-green-600 dark:text-green-400">
+                <div className="hidden sm:flex items-center text-green-600 dark:text-green-400">
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  <span className="text-sm">Cambios guardados</span>
+                  <span className="text-sm">Guardado</span>
                 </div>
               )}
               
@@ -504,26 +501,26 @@ export default function NewDevelopmentPage() {
               <button
                 onClick={onSubmit}
                 disabled={saving || isInitializing}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg font-medium text-sm sm:text-base transition-all duration-200 ${
                   saving || isInitializing
                     ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-brand-600 text-white hover:bg-brand-700 shadow-lg'
+                    : 'bg-brand-600 text-white hover:bg-brand-700 shadow-md'
                 }`}
               >
                 {saving ? (
                   <>
-                    <LoadingSpinner size="md" />
-                    <span className="ml-2">Guardando...</span>
+                    <LoadingSpinner size="sm" />
+                    <span className="hidden sm:inline">Guardando...</span>
                   </>
                 ) : saveSuccess ? (
                   <>
-                    <CheckCircle className="w-5 h-5" />
-                    Guardado
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Guardado</span>
                   </>
                 ) : (
                   <>
-                    <Save className="w-5 h-5" />
-                    Guardar Desarrollo
+                    <Save className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>Guardar</span>
                   </>
                 )}
               </button>
@@ -592,85 +589,78 @@ export default function NewDevelopmentPage() {
           {/* Main content */}
           <section className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
             {/* Step header + top buttons */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between gap-4">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
                     {updatedSteps.find(s => s.id === currentStep)?.title}
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     {updatedSteps.find(s => s.id === currentStep)?.description}
                   </p>
                 </div>
-                <div className="flex items-center space-x-3">
+                {/* Navigation buttons - hidden on mobile, shown in bottom bar */}
+                <div className="hidden sm:flex items-center space-x-2">
                   <button
                     type="button"
                     onClick={handleBack}
                     disabled={currentStep === 1}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    <ChevronLeft className="h-3.5 w-3.5 mr-0.5" />
                     Anterior
                   </button>
                   {currentStep < updatedSteps.length && (
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
+                      className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
                     >
                       Siguiente
-                      <ChevronRight className="h-4 w-4 ml-1" />
+                      <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
                     </button>
                   )}
-                  <button
-                    onClick={onSubmit}
-                    disabled={saving || isInitializing}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    {saving ? 'Guardando...' : 'Crear Desarrollo'}
-                  </button>
                 </div>
               </div>
             </div>
 
             {/* Step content */}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {renderStepContent()}
             </div>
 
             {/* Bottom navigation buttons */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-gray-700">
               <button
                 type="button"
                 onClick={handleBack}
                 disabled={currentStep === 1}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center px-2.5 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 text-xs sm:text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Anterior
+                <ChevronLeft className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Anterior</span>
               </button>
               
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={onSubmit}
-                  disabled={saving || isInitializing}
-                  className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Guardando...' : 'Crear Desarrollo'}
-                </button>
-                
+              <div className="flex items-center gap-2 sm:gap-3">
                 {currentStep < updatedSteps.length && (
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
+                    className="inline-flex items-center px-3 sm:px-5 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-lg text-white bg-brand-500 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors"
                   >
-                    Siguiente
-                    <ChevronRight className="h-4 w-4 ml-2" />
+                    <span>Siguiente</span>
+                    <ChevronRight className="h-4 w-4 ml-0.5 sm:ml-1" />
                   </button>
                 )}
+                
+                <button
+                  onClick={onSubmit}
+                  disabled={saving || isInitializing}
+                  className="inline-flex items-center px-3 sm:px-5 py-2 border border-transparent text-xs sm:text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Save className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">{saving ? 'Guardando...' : 'Crear'}</span>
+                </button>
               </div>
             </div>
           </section>

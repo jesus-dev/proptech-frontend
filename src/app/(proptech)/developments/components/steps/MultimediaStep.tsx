@@ -98,50 +98,57 @@ export default function MultimediaStep({ formData, errors, addImages, removeImag
     }
   };
 
+  // Referencia al input de archivo para hacer clic programático
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleDropzoneClick = () => {
+    if (!uploading && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Imágenes
         </label>
+        {/* Input oculto fuera del área clicable */}
+        <input
+          ref={fileInputRef}
+          id="images-upload"
+          type="file"
+          accept="image/*,.heic,.heif,.hif"
+          multiple
+          onChange={handleFileChange}
+          disabled={uploading}
+          className="sr-only"
+        />
         <div
+          onClick={handleDropzoneClick}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors ${
+          className={`mt-1 flex justify-center px-4 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-6 border-2 border-dashed rounded-lg transition-colors ${
             isDragActive 
               ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20" 
               : "border-gray-300 dark:border-gray-600"
-          } ${errors.images ? "border-red-500" : ""} ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-brand-500"}`}
+          } ${errors.images ? "border-red-500" : ""} ${uploading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-brand-500 hover:bg-gray-50 dark:hover:bg-gray-800/50"}`}
         >
           <div className="space-y-1 text-center">
             {uploading ? (
               <>
-                <Loader2 className="mx-auto h-12 w-12 text-brand-500 animate-spin" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">Procesando imágenes...</p>
+                <Loader2 className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-brand-500 animate-spin" />
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Procesando imágenes...</p>
               </>
             ) : (
               <>
-                <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
-                  <label
-                    htmlFor="images-upload"
-                    className="relative cursor-pointer rounded-md font-medium text-brand-600 hover:text-brand-500 focus-within:outline-none focus-within:ring-2 focus:ring-offset-2 focus:ring-brand-500"
-                  >
-                    <span>Subir archivos</span>
-                    <input
-                      id="images-upload"
-                      type="file"
-                      accept="image/*,.heic,.heif,.hif"
-                      multiple
-                      onChange={handleFileChange}
-                      disabled={uploading}
-                      className="sr-only"
-                    />
-                  </label>
-                  <p className="pl-1">o arrastrar y soltar</p>
+                <ImageIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-brand-600">Toca para subir</span>
+                  <span className="hidden sm:inline"> o arrastra archivos</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                   PNG, JPG, GIF, HEIC hasta 10MB
                 </p>
               </>
