@@ -377,11 +377,6 @@ const catalogItems: NavItem[] = [
         requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
       },
       {
-        name: "Agentes",
-        path: "/catalogs/agents",
-        requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN", "AGENCY_ADMIN"],
-      },
-      {
         name: "Campañas",
         path: "/catalogs/campaigns",
         requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
@@ -484,13 +479,6 @@ const MobileSidebar: React.FC = () => {
 
   // Función para verificar si el usuario puede ver un subitem del menú
   const canViewSubItem = (subItem: NonNullable<NavItem['subItems']>[0]): boolean => {
-    // Caso especial: "Agentes" - SOLO para admins, NUNCA para solo AGENT
-    if (subItem.path === '/catalogs/agents' || subItem.name === 'Agentes') {
-      // SOLO mostrar si tiene alguno de los roles de admin
-      // Si no tiene admin, retornar false inmediatamente (sin importar otros roles)
-      return hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
-    }
-    
     // Caso especial: "Estados de Propiedad" - SOLO para admins, NUNCA para solo AGENT
     if (subItem.path === '/catalogs/property-status' || subItem.name === 'Estados de Propiedad') {
       // SOLO mostrar si tiene alguno de los roles de admin
@@ -781,9 +769,10 @@ const MobileSidebar: React.FC = () => {
       
       {/* Sidebar mejorado */}
       <aside
-        className={`fixed top-0 left-0 w-80 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-[99999] flex flex-col transform transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-[99999] flex flex-col transform transition-transform duration-300 ease-out ${
           isAnimating ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ height: '100dvh' }}
       >
         {/* Header mejorado */}
         <div className="flex-shrink-0 py-3 px-4 flex items-center justify-between">
@@ -809,9 +798,10 @@ const MobileSidebar: React.FC = () => {
         
         {/* Contenido con scroll móvil */}
         <div 
-          className="flex flex-col overflow-y-auto duration-300 ease-linear px-4"
+          className="flex-1 flex flex-col overflow-y-auto duration-300 ease-linear px-4 pb-32"
           style={{
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            minHeight: 0
           }}
         >
           <nav className="mb-6">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { authService } from '@/services/authService';
 import { authApi } from '@/lib/api';
 import { handleApiError } from '@/lib/api';
@@ -40,7 +41,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Label from '@/components/form/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -56,9 +56,164 @@ import AvatarText from '@/components/ui/avatar/AvatarText';
 import Switch from '@/components/form/switch/Switch';
 import { useSpring, animated } from '@react-spring/web';
 import ImageCropModal from '@/components/common/ImageCropModal';
-import { Upload, Edit, Loader2, ShieldCheck } from 'lucide-react';
+import { Upload, Edit, Loader2, ShieldCheck, Search, Check, ChevronDown } from 'lucide-react';
 import { getEndpoint } from '@/lib/api-config';
 import { getProfilePhotoUrl } from '@/lib/url-utils';
+
+// Componente Combobox moderno para búsqueda de ciudades
+function CityCombobox({ 
+  options, 
+  value, 
+  onChange, 
+  placeholder = "Buscar ciudad...",
+  label,
+  disabled = false 
+}: {
+  options: { id: number; name: string; departmentName?: string }[];
+  value: number | null;
+  onChange: (value: number) => void;
+  placeholder?: string;
+  label: string;
+  disabled?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  
+  const selectedOption = options.find(opt => opt.id === value) || null;
+
+  const filteredOptions = options.filter(option =>
+    option.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (option.departmentName && option.departmentName.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const handleSelect = (option: { id: number; name: string; departmentName?: string }) => {
+    onChange(option.id);
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  // Cerrar al hacer click fuera
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  // Actualizar posición del dropdown
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  
+  React.useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="city" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">{label}</Label>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className="relative w-full px-4 py-2.5 text-left bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span className={`block truncate ${selectedOption ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+          {selectedOption ? (
+            <>
+              {selectedOption.name}
+              {selectedOption.departmentName && (
+                <span className="text-gray-400 dark:text-gray-500 ml-1">({selectedOption.departmentName})</span>
+              )}
+            </>
+          ) : placeholder}
+        </span>
+        <span className="absolute inset-y-0 right-0 flex items-center pr-3">
+          <ChevronDown className="h-4 w-4 text-gray-400" />
+        </span>
+      </button>
+
+      {isOpen && typeof document !== 'undefined' && ReactDOM.createPortal(
+        <div 
+          ref={dropdownRef}
+          className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-2xl overflow-hidden"
+          style={{ 
+            position: 'fixed',
+            top: position.top, 
+            left: position.left, 
+            width: position.width,
+            zIndex: 99999 
+          }}
+        >
+          <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar ciudad..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                autoFocus
+              />
+            </div>
+          </div>
+          
+          <div className="max-h-48 overflow-auto">
+            {filteredOptions.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                No se encontraron ciudades
+              </div>
+            ) : (
+              filteredOptions.slice(0, 50).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleSelect(option)}
+                  className={`w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 dark:hover:bg-gray-700 transition-colors ${
+                    selectedOption?.id === option.id 
+                      ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' 
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {option.name}
+                      {option.departmentName && (
+                        <span className="text-gray-400 dark:text-gray-500 ml-1">({option.departmentName})</span>
+                      )}
+                    </span>
+                    {selectedOption?.id === option.id && (
+                      <Check className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 // Tipo extendido para el perfil del usuario
 interface ProfileUser extends BaseUser {
@@ -68,7 +223,6 @@ interface ProfileUser extends BaseUser {
   address?: string;
   city?: string;
   country?: string;
-  bio?: string;
   website?: string;
   company?: string;
   position?: string;
@@ -92,6 +246,11 @@ interface ProfileFormData {
   address: string;
   cityId: number | null;
   countryId: number | null;
+  // Datos profesionales (para agentes)
+  company: string;
+  website: string;
+  position: string;
+  bio: string;
   timezone: string;
   language: string;
   notifications: {
@@ -179,6 +338,10 @@ export default function ProfilePage() {
     address: '',
     cityId: null,
     countryId: null,
+    company: '',
+    website: '',
+    position: '',
+    bio: '',
     timezone: 'America/Asuncion',
     language: 'es',
     notifications: {
@@ -294,6 +457,11 @@ export default function ProfilePage() {
             address: parsedUser.address || '',
             cityId: parsedUser.cityId || null,
             countryId: parsedUser.countryId || null,
+            // Información profesional (para agentes)
+            company: parsedUser.company || '',
+            website: parsedUser.website || '',
+            position: parsedUser.position || '',
+            bio: parsedUser.bio || '',
             // Preferencias
             timezone: parsedUser.timezone || 'America/Asuncion',
             language: parsedUser.language || 'es',
@@ -329,6 +497,7 @@ export default function ProfilePage() {
 loadUserData();
 }, []);
 
+
   // Cargar ciudades y países al montar
   useEffect(() => {
     const loadGeographicData = async () => {
@@ -342,10 +511,13 @@ loadUserData();
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        // Cargar ciudades y países en paralelo
-        const [citiesRes, countriesRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/cities`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/countries`, { headers })
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+        
+        // Cargar ciudades, países y país por defecto en paralelo
+        const [citiesRes, countriesRes, defaultCountryRes] = await Promise.all([
+          fetch(`${apiUrl}/api/cities`, { headers }),
+          fetch(`${apiUrl}/api/countries`, { headers }),
+          fetch(`${apiUrl}/api/countries/default`, { headers })
         ]);
         
         if (citiesRes.ok) {
@@ -356,6 +528,14 @@ loadUserData();
         if (countriesRes.ok) {
           const countriesData = await countriesRes.json();
           setCountries(countriesData);
+        }
+        
+        // Si no hay país seleccionado, usar el país por defecto del backend
+        if (!profileData.countryId && defaultCountryRes.ok) {
+          const defaultCountry = await defaultCountryRes.json();
+          if (defaultCountry?.id) {
+            setProfileData(prev => ({ ...prev, countryId: defaultCountry.id }));
+          }
         }
       } catch (error) {
         console.error('Error cargando datos geográficos:', error);
@@ -640,6 +820,11 @@ loadUserData();
         address: profileData.address,
         cityId: profileData.cityId,
         countryId: profileData.countryId,
+        // Datos profesionales (para agentes)
+        company: profileData.company,
+        website: profileData.website,
+        position: profileData.position,
+        bio: profileData.bio,
         // Preferencias
         timezone: profileData.timezone,
         language: profileData.language,
@@ -690,6 +875,11 @@ loadUserData();
         parsedUser.countryName = savedUser.countryName;
         parsedUser.timezone = savedUser.timezone;
         parsedUser.language = savedUser.language;
+        // Datos profesionales (para agentes) - usar valores enviados
+        parsedUser.company = profileData.company;
+        parsedUser.website = profileData.website;
+        parsedUser.position = profileData.position;
+        parsedUser.bio = profileData.bio;
         localStorage.setItem('user', JSON.stringify(parsedUser));
       }
       
@@ -1051,9 +1241,9 @@ loadUserData();
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Profile Card */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 overflow-visible">
           {/* Personal Information */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6 overflow-visible">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
               <UserIcon className="h-5 w-5 text-indigo-600" />
               Información Personal
@@ -1141,23 +1331,13 @@ loadUserData();
                     ))}
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ciudad</Label>
-                  <select
-                    id="city"
-                    value={profileData.cityId || ''}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, cityId: e.target.value ? Number(e.target.value) : null }))}
-                    className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
-                    disabled={loadingCities}
-                  >
-                    <option value="">Seleccionar ciudad...</option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={city.id}>
-                        {city.name}{city.departmentName ? ` (${city.departmentName})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CityCombobox
+                  options={cities}
+                  value={profileData.cityId}
+                  onChange={(cityId) => setProfileData(prev => ({ ...prev, cityId }))}
+                  label="Ciudad"
+                  disabled={loadingCities}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timezone" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Zona horaria</Label>
@@ -1173,6 +1353,62 @@ loadUserData();
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Información Profesional */}
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6 relative z-0">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-indigo-600" />
+              Información Profesional
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Datos de tu empresa y cargo (visible para agentes).
+            </p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Empresa</Label>
+                  <Input
+                    id="company"
+                    value={profileData.company}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
+                    placeholder="Ej: Inmobiliaria ABC"
+                    className={inputBaseClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="position" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Cargo</Label>
+                  <Input
+                    id="position"
+                    value={profileData.position}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, position: e.target.value }))}
+                    placeholder="Ej: Agente Inmobiliario"
+                    className={inputBaseClass}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="website" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Sitio Web</Label>
+                <Input
+                  id="website"
+                  value={profileData.website}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
+                  placeholder="Ej: miempresa.com"
+                  className={inputBaseClass}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bio" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Biografía / Descripción</Label>
+                <textarea
+                  id="bio"
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="Cuéntanos sobre tu experiencia profesional..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg resize-none"
+                />
               </div>
             </div>
           </div>
@@ -1258,7 +1494,7 @@ loadUserData();
             </div>
           </div>
 
-        </div>
+                  </div>
 
         {/* Sidebar */}
         <div className="space-y-6">

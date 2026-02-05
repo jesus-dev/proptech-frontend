@@ -409,11 +409,6 @@ const catalogItems: NavItem[] = [
         requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
       },
       {
-        name: "Agentes",
-        path: "/catalogs/agents",
-        requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN", "AGENCY_ADMIN"],
-      },
-      {
         name: "Campañas",
         path: "/catalogs/campaigns",
         requiredRole: ["SUPER_ADMIN", "TENANT_ADMIN"],
@@ -497,13 +492,6 @@ const AppSidebar: React.FC = () => {
 
   // Función para verificar si el usuario puede ver un subitem del menú
   const canViewSubItem = (subItem: NonNullable<NavItem['subItems']>[0]): boolean => {
-    // Caso especial: "Agentes" - SOLO para admins, NUNCA para solo AGENT
-    if (subItem.path === '/catalogs/agents' || subItem.name === 'Agentes') {
-      // SOLO mostrar si tiene alguno de los roles de admin
-      // Si no tiene admin, retornar false inmediatamente (sin importar otros roles)
-      return hasAnyRole(['SUPER_ADMIN', 'TENANT_ADMIN', 'AGENCY_ADMIN']);
-    }
-    
     // Caso especial: "Estados de Propiedad" - SOLO para admins, NUNCA para solo AGENT
     if (subItem.path === '/catalogs/property-status' || subItem.name === 'Estados de Propiedad') {
       // SOLO mostrar si tiene alguno de los roles de admin

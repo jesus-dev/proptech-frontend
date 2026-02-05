@@ -300,7 +300,7 @@ export default function AdminCommissionsPage() {
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white text-sm"
             >
               <option value="">Todos los estados</option>
               <option value="PAID">Pagada</option>
@@ -349,7 +349,7 @@ export default function AdminCommissionsPage() {
             <select
               value={filters.size}
               onChange={(e) => handleFilterChange('size', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white text-sm"
             >
               <option value="10">10</option>
               <option value="20">20</option>

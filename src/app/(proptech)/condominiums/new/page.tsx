@@ -36,7 +36,7 @@ export default function NewCondominiumPage() {
     description: "",
     address: "",
     city: "",
-    country: "Paraguay",
+    country: "",
     administratorName: "",
     administratorEmail: "",
     administratorPhone: "",
@@ -49,7 +49,7 @@ export default function NewCondominiumPage() {
     }).catch(() => {});
     currencyService.getActive().then(setCurrencies).catch(() => setCurrencies([]));
     
-    // Cargar ciudades y países
+    // Cargar ciudades, países y país por defecto
     apiClient.get('/api/cities').then((res) => {
       setCities(res.data || []);
     }).catch(() => setCities([]));
@@ -57,6 +57,13 @@ export default function NewCondominiumPage() {
     apiClient.get('/api/countries').then((res) => {
       setCountries(res.data || []);
     }).catch(() => setCountries([]));
+    
+    // Obtener país por defecto del backend
+    apiClient.get('/api/countries/default').then((res) => {
+      if (res.data?.name) {
+        setFormData(prev => ({ ...prev, country: res.data.name }));
+      }
+    }).catch(() => {});
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
