@@ -136,7 +136,7 @@ export default function SocialLayout({ children }: any) {
               }}
             />
             <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 text-left">
-              Donde nacen los negocios de bienes raices
+              Donde nacen los negocios de bienes raíces
             </p>
           </button>
         </div>
@@ -350,7 +350,7 @@ export default function SocialLayout({ children }: any) {
               }}
             />
             <p className="text-[8px] text-gray-500 dark:text-gray-400 mt-0.5 text-center leading-tight">
-              Donde nacen los negocios de bienes raices
+              Donde nacen los negocios de bienes raíces
             </p>
           </button>
         </div>

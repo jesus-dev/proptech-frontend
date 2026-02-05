@@ -72,6 +72,15 @@ export interface User {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  // Datos de ubicación
+  address?: string;
+  cityId?: number;
+  cityName?: string;
+  countryId?: number;
+  countryName?: string;
+  // Preferencias
+  timezone?: string;
+  language?: string;
   // Multi-tenant
   tenantId: number;
   tenantName?: string;

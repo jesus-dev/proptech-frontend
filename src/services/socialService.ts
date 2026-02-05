@@ -120,13 +120,9 @@ export class SocialService {
     }
     
     // Construir URL completa usando la base configurable
-    // Ensure we don't double-concatenate URLs
-    let fullUrl;
-    if (correctedPath.startsWith('/') && IMAGE_BASE_URL.endsWith('/')) {
-      fullUrl = `${IMAGE_BASE_URL.slice(0, -1)}${correctedPath}`;
-    } else {
-      fullUrl = `${IMAGE_BASE_URL}${correctedPath}`;
-    }
+    const base = IMAGE_BASE_URL.endsWith('/') ? IMAGE_BASE_URL.slice(0, -1) : IMAGE_BASE_URL;
+    const path = correctedPath.startsWith('/') ? correctedPath : `/${correctedPath}`;
+    const fullUrl = `${base}${path}`;
     
     // Guardar en cache
     imageCache.set(cacheKey, { url: fullUrl, timestamp: Date.now(), valid: true });
@@ -247,8 +243,8 @@ export class SocialService {
     return validPosts;
   }
 
-  // Obtener todas las imágenes de un post con validación
-  static async getPostImages(post: Post): Promise<string[]> {
+  // Obtener URLs de imágenes de un post (síncrono; sin peticiones al backend)
+  static getPostImages(post: Post): string[] {
     const images: string[] = [];
     const seenUrls = new Set<string>();
     const seenFileNames = new Set<string>(); // Para evitar duplicados por nombre de archivo
@@ -272,16 +268,12 @@ export class SocialService {
         return normalized;
       }
       
-      // Corregir rutas que tienen /uploads/network/network_ por /uploads/social/posts/
       if (normalized.includes('/uploads/network/network_')) {
-        normalized = normalized.replace('/uploads/network/network_', '/uploads/social/posts/');
+        normalized = normalized.replace(/\/uploads\/network\/network_/g, '/uploads/social/posts/');
       }
-      
-      // Si la ruta no empieza con /uploads/, agregar el prefijo
-      if (!normalized.startsWith('/uploads/')) {
-        normalized = `/uploads/social/posts/${normalized}`;
+      if (!normalized.startsWith('/')) {
+        normalized = normalized.startsWith('uploads/') ? `/${normalized}` : `/uploads/social/posts/${normalized}`;
       }
-      
       return normalized;
     };
     
@@ -323,10 +315,9 @@ export class SocialService {
     // Agregar imágenes adicionales si existen
     if (post.images) {
       const additionalImages = post.images.split(',').map(img => img.trim()).filter(img => img.length > 0);
-      additionalImages.forEach((img, index) => {
+      additionalImages.forEach((img) => {
         const normalizedPath = normalizeImagePath(img);
         const imageUrl = this.buildImageUrl(normalizedPath);
-        console.log(`  Imagen ${index + 1}: ${img} -> ${normalizedPath} -> ${imageUrl}`);
         addImageIfNotDuplicate(imageUrl);
       });
     }
@@ -339,29 +330,26 @@ export class SocialService {
     }
     
     if (post.allImages && Array.isArray(post.allImages)) {
-      post.allImages.forEach((img, index) => {
+      post.allImages.forEach((img) => {
         const normalizedPath = normalizeImagePath(img);
         const imageUrl = this.buildImageUrl(normalizedPath);
-        console.log(`  Imagen ${index + 1}: ${img} -> ${normalizedPath} -> ${imageUrl}`);
         addImageIfNotDuplicate(imageUrl);
       });
     }
     
-    console.log(`  - URLs únicas encontradas: ${images.length}`);
-    console.log(`  - URLs: [${images.join(', ')}]`);
-    
-    // Validar que las imágenes existan (opcional, puede ser lento)
-    const validImages: string[] = [];
-    for (const imageUrl of images) {
-      if (imageUrl && await this.checkImageExists(imageUrl)) {
-        validImages.push(imageUrl);
-      }
+    return images;
+  }
+
+  // Obtener un post por ID
+  static async getPost(id: number): Promise<Post | null> {
+    try {
+      const signal = createTimeoutSignal(10000);
+      const response = await apiClient.get<Post>(`/api/social/posts/${id}`, { signal });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching post:', error);
+      return null;
     }
-    
-    
-    const result = validImages.length > 0 ? validImages : images; // Fallback a todas si la validación falla
-    
-    return result;
   }
 
   // Obtener todos los posts con paginación SIN CACHE (siempre desde BD)
@@ -464,6 +452,18 @@ export class SocialService {
     }
   }
 
+  // Actualizar un post (solo campos enviados)
+  static async updatePost(postId: number, data: { content?: string; location?: string; linkUrl?: string; linkTitle?: string; linkDescription?: string; linkImage?: string; images?: string }): Promise<Post> {
+    try {
+      const signal = createTimeoutSignal(10000);
+      const response = await apiClient.put(`/api/social/posts/${postId}`, data, { signal });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating post:', error);
+      throw error;
+    }
+  }
+
   // Eliminar un post
   static async deletePost(postId: number, userId: number): Promise<void> {
     try {
@@ -513,44 +513,28 @@ export class SocialService {
   }
 
   // Upload de imágenes para posts
+  // Subida de imágenes igual que en gallery (FormData sin Content-Type manual para que axios ponga boundary)
   static async uploadPostImages(images: File[]): Promise<UploadImageResponse[]> {
+    if (!images.length) return [];
     try {
-
-      // const uploadPromises = images.map(async (image) => {
-      //   const formData = new FormData();
-      //   formData.append('image', image);
-      //   formData.append('fileName', image.name);
-      //   formData.append('fileType', 'post-image');
-      // 
-      //   const response = await fetch(`${API_BASE_URL}/api/social/posts/upload/images`, {
-      //     method: 'POST',
-      //     body: formData,
-      //     signal: AbortSignal.timeout(30000) // 30 segundos para upload de imágenes
-      //   });
-      // 
-      //   if (!response.ok) {
-      //     throw new Error(`Error uploading image ${image.name}: ${response.status}`);
-      //   }
-      // 
-      //   return await response.json();
-      // });
-      // 
-      // return await Promise.all(uploadPromises);
-      
       const uploadPromises = images.map(async (image) => {
         const formData = new FormData();
         formData.append('file', image);
         formData.append('fileName', image.name);
 
         const signal = createTimeoutSignal(30000);
-        const response = await apiClient.post('/api/social/upload-image', formData, {
-          signal,
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+        const response = await apiClient.post<{ fileUrl: string; fileName: string; success?: boolean }>('/api/social/upload-image', formData, {
+          signal
+          // No enviar Content-Type: apiClient con FormData lo setea con boundary (ver lib/api.ts)
         });
 
-        return response.data;
+        const data = response.data;
+        return {
+          url: data.fileUrl,
+          fileName: data.fileName,
+          fileSize: image.size,
+          mimeType: image.type || ''
+        };
       });
 
       return await Promise.all(uploadPromises);

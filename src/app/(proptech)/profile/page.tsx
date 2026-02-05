@@ -56,7 +56,7 @@ import AvatarText from '@/components/ui/avatar/AvatarText';
 import Switch from '@/components/form/switch/Switch';
 import { useSpring, animated } from '@react-spring/web';
 import ImageCropModal from '@/components/common/ImageCropModal';
-import { Upload, Edit } from 'lucide-react';
+import { Upload, Edit, Loader2, ShieldCheck } from 'lucide-react';
 import { getEndpoint } from '@/lib/api-config';
 import { getProfilePhotoUrl } from '@/lib/url-utils';
 
@@ -90,12 +90,8 @@ interface ProfileFormData {
   email: string;
   phone: string;
   address: string;
-  city: string;
-  country: string;
-  bio: string;
-  website: string;
-  company: string;
-  position: string;
+  cityId: number | null;
+  countryId: number | null;
   timezone: string;
   language: string;
   notifications: {
@@ -104,6 +100,19 @@ interface ProfileFormData {
     sms: boolean;
     marketing: boolean;
   };
+}
+
+interface CityOption {
+  id: number;
+  name: string;
+  departmentName?: string;
+  countryId?: number;
+}
+
+interface CountryOption {
+  id: number;
+  name: string;
+  code?: string;
 }
 
 interface SecurityFormData {
@@ -145,6 +154,7 @@ const USER_TYPE_LABELS = {
 export default function ProfilePage() {
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showStickyBar, setShowStickyBar] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -167,12 +177,8 @@ export default function ProfilePage() {
     email: '',
     phone: '',
     address: '',
-    city: '',
-    country: '',
-    bio: '',
-    website: '',
-    company: '',
-    position: '',
+    cityId: null,
+    countryId: null,
     timezone: 'America/Asuncion',
     language: 'es',
     notifications: {
@@ -182,6 +188,11 @@ export default function ProfilePage() {
       marketing: false
     }
   });
+
+  // Estados para ciudades y países
+  const [cities, setCities] = useState<CityOption[]>([]);
+  const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
 
   const [securityData, setSecurityData] = useState<SecurityFormData>({
     currentPassword: '',
@@ -279,15 +290,13 @@ export default function ProfilePage() {
             lastName: lastName,
             email: parsedUser.email || '',
             phone: phone,
-            address: '',
-            city: '',
-            country: 'Paraguay',
-            bio: '',
-            website: '',
-            company: '',
-            position: '',
-            timezone: 'America/Asuncion',
-            language: 'es',
+            // Datos de ubicación (cargar desde parsedUser o valores por defecto)
+            address: parsedUser.address || '',
+            cityId: parsedUser.cityId || null,
+            countryId: parsedUser.countryId || null,
+            // Preferencias
+            timezone: parsedUser.timezone || 'America/Asuncion',
+            language: parsedUser.language || 'es',
             notifications: {
               email: true,
               push: true,
@@ -319,6 +328,55 @@ export default function ProfilePage() {
 
 loadUserData();
 }, []);
+
+  // Cargar ciudades y países al montar
+  useEffect(() => {
+    const loadGeographicData = async () => {
+      setLoadingCities(true);
+      try {
+        const token = localStorage.getItem('token');
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // Cargar ciudades y países en paralelo
+        const [citiesRes, countriesRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/cities`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/countries`, { headers })
+        ]);
+        
+        if (citiesRes.ok) {
+          const citiesData = await citiesRes.json();
+          setCities(citiesData);
+        }
+        
+        if (countriesRes.ok) {
+          const countriesData = await countriesRes.json();
+          setCountries(countriesData);
+        }
+      } catch (error) {
+        console.error('Error cargando datos geográficos:', error);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+    
+    loadGeographicData();
+  }, []);
+
+  // Detectar scroll para mostrar barra sticky
+  useEffect(() => {
+    const handleScroll = () => {
+      // Mostrar barra sticky cuando el scroll supera 300px
+      setShowStickyBar(window.scrollY > 300);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Referencia al input de archivo
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -572,29 +630,67 @@ loadUserData();
     try {
       setLoading(true);
       
-      // Solo enviar campos permitidos y requeridos
+      // Enviar todos los campos del perfil
       const updateData: any = {
-        email: profileData.email, // <-- ¡Siempre incluir!
+        email: profileData.email,
         firstName: profileData.firstName,
         lastName: profileData.lastName,
         phone: profileData.phone,
+        // Datos de ubicación
+        address: profileData.address,
+        cityId: profileData.cityId,
+        countryId: profileData.countryId,
+        // Preferencias
+        timezone: profileData.timezone,
+        language: profileData.language,
       };
       
-      await authService.updateUser(userId, updateData);
+      // Guardar y obtener respuesta del servidor
+      const savedUser = await authService.updateUser(userId, updateData);
       
       setFormSuccess('Perfil actualizado exitosamente');
       toast.success('Perfil actualizado exitosamente');
       
-      // Actualizar profileUser con los nuevos datos
+      // Usar datos confirmados del servidor
+      const firstName = savedUser.firstName || updateData.firstName;
+      const lastName = savedUser.lastName || updateData.lastName;
+      const phone = savedUser.phone || updateData.phone;
+      const email = savedUser.email || updateData.email;
+      const fullName = savedUser.fullName || `${firstName} ${lastName}`.trim();
+      
+      // Actualizar profileUser con datos del servidor
       if (profileUser) {
         setProfileUser({
           ...profileUser,
-          email: updateData.email,
-          firstName: updateData.firstName,
-          lastName: updateData.lastName,
-          phone: updateData.phone,
-          fullName: `${updateData.firstName} ${updateData.lastName}`.trim(),
+          ...savedUser,
+          firstName,
+          lastName,
+          phone,
+          email,
+          fullName,
         });
+      }
+      
+      // Actualizar localStorage con datos del servidor
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        parsedUser.email = email;
+        parsedUser.firstName = firstName;
+        parsedUser.lastName = lastName;
+        parsedUser.phone = phone;
+        parsedUser.fullName = fullName;
+        parsedUser.name = firstName;
+        parsedUser.surname = lastName;
+        // Datos adicionales del perfil
+        parsedUser.address = savedUser.address;
+        parsedUser.cityId = savedUser.cityId;
+        parsedUser.cityName = savedUser.cityName;
+        parsedUser.countryId = savedUser.countryId;
+        parsedUser.countryName = savedUser.countryName;
+        parsedUser.timezone = savedUser.timezone;
+        parsedUser.language = savedUser.language;
+        localStorage.setItem('user', JSON.stringify(parsedUser));
       }
       
     } catch (error) {
@@ -616,7 +712,10 @@ loadUserData();
     setExportLoading(true);
     setExportSuccess(null);
     try {
-      // Simular datos
+      // Obtener nombres de ciudad y país
+      const cityName = cities.find(c => c.id === profileData.cityId)?.name || '';
+      const countryName = countries.find(c => c.id === profileData.countryId)?.name || '';
+      
       const userData = {
         personalInfo: {
           firstName: profileData.firstName,
@@ -624,12 +723,8 @@ loadUserData();
           email: profileData.email,
           phone: profileData.phone,
           address: profileData.address,
-          city: profileData.city,
-          country: profileData.country,
-          bio: profileData.bio,
-          website: profileData.website,
-          company: profileData.company,
-          position: profileData.position
+          city: cityName,
+          country: countryName
         },
         preferences: {
           timezone: profileData.timezone,
@@ -916,18 +1011,39 @@ loadUserData();
             <Button
               variant="outline"
               onClick={() => setShowPasswordDialog(true)}
-              className="flex items-center gap-2 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200"
+              className="group flex items-center gap-3 px-6 py-3.5 border-2 border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-300 rounded-xl"
             >
-              <Key className="h-4 w-4" />
-              Cambiar Contraseña
+              <Key className="h-5 w-5 text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300" />
+              <span className="font-medium text-base text-slate-700 dark:text-slate-300 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors duration-300">
+                Contraseña
+              </span>
             </Button>
             <Button
               onClick={handleProfileUpdate}
               disabled={loading}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+              className={`
+                group relative flex items-center gap-3 px-8 py-3.5 rounded-xl font-semibold text-base
+                transition-all duration-300 transform
+                ${loading 
+                  ? 'bg-indigo-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 hover:from-indigo-600 hover:via-purple-600 hover:to-indigo-700 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/25 active:scale-[0.98]'
+                }
+                shadow-lg text-white
+              `}
             >
-              <Save className="h-4 w-4" />
-              {loading ? 'Guardando...' : 'Guardar Cambios'}
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+                  <span>Guardar Cambios</span>
+                </>
+              )}
+              {/* Efecto de brillo */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 overflow-hidden pointer-events-none" />
             </Button>
           </div>
         </div>
@@ -994,52 +1110,6 @@ loadUserData();
                 />
                 {formErrors.phone && <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="company" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Empresa</Label>
-                <Input
-                  id="company"
-                  value={profileData.company}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
-                  placeholder="Ej: PropTech S.A."
-                  className={inputBaseClass}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="position" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Cargo</Label>
-                <Input
-                  id="position"
-                  value={profileData.position}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, position: e.target.value }))}
-                  placeholder="Ej: Agente / Administrador / Gerente"
-                  className={inputBaseClass}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="website" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Sitio web</Label>
-                <Input
-                  id="website"
-                  value={profileData.website}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
-                  placeholder="Ej: https://miempresa.com"
-                  className={inputBaseClass}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Opcional. Útil para tu perfil público.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="country" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">País</Label>
-                <select 
-                  value={profileData.country} 
-                  onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
-                >
-                  <option value="Paraguay">Paraguay</option>
-                  <option value="Argentina">Argentina</option>
-                  <option value="Brasil">Brasil</option>
-                  <option value="Uruguay">Uruguay</option>
-                  <option value="Chile">Chile</option>
-                  <option value="Bolivia">Bolivia</option>
-                </select>
-              </div>
             </div>
             
             <div className="mt-6 space-y-4">
@@ -1055,41 +1125,54 @@ loadUserData();
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="city" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ciudad</Label>
-                  <Input
-                    id="city"
-                    value={profileData.city}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
-                    placeholder="Ej: Asunción"
-                    className={inputBaseClass}
-                  />
+                  <Label htmlFor="country" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">País</Label>
+                  <select 
+                    id="country"
+                    value={profileData.countryId || ''} 
+                    onChange={(e) => setProfileData(prev => ({ ...prev, countryId: e.target.value ? Number(e.target.value) : null }))}
+                    className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
+                    disabled={loadingCities}
+                  >
+                    <option value="">Seleccionar país...</option>
+                    {countries.map((country) => (
+                      <option key={country.id} value={country.id}>
+                        {country.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="timezone" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Zona horaria</Label>
-                  <select 
-                    value={profileData.timezone} 
-                    onChange={(e) => setProfileData(prev => ({ ...prev, timezone: e.target.value }))}
+                  <Label htmlFor="city" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Ciudad</Label>
+                  <select
+                    id="city"
+                    value={profileData.cityId || ''}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, cityId: e.target.value ? Number(e.target.value) : null }))}
                     className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
+                    disabled={loadingCities}
                   >
-                    {TIMEZONES.map((tz) => (
-                      <option key={tz.value} value={tz.value}>
-                        {tz.label}
+                    <option value="">Seleccionar ciudad...</option>
+                    {cities.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}{city.departmentName ? ` (${city.departmentName})` : ''}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bio" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Biografía</Label>
-                <Textarea
-                  id="bio"
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Ej: Especialista en ventas de desarrollos, con experiencia en atención al cliente y cierres."
-                  rows={4}
-                  className={`${inputBaseClass} min-h-[110px] resize-y`}
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">Opcional. Máximo recomendado: 2–3 líneas.</p>
+                <Label htmlFor="timezone" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Zona horaria</Label>
+                <select 
+                  id="timezone"
+                  value={profileData.timezone} 
+                  onChange={(e) => setProfileData(prev => ({ ...prev, timezone: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white transition-all duration-200 text-sm shadow-sm hover:shadow-md focus:shadow-lg cursor-pointer"
+                >
+                  {TIMEZONES.map((tz) => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -1175,78 +1258,6 @@ loadUserData();
             </div>
           </div>
 
-          {/* Activity & Security */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <Shield className="h-5 w-5 text-indigo-600" />
-              Actividad y Seguridad
-            </h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Sesión actual</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Activa desde {new Date().toLocaleDateString('es-ES')}</p>
-                  </div>
-                </div>
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200">Activa</Badge>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Último acceso</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {profileUser.lastLogin ? new Date(profileUser.lastLogin).toLocaleString('es-ES') : 'Nunca'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-gray-700/40 border border-gray-200/60 dark:border-gray-700/60 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Ubicación</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Asunción, Paraguay</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-6 space-y-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowPasswordDialog(true)}
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Key className="h-4 w-4 mr-2" />
-                Cambiar Contraseña
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Autenticación de Dos Factores
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start border-gray-200 hover:bg-gray-50"
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                Historial de Actividad
-              </Button>
-            </div>
-          </div>
         </div>
 
         {/* Sidebar */}
@@ -1464,20 +1475,41 @@ loadUserData();
               {passwordErrors.confirmPassword && <p className="text-xs text-red-500 mt-1">{passwordErrors.confirmPassword}</p>}
             </div>
           </div>
-          <DialogFooter className="gap-3">
+          <DialogFooter className="gap-3 sm:gap-4 pt-2">
             <Button 
               variant="outline" 
               onClick={() => setShowPasswordDialog(false)}
-              className="border-gray-200 hover:bg-gray-50"
+              className="px-5 py-2.5 border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 font-medium"
             >
               Cancelar
             </Button>
             <Button 
               onClick={handlePasswordChange}
-              disabled={passwordLoading}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+              disabled={passwordLoading || !securityData.currentPassword || !securityData.newPassword || !securityData.confirmPassword}
+              className={`
+                group relative flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold
+                transition-all duration-300 transform overflow-hidden
+                ${passwordLoading 
+                  ? 'bg-emerald-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:via-teal-600 hover:to-emerald-700 hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/25 active:scale-[0.98]'
+                }
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-lg
+                shadow-lg text-white
+              `}
             >
-              {passwordLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
+              {passwordLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Actualizando...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+                  <span>Cambiar Contraseña</span>
+                </>
+              )}
+              {/* Efecto de brillo */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1504,6 +1536,60 @@ loadUserData();
           circularCrop={true}
         />
       )}
+
+      {/* Barra sticky de acciones - aparece al hacer scroll */}
+      <div 
+        className={`
+          fixed bottom-0 left-0 right-0 z-50
+          transition-all duration-300 ease-in-out
+          ${showStickyBar ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
+        `}
+      >
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-2xl shadow-black/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
+                <span className="font-medium text-gray-900 dark:text-white">Recuerda guardar</span> tus cambios antes de salir
+              </p>
+              <div className="flex items-center gap-3 ml-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPasswordDialog(true)}
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 border-2 border-slate-200 dark:border-slate-600 hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-xl transition-all duration-200"
+                >
+                  <Key className="h-4 w-4" />
+                  <span className="hidden md:inline">Contraseña</span>
+                </Button>
+                <Button
+                  onClick={handleProfileUpdate}
+                  disabled={loading}
+                  className={`
+                    group relative flex items-center gap-3 px-8 py-3.5 rounded-xl font-semibold text-base
+                    transition-all duration-300 transform
+                    ${loading 
+                      ? 'bg-indigo-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 hover:from-indigo-600 hover:via-purple-600 hover:to-indigo-700 hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/25 active:scale-[0.98]'
+                    }
+                    shadow-lg text-white
+                  `}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-5 w-5" />
+                      <span>Guardar Cambios</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
   );

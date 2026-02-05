@@ -126,6 +126,22 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
     }
   };
 
+  // Traducir rol a español
+  const translateRole = (role: string) => {
+    switch (role.toLowerCase()) {
+      case 'admin':
+        return 'Administrador';
+      case 'agent':
+        return 'Agente';
+      case 'supervisor':
+        return 'Supervisor';
+      case 'user':
+        return 'Usuario';
+      default:
+        return role;
+    }
+  };
+
   // Funciones auxiliares para novedades
   const getNoveltyIcon = (type: string) => {
     switch (type) {
@@ -273,8 +289,8 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
                 </p>
                 <div className="flex items-center gap-2">
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(role)} shadow-lg`}>
-                    {role === 'admin' || role === 'administrador' && <Crown className="w-3 h-3 mr-1" />}
-                    {role}
+                    {(role === 'admin' || role === 'administrador') && <Crown className="w-3 h-3 mr-1" />}
+                    {translateRole(role)}
                   </span>
                 </div>
               </div>
@@ -321,7 +337,9 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
                 </a>
               </li>
 
+              {/* TODO: Habilitar cuando estén implementados
               {/* Configuración */}
+              {/*
               <li>
                 <button
                   className="w-full text-left px-6 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 flex items-center gap-3 transition-all duration-200 group"
@@ -336,8 +354,10 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
                   <span className="font-medium">Configuración</span>
                 </button>
               </li>
+              */}
 
               {/* Ayuda */}
+              {/*
               {onHelp && (
                 <li>
                   <button
@@ -354,8 +374,10 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
                   </button>
                 </li>
               )}
+              */}
 
               {/* Feedback */}
+              {/*
               {onFeedback && (
                 <li>
                   <button
@@ -372,6 +394,7 @@ const UserDropdown: React.FC<UserHeaderProps> = ({
                   </button>
                 </li>
               )}
+              */}
 
               {/* Separador decorativo */}
               <li className="px-6 py-2">

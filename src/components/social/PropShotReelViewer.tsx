@@ -13,7 +13,9 @@ import {
   VolumeX,
   Building2,
   User,
-  Eye
+  Eye,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 interface PropShotReelViewerProps {
@@ -24,6 +26,9 @@ interface PropShotReelViewerProps {
   onComment?: (id: number, content: string, userId: number, userName: string) => Promise<void>;
   getFullUrl: (url: string) => string;
   onClose?: () => void;
+  isOwner?: boolean;
+  onEdit?: () => void;
+  onDelete?: (shot: PropShot) => void;
 }
 
 export default function PropShotReelViewer({
@@ -33,7 +38,10 @@ export default function PropShotReelViewer({
   onView,
   onComment,
   getFullUrl,
-  onClose
+  onClose,
+  isOwner = false,
+  onEdit,
+  onDelete
 }: PropShotReelViewerProps) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(
@@ -532,8 +540,28 @@ export default function PropShotReelViewer({
           <span className="text-white font-bold text-xs sm:text-sm md:text-lg drop-shadow-lg">PropShot</span>
         </div>
         
-        {/* Botón cerrar - Optimizado para móvil */}
-        <div className="flex justify-end pr-1.5 sm:pr-2 md:pr-12">
+        {/* Botón editar y eliminar (solo dueño) y cerrar - Optimizado para móvil */}
+        <div className="flex items-center justify-end gap-2 pr-1.5 sm:pr-2 md:pr-12">
+          {isOwner && onEdit && (
+            <button
+              onClick={onEdit}
+              className="w-9 h-9 sm:w-10 sm:h-10 md:w-9 md:h-9 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 active:bg-white/40 transition-all touch-manipulation shadow-lg"
+              aria-label="Editar"
+              title="Editar reel"
+            >
+              <Pencil className="w-4.5 h-4.5 sm:w-5 sm:h-5 md:w-5 md:h-5 text-white" />
+            </button>
+          )}
+          {isOwner && onDelete && (
+            <button
+              onClick={() => onDelete(currentPropShot)}
+              className="w-9 h-9 sm:w-10 sm:h-10 md:w-9 md:h-9 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-red-500/40 active:bg-red-500/50 transition-all touch-manipulation shadow-lg"
+              aria-label="Eliminar"
+              title="Eliminar reel"
+            >
+              <Trash2 className="w-4.5 h-4.5 sm:w-5 sm:h-5 md:w-5 md:h-5 text-white" />
+            </button>
+          )}
           <button
             onClick={handleClose}
             className="w-9 h-9 sm:w-10 sm:h-10 md:w-9 md:h-9 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 active:bg-white/40 transition-all touch-manipulation shadow-lg"

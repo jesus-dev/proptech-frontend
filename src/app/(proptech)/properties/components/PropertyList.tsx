@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useAmenities } from "@/app/(proptech)/catalogs/amenities/hooks/useAmenities";
 import { propertyService } from "../services/propertyService";
 import { resolvePropertyStatus } from "../utils/status";
-import { GlassWater, ParkingSquare, Wifi, Dumbbell, HelpCircle, MoveUpRight, Home, Shield, Leaf, Snowflake, Flame, PawPrint, Car, Star, Heart, MapPin, Building, Sun, Moon, Cloud, Droplets, Utensils, Phone, Mail, Globe, Download, Eye as EyeIcon, Clock, Award, Zap, Wrench, Bell, Pencil, Trash2 } from "lucide-react";
+import { GlassWater, ParkingSquare, Wifi, Dumbbell, HelpCircle, MoveUpRight, Home, Shield, Leaf, Snowflake, Flame, PawPrint, Car, Star, Heart, MapPin, Building, Sun, Moon, Cloud, Droplets, Utensils, Phone, Mail, Globe, Download, Eye as EyeIcon, Clock, Award, Zap, Wrench, Bell, Pencil, Trash2, MoreHorizontal, Link2 } from "lucide-react";
 import { formatPrice, formatCurrency } from "@/lib/utils";
 import { formatAmountWithCurrencySync } from "@/lib/currency-helpers";
 import { HomeIcon, BuildingOfficeIcon, UserIcon, MapPinIcon } from "@heroicons/react/24/outline";
@@ -213,6 +213,7 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
   });
   const [updatingFavorites, setUpdatingFavorites] = useState<Set<string>>(new Set());
   const [deletingProperties, setDeletingProperties] = useState<Set<string>>(new Set());
+  const [openMenuPropertyId, setOpenMenuPropertyId] = useState<string | null>(null);
   const { amenities: allAmenities } = useAmenities();
 
   const handleEdit = (id: string) => {
@@ -406,6 +407,62 @@ const PropertyList = React.memo(function PropertyList({ properties, view, onProp
                     </span>
                   </div>
                 )}
+
+                {/* Menú tres puntos (Editar, Eliminar, Copiar enlace) */}
+                <div className="absolute top-3 right-3 flex items-start gap-1">
+                  {property.featured && <div className="w-0" />}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpenMenuPropertyId(openMenuPropertyId === String(property.id) ? null : String(property.id));
+                      }}
+                      className="w-9 h-9 bg-white/90 hover:bg-white dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full flex items-center justify-center shadow-lg text-gray-600 dark:text-gray-300 transition-colors"
+                      title="Opciones"
+                      aria-label="Opciones"
+                    >
+                      <MoreHorizontal className="w-5 h-5" />
+                    </button>
+                    {openMenuPropertyId === String(property.id) && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setOpenMenuPropertyId(null)} />
+                        <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-20">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); handleEdit(property.id); setOpenMenuPropertyId(null); }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                          >
+                            <Pencil className="w-4 h-4" /> Editar
+                          </button>
+                          {!isFavoritesPage && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.preventDefault(); handleDelete(property.id, property.title); setOpenMenuPropertyId(null); }}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                            >
+                              <Trash2 className="w-4 h-4" /> Eliminar
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const url = typeof window !== 'undefined' ? `${window.location.origin}/properties/${property.id}` : '';
+                              navigator.clipboard?.writeText(url);
+                              setOpenMenuPropertyId(null);
+                              if (typeof window !== 'undefined') alert('Enlace copiado al portapapeles');
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                          >
+                            <Link2 className="w-4 h-4" /> Copiar enlace
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Property Info */}

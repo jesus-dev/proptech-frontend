@@ -13,7 +13,8 @@ import {
   Search,
   Filter,
   Plus,
-  XCircle
+  XCircle,
+  Pencil
 } from 'lucide-react';
 
 export default function PropShotsPage() {
@@ -33,6 +34,10 @@ export default function PropShotsPage() {
   const [filterLikes, setFilterLikes] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPropShot, setSelectedPropShot] = useState<PropShot | null>(null);
+  const [editingPropShot, setEditingPropShot] = useState<PropShot | null>(null);
+  const [editPropShotTitle, setEditPropShotTitle] = useState('');
+  const [editPropShotDescription, setEditPropShotDescription] = useState('');
+  const [savingEditPropShot, setSavingEditPropShot] = useState(false);
 
   const clearAllFilters = () => {
     setSearchQuery('');
@@ -294,6 +299,54 @@ export default function PropShotsPage() {
   const handlePropShotClick = (shot: PropShot) => {
     setSelectedPropShot(shot);
     handleViewPropShot(shot.id);
+  };
+
+  const handleOpenEditPropShot = (shot: PropShot) => {
+    setEditingPropShot(shot);
+    setEditPropShotTitle(shot.title || '');
+    setEditPropShotDescription(shot.description || '');
+    setSelectedPropShot(null);
+  };
+
+  const handleSaveEditPropShot = async () => {
+    if (!editingPropShot) return;
+    if (!editPropShotTitle.trim()) {
+      alert('El título es obligatorio.');
+      return;
+    }
+    try {
+      setSavingEditPropShot(true);
+      const updated = await PropShotService.updatePropShot(editingPropShot.id, {
+        title: editPropShotTitle.trim(),
+        description: editPropShotDescription.trim()
+      });
+      setPropShots(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+      setFilteredPropShots(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+      setEditingPropShot(null);
+      setEditPropShotTitle('');
+      setEditPropShotDescription('');
+    } catch (error: any) {
+      alert(error?.message || 'Error al guardar. Intenta de nuevo.');
+    } finally {
+      setSavingEditPropShot(false);
+    }
+  };
+
+  const handleDeletePropShot = async (shot: PropShot) => {
+    if (!confirm('¿Eliminar este reel? Esta acción no se puede deshacer.')) return;
+    try {
+      await PropShotService.deletePropShot(shot.id);
+      setPropShots(prev => prev.filter(s => s.id !== shot.id));
+      setFilteredPropShots(prev => prev.filter(s => s.id !== shot.id));
+      if (selectedPropShot?.id === shot.id) setSelectedPropShot(null);
+      if (editingPropShot?.id === shot.id) {
+        setEditingPropShot(null);
+        setEditPropShotTitle('');
+        setEditPropShotDescription('');
+      }
+    } catch (error: any) {
+      alert(error?.message || 'Error al eliminar el reel.');
+    }
   };
 
   // Función para convertir URLs relativas en URLs completas - usando la misma solución del CRM
@@ -630,6 +683,9 @@ export default function PropShotsPage() {
             onLike={handleLikePropShot}
             onView={handleViewPropShot}
             onPropShotClick={handlePropShotClick}
+            currentUserId={user?.id}
+            onEdit={handleOpenEditPropShot}
+            onDelete={handleDeletePropShot}
             showEmptyState={false}
             gridCols={{
               default: 2,
@@ -651,7 +707,56 @@ export default function PropShotsPage() {
           onComment={handleCommentPropShot}
           getFullUrl={getFullUrl}
           onClose={() => setSelectedPropShot(null)}
+          isOwner={isAuthenticated && !!user && !!selectedPropShot?.agentId && Number(selectedPropShot.agentId) === Number(user.id)}
+          onEdit={() => selectedPropShot && handleOpenEditPropShot(selectedPropShot)}
+          onDelete={handleDeletePropShot}
         />
+      )}
+
+      {/* Modal editar PropShot (solo dueño) */}
+      {editingPropShot && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !savingEditPropShot && setEditingPropShot(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-lg w-full p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Pencil className="w-5 h-5" />
+              Editar reel
+            </h3>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título</label>
+            <input
+              type="text"
+              value={editPropShotTitle}
+              onChange={e => setEditPropShotTitle(e.target.value)}
+              placeholder="Título del reel"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+            <textarea
+              value={editPropShotDescription}
+              onChange={e => setEditPropShotDescription(e.target.value)}
+              placeholder="Descripción (opcional)"
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingPropShot(null)}
+                disabled={savingEditPropShot}
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEditPropShot}
+                disabled={savingEditPropShot || !editPropShotTitle.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+              >
+                {savingEditPropShot ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal para crear PropShot */}

@@ -1,13 +1,14 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { CommentList } from '@/components/comments/CommentList';
 import { Post, SocialService, CreatePostRequest } from '@/services/socialService';
 import { commentService } from '@/services/commentService';
 import { PropShot, PropShotService, CreatePropShotRequest } from '@/services/propShotService';
 import { getEndpoint } from '@/lib/api-config';
+import { encodePostId } from '@/lib/post-slug';
 import CreatePropShotModal from '@/components/social/CreatePropShotModal';
 import LocationMap from '@/components/LocationMap';
 import { 
@@ -15,6 +16,7 @@ import {
   MessageCircle, 
   Share2, 
   MoreHorizontal, 
+  Pencil,
   MapPin, 
   Clock, 
   User,
@@ -25,10 +27,13 @@ import {
   Heart as HeartIcon,
   MessageCircle as MessageIcon,
   Camera,
-  Building2
+  Building2,
+  Image as ImageIcon
 } from 'lucide-react';
 import PropShotReelViewer from '@/components/social/PropShotReelViewer';
+import PostMultimediaStep from '@/components/social/PostMultimediaStep';
 import { createTimeoutSignal } from '@/utils/createTimeoutSignal';
+import { processImageFiles, isHeicFile } from '@/lib/image-utils';
 
 // Función para convertir URLs en texto a enlaces clickeables
 const convertUrlsToLinks = (text: string): string => {
@@ -351,6 +356,7 @@ export default function SocialPageContent() {
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string; fullAddress?: string } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [postImagePreviews, setPostImagePreviews] = useState<string[]>([]);
+  const postImagePreviewUrlsRef = useRef<string[]>([]);
   const [showComments, setShowComments] = useState<{ [key: number]: boolean }>({});
   const [commentCounts, setCommentCounts] = useState<{ [key: number]: number }>({});
   const [showMessages, setShowMessages] = useState(false);
@@ -370,6 +376,14 @@ export default function SocialPageContent() {
   const [selectedThumbnail, setSelectedThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [creatingPropShot, setCreatingPropShot] = useState(false);
+  const [editingPostId, setEditingPostId] = useState<number | null>(null);
+  const [editingPostContent, setEditingPostContent] = useState('');
+  const [editingPostLocation, setEditingPostLocation] = useState('');
+  const [editingPostImageUrls, setEditingPostImageUrls] = useState<string[]>([]);
+  const [editingPostNewImageFiles, setEditingPostNewImageFiles] = useState<File[]>([]);
+  const [editingPostNewImagePreviews, setEditingPostNewImagePreviews] = useState<string[]>([]);
+  const [savingEditPost, setSavingEditPost] = useState(false);
+  const MAX_POST_IMAGES = 5;
 
   // Función para abrir selector de ubicación
   const openLocationPicker = () => {
@@ -412,32 +426,30 @@ export default function SocialPageContent() {
     setMounted(true);
   }, []);
 
-  // useEffect para extraer títulos de URLs detectadas
+  // Ref para no re-ejecutar en bucle; solo dependemos de detectedUrls
+  const urlTitlesProcessedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    const extractTitlesForUrls = async () => {
-      for (const url of detectedUrls) {
-        // Solo extraer si no se ha procesado antes y no está cargando
-        if (!urlTitles[url] && !urlLoadingStates[url]) {
-          // Marcar como cargando
-          setUrlLoadingStates(prev => ({ ...prev, [url]: true }));
-          
-          try {
-            const title = await extractUrlTitle(url);
-            setUrlTitles(prev => ({ ...prev, [url]: title }));
-          } catch (error) {
-            setUrlTitles(prev => ({ ...prev, [url]: url })); // Fallback
-          } finally {
-            // Marcar como no cargando
-            setUrlLoadingStates(prev => ({ ...prev, [url]: false }));
-          }
+    if (detectedUrls.length === 0) {
+      urlTitlesProcessedRef.current.clear();
+      return;
+    }
+    const toProcess = detectedUrls.filter(url => !urlTitlesProcessedRef.current.has(url));
+    toProcess.forEach(url => urlTitlesProcessedRef.current.add(url));
+    if (toProcess.length === 0) return;
+    (async () => {
+      for (const url of toProcess) {
+        setUrlLoadingStates(prev => ({ ...prev, [url]: true }));
+        try {
+          const title = await extractUrlTitle(url);
+          setUrlTitles(prev => ({ ...prev, [url]: title }));
+        } catch {
+          setUrlTitles(prev => ({ ...prev, [url]: url }));
+        } finally {
+          setUrlLoadingStates(prev => ({ ...prev, [url]: false }));
         }
       }
-    };
-
-    if (detectedUrls.length > 0) {
-      extractTitlesForUrls();
-    }
-  }, [detectedUrls, urlTitles, urlLoadingStates]);
+    })();
+  }, [detectedUrls]);
 
   const [conversations] = useState([
     {
@@ -469,26 +481,21 @@ export default function SocialPageContent() {
     ]
   });
 
-  // Cargar posts iniciales
+  // Cargar posts iniciales (cleanup evita setState si el efecto se re-ejecuta o desmonta)
   useEffect(() => {
+    let cancelled = false;
     const loadInitialPosts = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Panache usa índice 0 para la primera página
         const fetchedPosts = await SocialService.getPosts(0, postsPerPage);
-        
+        if (cancelled) return;
         if (!fetchedPosts || fetchedPosts.length === 0) {
-          console.log('ℹ️ No se encontraron posts');
           setPosts([]);
           setHasMorePosts(false);
         } else {
           setPosts(fetchedPosts);
-          
-          // Verificar si hay más posts
           setHasMorePosts(fetchedPosts.length === postsPerPage);
-          
-          // Cargar conteo de comentarios para cada post
           fetchedPosts.forEach(post => {
             loadCommentCounts(post.id);
             if (post.linkImage || post.images) {
@@ -497,15 +504,16 @@ export default function SocialPageContent() {
           });
         }
       } catch (err) {
-        console.error('Error loading posts:', err);
-        setError('No se pudieron cargar los posts en este momento');
-        setPosts([]);
+        if (!cancelled) {
+          setError('No se pudieron cargar los posts en este momento');
+          setPosts([]);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-
     loadInitialPosts();
+    return () => { cancelled = true; };
   }, [postsPerPage]);
 
   // Cargar TODOS los PropShots (público)
@@ -567,88 +575,16 @@ export default function SocialPageContent() {
     }
   };
 
-  // Función para cargar imágenes de un post
-  const loadPostImages = async (post: Post) => {
-    try {
-      
-      // Primero verificar si el post ya tiene imágenes en el estado
-      const existingImages = postImages.get(post.id);
-      if (existingImages && existingImages.length > 0) {
-        return;
-      }
-      
-      // Intentar cargar imágenes del servicio
-      const images = await SocialService.getPostImages(post);
-      
-      // Si no hay imágenes del servicio, verificar si el post tiene linkImage
-      if (!images || images.length === 0) {
-        if (post.linkImage) {
-          const linkImages = [post.linkImage!];
-          setPostImages(prev => {
-            const newMap = new Map(prev);
-            newMap.set(post.id, linkImages);
-            return newMap;
-          });
-          return;
-        }
-        
-        // Si el post tiene images, procesarlas
-        if (post.images) {
-          let processedImages: string[] = [];
-          if (typeof post.images === 'string') {
-            processedImages = post.images.split(',').filter(img => img.trim());
-          } else if (Array.isArray(post.images)) {
-            processedImages = post.images;
-          }
-          
-          if (processedImages.length > 0) {
-            setPostImages(prev => {
-              const newMap = new Map(prev);
-              newMap.set(post.id, processedImages);
-              return newMap;
-            });
-            return;
-          }
-        }
-        
-        return;
-      }
-      
-      // Si hay imágenes del servicio, actualizar el estado
-      setPostImages(prev => {
-        const newMap = new Map(prev);
-        newMap.set(post.id, images);
-        return newMap;
-      });
-    } catch (error) {
-      console.error(`❌ Error al cargar imágenes del post ${post.id}:`, error);
-      
-      // Fallback: intentar usar linkImage o images del post
-      if (post.linkImage) {
-        setPostImages(prev => {
-          const newMap = new Map(prev);
-          if (post.linkImage) {
-            newMap.set(post.id, [post.linkImage]);
-          }
-          return newMap;
-        });
-      } else if (post.images) {
-        let processedImages: string[] = [];
-        if (typeof post.images === 'string') {
-          processedImages = post.images.split(',').filter(img => img.trim());
-        } else if (Array.isArray(post.images)) {
-          processedImages = post.images;
-        }
-        
-        if (processedImages.length > 0) {
-          setPostImages(prev => {
-            const newMap = new Map(prev);
-            newMap.set(post.id, processedImages);
-            return newMap;
-          });
-        }
-      }
-    }
+  // Rellenar imágenes de un post en el estado (síncrono; sin peticiones extra)
+  const loadPostImages = (post: Post) => {
+    if (postImages.get(post.id)?.length) return;
+    const images = SocialService.getPostImages(post);
+    if (images.length === 0) return;
+    setPostImages(prev => {
+      const next = new Map(prev);
+      next.set(post.id, images);
+      return next;
+    });
   };
 
   // Función para compartir un post
@@ -739,6 +675,100 @@ export default function SocialPageContent() {
     }
   };
 
+  const handleOpenEditPost = async (post: Post) => {
+    setEditingPostId(post.id);
+    setEditingPostContent(post.content || '');
+    setEditingPostLocation(post.location || '');
+    setEditingPostNewImagePreviews(prev => {
+      prev.forEach(url => URL.revokeObjectURL(url));
+      return [];
+    });
+    setEditingPostNewImageFiles([]);
+    setOpenDropdown(null);
+    const existing = postImages.get(post.id);
+    if (existing?.length) {
+      setEditingPostImageUrls(existing);
+    } else {
+      setEditingPostImageUrls([]);
+      if (post.images || post.linkImage) {
+        const urls = SocialService.getPostImages(post);
+        setEditingPostImageUrls(urls || []);
+      }
+    }
+  };
+
+  const handleSaveEditPost = async () => {
+    if (editingPostId == null) return;
+    if (!editingPostContent.trim()) {
+      alert('El contenido no puede estar vacío.');
+      return;
+    }
+    try {
+      setSavingEditPost(true);
+      let allUrls: string[] = [...editingPostImageUrls];
+      if (editingPostNewImageFiles.length > 0) {
+        const processed = await processImageFiles(editingPostNewImageFiles);
+        const uploads = await SocialService.uploadPostImages(processed);
+        allUrls = [...allUrls, ...uploads.map(u => u.url)];
+      }
+      const imagesValue = allUrls.length > 0 ? allUrls.join(',') : '';
+      await SocialService.updatePost(editingPostId, {
+        content: editingPostContent.trim(),
+        location: editingPostLocation.trim() || undefined,
+        images: imagesValue
+      });
+      setPosts(prev => prev.map(p => p.id === editingPostId
+        ? { ...p, content: editingPostContent.trim(), location: editingPostLocation.trim() || undefined }
+        : p
+      ));
+      setEditingPostNewImagePreviews(prev => {
+        prev.forEach(url => URL.revokeObjectURL(url));
+        return [];
+      });
+      setEditingPostId(null);
+      setEditingPostContent('');
+      setEditingPostLocation('');
+      setEditingPostImageUrls([]);
+      setEditingPostNewImageFiles([]);
+      setPostImages(prev => {
+        const next = new Map(prev);
+        if (imagesValue === '') next.delete(editingPostId);
+        else next.set(editingPostId, allUrls);
+        return next;
+      });
+    } catch (error: any) {
+      alert(error?.response?.data?.error || error?.message || 'Error al guardar. Intenta de nuevo.');
+    } finally {
+      setSavingEditPost(false);
+    }
+  };
+
+  const handleEditPostImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    e.target.value = '';
+    if (!files?.length) return;
+    const currentTotal = editingPostImageUrls.length + editingPostNewImageFiles.length;
+    const toAdd = Math.min(MAX_POST_IMAGES - currentTotal, files.length);
+    if (toAdd <= 0) return;
+    const newFiles = Array.from(files).slice(0, toAdd);
+    const newPreviews = newFiles.map(f => URL.createObjectURL(f));
+    setEditingPostNewImageFiles(prev => [...prev, ...newFiles]);
+    setEditingPostNewImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeEditPostExistingImage = (index: number) => {
+    setEditingPostImageUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeEditPostNewImage = (index: number) => {
+    setEditingPostNewImagePreviews(prev => {
+      const url = prev[index];
+      if (url) URL.revokeObjectURL(url);
+      return prev.filter((_, i) => i !== index);
+    });
+    setEditingPostNewImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Función para manejar likes (permite usuarios anónimos)
   const handleLike = async (postId: number) => {
     try {
@@ -818,22 +848,29 @@ export default function SocialPageContent() {
     }
   };
 
-  // Función para manejar selección de imágenes en posts
+  // Agregar fotos al post: previsualización inmediata, varias imágenes, máx 5. Sin setState anidado.
   const handlePostImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      // Limitar a máximo 5 imágenes
-      const selectedFiles = files.slice(0, 5);
-      setSelectedPostImages(selectedFiles);
-      
-      // Crear previews
-      const previews = selectedFiles.map(file => URL.createObjectURL(file));
-      setPostImagePreviews(previews);
-    }
+    const fileList = e.target.files;
+    e.target.value = '';
+    if (!fileList?.length) return;
+
+    const currentCount = postImagePreviewUrlsRef.current.length;
+    const spaceLeft = MAX_POST_IMAGES - currentCount;
+    if (spaceLeft <= 0) return;
+
+    const toAdd = Array.from(fileList).slice(0, spaceLeft);
+    const newPreviews = toAdd.map((f: File) => URL.createObjectURL(f));
+
+    postImagePreviewUrlsRef.current = [...postImagePreviewUrlsRef.current, ...newPreviews];
+    setSelectedPostImages(prev => [...prev, ...toAdd]);
+    setPostImagePreviews(prev => [...prev, ...newPreviews]);
   };
 
-  // Función para remover imagen de post
+  // Quitar una foto del post y revocar su blob URL
   const removePostImage = (index: number) => {
+    const urlToRevoke = postImagePreviews[index];
+    if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
+    postImagePreviewUrlsRef.current = postImagePreviews.filter((_, i) => i !== index);
     setSelectedPostImages(prev => prev.filter((_, i) => i !== index));
     setPostImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
@@ -855,14 +892,21 @@ export default function SocialPageContent() {
         location: userLocation || undefined
       };
 
-      // Upload de imágenes si se seleccionaron
+      // Igual que step multimedia en propiedades: procesar imágenes (HEIC → JPG) y luego subir una por una
       if (selectedPostImages.length > 0) {
         try {
-          const imageUploads = await SocialService.uploadPostImages(selectedPostImages);
+          const filesArray = Array.from(selectedPostImages);
+          const heicCount = filesArray.filter(f => isHeicFile(f)).length;
+          if (heicCount > 0) {
+            console.log(`🔄 Convirtiendo ${heicCount} archivo(s) HEIC a JPG...`);
+          }
+          const processedFiles = await processImageFiles(filesArray);
+          const imageUploads = await SocialService.uploadPostImages(processedFiles);
           postData.images = imageUploads.map(upload => upload.url);
         } catch (error) {
           console.error('Error uploading images:', error);
-          alert('Error al subir las imágenes. El post se creará sin imágenes.');
+          alert('Error al subir las imágenes. Revisa la conexión e intenta de nuevo.');
+          return;
         }
       }
 
@@ -874,7 +918,9 @@ export default function SocialPageContent() {
         setShowSuccess(false);
       }, 3000);
       
-      // Limpiar el formulario
+      // Limpiar el formulario (revocar blob URLs de preview)
+      postImagePreviewUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      postImagePreviewUrlsRef.current = [];
       setNewPost('');
       setSelectedPostImages([]);
       setPostImagePreviews([]);
@@ -1032,32 +1078,25 @@ export default function SocialPageContent() {
     }
   };
 
-  // Función para convertir URLs relativas en URLs completas - usando la misma solución del CRM
+  // Convierte URLs relativas en completas (reels PropShots e imágenes de posts)
   const getFullUrl = (url: string): string => {
-    if (!url) return '';
-    
-    // Si ya es una URL completa, retornarla
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
-      return url;
+    if (!url || typeof url !== 'string') return '';
+    const t = url.trim();
+    if (t.startsWith('http://') || t.startsWith('https://') || t.startsWith('blob:')) return t;
+    if (t.startsWith('/uploads/') || t.startsWith('/api/')) return getEndpoint(t);
+    if (!t.startsWith('/') && !t.includes('/')) {
+      const ext = (t.split('.').pop() || '').toLowerCase();
+      const isVideo = ['mp4', 'webm', 'mov', 'ogg'].includes(ext);
+      return getEndpoint(isVideo ? `/uploads/social/propshots/${t}` : `/uploads/social/posts/${t}`);
     }
-    
-    // Si es una URL relativa del backend (como /uploads/social/propshots/...), usar getEndpoint
-    if (url.startsWith('/uploads/')) {
-      return getEndpoint(url);
-    }
-    
-    // Si es una URL de API, usar getEndpoint
-    if (url.startsWith('/api/')) {
-      return getEndpoint(url);
-    }
-    
-    // Si solo es el nombre del archivo (sin ruta), agregar la ruta completa
-    if (!url.startsWith('/') && !url.includes('/')) {
-      return getEndpoint(`/uploads/social/propshots/${url}`);
-    }
-    
-    // Para cualquier otra ruta relativa, usar getEndpoint
-    return getEndpoint(url.startsWith('/') ? url : `/${url}`);
+    return getEndpoint(t.startsWith('/') ? t : `/${t}`);
+  };
+
+  // URLs de imágenes de un post: del estado o derivadas de post.images / post.linkImage (siempre algo si hay datos)
+  const getPostImageUrls = (post: Post): string[] => {
+    const fromMap = postImages.get(post.id);
+    if (fromMap?.length) return fromMap;
+    return SocialService.getPostImages(post);
   };
 
   // Función para formatear fecha como Facebook
@@ -1079,11 +1118,10 @@ export default function SocialPageContent() {
     return `hace ${Math.floor(diffInDays / 365)} año`;
   };
 
-  // Redirigir a la galería existente (/yvu/gallery/[postId])
+  // Redirigir a la galería: /yvu/gallery/[hash] o /yvu/gallery/[hash]?i=1
   const openImageGallery = (postId: number, imageIndex: number = 0) => {
-    const target = imageIndex > 0 
-      ? `/yvu/gallery/${postId}?i=${imageIndex}` 
-      : `/yvu/gallery/${postId}`;
+    const slug = encodePostId(postId);
+    const target = imageIndex > 0 ? `/yvu/gallery/${slug}?i=${imageIndex}` : `/yvu/gallery/${slug}`;
     if (typeof window !== 'undefined') {
       window.location.href = target;
     }
@@ -1128,38 +1166,146 @@ export default function SocialPageContent() {
 
   return (
     <>
+      {/* Modal editar post - una pantalla tipo Facebook: contenido, ubicación y fotos (máx. 5) */}
+      {editingPostId != null && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => {
+            if (savingEditPost) return;
+            setEditingPostNewImagePreviews(prev => {
+              prev.forEach(url => URL.revokeObjectURL(url));
+              return [];
+            });
+            setEditingPostId(null);
+            setEditingPostImageUrls([]);
+            setEditingPostNewImageFiles([]);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-6 sm:p-8">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Editar publicación</h3>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">¿Qué estás pensando?</label>
+                  <textarea
+                    value={editingPostContent}
+                    onChange={e => setEditingPostContent(e.target.value)}
+                    placeholder="Escribe aquí..."
+                    rows={5}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <MapPin className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                    Ubicación
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPostLocation}
+                    onChange={e => setEditingPostLocation(e.target.value)}
+                    placeholder="Añadir ubicación (opcional)"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <PostMultimediaStep
+                    mode="edit"
+                    maxCount={MAX_POST_IMAGES}
+                    getFullUrl={getFullUrl}
+                    items={[
+                      ...editingPostImageUrls.map((url, i) => ({ id: `ex-${i}`, url })),
+                      ...editingPostNewImageFiles.map((_, i) => ({
+                        id: `new-${i}-${editingPostNewImagePreviews[i] ?? ''}`,
+                        url: editingPostNewImagePreviews[i] ?? '',
+                        file: editingPostNewImageFiles[i],
+                      })),
+                    ]}
+                    onItemsChange={(items) => {
+                      const existing: string[] = [];
+                      const newFiles: File[] = [];
+                      const newPreviews: string[] = [];
+                      items.forEach((it) => {
+                        if (it.file) {
+                          newFiles.push(it.file);
+                          newPreviews.push(it.url);
+                        } else {
+                          existing.push(it.url);
+                        }
+                      });
+                      setEditingPostImageUrls(existing);
+                      setEditingPostNewImageFiles(newFiles);
+                      setEditingPostNewImagePreviews(newPreviews);
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingPostNewImagePreviews(prev => {
+                      prev.forEach(url => URL.revokeObjectURL(url));
+                      return [];
+                    });
+                    setEditingPostId(null);
+                    setEditingPostImageUrls([]);
+                    setEditingPostNewImageFiles([]);
+                  }}
+                  disabled={savingEditPost}
+                  className="px-5 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors disabled:opacity-50 font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEditPost}
+                  disabled={savingEditPost || !editingPostContent.trim()}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition-colors font-medium"
+                >
+                  {savingEditPost ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row gap-6 lg:gap-8 lg:justify-center">
+        <div className="flex-1 min-w-0 w-full max-w-4xl mx-auto lg:mx-0 lg:flex-none">
       {/* Banner de marca Áureo - Premium */}
       <div className="relative mb-6 overflow-hidden">
-        <div className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl p-4 sm:p-8 md:p-12 border border-blue-100 dark:border-gray-700 shadow-lg">
-          {/* Patrón de fondo decorativo */}
-          <div className="absolute inset-0 opacity-5 dark:opacity-10">
-            <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
-          </div>
-          
+        <div className="relative rounded-2xl p-4 sm:p-8 md:p-12 border border-blue-200/80 dark:border-blue-900/50 bg-white dark:bg-black shadow-lg">
           <div className="relative text-center">
             {/* Logo con efecto hover */}
             <div className="flex flex-col items-center justify-center mb-3 sm:mb-4 md:mb-6">
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
+                <div className="absolute inset-0 bg-blue-600/40 rounded-2xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-500"></div>
                 <img 
                   src="/images/logo/yvu.png" 
                   alt="Áureo Logo" 
                   className="relative h-12 sm:h-16 md:h-24 lg:h-28 w-auto object-contain transform group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
-                Donde nacen los negocios de bienes raices
+              <p className="text-xs sm:text-sm text-black dark:text-white mt-2 text-center font-medium tracking-wide">
+                Donde nacen los negocios de bienes raíces
               </p>
             </div>
             
-            {/* Tagline mejorado */}
+            {/* Tagline */}
             <div className="space-y-1.5 sm:space-y-2">
-              <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent leading-tight px-2">
-                La red profesional para agentes Inmobiliarios
+              <h1 className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold text-blue-700 dark:text-blue-300 leading-tight px-2 tracking-tight">
+                La red profesional para agentes inmobiliarios
               </h1>
-              <p className="text-xs sm:text-sm md:text-lg text-gray-600 dark:text-gray-300 font-medium max-w-2xl mx-auto px-2">
-                Conecta, comparte y crece en la comunidad inmobiliaria más grande
+              <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 font-medium max-w-2xl mx-auto px-2 leading-relaxed">
+                Publica propiedades. Conecta con agentes. Vende más. Tu red para cerrar.
               </p>
             </div>
           </div>
@@ -1373,45 +1519,22 @@ export default function SocialPageContent() {
                       </div>
                     )}
                     
-                    {/* Preview de imágenes seleccionadas */}
-                    {postImagePreviews.length > 0 && (
-                      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {postImagePreviews.map((preview, index) => (
-                          <div key={index} className="relative group">
-                            <div className="aspect-square rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-600">
-                              <img
-                                src={preview}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <button
-                              onClick={() => removePostImage(index)}
-                              className="absolute top-2 right-2 w-7 h-7 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all transform hover:scale-110"
-                              title="Eliminar imagen"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {/* Step multimedia igual que en propiedades: grid, arrastrar, HEIC, agregar más */}
+                    <div className="mt-4">
+                      <PostMultimediaStep
+                        files={selectedPostImages}
+                        previewUrls={postImagePreviews}
+                        maxCount={MAX_POST_IMAGES}
+                        onFilesChange={(files, previewUrls) => {
+                          setSelectedPostImages(files);
+                          setPostImagePreviews(previewUrls);
+                          postImagePreviewUrlsRef.current = previewUrls;
+                        }}
+                      />
+                    </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                    <label className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer group">
-                      <Camera className="w-5 h-5 group-hover:scale-110 transition-transform flex-shrink-0" />
-                      <span className="text-sm font-medium whitespace-nowrap">Fotos (máx. 5)</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handlePostImageSelect}
-                      />
-                    </label>
                     <button
                       onClick={openLocationPicker}
                       className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors group min-w-0"
@@ -1689,14 +1812,14 @@ export default function SocialPageContent() {
         </div>
       )}
 
-      {/* Posts en dos columnas - Mejorado */}
+      {/* Posts en una sola columna */}
             {!loading && !error && posts.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 pb-24">
                 {posts.map((post) => (
-            <div key={post.id} className="group bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden relative z-0">
-              {/* Header del Post - Mejorado */}
-              <div className="p-3 sm:p-4 md:p-5 bg-gradient-to-r from-blue-50/30 to-transparent">
-                <div className="flex items-center justify-between">
+            <div key={post.id} className="group bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 relative z-0">
+              {/* Header del Post - Mejorado (sin overflow para que se vea el menú) */}
+              <div className="p-3 sm:p-4 md:p-5 bg-gradient-to-r from-blue-50/30 to-transparent dark:from-gray-800 dark:to-transparent rounded-t-xl sm:rounded-t-2xl">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center space-x-3">
                     <div className="relative">
                       <div className="w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-base md:text-lg shadow-md ring-2 ring-blue-100">
@@ -1728,13 +1851,27 @@ export default function SocialPageContent() {
                       </div>
                     </div>
                   </div>
-                  {/* Menú de opciones (tres puntitos) */}
-                  <div className="relative flex-shrink-0">
+                  {/* Tres puntos (todos) y lápiz Editar (solo dueño) - siempre visibles */}
+                  <div className="relative flex items-center gap-1 flex-shrink-0">
+                    {isAuthenticated && user && post.user && Number(post.user.id) === Number(user.id) && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditPost(post)}
+                        className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/30 transition-colors"
+                        title="Editar post"
+                        aria-label="Editar post"
+                      >
+                        <Pencil className="w-5 h-5" />
+                      </button>
+                    )}
                     <button 
-                      onClick={() => setOpenDropdown(openDropdown === post.id ? null : post.id)}
-                      className="p-2 hover:bg-white/80 rounded-lg transition-colors"
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === post.id ? null : post.id); }}
+                      className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      title="Opciones"
+                      aria-label="Opciones del post"
                     >
-                      <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                      <MoreHorizontal className="w-5 h-5" />
                     </button>
                     
                     {/* Dropdown menu */}
@@ -1747,50 +1884,42 @@ export default function SocialPageContent() {
                         />
                         
                         {/* Menú dropdown */}
-                        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                          {/* Solo mostrar "Eliminar" si el usuario es el dueño del post */}
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-20">
                           {(() => {
-                            const isOwner = isAuthenticated && user && post.user && 
-                                           Number(post.user.id) === Number(user.id);
-                            // Debug activo para verificar la comparación
-                            console.log('🔍 Debug Post', post.id, ':', {
-                              postUserId: post.user?.id,
-                              postUserIdType: typeof post.user?.id,
-                              currentUserId: user?.id,
-                              currentUserIdType: typeof user?.id,
-                              isAuthenticated,
-                              hasUser: !!user,
-                              hasPostUser: !!post.user,
-                              isOwner
-                            });
-                            return isOwner;
-                          })() && (
-                            <button
-                              onClick={() => handleDeletePost(post.id)}
-                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Eliminar post
-                            </button>
-                          )}
-                          
-                          {/* Separador solo si hay opción de eliminar */}
-                          {(() => {
-                            const isOwner = isAuthenticated && user && post.user && 
-                                           Number(post.user.id) === Number(user.id);
-                            return isOwner && <div className="border-t border-gray-200 my-1" />;
+                            const isOwner = isAuthenticated && user && post.user && Number(post.user.id) === Number(user.id);
+                            if (!isOwner) return null;
+                            return (
+                              <>
+                                <button
+                                  onClick={() => handleOpenEditPost(post)}
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={() => handleDeletePost(post.id)}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Eliminar
+                                </button>
+                                <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                              </>
+                            );
                           })()}
                           
-                          {/* Otras opciones futuras pueden ir aquí */}
                           <button
                             onClick={() => {
-                              navigator.clipboard.writeText(`${window.location.origin}/yvu/posts/${post.id}`);
+                              navigator.clipboard.writeText(`${window.location.origin}/yvu/gallery/${encodePostId(post.id)}`);
                               setOpenDropdown(null);
                               alert('Enlace copiado al portapapeles');
                             }}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -1805,20 +1934,20 @@ export default function SocialPageContent() {
               </div>
 
                     {/* Contenido del Post */}
-              <div className="p-4">
+              <div className="p-4 rounded-b-xl sm:rounded-b-2xl overflow-hidden">
 
                 
-                {/* Imágenes del post */}
+                {/* Imágenes del post (siempre desde post.images/linkImage si el mapa no tiene) */}
                 {(() => {
-                  const currentPostImages = postImages.get(post.id) || [];
-                  if (currentPostImages && currentPostImages.length > 0) {
+                  const currentPostImages = getPostImageUrls(post);
+                  if (currentPostImages.length > 0) {
                     return (
                       <div className="mb-4">
                         {currentPostImages.length === 1 ? (
                           // Una sola imagen - mostrar grande
                           <div className="relative cursor-pointer overflow-hidden rounded-xl">
                             <img 
-                              src={currentPostImages[0]} 
+                              src={getFullUrl(currentPostImages[0])} 
                               alt="Post image"
                               className="w-full h-80 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                               onClick={() => {
@@ -1838,7 +1967,7 @@ export default function SocialPageContent() {
                             {currentPostImages.map((imageUrl, index) => (
                               <div key={index} className="relative cursor-pointer overflow-hidden rounded-xl">
                                 <img 
-                                  src={imageUrl} 
+                                  src={getFullUrl(imageUrl)} 
                                   alt={`Post image ${index + 1}`}
                                   className="w-full h-48 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                   onClick={() => {
@@ -1859,7 +1988,7 @@ export default function SocialPageContent() {
                           <div className="grid grid-cols-3 gap-3">
                             <div className="col-span-2 relative cursor-pointer overflow-hidden rounded-xl">
                               <img 
-                                src={currentPostImages[0]} 
+                                src={getFullUrl(currentPostImages[0])} 
                                 alt="Post image 1"
                                 className="w-full h-48 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                 onClick={() => {
@@ -1877,7 +2006,7 @@ export default function SocialPageContent() {
                               {currentPostImages.slice(1).map((imageUrl, index) => (
                                 <div key={index + 1} className="relative cursor-pointer overflow-hidden rounded-xl">
                                   <img 
-                                    src={imageUrl} 
+                                    src={getFullUrl(imageUrl)} 
                                     alt={`Post image ${index + 2}`}
                                     className="w-full h-20 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                     onClick={() => {
@@ -1900,7 +2029,7 @@ export default function SocialPageContent() {
                             {currentPostImages.slice(0, 4).map((imageUrl, index) => (
                               <div key={index} className="relative cursor-pointer overflow-hidden rounded-xl">
                                 <img 
-                                  src={imageUrl} 
+                                  src={getFullUrl(imageUrl)} 
                                   alt={`Post image ${index + 1}`}
                                   className="w-full h-40 object-cover rounded-xl hover:opacity-90 transition-opacity duration-200"
                                   onClick={() => {
@@ -2463,6 +2592,31 @@ export default function SocialPageContent() {
           </div>
         </div>
       )}
+
+        </div>
+        {/* Espacio reservado para el aside fijo */}
+        <div className="hidden lg:block w-[200px] flex-shrink-0" />
+      </div>
+
+      {/* Banner publicitario fijo */}
+      <aside className="hidden lg:block fixed right-8 top-4 w-[280px] z-40">
+        <a 
+          href="/properties" 
+          className="block w-full group"
+        >
+          <div className="flex flex-col items-center text-center">
+            <img 
+              src="/images/logo/proptech.png" 
+              alt="Proptech" 
+              className="w-48 h-auto mb-3 group-hover:scale-105 transition-transform"
+            />
+            <span className="text-sm text-gray-400 dark:text-gray-500">Publicidad</span>
+            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium group-hover:underline mt-1">
+              Ver propiedades →
+            </span>
+          </div>
+        </a>
+      </aside>
 
       {/* Modal Selector de Ubicación con Mapa */}
       {showLocationPicker && (

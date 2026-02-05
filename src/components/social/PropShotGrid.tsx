@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PropShot } from '@/services/propShotService';
 import { getEndpoint } from '@/lib/api-config';
@@ -10,7 +10,11 @@ import {
   Heart as HeartIcon,
   MessageCircle as MessageIcon,
   Eye as EyeIcon,
-  Building2
+  Building2,
+  Pencil,
+  MoreHorizontal,
+  Link2,
+  Trash2
 } from 'lucide-react';
 
 interface PropShotGridProps {
@@ -21,6 +25,11 @@ interface PropShotGridProps {
   limit?: number; // Limitar número de PropShots mostrados (útil para dashboard)
   showEmptyState?: boolean;
   onPropShotClick?: (propShot: PropShot) => void; // Callback opcional para clicks
+  /** Si se pasa, se muestra botón Editar en los reels del usuario (agentId === currentUserId) */
+  currentUserId?: number;
+  onEdit?: (shot: PropShot) => void;
+  /** Si se pasa, se muestra opción Eliminar en el menú para el dueño */
+  onDelete?: (shot: PropShot) => void;
   className?: string;
   gridCols?: {
     default?: number;
@@ -42,6 +51,9 @@ export default function PropShotGrid({
   limit,
   showEmptyState = true,
   onPropShotClick,
+  currentUserId,
+  onEdit,
+  onDelete,
   className = '',
   gridCols = {
     default: 2,
@@ -51,6 +63,7 @@ export default function PropShotGrid({
   }
 }: PropShotGridProps) {
   const router = useRouter();
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   // Aplicar límite si se especifica
   const displayedPropShots = limit ? propShots.slice(0, limit) : propShots;
@@ -195,6 +208,73 @@ export default function PropShotGrid({
                     <span>PropShots</span>
                   </div>
                 </div>
+
+                {/* Menú tres puntos (siempre visible) y lápiz (solo dueño) */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 pointer-events-auto z-10">
+                  {currentUserId != null && onEdit && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(shot);
+                      }}
+                      className="w-9 h-9 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center shadow-lg text-white"
+                      title="Editar reel"
+                      aria-label="Editar reel"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === shot.id ? null : shot.id);
+                    }}
+                    className="w-9 h-9 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center shadow-lg text-white"
+                    title="Opciones"
+                    aria-label="Opciones"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                  {openMenuId === shot.id && (
+                    <>
+                      <div className="fixed inset-0 z-20" onClick={() => setOpenMenuId(null)} />
+                      <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-30">
+                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onEdit && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onEdit(shot); setOpenMenuId(null); }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                          >
+                            <Pencil className="w-4 h-4" /> Editar
+                          </button>
+                        )}
+                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onDelete && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onDelete(shot); setOpenMenuId(null); }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" /> Eliminar
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(typeof window !== 'undefined' ? `${window.location.origin}/yvu/propshots?r=${shot.id}` : '');
+                            setOpenMenuId(null);
+                            if (typeof window !== 'undefined') alert('Enlace copiado');
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        >
+                          <Link2 className="w-4 h-4" /> Copiar enlace
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
                 
                 {/* Duración del video */}
                 <div className="absolute bottom-3 right-3 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded-lg font-medium pointer-events-none">
@@ -218,6 +298,47 @@ export default function PropShotGrid({
                     </svg>
                     <span>PropShots</span>
                   </div>
+                </div>
+
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                  {currentUserId != null && onEdit && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onEdit(shot); }}
+                      className="w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg text-blue-600"
+                      title="Editar reel"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === shot.id ? null : shot.id); }}
+                    className="w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg text-gray-600"
+                    title="Opciones"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                  {openMenuId === shot.id && (
+                    <>
+                      <div className="fixed inset-0 z-20" onClick={() => setOpenMenuId(null)} />
+                      <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-30">
+                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onEdit && (
+                          <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(shot); setOpenMenuId(null); }} className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                            <Pencil className="w-4 h-4" /> Editar
+                          </button>
+                        )}
+                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onDelete && (
+                          <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(shot); setOpenMenuId(null); }} className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                            <Trash2 className="w-4 h-4" /> Eliminar
+                          </button>
+                        )}
+                        <button type="button" onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(typeof window !== 'undefined' ? `${window.location.origin}/yvu/propshots?r=${shot.id}` : ''); setOpenMenuId(null); if (typeof window !== 'undefined') alert('Enlace copiado'); }} className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
+                          <Link2 className="w-4 h-4" /> Copiar enlace
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 {/* Duración del video */}

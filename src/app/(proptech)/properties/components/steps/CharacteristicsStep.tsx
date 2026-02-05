@@ -27,12 +27,14 @@ interface CharacteristicsStepProps {
   errors: PropertyFormErrors;
 }
 
+type SectionId = 'basic' | 'spaces' | 'dimensions' | 'details';
+
 export default function CharacteristicsStep({ formData, handleChange, errors }: CharacteristicsStepProps) {
   // Lógica común: mismo criterio que FloorPlansStep, AmenitiesStep y edit/new
   const isLand = isPropertyTypeLand(formData);
 
   // Sección activa: para terrenos arrancamos en "dimensions", para el resto en "basic"
-  const [activeSection, setActiveSection] = useState<'basic' | 'spaces' | 'dimensions' | 'details'>(isLand ? 'dimensions' : 'basic');
+  const [activeSection, setActiveSection] = useState<SectionId>(isLand ? 'dimensions' : 'basic');
 
   // Cuando cambia el tipo (casa ↔ terreno), ajustamos la sección activa
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function CharacteristicsStep({ formData, handleChange, errors }: 
 
   // Secciones visibles: para terrenos sólo Dimensiones y Detalles
   const sections = useMemo(
-    () =>
+    (): { id: SectionId; name: string; icon: typeof HomeIcon; color: string }[] =>
       isLand
         ? [
             { id: 'dimensions', name: 'Dimensiones', icon: Square2StackIcon, color: 'purple' },
