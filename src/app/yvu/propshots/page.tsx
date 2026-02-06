@@ -351,9 +351,12 @@ export default function PropShotsPage() {
 
   // Función para convertir URLs relativas en URLs completas
   // Para videos de PropShots, usar el nuevo endpoint /api/social/propshots/video/{filename}
+  // URL base para videos en producción (sin proxy Cloudflare)
+  const UPLOADS_BASE_URL = 'https://uploads.proptech.com.py';
+  const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+
   const getFullUrl = (url: string): string => {
     if (!url) {
-      console.log('🎬 [VIDEO-URL] URL vacía');
       return '';
     }
     
@@ -363,11 +366,22 @@ export default function PropShotsPage() {
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
       result = url;
     }
-    // Si es una URL de video de PropShots (/uploads/social/propshots/xxx.mp4), usar el nuevo endpoint
+    // Videos de PropShots: usar uploads.proptech.com.py en producción (sin proxy Cloudflare)
     else if (url.includes('/social/propshots/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
-      // Extraer el nombre del archivo
       const filename = url.split('/').pop();
-      result = getEndpoint(`/api/social/propshots/video/${filename}`);
+      if (isProduction) {
+        result = `${UPLOADS_BASE_URL}/api/social/propshots/video/${filename}`;
+      } else {
+        result = getEndpoint(`/api/social/propshots/video/${filename}`);
+      }
+    }
+    // Solo nombre de archivo de video
+    else if (!url.startsWith('/') && !url.includes('/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
+      if (isProduction) {
+        result = `${UPLOADS_BASE_URL}/api/social/propshots/video/${url}`;
+      } else {
+        result = getEndpoint(`/api/social/propshots/video/${url}`);
+      }
     }
     // Si es una URL relativa del backend (como /uploads/...), usar getEndpoint
     else if (url.startsWith('/uploads/')) {
@@ -376,10 +390,6 @@ export default function PropShotsPage() {
     // Si es una URL de API, usar getEndpoint
     else if (url.startsWith('/api/')) {
       result = getEndpoint(url);
-    }
-    // Si solo es el nombre del archivo (sin ruta), usar el nuevo endpoint de video
-    else if (!url.startsWith('/') && !url.includes('/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
-      result = getEndpoint(`/api/social/propshots/video/${url}`);
     }
     // Para cualquier otra ruta relativa, usar getEndpoint
     else {

@@ -68,7 +68,11 @@ export default function PropShotGrid({
   // Aplicar límite si se especifica
   const displayedPropShots = limit ? propShots.slice(0, limit) : propShots;
 
-  // Función para obtener URL completa - usando getEndpoint como en otros componentes
+  // URL base para videos en producción (sin proxy Cloudflare)
+  const UPLOADS_BASE_URL = 'https://uploads.proptech.com.py';
+  const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+
+  // Función para obtener URL completa
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
@@ -77,10 +81,23 @@ export default function PropShotGrid({
       return url;
     }
     
-    // Manejar URLs incorrectas de PropShots
-    if (url.includes('/api/prop-shots/media/')) {
+    // Videos de PropShots: usar uploads.proptech.com.py en producción
+    if (url.includes('/social/propshots/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
       const filename = url.split('/').pop();
-      url = `/uploads/prop-shots/media/${filename}`;
+      if (isProduction) {
+        return `${UPLOADS_BASE_URL}/api/social/propshots/video/${filename}`;
+      } else {
+        return getEndpoint(`/api/social/propshots/video/${filename}`);
+      }
+    }
+    
+    // Solo nombre de archivo de video
+    if (!url.startsWith('/') && !url.includes('/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
+      if (isProduction) {
+        return `${UPLOADS_BASE_URL}/api/social/propshots/video/${url}`;
+      } else {
+        return getEndpoint(`/api/social/propshots/video/${url}`);
+      }
     }
     
     // Si es una URL relativa del backend (como /uploads/...), usar getEndpoint
@@ -95,7 +112,6 @@ export default function PropShotGrid({
     
     // Si solo es el nombre del archivo (sin ruta), intentar rutas comunes
     if (!url.startsWith('/') && !url.includes('/')) {
-      // Intentar primero con /uploads/inmo/ (fotos de agentes)
       return getEndpoint(`/uploads/inmo/${url}`);
     }
     
