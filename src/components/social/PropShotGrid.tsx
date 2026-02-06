@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PropShot } from '@/services/propShotService';
 import { getEndpoint } from '@/lib/api-config';
+import HlsVideo from './HlsVideo';
 import { 
   Camera,
   Play,
@@ -69,13 +70,25 @@ export default function PropShotGrid({
   const displayedPropShots = limit ? propShots.slice(0, limit) : propShots;
 
   // Función para obtener URL completa
-  // Usa api.proptech.com.py con endpoint optimizado para Cloudflare
+  // Soporta videos HLS (.m3u8) y videos normales
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
     // Si ya es una URL completa, retornarla
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
       return url;
+    }
+    
+    // HLS streams: usar endpoint de HLS
+    if (url.includes('/hls/') && url.endsWith('.m3u8')) {
+      // URL tipo: /uploads/social/propshots/hls/{videoId}/playlist.m3u8
+      const parts = url.split('/');
+      const videoIdIndex = parts.indexOf('hls') + 1;
+      if (videoIdIndex > 0 && videoIdIndex < parts.length - 1) {
+        const videoId = parts[videoIdIndex];
+        const filename = parts[parts.length - 1];
+        return getEndpoint(`/api/social/propshots/hls/${videoId}/${filename}`);
+      }
     }
     
     // Videos de PropShots: usar endpoint optimizado
@@ -177,22 +190,13 @@ export default function PropShotGrid({
           <div className="relative mb-3">
             {shot.mediaUrl ? (
               <div className="aspect-[9/16] rounded-xl overflow-hidden shadow-lg relative">
-                <video
+                <HlsVideo
                   src={getFullUrl(shot.mediaUrl)}
                   className="w-full h-full object-cover"
                   autoPlay
                   muted
                   loop
                   playsInline
-                  preload="metadata"
-                  onLoadedData={(e) => {
-                    const videoElement = e.currentTarget;
-                    // Mantener silenciado en preview
-                    videoElement.muted = true;
-                    videoElement.play().catch(() => {
-                      // Ignorar errores de autoplay
-                    });
-                  }}
                   onClick={(e) => {
                     // Al hacer click, abrir el reproductor completo con sonido
                     e.stopPropagation();

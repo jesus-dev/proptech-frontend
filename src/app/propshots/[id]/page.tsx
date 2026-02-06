@@ -60,13 +60,24 @@ export default function PropShotReelPage() {
   }, [propShotId]);
 
   // Función para obtener URL completa
-  // Usa api.proptech.com.py con endpoint optimizado para Cloudflare
+  // Soporta HLS (.m3u8) y videos normales
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
     // Si ya es una URL completa, retornarla
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
       return url;
+    }
+    
+    // HLS streams: usar endpoint de HLS
+    if (url.includes('/hls/') && url.endsWith('.m3u8')) {
+      const parts = url.split('/');
+      const videoIdIndex = parts.indexOf('hls') + 1;
+      if (videoIdIndex > 0 && videoIdIndex < parts.length - 1) {
+        const videoId = parts[videoIdIndex];
+        const filename = parts[parts.length - 1];
+        return getEndpoint(`/api/social/propshots/hls/${videoId}/${filename}`);
+      }
     }
     
     // Videos de PropShots: usar endpoint optimizado

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { PropShot, PropShotService, PropShotComment } from '@/services/propShotService';
+import HlsVideo from './HlsVideo';
 import { 
   Heart, 
   MessageCircle, 
@@ -699,8 +700,8 @@ export default function PropShotReelViewer({
               </div>
             )}
             
-            <video
-              ref={videoRef}
+            <HlsVideo
+              videoRef={videoRef}
               src={getFullUrl(currentPropShot.mediaUrl)}
               className="max-w-full max-h-full w-auto h-auto"
               style={{ 
@@ -708,7 +709,7 @@ export default function PropShotReelViewer({
                 width: 'auto',
                 height: 'auto',
                 maxWidth: '100vw',
-                maxHeight: isMobile ? 'calc(100dvh - 120px)' : 'calc(100vh - 100px)', // Más espacio hacia arriba
+                maxHeight: isMobile ? 'calc(100dvh - 120px)' : 'calc(100vh - 100px)',
                 minWidth: '0',
                 minHeight: '0',
                 objectPosition: 'center center',
@@ -732,11 +733,6 @@ export default function PropShotReelViewer({
               muted={isMuted}
               loop
               playsInline
-              preload="auto"
-              data-playsinline="true"
-              data-webkit-playsinline="true"
-              webkit-playsinline="true"
-              x5-playsinline="true"
               onClick={(e) => {
                 e.stopPropagation();
                 if (videoRef.current) {
@@ -754,7 +750,6 @@ export default function PropShotReelViewer({
               }}
               onCanPlay={() => {
                 setVideoLoading(false);
-                // Calcular offset izquierdo del video
                 if (videoRef.current) {
                   const rect = videoRef.current.getBoundingClientRect();
                   setVideoLeftOffset(rect.left);
@@ -762,14 +757,12 @@ export default function PropShotReelViewer({
               }}
               onPlaying={() => {
                 setVideoLoading(false);
-                // Calcular offset izquierdo del video
                 if (videoRef.current) {
                   const rect = videoRef.current.getBoundingClientRect();
                   setVideoLeftOffset(rect.left);
                 }
               }}
               onLoadedMetadata={(e) => {
-                // Calcular offset izquierdo del video cuando se cargan los metadatos
                 const video = e.currentTarget;
                 const rect = video.getBoundingClientRect();
                 setVideoLeftOffset(rect.left);
