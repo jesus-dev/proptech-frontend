@@ -362,13 +362,14 @@ export default function PropShotsPage() {
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
       result = url;
     }
-    // HLS streams: usar endpoint de HLS
-    else if (url.includes('/hls/') && url.endsWith('.m3u8')) {
+    // HLS streams: usar endpoint de HLS (PRIORIDAD ALTA)
+    else if (url.endsWith('.m3u8')) {
+      // Extraer videoId del path (el directorio antes de playlist.m3u8)
       const parts = url.split('/');
-      const videoIdIndex = parts.indexOf('hls') + 1;
-      if (videoIdIndex > 0 && videoIdIndex < parts.length - 1) {
-        const videoId = parts[videoIdIndex];
-        const filename = parts[parts.length - 1];
+      const playlistIndex = parts.findIndex(p => p.endsWith('.m3u8'));
+      if (playlistIndex > 0) {
+        const videoId = parts[playlistIndex - 1];
+        const filename = parts[playlistIndex];
         result = getEndpoint(`/api/social/propshots/hls/${videoId}/${filename}`);
       } else {
         result = getEndpoint(url);

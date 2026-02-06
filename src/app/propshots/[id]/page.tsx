@@ -64,50 +64,53 @@ export default function PropShotReelPage() {
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
+    let result = '';
+    
     // Si ya es una URL completa, retornarla
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
-      return url;
+      result = url;
     }
-    
-    // HLS streams: usar endpoint de HLS
-    if (url.includes('/hls/') && url.endsWith('.m3u8')) {
+    // HLS streams: usar endpoint de HLS (PRIORIDAD ALTA)
+    else if (url.endsWith('.m3u8')) {
+      // Extraer videoId del path (el directorio antes de playlist.m3u8)
       const parts = url.split('/');
-      const videoIdIndex = parts.indexOf('hls') + 1;
-      if (videoIdIndex > 0 && videoIdIndex < parts.length - 1) {
-        const videoId = parts[videoIdIndex];
-        const filename = parts[parts.length - 1];
-        return getEndpoint(`/api/social/propshots/hls/${videoId}/${filename}`);
+      const playlistIndex = parts.findIndex(p => p.endsWith('.m3u8'));
+      if (playlistIndex > 0) {
+        const videoId = parts[playlistIndex - 1];
+        const filename = parts[playlistIndex];
+        result = getEndpoint(`/api/social/propshots/hls/${videoId}/${filename}`);
+      } else {
+        result = getEndpoint(url);
       }
     }
-    
     // Videos de PropShots: usar endpoint optimizado
-    if (url.includes('/social/propshots/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
+    else if (url.includes('/social/propshots/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
       const filename = url.split('/').pop();
-      return getEndpoint(`/api/social/propshots/video/${filename}`);
+      result = getEndpoint(`/api/social/propshots/video/${filename}`);
     }
-    
     // Solo nombre de archivo de video
-    if (!url.startsWith('/') && !url.includes('/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
-      return getEndpoint(`/api/social/propshots/video/${url}`);
+    else if (!url.startsWith('/') && !url.includes('/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
+      result = getEndpoint(`/api/social/propshots/video/${url}`);
     }
-    
     // Si es una URL relativa del backend (como /uploads/...), usar getEndpoint
-    if (url.startsWith('/uploads/')) {
-      return getEndpoint(url);
+    else if (url.startsWith('/uploads/')) {
+      result = getEndpoint(url);
     }
-    
     // Si es una URL de API, usar getEndpoint
-    if (url.startsWith('/api/')) {
-      return getEndpoint(url);
+    else if (url.startsWith('/api/')) {
+      result = getEndpoint(url);
     }
-    
     // Si solo es el nombre del archivo (sin ruta), agregar la ruta completa
-    if (!url.startsWith('/') && !url.includes('/')) {
-      return getEndpoint(`/uploads/social/propshots/${url}`);
+    else if (!url.startsWith('/') && !url.includes('/')) {
+      result = getEndpoint(`/uploads/social/propshots/${url}`);
+    }
+    // Para cualquier otra ruta relativa, usar getEndpoint
+    else {
+      result = getEndpoint(url.startsWith('/') ? url : `/${url}`);
     }
     
-    // Para cualquier otra ruta relativa, usar getEndpoint
-    return getEndpoint(url.startsWith('/') ? url : `/${url}`);
+    console.log('🎬 [VIDEO-URL] Input:', url, '-> Output:', result);
+    return result;
   };
 
   // Función para dar like
