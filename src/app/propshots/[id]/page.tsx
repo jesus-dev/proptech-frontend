@@ -59,7 +59,7 @@ export default function PropShotReelPage() {
     loadData();
   }, [propShotId]);
 
-  // URL base para videos en producción (sin proxy Cloudflare)
+  // URL base para videos en producción (con SSL via Nginx, sin proxy Cloudflare)
   const UPLOADS_BASE_URL = 'https://uploads.proptech.com.py';
   const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
 

@@ -68,7 +68,7 @@ export default function PropShotGrid({
   // Aplicar límite si se especifica
   const displayedPropShots = limit ? propShots.slice(0, limit) : propShots;
 
-  // URL base para videos en producción (sin proxy Cloudflare)
+  // URL base para videos en producción (con SSL via Nginx, sin proxy Cloudflare)
   const UPLOADS_BASE_URL = 'https://uploads.proptech.com.py';
   const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
 
@@ -81,7 +81,7 @@ export default function PropShotGrid({
       return url;
     }
     
-    // Videos de PropShots: usar uploads.proptech.com.py en producción
+    // Videos de PropShots: usar uploads.proptech.com.py en producción (sin Cloudflare)
     if (url.includes('/social/propshots/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
       const filename = url.split('/').pop();
       if (isProduction) {
