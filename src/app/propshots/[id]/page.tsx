@@ -59,11 +59,8 @@ export default function PropShotReelPage() {
     loadData();
   }, [propShotId]);
 
-  // URL base para videos en producción (con SSL via Nginx, sin proxy Cloudflare)
-  const UPLOADS_BASE_URL = 'https://uploads.proptech.com.py';
-  const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
-
   // Función para obtener URL completa
+  // Usa api.proptech.com.py con endpoint optimizado para Cloudflare
   const getFullUrl = (url: string): string => {
     if (!url) return '';
     
@@ -72,23 +69,15 @@ export default function PropShotReelPage() {
       return url;
     }
     
-    // Videos de PropShots: usar uploads.proptech.com.py en producción
+    // Videos de PropShots: usar endpoint optimizado
     if (url.includes('/social/propshots/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
       const filename = url.split('/').pop();
-      if (isProduction) {
-        return `${UPLOADS_BASE_URL}/api/social/propshots/video/${filename}`;
-      } else {
-        return getEndpoint(`/api/social/propshots/video/${filename}`);
-      }
+      return getEndpoint(`/api/social/propshots/video/${filename}`);
     }
     
     // Solo nombre de archivo de video
     if (!url.startsWith('/') && !url.includes('/') && (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov'))) {
-      if (isProduction) {
-        return `${UPLOADS_BASE_URL}/api/social/propshots/video/${url}`;
-      } else {
-        return getEndpoint(`/api/social/propshots/video/${url}`);
-      }
+      return getEndpoint(`/api/social/propshots/video/${url}`);
     }
     
     // Si es una URL relativa del backend (como /uploads/...), usar getEndpoint
