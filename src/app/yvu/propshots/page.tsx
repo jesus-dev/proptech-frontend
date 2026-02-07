@@ -701,13 +701,15 @@ export default function PropShotsPage() {
             </p>
           </div>
         ) : (
+          <>
+          {user && console.log('🔑 [DEBUG USER]', { userId: user.id, agentId: (user as any)?.agentId, agentObjId: user?.agent?.id, firstPropShotAgentId: filteredPropShots[0]?.agentId, resolvedId: (user as any)?.agentId || user?.agent?.id || user?.id, allUserKeys: Object.keys(user) })}
           <PropShotGrid
             propShots={filteredPropShots}
             loading={false}
             onLike={handleLikePropShot}
             onView={handleViewPropShot}
             onPropShotClick={handlePropShotClick}
-            currentUserId={user?.id}
+            currentUserId={(user as any)?.agentId || user?.agent?.id || user?.id}
             onEdit={handleOpenEditPropShot}
             onDelete={handleDeletePropShot}
             showEmptyState={false}
@@ -718,6 +720,7 @@ export default function PropShotsPage() {
               lg: 4
             }}
           />
+          </>
         )}
       </div>
 
@@ -731,7 +734,7 @@ export default function PropShotsPage() {
           onComment={handleCommentPropShot}
           getFullUrl={getFullUrl}
           onClose={() => setSelectedPropShot(null)}
-          isOwner={isAuthenticated && !!user && !!selectedPropShot?.agentId && Number(selectedPropShot.agentId) === Number(user.id)}
+          isOwner={isAuthenticated && !!user && selectedPropShot?.agentId != null && Number(selectedPropShot.agentId) === Number((user as any)?.agentId || user?.agent?.id || user?.id)}
           onEdit={() => selectedPropShot && handleOpenEditPropShot(selectedPropShot)}
           onDelete={handleDeletePropShot}
         />

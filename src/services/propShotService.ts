@@ -86,7 +86,10 @@ export class PropShotService {
       formData.append('fileName', videoFile.name);
       
       const response = await apiClient.post('/api/social/propshots/upload/video', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 300000, // 5 minutos para videos grandes
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
       });
       
       const videoUrl = typeof response.data === 'string' ? response.data : response.data.url;
@@ -110,7 +113,10 @@ export class PropShotService {
       formData.append('fileName', thumbnailFile.name);
       
       const response = await apiClient.post('/api/social/propshots/upload/thumbnail', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000, // 2 minutos
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity
       });
       
       const thumbnailUrl = typeof response.data === 'string' ? response.data : response.data.url;

@@ -66,6 +66,13 @@ export default function PropShotGrid({
   const router = useRouter();
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
+  // Verificar si el usuario actual es dueño del PropShot
+  // currentUserId puede ser el userId o el agentId, comparamos ambos
+  const isOwnerOf = (shot: PropShot): boolean => {
+    if (currentUserId == null || shot.agentId == null) return false;
+    return Number(shot.agentId) === Number(currentUserId);
+  };
+
   // Aplicar límite si se especifica
   const displayedPropShots = limit ? propShots.slice(0, limit) : propShots;
 
@@ -222,7 +229,7 @@ export default function PropShotGrid({
 
                 {/* Menú tres puntos (siempre visible) y lápiz (solo dueño) */}
                 <div className="absolute top-3 right-3 flex items-center gap-1.5 pointer-events-auto z-10">
-                  {currentUserId != null && onEdit && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && (
+                  {isOwnerOf(shot) && onEdit && (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -252,7 +259,7 @@ export default function PropShotGrid({
                     <>
                       <div className="fixed inset-0 z-20" onClick={() => setOpenMenuId(null)} />
                       <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-30">
-                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onEdit && (
+                        {isOwnerOf(shot) && onEdit && (
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); onEdit(shot); setOpenMenuId(null); }}
@@ -261,7 +268,7 @@ export default function PropShotGrid({
                             <Pencil className="w-4 h-4" /> Editar
                           </button>
                         )}
-                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onDelete && (
+                        {isOwnerOf(shot) && onDelete && (
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); onDelete(shot); setOpenMenuId(null); }}
@@ -312,7 +319,7 @@ export default function PropShotGrid({
                 </div>
 
                 <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-                  {currentUserId != null && onEdit && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && (
+                  {isOwnerOf(shot) && onEdit && (
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onEdit(shot); }}
@@ -334,12 +341,12 @@ export default function PropShotGrid({
                     <>
                       <div className="fixed inset-0 z-20" onClick={() => setOpenMenuId(null)} />
                       <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 py-1 z-30">
-                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onEdit && (
+                        {isOwnerOf(shot) && onEdit && (
                           <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(shot); setOpenMenuId(null); }} className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
                             <Pencil className="w-4 h-4" /> Editar
                           </button>
                         )}
-                        {currentUserId != null && shot.agentId != null && Number(shot.agentId) === Number(currentUserId) && onDelete && (
+                        {isOwnerOf(shot) && onDelete && (
                           <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(shot); setOpenMenuId(null); }} className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2">
                             <Trash2 className="w-4 h-4" /> Eliminar
                           </button>

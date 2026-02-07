@@ -230,6 +230,35 @@ export class AgentService {
       return [];
     }
   }
+  // ==================== FAVORITOS ====================
+
+  /**
+   * Obtener IDs de agentes favoritos del usuario autenticado
+   */
+  static async getFavoriteAgentIds(): Promise<number[]> {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || token === 'undefined' || token === 'null') return [];
+      const response = await apiClient.get('/api/agents/favorites');
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching favorite agents:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Toggle favorito de un agente (agregar/quitar)
+   */
+  static async toggleFavorite(agentId: string | number): Promise<{ isFavorite: boolean }> {
+    try {
+      const response = await apiClient.post(`/api/agents/${agentId}/favorites/toggle`);
+      return response.data;
+    } catch (error) {
+      console.error('Error toggling agent favorite:', error);
+      throw new Error('Error al actualizar favorito');
+    }
+  }
 }
 
 export const agentService = new AgentService();

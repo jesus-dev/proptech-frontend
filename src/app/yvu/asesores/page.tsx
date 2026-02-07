@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Phone, Mail, Star, Users, Award, TrendingUp } from 'lucide-react';
+import { Search, Phone, Mail, Star, Users, Award, TrendingUp, Heart } from 'lucide-react';
 import { AgentService, Agent } from '@/services/agentService';
 import { getEndpoint } from '@/lib/api-config';
 
@@ -24,6 +24,13 @@ export default function AsesoresPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [advisors, setAdvisors] = useState<AdvisorDisplay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+  const [togglingFav, setTogglingFav] = useState<string | null>(null);
+
+  // Cargar favoritos desde BD al montar
+  useEffect(() => {
+    AgentService.getFavoriteAgentIds().then(ids => setFavoriteIds(ids));
+  }, []);
 
   // Cargar agentes desde la BD
   useEffect(() => {
@@ -113,13 +120,36 @@ export default function AsesoresPage() {
     return getEndpoint(photo.startsWith('/') ? photo : `/${photo}`);
   };
 
-  // Filtrar asesores por especialidad y búsqueda
-  const filteredAdvisors = advisors.filter(advisor => {
-    const matchesSpecialty = selectedSpecialty === 'Todas' || advisor.specialties.includes(selectedSpecialty);
-    const matchesSearch = advisor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         advisor.role.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSpecialty && matchesSearch;
-  });
+  // Toggle favorito en BD
+  const handleToggleFavorite = async (agentId: string) => {
+    setTogglingFav(agentId);
+    try {
+      const result = await AgentService.toggleFavorite(agentId);
+      if (result.isFavorite) {
+        setFavoriteIds(prev => [...prev, Number(agentId)]);
+      } else {
+        setFavoriteIds(prev => prev.filter(id => id !== Number(agentId)));
+      }
+    } catch (error) {
+      console.error('Error al toggle favorito:', error);
+    } finally {
+      setTogglingFav(null);
+    }
+  };
+
+  // Filtrar asesores por especialidad y búsqueda, favoritos primero
+  const filteredAdvisors = advisors
+    .filter(advisor => {
+      const matchesSpecialty = selectedSpecialty === 'Todas' || advisor.specialties.includes(selectedSpecialty);
+      const matchesSearch = advisor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           advisor.role.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSpecialty && matchesSearch;
+    })
+    .sort((a, b) => {
+      const aFav = favoriteIds.includes(Number(a.id)) ? 1 : 0;
+      const bFav = favoriteIds.includes(Number(b.id)) ? 1 : 0;
+      return bFav - aFav; // Favoritos primero
+    });
 
   // Obtener especialidades únicas
   const allSpecialties = Array.from(new Set(advisors.flatMap(advisor => advisor.specialties)));
@@ -223,7 +253,11 @@ export default function AsesoresPage() {
       {!loading && (
         <div className="grid grid-cols-2 gap-2 sm:gap-4 md:gap-6">
           {filteredAdvisors.map((advisor) => (
-          <div key={advisor.id} className="group bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 transition-all duration-500">
+          <div key={advisor.id} className={`group bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl md:rounded-3xl shadow-xl border-2 overflow-hidden hover:shadow-2xl hover:-translate-y-1 sm:hover:-translate-y-2 transition-all duration-500 ${
+            favoriteIds.includes(Number(advisor.id))
+              ? 'border-red-300 dark:border-red-500 ring-1 ring-red-200 dark:ring-red-800'
+              : 'border-gray-200 dark:border-gray-700'
+          }`}>
             {/* Header del card con gradiente mejorado */}
             <div className="relative bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-3 sm:p-5 md:p-8 pb-16 sm:pb-20 md:pb-24 overflow-hidden">
               {/* Patrón decorativo de fondo mejorado */}
@@ -233,6 +267,21 @@ export default function AsesoresPage() {
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-white rounded-full blur-xl"></div>
               </div>
               
+              {/* Botón de favorito (corazón) */}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleToggleFavorite(advisor.id); }}
+                disabled={togglingFav === advisor.id}
+                className={`absolute top-2 left-2 sm:top-3 sm:left-3 md:top-5 md:left-5 z-10 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg ${
+                  favoriteIds.includes(Number(advisor.id))
+                    ? 'bg-red-500 hover:bg-red-600 text-white scale-110'
+                    : 'bg-white/80 hover:bg-white text-gray-500 hover:text-red-500'
+                } ${togglingFav === advisor.id ? 'opacity-50 animate-pulse' : ''}`}
+                title={favoriteIds.includes(Number(advisor.id)) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              >
+                <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${favoriteIds.includes(Number(advisor.id)) ? 'fill-current' : ''}`} />
+              </button>
+
               {/* Badge de disponibilidad mejorado */}
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 md:top-5 md:right-5 z-10">
                 <span className={`inline-flex items-center gap-1 sm:gap-1.5 md:gap-2 px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 text-[9px] sm:text-[10px] md:text-xs font-bold rounded-full shadow-2xl backdrop-blur-md border-2 ${

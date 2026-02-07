@@ -377,6 +377,11 @@ export default function SocialPageContent() {
   const [selectedThumbnail, setSelectedThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [creatingPropShot, setCreatingPropShot] = useState(false);
+  const [editingPropShot, setEditingPropShot] = useState<PropShot | null>(null);
+  const [editPropShotTitle, setEditPropShotTitle] = useState('');
+  const [editPropShotDescription, setEditPropShotDescription] = useState('');
+  const [savingEditPropShot, setSavingEditPropShot] = useState(false);
+  const [openPropShotDropdown, setOpenPropShotDropdown] = useState<number | null>(null);
   const [editingPostId, setEditingPostId] = useState<number | null>(null);
   const [editingPostContent, setEditingPostContent] = useState('');
   const [editingPostLocation, setEditingPostLocation] = useState('');
@@ -1079,6 +1084,56 @@ export default function SocialPageContent() {
     }
   };
 
+  // Abrir modal de edición de PropShot
+  const handleOpenEditPropShot = (shot: PropShot) => {
+    setEditingPropShot(shot);
+    setEditPropShotTitle(shot.title || '');
+    setEditPropShotDescription(shot.description || '');
+    setSelectedPropShot(null);
+    setOpenPropShotDropdown(null);
+  };
+
+  // Guardar edición de PropShot
+  const handleSaveEditPropShot = async () => {
+    if (!editingPropShot) return;
+    if (!editPropShotTitle.trim()) {
+      alert('El título es obligatorio.');
+      return;
+    }
+    try {
+      setSavingEditPropShot(true);
+      const updated = await PropShotService.updatePropShot(editingPropShot.id, {
+        title: editPropShotTitle.trim(),
+        description: editPropShotDescription.trim()
+      });
+      setPropShots(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+      setEditingPropShot(null);
+      setEditPropShotTitle('');
+      setEditPropShotDescription('');
+    } catch (error: any) {
+      alert(error?.message || 'Error al guardar. Intenta de nuevo.');
+    } finally {
+      setSavingEditPropShot(false);
+    }
+  };
+
+  // Eliminar PropShot
+  const handleDeletePropShot = async (shot: PropShot) => {
+    if (!confirm('¿Eliminar este PropShot? Esta acción no se puede deshacer.')) return;
+    try {
+      await PropShotService.deletePropShot(shot.id);
+      setPropShots(prev => prev.filter(s => s.id !== shot.id));
+      if (selectedPropShot?.id === shot.id) setSelectedPropShot(null);
+      if (editingPropShot?.id === shot.id) {
+        setEditingPropShot(null);
+        setEditPropShotTitle('');
+        setEditPropShotDescription('');
+      }
+    } catch (error: any) {
+      alert(error?.message || 'Error al eliminar el PropShot.');
+    }
+  };
+
   // Convierte URLs relativas en completas (reels PropShots e imágenes de posts)
   const getFullUrl = (url: string): string => {
     if (!url || typeof url !== 'string') return '';
@@ -1661,7 +1716,8 @@ export default function SocialPageContent() {
               </div>
             ))
           ) : propShots.length > 0 ? (
-            propShots.slice(0, 4).map((shot) => (
+            propShots.slice(0, 4).map((shot) => {
+              return (
               <div 
                 key={shot.id} 
                 className="group cursor-pointer transform hover:scale-105 transition-all duration-300"
@@ -1700,6 +1756,64 @@ export default function SocialPageContent() {
                             <span>PropShots</span>
                       </div>
                     </div>
+
+                    {/* Menú de opciones (3 puntos) */}
+                    <div className="absolute top-3 right-3 z-10">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenPropShotDropdown(openPropShotDropdown === shot.id ? null : shot.id);
+                        }}
+                        className="p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                        title="Opciones"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+
+                      {openPropShotDropdown === shot.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenPropShotDropdown(null); }} />
+                          <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-20">
+                            {isAuthenticated && user && shot.agentId != null && Number(shot.agentId) === Number((user as any)?.agentId || user?.agent?.id || user?.id) && (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleOpenEditPropShot(shot); }}
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setOpenPropShotDropdown(null); handleDeletePropShot(shot); }}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Eliminar
+                                </button>
+                                <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                              </>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`${window.location.origin}/yvu/propshots`);
+                                setOpenPropShotDropdown(null);
+                                alert('Enlace copiado al portapapeles');
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                              Copiar enlace
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                     
                     {/* Duración del video */}
                     <div className="absolute bottom-3 right-3 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded-lg font-medium pointer-events-none">
@@ -1723,6 +1837,64 @@ export default function SocialPageContent() {
                         </svg>
                             <span>PropShots</span>
                       </div>
+                    </div>
+
+                    {/* Menú de opciones (3 puntos) - placeholder */}
+                    <div className="absolute top-3 right-3 z-10">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenPropShotDropdown(openPropShotDropdown === shot.id ? null : shot.id);
+                        }}
+                        className="p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                        title="Opciones"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+
+                      {openPropShotDropdown === shot.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpenPropShotDropdown(null); }} />
+                          <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-20">
+                            {isAuthenticated && user && shot.agentId != null && Number(shot.agentId) === Number((user as any)?.agentId || user?.agent?.id || user?.id) && (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleOpenEditPropShot(shot); }}
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setOpenPropShotDropdown(null); handleDeletePropShot(shot); }}
+                                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  Eliminar
+                                </button>
+                                <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                              </>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`${window.location.origin}/yvu/propshots`);
+                                setOpenPropShotDropdown(null);
+                                alert('Enlace copiado al portapapeles');
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                              Copiar enlace
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                     
                     {/* Duración del video */}
@@ -1766,7 +1938,7 @@ export default function SocialPageContent() {
                 </div>
                     </div>
                   </div>
-          ))
+          );})
           ) : (
             // Empty state
             <div className="col-span-full text-center py-8">
@@ -2369,7 +2541,56 @@ export default function SocialPageContent() {
           onComment={handleCommentPropShot}
           getFullUrl={getFullUrl}
           onClose={() => setSelectedPropShot(null)}
+          isOwner={isAuthenticated && !!user && selectedPropShot?.agentId != null && Number(selectedPropShot.agentId) === Number((user as any)?.agentId || user?.agent?.id || user?.id)}
+          onEdit={() => selectedPropShot && handleOpenEditPropShot(selectedPropShot)}
+          onDelete={handleDeletePropShot}
         />
+      )}
+
+      {/* Modal editar PropShot (solo dueño) */}
+      {editingPropShot && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !savingEditPropShot && setEditingPropShot(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-lg w-full p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <Pencil className="w-5 h-5" />
+              Editar PropShot
+            </h3>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título</label>
+            <input
+              type="text"
+              value={editPropShotTitle}
+              onChange={e => setEditPropShotTitle(e.target.value)}
+              placeholder="Título del PropShot"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+            <textarea
+              value={editPropShotDescription}
+              onChange={e => setEditPropShotDescription(e.target.value)}
+              placeholder="Descripción (opcional)"
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingPropShot(null)}
+                disabled={savingEditPropShot}
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEditPropShot}
+                disabled={savingEditPropShot || !editPropShotTitle.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+              >
+                {savingEditPropShot ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal de Crear PropShot */}
@@ -2599,10 +2820,10 @@ export default function SocialPageContent() {
         <div className="hidden lg:block w-[200px] flex-shrink-0" />
       </div>
 
-      {/* Banner publicitario fijo */}
-      <aside className="hidden lg:block fixed right-8 top-4 w-[280px] z-40">
+      {/* Banners publicitarios fijos */}
+      <aside className="hidden lg:block fixed right-8 top-4 w-[280px] z-40 space-y-6">
         <a 
-          href="/properties" 
+          href="https://proptech.com.py" 
           className="block w-full group"
         >
           <div className="flex flex-col items-center text-center">
@@ -2614,6 +2835,25 @@ export default function SocialPageContent() {
             <span className="text-sm text-gray-400 dark:text-gray-500">Publicidad</span>
             <span className="text-sm text-blue-600 dark:text-blue-400 font-medium group-hover:underline mt-1">
               Ver propiedades →
+            </span>
+          </div>
+        </a>
+
+        <a 
+          href="https://aciapp.org.py" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full group"
+        >
+          <div className="flex flex-col items-center text-center">
+            <img 
+              src="/images/logo/logoaciapp.png" 
+              alt="ACIAPP" 
+              className="w-24 h-auto mb-3 group-hover:scale-105 transition-transform"
+            />
+            <span className="text-sm text-gray-400 dark:text-gray-500">Publicidad</span>
+            <span className="text-sm text-purple-600 dark:text-purple-400 font-medium group-hover:underline mt-1">
+              Visitar ACIAPP →
             </span>
           </div>
         </a>
