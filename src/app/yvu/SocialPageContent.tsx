@@ -10,6 +10,7 @@ import { PropShot, PropShotService, CreatePropShotRequest } from '@/services/pro
 import { getEndpoint } from '@/lib/api-config';
 import { encodePostId } from '@/lib/post-slug';
 import CreatePropShotModal from '@/components/social/CreatePropShotModal';
+import HlsVideo from '@/components/social/HlsVideo';
 import LocationMap from '@/components/LocationMap';
 import { 
   Heart, 
@@ -1083,6 +1084,16 @@ export default function SocialPageContent() {
     if (!url || typeof url !== 'string') return '';
     const t = url.trim();
     if (t.startsWith('http://') || t.startsWith('https://') || t.startsWith('blob:')) return t;
+    // HLS streams: usar endpoint de HLS
+    if (t.endsWith('.m3u8')) {
+      const parts = t.split('/');
+      const playlistIndex = parts.findIndex(p => p.endsWith('.m3u8'));
+      if (playlistIndex > 0) {
+        const videoId = parts[playlistIndex - 1];
+        const filename = parts[playlistIndex];
+        return getEndpoint(`/api/social/propshots/hls/${videoId}/${filename}`);
+      }
+    }
     if (t.startsWith('/uploads/') || t.startsWith('/api/')) return getEndpoint(t);
     if (!t.startsWith('/') && !t.includes('/')) {
       const ext = (t.split('.').pop() || '').toLowerCase();
@@ -1663,24 +1674,14 @@ export default function SocialPageContent() {
               <div className="relative mb-3">
                 {shot.mediaUrl ? (
                   <div className="aspect-[9/16] rounded-xl overflow-hidden shadow-lg relative">
-                    <video
+                    <HlsVideo
                       src={getFullUrl(shot.mediaUrl)}
                       className="w-full h-full object-cover"
                       autoPlay
                       muted
                       loop
                       playsInline
-                      preload="metadata"
-                      onLoadedData={(e) => {
-                        const videoElement = e.currentTarget;
-                        // Mantener silenciado en preview del home
-                        videoElement.muted = true;
-                        videoElement.play().catch(() => {
-                          // Ignorar errores de autoplay
-                        });
-                      }}
                       onClick={(e) => {
-                        // Al hacer click, abrir el reproductor completo con sonido
                         e.stopPropagation();
                         handleViewPropShot(shot.id);
                         setSelectedPropShot(shot);
