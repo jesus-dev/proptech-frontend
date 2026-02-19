@@ -20,7 +20,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     '/yvu',
     '/propshots',
     '/propiedad', // ⭐ Páginas de propiedades públicas
-    '/propiedades' // ⭐ Listado público
+    '/propiedades', // ⭐ Listado público
+    '/agendar' // ⭐ Agendamiento público
   ];
   
   // ⭐ Ruta raíz "/" también es pública (exacta)

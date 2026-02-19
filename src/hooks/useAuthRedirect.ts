@@ -17,7 +17,7 @@ export const useAuthRedirect = (options: UseAuthRedirectOptions = {}) => {
 
   // Rutas públicas que no requieren autenticación
   const publicRoutes = ['/login', '/register', '/registrarse', '/forgot-password', '/reset-password'];
-  const isPublicRoute = pathname ? publicRoutes.includes(pathname) : false;
+  const isPublicRoute = pathname ? (publicRoutes.includes(pathname) || pathname.startsWith('/agendar')) : false;
 
   useEffect(() => {
     // No hacer nada si está cargando

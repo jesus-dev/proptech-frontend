@@ -24,7 +24,8 @@ const Header = () => {
   const isAyudaPage = pathname === '/ayuda' || pathname === '/ayuda/';
   const isSeguridadPage = pathname === '/seguridad' || pathname === '/seguridad/';
   const isInstructivosPage = pathname === '/instructivos' || pathname?.startsWith('/instructivos');
-  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage || isAsesoresPage || isProfesionalesPage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage || isInstructivosPage;
+  const isAgendarPage = pathname?.startsWith('/agendar');
+  const hasBlueHero = isPropiedadesPage || isHomePage || isProptechPage || isContactPage || isAsesoresPage || isProfesionalesPage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage || isInstructivosPage || isAgendarPage;
   
   // Determinar el color del texto basado en si no hay scroll y tiene hero
   const shouldUseWhiteText = !isScrolled && hasBlueHero;

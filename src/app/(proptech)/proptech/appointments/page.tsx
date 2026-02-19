@@ -100,10 +100,10 @@ export default function PublicAppointmentsPage() {
               </Link>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Citas Agendadas
+                  Citas de Registro
                 </h1>
                 <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                  Citas agendadas desde registros públicos
+                  Citas generadas desde el formulario de registro público de PropTech
                 </p>
               </div>
             </div>
@@ -128,13 +128,13 @@ export default function PublicAppointmentsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Citas Agendadas ({filteredAppointments.length})</CardTitle>
+            <CardTitle>Citas de Registro ({filteredAppointments.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {filteredAppointments.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>No hay citas agendadas</p>
+                <p>No hay citas de registro</p>
               </div>
             ) : (
               <div className="space-y-4">

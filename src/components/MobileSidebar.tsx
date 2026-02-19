@@ -19,7 +19,7 @@ import {
   DocsIcon,
   GroupIcon,
 } from "../icons/index";
-import { Package, Bell, MoreHorizontal, FileText, Mail, Globe, Rocket, Calendar, Wrench, CreditCard, Building2 } from "lucide-react";
+import { Package, Bell, MoreHorizontal, FileText, Mail, Globe, Rocket, Calendar, Wrench, CreditCard, Building2, ClipboardList } from "lucide-react";
 import { useAuthContext } from "@/context/AuthContext";
 
 interface NavItem {
@@ -331,10 +331,24 @@ const othersItems: NavItem[] = [
 
 const proptechItems: NavItem[] = [
   {
-    name: "Citas Agendadas",
-    path: "/proptech/appointments",
+    name: "Agendamiento",
     icon: <Calendar className="w-5 h-5" />,
     requiredRole: "SUPER_ADMIN",
+    subItems: [
+      {
+        name: "Citas de Registro",
+        path: "/proptech/appointments",
+      },
+      {
+        name: "Agenda Online",
+        path: "/scheduling",
+      },
+      {
+        name: "Nueva Agenda",
+        path: "/scheduling/new",
+        nuevo: true,
+      },
+    ],
   },
   {
     name: "Suscripciones",

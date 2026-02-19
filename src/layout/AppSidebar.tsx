@@ -363,10 +363,24 @@ const othersItems: NavItem[] = [
 
 const proptechItems: NavItem[] = [
   {
-    name: "Citas Agendadas",
-    path: "/proptech/appointments",
+    name: "Agendamiento",
     icon: <Calendar className="w-5 h-5" />,
     requiredRole: "SUPER_ADMIN",
+    subItems: [
+      {
+        name: "Citas de Registro",
+        path: "/proptech/appointments",
+      },
+      {
+        name: "Agenda Online",
+        path: "/scheduling",
+      },
+      {
+        name: "Nueva Agenda",
+        path: "/scheduling/new",
+        nuevo: true,
+      },
+    ],
   },
   {
     name: "Suscripciones",

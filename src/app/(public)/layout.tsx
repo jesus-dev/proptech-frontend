@@ -80,7 +80,8 @@ export default function PublicLayout({ children }: any) {
   const isAyudaPage = pathname === '/ayuda' || pathname === '/ayuda/';
   const isSeguridadPage = pathname === '/seguridad' || pathname === '/seguridad/';
   const isInstructivosPage = pathname === '/instructivos' || pathname?.startsWith('/instructivos');
-  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isProfesionalesPage || isContactPage || isRegisterPage || isRegistrarsePage || isProptechPage || isAgentePage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage || isInstructivosPage;
+  const isAgendarPage = pathname?.startsWith('/agendar');
+  const hasHeroSection = isHomePage || isPropertiesPage || isAsesoresPage || isProfesionalesPage || isContactPage || isRegisterPage || isRegistrarsePage || isProptechPage || isAgentePage || isTerminosPage || isPrivacidadPage || isAyudaPage || isSeguridadPage || isInstructivosPage || isAgendarPage;
 
   return (
     <>
