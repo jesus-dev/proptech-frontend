@@ -177,11 +177,6 @@ export default function AgendarPage() {
       });
       setBooking(result);
       setStep('confirmation');
-      if (result.whatsappLink) {
-        setTimeout(() => {
-          window.open(result.whatsappLink!, '_blank');
-        }, 1500);
-      }
     } catch (err: any) {
       const msg = err?.response?.data?.error || 'Error al crear la reserva';
       setFormErrors({ submit: msg });
@@ -788,7 +783,7 @@ export default function AgendarPage() {
                   {booking.whatsappLink && (
                     <>
                       <p className="text-sm text-gray-500 mb-3">
-                        Se abrirá WhatsApp automáticamente. Si no se abrió, toca el botón:
+                        Confirma tu cita enviando un mensaje por WhatsApp:
                       </p>
                       <a
                         href={booking.whatsappLink}
