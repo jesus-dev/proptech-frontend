@@ -247,25 +247,56 @@ export default function AgendarPage() {
     return grouped;
   }, [availableSlots]);
 
-  if (loading) {
+  if (loading || error || !agenda) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando agenda...</p>
-        </div>
-      </div>
-    );
-  }
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+        <section className="relative -mt-[3.5rem] sm:-mt-16 min-h-[45vh] sm:min-h-[50vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-cyan-900 to-blue-900 w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+          <div className="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="agenda-grid-loading" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <rect width="80" height="80" fill="none" stroke="cyan" strokeWidth="0.5" opacity="0.3"/>
+                  <rect x="10" y="10" width="60" height="45" fill="none" stroke="cyan" strokeWidth="0.3" opacity="0.4" rx="2"/>
+                  <circle cx="20" cy="25" r="3" fill="cyan" opacity="0.3"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#agenda-grid-loading)" />
+            </svg>
+          </div>
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-20 left-10 w-20 h-20 bg-cyan-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute top-40 right-20 w-32 h-32 bg-blue-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-cyan-300/20 rounded-full blur-xl animate-bounce" />
+          </div>
 
-  if (error || !agenda) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50">
-        <div className="text-center max-w-md mx-auto px-6">
-          <ExclamationTriangleIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Agenda no encontrada</h1>
-          <p className="text-gray-600">{error || 'La agenda solicitada no existe o no está activa.'}</p>
-        </div>
+          <div className="relative z-10 text-center px-6">
+            {loading ? (
+              <>
+                <div className="w-14 h-14 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">Cargando agenda</h1>
+                <p className="text-cyan-200/80 text-sm sm:text-base">Un momento por favor...</p>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <CalendarIcon className="w-8 h-8 text-cyan-300" />
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">Agenda no disponible</h1>
+                <p className="text-cyan-200/80 text-sm sm:text-base max-w-md mx-auto">
+                  {error || 'La agenda solicitada no existe o no está activa en este momento.'}
+                </p>
+                <a
+                  href="/"
+                  className="inline-flex items-center gap-2 mt-6 px-6 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 
+                    rounded-xl text-white text-sm font-medium hover:bg-white/20 transition-all"
+                >
+                  <ArrowLeftIcon className="w-4 h-4" />
+                  Volver al inicio
+                </a>
+              </>
+            )}
+          </div>
+        </section>
       </div>
     );
   }
@@ -329,70 +360,62 @@ export default function AgendarPage() {
       </section>
 
       {/* Info Cards */}
-      <section className="py-8 bg-white/50 backdrop-blur-sm">
+      <section className="py-6 sm:py-8 bg-white/50 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`grid grid-cols-1 ${agenda.location || (agenda.maxBookingsPerSlot && agenda.maxBookingsPerSlot > 1) ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="group flex items-center gap-4 p-5 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+              transition={{ duration: 0.4 }}
+              className="group flex flex-col items-center text-center p-4 sm:p-5 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
             >
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <ClockIcon className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform duration-300">
+                <ClockIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Duración</h3>
-                <p className="text-sm text-gray-600">{agenda.defaultDuration} minutos</p>
-              </div>
+              <h3 className="text-sm font-semibold text-gray-900">{agenda.defaultDuration} min</h3>
+              <p className="text-xs text-gray-500">Duración</p>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="group flex items-center gap-4 p-5 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+              transition={{ duration: 0.4, delay: 0.05 }}
+              className="group flex flex-col items-center text-center p-4 sm:p-5 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
             >
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <CalendarDaysIcon className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform duration-300">
+                <CalendarDaysIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Disponibilidad</h3>
-                <p className="text-sm text-gray-600">Hasta {agenda.maxAdvanceDays} días de anticipación</p>
-              </div>
+              <h3 className="text-sm font-semibold text-gray-900">{agenda.maxAdvanceDays} días</h3>
+              <p className="text-xs text-gray-500">Anticipación</p>
             </motion.div>
 
             {agenda.location && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="group flex items-center gap-4 p-5 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="group flex flex-col items-center text-center p-4 sm:p-5 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
               >
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <MapPinIcon className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform duration-300">
+                  <MapPinIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Ubicación</h3>
-                  <p className="text-sm text-gray-600">{agenda.location}</p>
-                </div>
+                <h3 className="text-sm font-semibold text-gray-900 line-clamp-1">{agenda.locationType === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</h3>
+                <p className="text-xs text-gray-500">Ubicación</p>
               </motion.div>
             )}
 
             {agenda.maxBookingsPerSlot && agenda.maxBookingsPerSlot > 1 && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="group flex items-center gap-4 p-5 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="group flex flex-col items-center text-center p-4 sm:p-5 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100"
               >
-                <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <UsersIcon className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform duration-300">
+                  <UsersIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Sesión Grupal</h3>
-                  <p className="text-sm text-gray-600">Hasta {agenda.maxBookingsPerSlot} personas por horario</p>
-                </div>
+                <h3 className="text-sm font-semibold text-gray-900">{agenda.maxBookingsPerSlot} cupos</h3>
+                <p className="text-xs text-gray-500">Por horario</p>
               </motion.div>
             )}
           </div>
