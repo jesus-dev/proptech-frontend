@@ -207,7 +207,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    name: "Agenda",
+    name: "Agenda de Agentes",
     path: "/agenda",
     icon: <CalenderIcon />,
     subItems: [
